@@ -158,11 +158,11 @@ const sum=a=>a.reduce((x,y)=>x+y,0);
 let D,L,R,Q,V,M,PEM,PBM;const charts={};
 
 // 由歷史倍數自動產生 6 條色帶（取 5%~95% 分位，四捨五入到整齊級距）
-function bands(vals,steps){
-  const v=vals.filter(x=>x>0).sort((a,b)=>a-b);if(!v.length)return [1,2,3,4,5,6];
-  const lo=v[Math.floor(v.length*.01)],hi=v[Math.ceil(v.length*.99)-1];
-  let i=steps.findIndex(s=>s>=(hi-lo)/5);if(i<0)i=steps.length-1;
-  for(;i<steps.length;i++){const st=steps[i],a=Math.floor(lo/st)*st;if(a+5*st>=hi||i===steps.length-1)return [0,1,2,3,4,5].map(k=>+(a+k*st).toFixed(2))}
+function bands(vals){
+  const v=vals.filter(x=>x>0).sort((a,b)=>a-b);if(v.length<6)return [1,2,3,4,5,6];
+  const nice=x=>x>=10?Math.round(x):Math.round(x*10)/10;
+  const out=[];for(const p of [.02,.2,.4,.6,.8,.98]){let x=nice(v[Math.round(p*(v.length-1))]);if(out.length&&x<=out[out.length-1])x=nice(out[out.length-1]*1.05+(x>=10?1:0.1));out.push(x)}
+  return out;
 }
 function qInfo(lbl){return {y:2000+ +lbl.slice(0,2),n:+lbl[3]}}
 // 預估模型：最新已公布季 → 下一季用月營收（缺的月份用輸入值），之後各季用季增率，跨年用年增率
@@ -210,8 +210,8 @@ function header(){
   $('tPE').innerHTML=L.pe?`目前 <strong>${L.pe} 倍</strong>，位在 <span class="pill">${band(PEM,L.pe)}</span> 帶，高於近 ${yrs} 年 <strong>${pct(R.map(r=>r[4]),L.pe)}%</strong> 的月份`:'近四季虧損，本益比不適用';
   if(D.cyclical)$('tPE').innerHTML+='<br><span class="pill">循環股</span> EPS 高峰時本益比會偏低、谷底時偏高，請以淨值比河流圖為主';
   $('tPB').innerHTML=`目前 <strong>${L.pb} 倍</strong>，位在 <span class="pill">${band(PBM,L.pb)}</span> 帶，高於近 ${yrs} 年 <strong>${pct(R.map(r=>r[5]),L.pb)}%</strong> 的月份`;
-  $('fPE').textContent=`色帶 = 近四季 EPS × ${PEM.join('／')} 倍（依歷史區間自動產生）；粗線為月底收盤價`;
-  $('fPB').textContent=`色帶 = 每股淨值 × ${PBM.join('／')} 倍（依歷史區間自動產生）`;
+  $('fPE').textContent=`色帶 = 近四季 EPS × ${PEM.join('／')} 倍（歷史 2／20／40／60／80／98% 分位數）；粗線為月底收盤價`;
+  $('fPB').textContent=`色帶 = 每股淨值 × ${PBM.join('／')} 倍（歷史 2／20／40／60／80／98% 分位數）`;
   $('note').textContent=`資料來源：FinMind（證交所月營收、財報、本益比／淨值比），更新時間 ${D.updated.replace('T',' ').replace('Z',' UTC')}。每個交易日傍晚自動更新。本頁不構成投資建議。`;
 }
 function render(){
@@ -250,7 +250,8 @@ function renderFwd(){
   const miss=m.ms.filter((k,i)=>m.known[i]==null).map(k=>+k.slice(5)+'月');
   $('lMon').textContent=miss.length?`${miss.join('、')}營收估（億／月）`:'本季營收已全數公布';
   $('iMon').disabled=!miss.length;$('lYg').textContent=`${m.y+1} 營收年增（%）`;
-  $('fFwd').textContent=`EPS = 營收 × 淨利率 ÷ ${fmt(D.shares,2)} 億股。預設值：未公布月份取本季已公布月份平均、淨利率取 ${Q[Q.length-1][0]} 實績。`;
+  $('fFwd').textContent=`EPS = 營收 × 淨利率 ÷ ${fmt(D.shares,2)} 億股。預設值：未公布月份取本季已公布月份平均、淨利率取 ${window.__nmAbn?'近四季平均':Q[Q.length-1][0]+' 實績'}。`;
+  if(window.__nmAbn)$('tFwd').innerHTML+=`<br><span class="pill">業外影響</span> ${Q[Q.length-1][0]} 淨利率 ${Q[Q.length-1][4]}% 高於營益率 ${Q[Q.length-1][3]}%，業外收益可能不會延續，預設改用近四季平均淨利率`;
 }
 function river(id,ms,col,unit){
   const o=base(),c=mk(id),cols=['--b1','--b2','--b3','--b4','--b5'].map(css);o.yAxis.scale=false;
@@ -267,11 +268,11 @@ async function load(id){
   try{
     const r=await fetch(`data/${id}.json?t=${Date.now()}`);if(!r.ok)throw new Error(`找不到 ${id} 的資料（data/${id}.json）`);
     D=await r.json();L=D.last;R=D.riv;Q=D.q;V=D.rev;
-    PEM=bands(R.map(r=>r[4]),[1,2,3,4,5,8,10]);PBM=bands(R.map(r=>r[5]),[0.1,0.2,0.25,0.5,1,1.5,2]);
+    PEM=bands(R.map(r=>r[4]));PBM=bands(R.map(r=>r[5]));
     const m0=(()=>{const lq=qInfo(Q[Q.length-1][0]);let y=lq.y,n=lq.n+1;if(n>4){n=1;y++}
       const k=[1,2,3].map(i=>(V.find(x=>x[0]===`${y}-${String((n-1)*3+i).padStart(2,'0')}`)||[])[1]).filter(x=>x!=null);
       return k.length?sum(k)/k.length:Q[Q.length-1][1]/3})();
-    $('iMon').value=Math.round(m0);$('iNm').value=Q[Q.length-1][4];$('iQg').value=5;$('iYg').value=15;
+    $('iMon').value=Math.round(m0);const ql=Q[Q.length-1],nmAbn=ql[4]>ql[3]+5;window.__nmAbn=nmAbn;$('iNm').value=nmAbn?+(sum(Q.slice(-4).map(x=>x[4]))/4).toFixed(1):ql[4];$('iQg').value=5;$('iYg').value=15;
     document.title=`${D.id} ${D.name} 估值看板`;$('err').hidden=true;
     header();render();
   }catch(e){$('err').textContent='資料載入失敗：'+e.message;$('err').hidden=false;$('asof').textContent=''}
