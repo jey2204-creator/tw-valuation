@@ -206,8 +206,9 @@ function header(){
   $('tEps').innerHTML=`${q1[0]} EPS <strong>${q1[5]}</strong> 元${q0[5]>0?`，季增 ${((q1[5]/q0[5]-1)*100).toFixed(0)}%`:''}；近四季 <strong>${lastR[2]?.toFixed(2)}</strong> 元`;
   const pct=(arr,v)=>Math.round(arr.filter(x=>x!=null&&x<=v).length/arr.filter(x=>x!=null).length*100);
   const band=(ms,v)=>{for(let i=ms.length-1;i>=0;i--)if(v>=ms[i])return i===ms.length-1?`${ms[i]} 倍以上`:`${ms[i]}–${ms[i+1]} 倍`;return `${ms[0]} 倍以下`};
-  const yrs=Math.round(R.length/12);
+  const yrs=(R.length/12).toFixed(1);
   $('tPE').innerHTML=L.pe?`目前 <strong>${L.pe} 倍</strong>，位在 <span class="pill">${band(PEM,L.pe)}</span> 帶，高於近 ${yrs} 年 <strong>${pct(R.map(r=>r[4]),L.pe)}%</strong> 的月份`:'近四季虧損，本益比不適用';
+  if(D.cyclical)$('tPE').innerHTML+='<br><span class="pill">循環股</span> EPS 高峰時本益比會偏低、谷底時偏高，請以淨值比河流圖為主';
   $('tPB').innerHTML=`目前 <strong>${L.pb} 倍</strong>，位在 <span class="pill">${band(PBM,L.pb)}</span> 帶，高於近 ${yrs} 年 <strong>${pct(R.map(r=>r[5]),L.pb)}%</strong> 的月份`;
   $('fPE').textContent=`色帶 = 近四季 EPS × ${PEM.join('／')} 倍（依歷史區間自動產生）；粗線為月底收盤價`;
   $('fPB').textContent=`色帶 = 每股淨值 × ${PBM.join('／')} 倍（依歷史區間自動產生）`;

@@ -7,7 +7,8 @@ import json, os, sys, time, datetime as dt
 from pathlib import Path
 import urllib.request, urllib.parse
 
-STOCKS = ["2330"]          # 想追蹤的股票加在這裡
+STOCKS = ["2330", "2344", "6488"]   # 想追蹤的股票加在這裡
+CYCLICAL = {"2344", "6488"}          # 景氣循環股：網頁會提醒以淨值比為主
 YEARS = 6                  # 河流圖回溯年數
 API = "https://api.finmindtrade.com/api/v4/data"
 OUT = Path(__file__).resolve().parent / "data"
@@ -96,7 +97,7 @@ def build(sid, today=None, fetch=get):
                 prev=pxs[-2]["close"] if len(pxs) > 1 else pxs[-1]["close"],
                 pe=pers[-1]["PER"], pb=pers[-1]["PBR"])
     name = info[0].get("stock_name", "") if info else ""
-    return dict(id=sid, name=name, updated=dt.datetime.utcnow().strftime("%Y-%m-%dT%H:%MZ"),
+    return dict(id=sid, name=name, cyclical=sid in CYCLICAL, updated=dt.datetime.utcnow().strftime("%Y-%m-%dT%H:%MZ"),
                 shares=round(shares, 4) if shares else None, last=last, rev=rev, q=q, riv=riv)
 
 
