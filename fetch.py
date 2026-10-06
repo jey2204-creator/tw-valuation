@@ -16,7 +16,7 @@ TOKEN = os.environ.get("FINMIND_TOKEN", "")
 
 
 def get(dataset, sid, start):
-    q = {"dataset": dataset, "data_id": sid, "start_date": start}
+    q = {k: v for k, v in {"dataset": dataset, "data_id": sid, "start_date": start}.items() if v}
     req = urllib.request.Request(API + "?" + urllib.parse.urlencode(q))
     if TOKEN:
         req.add_header("Authorization", "Bearer " + TOKEN)
@@ -75,12 +75,14 @@ def build(sid, today=None, fetch=get):
     q = []
     for d in sorted(qd):
         o = qd[d]
-        if not all(k in o for k in want) or not o["Revenue"]:
+        rv_, ni, eps = o.get("Revenue"), o.get("EquityAttributableToOwnersOfParent"), o.get("EPS")
+        if eps is None and ni is not None and shares:   # 金融股財報沒有 EPS 欄位
+            eps = ni / 1e8 / shares
+        if not rv_ or eps is None:
             continue
-        rv_ = o["Revenue"]
+        pct = lambda v: None if v is None else round(v / rv_ * 100, 1)
         q.append([f"{d[2:4]}Q{int(d[5:7]) // 3}", round(rv_ / 1e8),
-                  round(o["GrossProfit"] / rv_ * 100, 1), round(o["OperatingIncome"] / rv_ * 100, 1),
-                  round(o["EquityAttributableToOwnersOfParent"] / rv_ * 100, 1), round(o["EPS"], 2)])
+                  pct(o.get("GrossProfit")), pct(o.get("OperatingIncome")), pct(ni), round(eps, 2)])
 
     # 月底股價 + PE/PB → 近四季EPS、每股淨值
     pm, em = month_last(px, "close"), month_last(per, "PER")
@@ -101,9 +103,27 @@ def build(sid, today=None, fetch=get):
                 shares=round(shares, 4) if shares else None, last=last, rev=rev, q=q, riv=riv)
 
 
+def build_list():
+    """全部上市櫃普通股清單（給網頁搜尋用）：[代號, 名稱, 上市/上櫃, 產業]"""
+    m = {}
+    for s in get("TaiwanStockInfo", "", ""):
+        sid = s.get("stock_id", "")
+        if s.get("type") in ("twse", "tpex") and len(sid) == 4 and sid.isdigit() and sid[0] != "0":
+            if sid not in m or s.get("date", "") > m[sid].get("date", ""):
+                m[sid] = s
+    rows = [[k, v["stock_name"], "上市" if v["type"] == "twse" else "上櫃", v.get("industry_category", "")]
+            for k, v in sorted(m.items())]
+    (OUT / "list.json").write_text(json.dumps(rows, ensure_ascii=False, separators=(",", ":")), "utf-8")
+    print(f"list.json: {len(rows)} 檔")
+
+
 def main():
     ids = sys.argv[1:] or STOCKS
     OUT.mkdir(exist_ok=True)
+    try:
+        build_list()
+    except Exception as e:
+        print(f"list FAILED: {e}", file=sys.stderr)
     ok = []
     for sid in ids:
         try:
