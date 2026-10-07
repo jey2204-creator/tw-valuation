@@ -1,7 +1,8 @@
 name: 更新股票資料
 on:
   schedule:
-    - cron: "40 10 * * 1-5"   # 台北時間 平日 18:40（收盤後，FinMind 已更新）
+    - cron: "40 10 * * 1-5"   # 台北時間 平日 18:40（收盤後第一次）
+    - cron: "30 14 * * 1-5"   # 台北時間 平日 22:30（補抓 FinMind 晚間才進來的資料）
   workflow_dispatch:           # 可在 Actions 頁面手動執行
 permissions:
   contents: write
