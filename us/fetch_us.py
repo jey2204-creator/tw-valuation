@@ -216,18 +216,29 @@ def instants(rows):
 
 
 def merged(cf, names, fn, unit_pred=lambda u: u == "USD", adj=None):
-    """多個候選科目合併：最新資料的科目優先，缺的期間用其他科目補。
-    adj(row) → 調整後數值（分割還原），在推算 Q4 之前先做，避免分割前後的數字混算"""
+    """多個候選科目先合併成同一組期間資料再推算（公司常換科目名稱，
+    例如 9 個月累計與全年分屬不同科目時才能相減出 Q4）。
+    同一期間：數值取「最新資料的科目」；公布日取所有科目中最早的申報日。
+    adj(row) → 調整後數值（分割還原），在推算 Q4 之前先做"""
     raw = facts_of(cf, names, unit_pred)
     if adj:
         raw = {n: [dict(r, val=adj(r)) for r in rows] for n, rows in raw.items()}
-    per = {n: fn(rows) for n, rows in raw.items()}
-    order = sorted(per, key=lambda n: (max(per[n]) if per[n] else "", len(per[n])), reverse=True)
-    out = {}
+    order = sorted(raw, key=lambda n: (max(r["end"] for r in raw[n]), len(raw[n])), reverse=True)
+    owner, earliest = {}, {}
     for n in order:
-        for k, v in per[n].items():
-            out.setdefault(k, v)
-    return out
+        for r in raw[n]:
+            k = (r.get("start"), r["end"])
+            owner.setdefault(k, n)
+            earliest[k] = min(earliest.get(k, r["filed"]), r["filed"])
+    rows = []
+    for n in order:
+        rows += [r for r in raw[n] if owner[(r.get("start"), r["end"])] == n]
+    # 補一筆「最早申報日」的影子資料：值與採用值相同，只用來讓公布日取到最早
+    chosen = latest_by_period(rows)
+    for k, r in chosen.items():
+        if earliest[k] < r["first"]:
+            rows.append(dict(r, filed=earliest[k]))
+    return fn(rows)
 
 
 def cal_label(start, end):
