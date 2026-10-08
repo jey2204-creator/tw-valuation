@@ -136,13 +136,13 @@ def latest_by_period(rows):
 
 
 def restatements(cf, names, unit_pred, inverse=False):
-    """同一期間前後兩次申報的比例接近整數 n≥2 → [(後一次申報日, n)]"""
+    """同一期間前後兩次申報的比例接近整數 n≥2 → [(後一次申報日, n, 期間)]"""
     ev = []
     for rows in facts_of(cf, names, unit_pred).values():
         by = {}
         for r in rows:
             by.setdefault((r.get("start"), r["end"]), []).append(r)
-        for lst in by.values():
+        for k, lst in by.items():
             lst.sort(key=lambda r: r["filed"])
             for a, b in zip(lst, lst[1:]):
                 if not a["val"] or not b["val"] or (a["val"] > 0) != (b["val"] > 0):
@@ -150,23 +150,33 @@ def restatements(cf, names, unit_pred, inverse=False):
                 ratio = b["val"] / a["val"] if inverse else a["val"] / b["val"]
                 n = round(ratio)
                 if 2 <= n <= 50 and abs(ratio - n) / n < 0.03:
-                    ev.append((b["filed"], n))
+                    ev.append((b["filed"], n, k))
     return ev
 
 
 def split_events(cf):
-    """股票分割：EPS 重述縮小 n 倍，且稀釋股數同時重述放大 n 倍（前後 200 天內）才採用。
-    只看 EPS 會把會計重述、單位更正誤判成分割。回傳 [(生效日, n)]"""
+    """股票分割：EPS 被重述縮小 n 倍，且符合下列任一佐證才採用（避免把會計重述誤判成分割）：
+    ① 稀釋股數同時重述放大 n 倍；② 同一份財報把 2 個以上期間都按 n 倍重述。
+    同一倍數、相隔 400 天內的重述視為同一次分割，生效日取最早那次。回傳 [(生效日, n)]"""
+    eps = sorted(restatements(cf, EPS, lambda u: "/" in u))
     sh = restatements(cf, SHR, lambda u: u == "shares", inverse=True)
-    ev = [(d, n) for d, n in restatements(cf, EPS, lambda u: "/" in u)
-          if any(m == n and abs(days(d, d2)) <= 200 for d2, m in sh)]
-    # 合併：同一比例、相隔 400 天內視為同一次分割，取最早重述日
-    ev.sort()
+    per_filing = {}
+    for d, n, k in eps:
+        per_filing.setdefault((d, n), set()).add(k)
+    clusters = []
+    for (d, n), ks in sorted(per_filing.items()):
+        c = clusters[-1] if clusters else None
+        if c and c["n"] == n and days(c["last"], d) < 400:
+            c["last"] = d
+            c["multi"] |= len(ks) >= 2
+        else:
+            clusters.append(dict(first=d, last=d, n=n, multi=len(ks) >= 2))
     out = []
-    for d, n in ev:
-        if out and out[-1][1] == n and days(out[-1][0], d) < 400:
-            continue
-        out.append((d, n))
+    for c in clusters:
+        by_shares = any(m == c["n"] and -200 <= days(c["first"], d2) <= days(c["first"], c["last"]) + 200
+                        for d2, m, _ in sh)
+        if c["multi"] or by_shares:
+            out.append((c["first"], c["n"]))
     return out
 
 
