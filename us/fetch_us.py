@@ -357,7 +357,7 @@ def build(tk, cik_map, today=None):
         last = av[-need:]
         if fin["freq"] == "Q" and days(last[0]["end"], last[-1]["end"]) > 300:  # 中間缺季
             return None
-        return sum(q["eps"] for q in last)
+        return round(sum(q["eps"] for q in last), 4)
 
     def bvps_at(day):
         av = [e for e in EQS if e[2] <= day]
@@ -375,12 +375,12 @@ def build(tk, cik_map, today=None):
         r = mon[k]
         c, t, b = r["c"], ttm_at(r["date"]), bvps_at(r["date"])
         riv.append([k, round(c, 2), None if t is None else round(t, 3), None if b is None else round(b, 2),
-                    round(c / t, 1) if t and t > 0 else None, round(c / b, 2) if b and b > 0 else None])
+                    round(c / t, 1) if t and t >= 0.01 else None, round(c / b, 2) if b and b > 0 else None])
     last_r, prev_r = px[-1], px[-2] if len(px) > 1 else px[-1]
     t, b = ttm_at(last_r["date"]), bvps_at(last_r["date"])
     last = dict(date=last_r["date"], close=round(last_r["c"], 2), prev=round(prev_r["c"], 2),
                 ttm=None if t is None else round(t, 3), bvps=None if b is None else round(b, 2),
-                pe=round(last_r["c"] / t, 1) if t and t > 0 else None,
+                pe=round(last_r["c"] / t, 1) if t and t >= 0.01 else None,
                 pb=round(last_r["c"] / b, 2) if b and b > 0 else None)
     q = [[x["cal"], x["fis"], x["rev"], x["gm"], x["om"], x["nm"], x["eps"], x["capex"], x["sh"], x["end"], x["filed"]]
          for x in Q if x["end"] >= f"{today.year - YEARS - 1}-01-01"]

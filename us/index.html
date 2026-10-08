@@ -218,7 +218,8 @@ let IDX=[],D,L,R,Q,PEM,PBM,U;const charts={};
 // riv 欄位：0年月 1收盤 2近四季EPS 3每股淨值 4PE 5PB
 
 function bands(vals){
-  const v=vals.filter(x=>x!=null&&x>0).sort((a,b)=>a-b);if(v.length<12)return null;
+  let v=vals.filter(x=>x!=null&&x>0).sort((a,b)=>a-b);if(v.length<12)return null;
+  const med=v[Math.floor(v.length/2)];v=v.filter(x=>x<=med*8);   // 排除 EPS 接近 0 時的極端倍數
   const nice=x=>x>=10?Math.round(x):Math.round(x*10)/10;
   const out=[];for(const p of [.02,.2,.4,.6,.8,.98]){let x=nice(v[Math.round(p*(v.length-1))]);if(out.length&&x<=out[out.length-1])x=nice(out[out.length-1]*1.05+(x>=10?1:0.1));out.push(x)}
   return out;
@@ -353,20 +354,23 @@ function renderFwd(){
   if(window.__nmAbn)$('tFwd').innerHTML+=`<br><span class="pill">業外影響</span> ${qlbl(ql)} 淨利率 ${ql[5]}% 高於營益率 ${ql[4]}% 超過 5 個百分點，可能含一次性收益，預設改用近四季平均淨利率`;
   if(m.annual){$('lQ1').textContent=`FY${m.y} 營收年增（%）`;$('lYg').textContent=`FY${m.y+1} 營收年增（%）`;$('iQg').parentElement.hidden=true}
   else{$('lQ1').textContent=`${m.est[0].lbl.replace('E','')} 營收季增（%）`;$('lYg').textContent=`${m.y+1} 營收年增（%）`;$('iQg').parentElement.hidden=m.est.length<2}
-  $('fFwd').textContent=`EPS = 營收 × 淨利率 ÷ ${fmt(m.sh,0)} 百萬股（最新稀釋加權股數）。預設值依近一年實績：季增取近四季平均季增、年增取近四季營收年增、淨利率取${window.__nmAbn?'近四季平均':'最新一期'}。年度以日曆年計。`;
+  $('fFwd').textContent=`EPS = 營收 × 淨利率 ÷ ${fmt(m.sh,0)} 百萬股（最新稀釋加權股數）。預設值刻意偏保守、避免把高成長直線外推：下季季增取近四季平均（上限 15%）、之後各季減半、明年年增取近四季營收年增的一半（上限 30%）、淨利率取${window.__nmAbn?'近四季平均':'最新一期'}。年度以日曆年計。`;
 }
 function river(id,ms,col,unit){
   const c=mk(id);
   if(!ms){c.clear();$(id).style.height='0px';c.resize();return}
   $(id).style.height='';c.resize();
   const o=base(),cols=['--b1','--b2','--b3','--b4','--b5'].map(css);o.yAxis.scale=false;
-  const rr=R.filter(r=>r[col]!=null&&r[col]>0);
+  const i0=R.findIndex(r=>r[col]!=null&&r[col]>0),rr=R.slice(i0);   // 虧損月份留白，不刪掉（避免時間軸被壓縮）
+  const ok=r=>r[col]!=null&&r[col]>0;
   o.xAxis.data=rr.map(r=>r[0].slice(2).replace('-','/'));o.xAxis.boundaryGap=false;
-  const s=[{name:ms[0]+unit,type:'line',stack:'r',data:rr.map(r=>+(r[col]*ms[0]).toFixed(2)),symbol:'none',lineStyle:{width:0},silent:true}];
-  for(let i=1;i<ms.length;i++)s.push({name:ms[i]+unit,type:'line',stack:'r',data:rr.map(r=>+(r[col]*(ms[i]-ms[i-1])).toFixed(2)),symbol:'none',lineStyle:{width:0},areaStyle:{color:cols[i-1],opacity:1},silent:true});
+  const s=[{name:ms[0]+unit,type:'line',stack:'r',data:rr.map(r=>ok(r)?+(r[col]*ms[0]).toFixed(2):null),symbol:'none',lineStyle:{width:0},silent:true}];
+  for(let i=1;i<ms.length;i++)s.push({name:ms[i]+unit,type:'line',stack:'r',data:rr.map(r=>ok(r)?+(r[col]*(ms[i]-ms[i-1])).toFixed(2):null),symbol:'none',lineStyle:{width:0},areaStyle:{color:cols[i-1],opacity:1},silent:true});
   s.push({name:'股價',type:'line',data:rr.map(r=>r[1]),symbol:'none',lineStyle:{width:2.2,color:css('--price')},itemStyle:{color:css('--price')},z:5,endLabel:{show:true,formatter:p=>p.value,fontFamily:'IBM Plex Mono',fontSize:10,color:css('--price')}});
-  o.series=s;o.legend.show=false;o.grid.right=40;o.grid.top=12;
-  o.tooltip.formatter=ps=>{const r=rr[ps[0].dataIndex];let h=`<b>${r[0]}</b>　股價 ${fmt(r[1],2)}<br>`;for(let k=ms.length-1;k>=0;k--)h+=`${ms[k]}${unit}：${fmt(r[col]*ms[k],2)}<br>`;return h};
+  // Y 軸上限 = 股價最高點 × 1.6：極端倍數（EPS 谷底時）不會把股價線壓扁
+  o.yAxis.max=Math.ceil(Math.max(...rr.map(r=>r[1]))*1.6/10)*10;s[s.length-1].endLabel.formatter=p=>p.value>=100?Math.round(p.value):p.value;
+  o.series=s;o.legend.show=false;o.grid.right=44;o.grid.top=12;
+  o.tooltip.formatter=ps=>{const r=rr[ps[0].dataIndex];let h=`<b>${r[0]}</b>　股價 ${fmt(r[1],2)}<br>`;if(!ok(r))return h+'近四季虧損，倍數不適用';for(let k=ms.length-1;k>=0;k--)h+=`${ms[k]}${unit}：${fmt(r[col]*ms[k],2)}<br>`;return h};
   c.setOption(o,true);
 }
 // ---------- 載入個股 ----------
@@ -384,9 +388,9 @@ async function load(id){
     const ql=Q[Q.length-1],last4=Q.slice(-4),nmAbn=ql[4]!=null&&ql[5]!=null&&ql[5]>ql[4]+5;window.__nmAbn=nmAbn;
     const nms=last4.map(x=>x[5]).filter(x=>x!=null);
     $('iNm').value=nmAbn&&nms.length?+(sum(nms)/nms.length).toFixed(1):(ql[5]??0);
-    if(D.freq==='Q'){const g=Q.slice(-5).map((x,i,a)=>i?x[2]/a[i-1][2]-1:null).slice(1);const qg=clamp(sum(g)/g.length*100,-10,20);
-      const y4=sum(Q.slice(-4).map(x=>x[2])),y0=sum(Q.slice(-8,-4).map(x=>x[2]));const yg=Q.length>=8?clamp((y4/y0-1)*100,-20,60):10;
-      $('iQ1').value=Math.round(qg);$('iQg').value=Math.round(qg);$('iYg').value=Math.round(yg)}
+    if(D.freq==='Q'){const g=Q.slice(-5).map((x,i,a)=>i?x[2]/a[i-1][2]-1:null).slice(1);const qg=clamp(sum(g)/g.length*100,-10,15);
+      const y4=sum(Q.slice(-4).map(x=>x[2])),y0=sum(Q.slice(-8,-4).map(x=>x[2]));const yg=Q.length>=8?clamp((y4/y0-1)*50,-20,30):10;
+      $('iQ1').value=Math.round(qg);$('iQg').value=Math.round(qg/2);$('iYg').value=Math.round(yg)}
     else{const yg=Q.length>=2?clamp((ql[2]/Q[Q.length-2][2]-1)*100,-20,60):10;$('iQ1').value=Math.round(yg);$('iYg').value=Math.round(yg)}
     document.title=`${D.id} 美股估值看板`;
     header();render();
