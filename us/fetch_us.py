@@ -11,7 +11,7 @@ import urllib.request, urllib.parse
 # ---------- 追蹤清單：主題 → [(代號, [(台股代號, 名稱)...], 旗標)] ----------
 # 旗標：C = 循環股（以淨值比為主）、D = 需求層（顯示資本支出）
 THEMES = [
-    ("🛰️ 低軌衛星", [("SPCX", ""), ("ASTS", ""), ("RKLB", ""), ("SATS", ""), ("IRDM", ""), ("GSAT", ""), ("VSAT", "")],
+    ("🛰️ 低軌衛星", [("SPCX", ""), ("ASTS", ""), ("RKLB", ""), ("ECHO", ""), ("IRDM", ""), ("GSAT", ""), ("VSAT", "")],
      [("2313", "華通"), ("3491", "昇達科"), ("6285", "啟碁"), ("2314", "台揚"), ("3105", "穩懋")]),
     ("💿 矽晶圓／基板", [("WOLF", "C"), ("COHR", ""), ("ENTG", "")],
      [("6488", "環球晶"), ("5483", "中美晶"), ("6182", "合晶")]),
@@ -37,6 +37,7 @@ THEMES = [
 ]
 CFG = {t: dict(theme=th, flags=f, tw=tw) for th, items, tw in THEMES for t, f in items}
 STOCKS = list(CFG)
+PRICE_ALIAS = {"ECHO": ["SATS"]}   # 改過代號：舊代號的股價接在前面，歷史才不會斷
 
 YEARS = 6
 FM = "https://api.finmindtrade.com/api/v4/data"
@@ -59,7 +60,7 @@ EQ = ["StockholdersEquity", "EquityAttributableToOwnersOfParent",
       "StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest"]
 CAPEX = ["PaymentsToAcquirePropertyPlantAndEquipment", "PaymentsToAcquireProductiveAssets",
          "PurchaseOfPropertyPlantAndEquipmentClassifiedAsInvestingActivities"]
-QFORMS = {"10-Q", "10-Q/A", "10-K", "10-K/A"}
+QFORMS = {"10-Q", "10-Q/A", "10-K", "10-K/A", "6-K", "6-K/A"}
 AFORMS = {"20-F", "20-F/A", "40-F", "40-F/A"}
 
 
@@ -134,10 +135,10 @@ def latest_by_period(rows):
     return m
 
 
-def split_events(cf):
-    """從 EPS 重述偵測股票分割：同期間前後申報值比例接近整數 n≥2 → 分割。回傳 [(生效日, n)]"""
+def restatements(cf, names, unit_pred, inverse=False):
+    """同一期間前後兩次申報的比例接近整數 n≥2 → [(後一次申報日, n)]"""
     ev = []
-    for rows in facts_of(cf, EPS, lambda u: "/" in u).values():
+    for rows in facts_of(cf, names, unit_pred).values():
         by = {}
         for r in rows:
             by.setdefault((r.get("start"), r["end"]), []).append(r)
@@ -146,10 +147,19 @@ def split_events(cf):
             for a, b in zip(lst, lst[1:]):
                 if not a["val"] or not b["val"] or (a["val"] > 0) != (b["val"] > 0):
                     continue
-                ratio = a["val"] / b["val"]
+                ratio = b["val"] / a["val"] if inverse else a["val"] / b["val"]
                 n = round(ratio)
-                if n >= 2 and abs(ratio - n) / n < 0.03:
+                if 2 <= n <= 50 and abs(ratio - n) / n < 0.03:
                     ev.append((b["filed"], n))
+    return ev
+
+
+def split_events(cf):
+    """股票分割：EPS 重述縮小 n 倍，且稀釋股數同時重述放大 n 倍（前後 200 天內）才採用。
+    只看 EPS 會把會計重述、單位更正誤判成分割。回傳 [(生效日, n)]"""
+    sh = restatements(cf, SHR, lambda u: u == "shares", inverse=True)
+    ev = [(d, n) for d, n in restatements(cf, EPS, lambda u: "/" in u)
+          if any(m == n and abs(days(d, d2)) <= 200 for d2, m in sh)]
     # 合併：同一比例、相隔 400 天內視為同一次分割，取最早重述日
     ev.sort()
     out = []
@@ -270,7 +280,7 @@ def build_fin(cik):
     rev = merged(cf, REV, quarters)
     revA = merged(cf, REV, annuals)
     freq = "Q"
-    if len([e for e in rev if days(e, dt.date.today().isoformat()) < 800]) < 4:
+    if len([e for e in rev if days(e, dt.date.today().isoformat()) < 800]) < 4 and len(revA) >= 2:
         freq = "A"  # 只交 20-F/40-F：沒有季報
     pick = quarters if freq == "Q" else annuals
     rev = rev if freq == "Q" else revA
@@ -304,8 +314,9 @@ def build_fin(cik):
             shares = shr[e][0]
         if ep is None and n is not None and shares:
             ep = n / shares
-        if shares is None and n and ep:
-            shares = n / ep
+        implied = n / ep if n and ep else None
+        if shares is None or (implied and not 0.01 < abs(shares / implied) < 100):
+            shares = implied or shares   # 申報股數與 淨利÷EPS 差上百倍（單位填錯）→ 用推算值
         pct = lambda v: None if v is None else round(v / r * 100, 1)
         cx = capex.get(e, (None,))[0]
         rows.append(dict(end=e, start=s, filed=filed, cal=cal_label(s, e) if freq == "Q" else f"FY{e[2:4]}",
@@ -340,6 +351,9 @@ def build(tk, cik_map, today=None):
     cik = cik_map.get(tk)
     fin = build_fin(cik) if cik else dict(name="", freq="Q", fye=None, splits=[], q=[], eq=[])
     px = finmind("USStockPrice", tk, f"{today.year - YEARS}-01-01")
+    for old in PRICE_ALIAS.get(tk, []):
+        have = {r["date"] for r in px}
+        px += [r for r in finmind("USStockPrice", old, f"{today.year - YEARS}-01-01") if r["date"] not in have]
     px = sorted([r for r in px if r.get("Close")], key=lambda r: r["date"])
     if not px:
         raise RuntimeError("FinMind 沒有股價")
@@ -389,6 +403,10 @@ def build(tk, cik_map, today=None):
         note.append("SEC 查無此代號（可能剛上市尚未申報），沒有財報資料")
     if fin["freq"] == "A":
         note.append("外國發行人只交年報（20-F／40-F），財報為年度資料")
+    elif cik and len(Q) < 4:
+        note.append(f"上市不久，財報只有 {len(Q)} 季，歷史資料不足")
+    if tk in PRICE_ALIAS:
+        note.append("原代號 " + "、".join(PRICE_ALIAS[tk]) + "，股價歷史已合併")
     if fix:
         note.append("股價已依分割調整：" + "、".join(f"{d} 1拆{n}" for d, n in fix))
     elif fin["splits"]:
