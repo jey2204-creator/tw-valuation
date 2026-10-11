@@ -68,25 +68,70 @@ def ym_of(v):
     return None
 
 
+def finmind(dataset, sid, start):
+    import os, urllib.parse
+    q = urllib.parse.urlencode({"dataset": dataset, "data_id": sid, "start_date": start})
+    req = urllib.request.Request("https://api.finmindtrade.com/api/v4/data?" + q)
+    tok = os.environ.get("FINMIND_TOKEN", "")
+    if tok:
+        req.add_header("Authorization", "Bearer " + tok)
+    with urllib.request.urlopen(req, timeout=60) as r:
+        return json.load(r).get("data", [])
+
+
+def theme_ids():
+    th = json.loads((OUT / "themes.json").read_text("utf-8"))["themes"]
+    return sorted({s[0] for t in th for s in t["stocks"]})
+
+
+def eps_of(rows):
+    """FinMind 單季財報 → [季別, 本季EPS, 去年同季EPS, 年增%, 業外旗標]
+    年增% 只有去年同季 EPS > 0 才算；業外旗標 = 本季淨利率比營益率高 5 個百分點以上"""
+    q = {}
+    for r in rows:
+        q.setdefault(r["date"], {})[r["type"]] = r["value"]
+    ds = sorted(d for d in q if q[d].get("EPS") is not None)
+    if not ds:
+        return None
+    last = ds[-1]
+    o = q[last]
+    prev_d = f"{int(last[:4]) - 1}{last[4:]}"
+    prev = q.get(prev_d, {}).get("EPS")
+    cur = o["EPS"]
+    yoy = round((cur / prev - 1) * 100, 1) if prev is not None and prev > 0 else None
+    rv, oi, ni = o.get("Revenue"), o.get("OperatingIncome"), o.get("EquityAttributableToOwnersOfParent")
+    nonop = 1 if rv and oi is not None and ni is not None and (ni - oi) / rv * 100 > 5 else 0
+    label = f"{last[2:4]}Q{(int(last[5:7]) + 2) // 3}"
+    return [label, round(cur, 2), round(prev, 2) if prev is not None else None, yoy, nonop]
+
+
+def fetch_eps(ids):
+    start = f"{dt.date.today().year - 2}-01-01"
+    out, fail = {}, 0
+    for c in ids:
+        try:
+            e = eps_of(finmind("TaiwanStockFinancialStatements", c, start))
+            if e:
+                out[c] = e
+        except Exception as ex:
+            fail += 1
+            print(f"  {c} EPS 失敗: {ex}", file=sys.stderr)
+        time.sleep(0.3)
+    print(f"FinMind EPS：{len(ids)} 檔，成功 {len(out)}，失敗 {fail}")
+    return out
+
+
 def patch_revenue(d, latest):
     """證交所開放資料的上市月營收常晚幾天才更新；主題成份股若落後，用 FinMind 補到最新月份。"""
-    import os, urllib.parse
-    th = json.loads((OUT / "themes.json").read_text("utf-8"))["themes"]
-    ids = sorted({s[0] for t in th for s in t["stocks"]})
+    ids = theme_ids()
     lag = [c for c in ids if c in d and (d[c][7] or "") < latest]
     if not lag:
         return
-    tok = os.environ.get("FINMIND_TOKEN", "")
     start = (dt.date.today() - dt.timedelta(days=430)).strftime("%Y-%m-01")
     n = 0
     for c in lag:
-        q = urllib.parse.urlencode({"dataset": "TaiwanStockMonthRevenue", "data_id": c, "start_date": start})
-        req = urllib.request.Request("https://api.finmindtrade.com/api/v4/data?" + q)
-        if tok:
-            req.add_header("Authorization", "Bearer " + tok)
         try:
-            with urllib.request.urlopen(req, timeout=60) as r:
-                rows = json.load(r).get("data", [])
+            rows = finmind("TaiwanStockMonthRevenue", c, start)
         except Exception as e:
             print(f"  {c} 補營收失敗: {e}", file=sys.stderr)
             continue
@@ -173,8 +218,19 @@ def main():
         if x[2] == 0:
             x[2] = None
     yms = sorted({x[7] for x in d.values() if x[7]})
+    try:
+        eps = fetch_eps(theme_ids())
+    except Exception as e:
+        eps = {}
+        errs.append(f"FinMind EPS: {e}")
+    if not eps:                              # 抓不到就沿用上一版，避免整欄消失
+        try:
+            eps = json.loads((OUT / "summary.json").read_text("utf-8")).get("eps", {})
+        except Exception:
+            eps = {}
     out = dict(updated=dt.datetime.utcnow().strftime("%Y-%m-%dT%H:%MZ"), fields=FIELDS,
-               revYM=yms[-1] if yms else None, sources=src, errors=errs, d=d)
+               revYM=yms[-1] if yms else None, sources=src, errors=errs, d=d,
+               epsFields=["q", "eps", "epsPrev", "yoy", "nonop"], eps=eps)
     (OUT / "summary.json").write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")), "utf-8")
     print(f"summary.json: {len(d)} 檔，最新營收月份 {out['revYM']}，失敗 {len(errs)} 個來源")
 

@@ -151,6 +151,8 @@ details.ind .tbl{padding:0 10px 6px;margin-top:0}
 .ehead{display:flex;justify-content:space-between;align-items:center;padding-top:14px;font-size:13px}
 .ehead a{color:var(--accent);text-decoration:none}
 [hidden]{display:none!important}
+.cheap{color:var(--accent2)!important}.pricey{color:var(--warm)!important}
+.flag{font-size:10px;font-family:var(--f-body);color:var(--warm);border:1px solid var(--warm);border-radius:4px;padding:0 3px;margin-left:2px;vertical-align:1px;white-space:nowrap}
 .drag{flex:none;width:40px;height:40px;display:inline-flex;align-items:center;justify-content:center;color:var(--muted);font-size:20px;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;border-radius:8px}
 .drag:active{cursor:grabbing}
 .erow.ghost{opacity:.35}
@@ -464,6 +466,8 @@ async function load(id){
     $('meta').innerHTML=(it?`${it[2]}・${it[3]}`:'')+(D.live?' <span class="live">即時查詢</span>':' <span class="live">追蹤清單</span>');
     document.title=`${D.id} ${$('nm').textContent} 估值看板`;
     header();render();
+    try{const L=Q[Q.length-1],m=L[0].match(/^(\d\d)Q(\d)$/);if(m&&L[5]!=null){const P=Q.find(x=>x[0]===`${String(+m[1]-1).padStart(2,'0')}Q${m[2]}`),pv=P?P[5]:null;
+      const el=store.get('epsLocal')||{};el[id]=[L[0],L[5],pv,pv!=null&&pv>0?+((L[5]/pv-1)*100).toFixed(1):null,L[3]!=null&&L[4]>L[3]+5?1:0];store.set('epsLocal',el)}}catch(e){}
     const rec=(store.get('recent')||[]).filter(x=>x!==id);rec.unshift(id);store.set('recent',rec.slice(0,8));
   }catch(e){$('err').textContent='資料載入失敗：'+e.message;$('err').hidden=false;$('asof').textContent=''}
   document.body.classList.remove('dim');
@@ -502,27 +506,53 @@ const sign=v=>v==null?'':v>0?'up':v<0?'dn':'';
 const pct=(v,d=1)=>v==null?'—':(v>0?'+':'')+fmt(v,d)+'%';
 const median=a=>{a=a.filter(x=>x!=null).sort((x,y)=>x-y);if(!a.length)return null;const m=a.length>>1;return a.length%2?a[m]:(a[m-1]+a[m])/2};
 const COLS=[['pe','本益比'],['pb','淨值比'],['yoy','營收年增']];
+// ---- EPS 年增／PEG ----
+// 來源：summary.json 的 eps（主題成份股，Actions 每天抓）＋個股頁看過時存在手機的 epsLocal（自訂主題的股票靠這個）
+// 格式 [季別, 本季EPS, 去年同季EPS, 年增%, 業外旗標]
+function EP(id){const a=S&&S.eps?S.eps[id]:null,l=(store.get('epsLocal')||{})[id];return a&&l?(l[0]>a[0]?l:a):(a||l||null)}
+const epsY=id=>{const e=EP(id);return e&&e[3]!=null?e[3]:null};
+const peg=id=>{const pe=sv(id,'pe'),y=epsY(id);return pe!=null&&y!=null&&y>0?+(pe/y).toFixed(2):null};
+let QN='';
+function modeQ(){const c={};Object.values((S&&S.eps)||{}).forEach(e=>c[e[0]]=(c[e[0]]||0)+1);QN=Object.keys(c).sort((a,b)=>c[b]-c[a])[0]||''}
+function epsCell(id){
+  const e=EP(id);if(!e)return '<span class="sub">EPS —</span>';
+  const [q,cur,prev,y,nonop]=e;let t,cl='';
+  if(prev==null)t='EPS —';
+  else if(prev<=0)t=cur>0?'轉盈':'虧損',cl=cur>0?'up':'dn';
+  else if(cur<=0)t='轉虧',cl='dn';
+  else t='EPS '+(y>300?'>+300%':pct(y,0)),cl=sign(y);
+  const qs=q!==QN?` <span style="color:var(--warm)" title="跟其他檔不同季">${q}</span>`:'';
+  const nb=nonop?' <span class="flag" title="本季淨利率比營益率高 5 個百分點以上，EPS 可能含一次性業外收益">業外</span>':'';
+  const g=peg(id),gc=g==null?'':g<1?'cheap':g>2?'pricey':'';
+  const l2=(g!=null?`<span class="${gc}">PEG ${fmt(g,g<10?2:1)}</span>`:'')+qs+nb;
+  return `<span class="sub ${cl}">${t}</span>`+(l2?`<span class="sub">${l2}</span>`:'');
+}
+const SORTV={pe:id=>sv(id,'pe'),eps:epsY,peg:peg,px:id=>sv(id,'chg')};
+const PE_CYCLE=['pe:-1','pe:1','eps:-1','peg:1',''];
+const PE_LABEL={pe:'本益比',eps:'EPS年增',peg:'PEG'};
 function table(el,items,sortKey){
   // items: [[代號, 角色]]；sortKey: el.dataset.sort（例 'yoy:-1'）
   const [k,dir]=(el.dataset.sort||sortKey||'').split(':');let rows=items.slice();
-  if(k){rows.sort((a,b)=>{const x=k==='px'?sv(a[0],'chg'):sv(a[0],k),y=k==='px'?sv(b[0],'chg'):sv(b[0],k);if(x==null)return 1;if(y==null)return -1;return (x-y)*(+dir||-1)})}
-  const th=(key,lb)=>`<th data-k="${key}" class="${k===key?'on':''}">${lb}${k===key?(+dir>0?' ▲':' ▼'):''}</th>`;
+  if(k){const f=SORTV[k]||(id=>sv(id,k));rows.sort((a,b)=>{const x=f(a[0]),y=f(b[0]);if(x==null)return 1;if(y==null)return -1;return (x-y)*(+dir||-1)})}
+  const th=(key,lb)=>{const on=key==='pe'?['pe','eps','peg'].includes(k):k===key;return `<th data-k="${key}" class="${on?'on':''}">${key==='pe'&&on?PE_LABEL[k]:lb}${on?(+dir>0?' ▲':' ▼'):''}</th>`};
   el.innerHTML=`<thead><tr><th>股票</th>${th('px','收盤')}${COLS.map(c=>th(...c)).join('')}</tr></thead><tbody>`+rows.map(([id,role])=>{
     const c=sv(id,'close'),ch=sv(id,'chg'),y=sv(id,'yoy'),ym=sv(id,'ym');
     return `<tr data-id="${id}"><td><span class="nm">${nameOf(id)}</span><span class="cd">${id}</span>${role?`<div class="role">${role}</div>`:''}</td>
       <td>${fmt(c,c!=null&&c<100?2:c!=null&&c<1000?1:0)}<span class="sub ${sign(ch)}">${pct(ch,2)}</span></td>
-      <td>${fmt(sv(id,'pe'),1)}</td><td>${fmt(sv(id,'pb'),2)}<span class="sub">殖 ${sv(id,'yld')==null?'—':fmt(sv(id,'yld'),1)+'%'}</span></td>
+      <td>${fmt(sv(id,'pe'),1)}${epsCell(id)}</td><td>${fmt(sv(id,'pb'),2)}<span class="sub">殖 ${sv(id,'yld')==null?'—':fmt(sv(id,'yld'),1)+'%'}</span></td>
       <td class="${sign(y)}">${pct(y)}<span class="sub" ${ym&&S.revYM&&ym<S.revYM?'style="color:var(--warm)" title="尚未公布最新月份"':''}>${ym?(+ym.slice(5))+'月':''}</span></td></tr>`}).join('')+'</tbody>';
-  el.onclick=e=>{const h=e.target.closest('th[data-k]');if(h){const nk=h.dataset.k,cur=(el.dataset.sort||'').split(':');el.dataset.sort=cur[0]===nk?(cur[1]==='-1'?nk+':1':''):nk+':-1';table(el,items);return}
+  el.onclick=e=>{const h=e.target.closest('th[data-k]');if(h){const nk=h.dataset.k,cs=el.dataset.sort||'',cur=cs.split(':');
+    if(nk==='pe'){const i=PE_CYCLE.indexOf(cs);el.dataset.sort=PE_CYCLE[i<0?0:(i+1)%PE_CYCLE.length]}
+    else el.dataset.sort=cur[0]===nk?(cur[1]==='-1'?nk+':1':''):nk+':-1';table(el,items);return}
     const r=e.target.closest('tr[data-id]');if(r)location.hash=r.dataset.id};
 }
 function renderHome(){
-  $('sumAsof').textContent=S?`資料 ${S.updated.slice(5,10).replace('-','/')}・營收 ${S.revYM?+S.revYM.slice(5)+'月':'—'}`:'數字待 Actions 產生';
+  modeQ();$('sumAsof').textContent=S?`資料 ${S.updated.slice(5,10).replace('-','/')}・營收 ${S.revYM?+S.revYM.slice(5)+'月':'—'}${QN?'・EPS '+QN:''}`:'數字待 Actions 產生';
   const fav=store.get('fav')||[];
   $('favBox').innerHTML=fav.length?'<div class="panel"><div class="tbl"><table class="lst" id="favTbl"></table></div></div>':'<p class="tip">在個股頁點「☆ 加入自選」，就會出現在這裡。</p>';
   if(fav.length)table($('favTbl'),fav.map(id=>[id,'']));
-  $('tgrid').innerHTML=THEMES.map(t=>{const ids=t.stocks.map(x=>x[0]),y=median(ids.map(i=>sv(i,'yoy'))),pe=median(ids.map(i=>sv(i,'pe')));
-    return `<a class="tcard" href="#t/${t.id}"><b>${t.name}</b><span class="k"><span>營收年增</span><span class="num ${sign(y)}">${y==null?'—':pct(y,0)}</span></span><span class="k"><span>本益比</span><span class="num">${pe==null?'—':fmt(pe,1)}</span></span><span class="k"><span>成份股</span><span class="num">${ids.length}</span></span></a>`}).join('');
+  $('tgrid').innerHTML=THEMES.map(t=>{const ids=t.stocks.map(x=>x[0]),y=median(ids.map(i=>sv(i,'yoy'))),pe=median(ids.map(i=>sv(i,'pe'))),ey=median(ids.map(epsY)),pg=median(ids.map(peg));
+    return `<a class="tcard" href="#t/${t.id}"><b>${t.name}</b><span class="k"><span>營收年增</span><span class="num ${sign(y)}">${y==null?'—':pct(y,0)}</span></span><span class="k"><span>EPS 年增</span><span class="num ${sign(ey)}">${ey==null?'—':pct(ey,0)}</span></span><span class="k"><span>本益比</span><span class="num">${pe==null?'—':fmt(pe,1)}</span></span><span class="k"><span>PEG</span><span class="num ${pg==null?'':pg<1?'cheap':pg>2?'pricey':''}">${pg==null?'—':fmt(pg,2)}</span></span></a>`}).join('');
   if(!$('indBox').dataset.done&&LIST.length){
     const g={};LIST.forEach(s=>{let k=(s[3]||'其他').replace(/類$/,'');if(k==='其他電子')k='其他電子業';(g[k]=g[k]||[]).push(s[0])});
     $('indBox').innerHTML=Object.entries(g).sort((a,b)=>b[1].length-a[1].length).map(([k,v],i)=>`<details class="ind" data-i="${i}"><summary>${k}<span>${v.length} 檔</span></summary><div class="tbl"><table class="lst"></table></div></details>`).join('');
@@ -535,12 +565,12 @@ function showTheme(tid){
   const t=THEMES.find(x=>x.id===tid);if(!t){location.hash='';return}
   try{sessionStorage.setItem('lastTheme',tid)}catch(e){}
   $('tName').textContent=t.name;document.title=`${t.name} 估值看板`;
-  const ids=t.stocks.map(x=>x[0]),y=median(ids.map(i=>sv(i,'yoy'))),pe=median(ids.map(i=>sv(i,'pe'))),pb=median(ids.map(i=>sv(i,'pb')));
+  modeQ();const ids=t.stocks.map(x=>x[0]),y=median(ids.map(i=>sv(i,'yoy'))),pe=median(ids.map(i=>sv(i,'pe'))),pb=median(ids.map(i=>sv(i,'pb'))),ey=median(ids.map(epsY)),pg=median(ids.map(peg));
   $('tEdit').href='#e/'+t.id;
-  $('tSum').innerHTML=S?`${ids.length} 檔中位數：營收年增 <strong class="${sign(y)}">${pct(y)}</strong>・本益比 <strong>${fmt(pe,1)}</strong>・淨值比 <strong>${fmt(pb,2)}</strong>`:'全市場數字尚未產生（等 Actions 第一次執行）';
+  $('tSum').innerHTML=S?`${ids.length} 檔中位數：營收年增 <strong class="${sign(y)}">${pct(y)}</strong>・EPS 年增 <strong class="${sign(ey)}">${pct(ey)}</strong>・本益比 <strong>${fmt(pe,1)}</strong>・PEG <strong>${fmt(pg,2)}</strong>・淨值比 <strong>${fmt(pb,2)}</strong>`:'全市場數字尚未產生（等 Actions 第一次執行）';
   $('tUS').innerHTML=t.us&&t.us.length?'對應美股 '+t.us.map(u=>`<a href="us/#${u}">${u}</a>`).join(''):'';
   $('tTbl').dataset.sort='';table($('tTbl'),t.stocks);
-  $('tFoot').textContent='點欄位標題可排序（再點一次反向、第三次回到預設順序）；點一列看個股圖表。'+(S?` 資料更新 ${S.updated.slice(0,10)}`:'');
+  $('tFoot').innerHTML=`EPS 年增＝最新一季${QN?'（'+QN+'）':''}單季 EPS 對比去年同季，橘色季別＝跟其他檔不同季；<span class="flag">業外</span>＝本季 EPS 可能含一次性收益。PEG＝本益比 ÷ EPS 年增，<span class="cheap">&lt;1 偏便宜</span>、<span class="pricey">&gt;2 偏貴</span>；記憶體等循環股的 PEG 參考性低。<br>點欄位標題排序；「本益比」連點可切換成 EPS 年增、PEG 排序。點一列看個股圖表。`+(S?` 資料更新 ${S.updated.slice(0,10)}`:'');
 }
 function stockExtras(id){
   const fav=store.get('fav')||[],on=fav.includes(id);
