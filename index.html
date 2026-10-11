@@ -131,6 +131,28 @@ details.ind .tbl{padding:0 10px 6px;margin-top:0}
 .peers{margin-top:6px;font-size:12px;color:var(--muted);display:flex;flex-wrap:wrap;gap:5px 6px;align-items:center}
 .peers a{font-family:var(--f-body)}
 .peers a.cur{border-color:var(--accent);color:var(--accent);font-weight:700}
+.sec .act{font:inherit;font-size:12.5px;font-weight:700;letter-spacing:0;color:var(--accent);background:none;border:0;padding:2px 0 2px 10px;cursor:pointer}
+.erow{display:flex;align-items:center;gap:6px;padding:8px 0;border-bottom:1px solid var(--line);min-width:0}
+.erow:last-child{border-bottom:0}
+.erow .grow{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.erow .grow b{font-size:14.5px;overflow-wrap:anywhere}
+.erow .grow small{font-size:11.5px;color:var(--muted)}
+.erow.off .grow{opacity:.45}
+.ib{flex:none;font:inherit;font-size:13px;min-width:34px;height:34px;padding:0 9px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--fg);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;text-decoration:none}
+.ib:disabled{opacity:.3;cursor:default}
+.ib.pri{background:var(--accent);border-color:var(--accent);color:var(--card);font-weight:700}
+.ib.warn{color:var(--up);border-color:var(--up)}
+.efield{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted);margin-top:14px}
+.efield input,.efield textarea,.erow input{font:inherit;font-size:16px;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg);width:100%;min-width:0}
+.erow input{font-size:14px;padding:4px 7px}
+.efield textarea{font-family:var(--f-num);font-size:12px;min-height:110px}
+.ebar{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.ebar .ib{height:38px;padding:0 14px}
+.ehead{display:flex;justify-content:space-between;align-items:center;padding-top:14px;font-size:13px}
+.ehead a{color:var(--accent);text-decoration:none}
+[hidden]{display:none!important}
+.erow .cd{font-family:var(--f-num);font-size:11.5px;color:var(--muted);font-weight:400}
+.tag{font-size:10.5px;font-weight:500;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:0 6px;margin-left:4px;vertical-align:2px}
 .tip{font-size:13px;color:var(--muted);background:var(--card);border:1px dashed var(--line);border-radius:10px;padding:10px 12px;margin:0}
 </style>
 
@@ -146,18 +168,48 @@ details.ind .tbl{padding:0 10px 6px;margin-top:0}
   </div>
   <h2 class="sec">⭐ 自選</h2>
   <div id="favBox"></div>
-  <h2 class="sec">產業主題 <small><span id="sumAsof"></span>・中位數</small></h2>
+  <h2 class="sec"><span>產業主題 <small><span id="sumAsof"></span>・中位數</small></span><a class="act" href="#e">✏️ 編輯</a></h2>
   <div class="tgrid" id="tgrid"></div>
   <details class="ind" id="indAll" style="margin-top:22px"><summary><b>🏭 官方產業別</b><span>點開瀏覽全部上市櫃</span></summary><div id="indBox" style="padding:0 8px 8px"></div></details>
-  <p class="note">主題成份股寫在 data/themes.json，可直接在 GitHub 網頁編輯。數字為證交所／櫃買每日資料，本益比空白＝虧損或不適用。</p>
+  <p class="note">點「✏️ 編輯」可新增主題、增減成份股、調整順序（存在這支手機上）。數字為證交所／櫃買每日資料，本益比空白＝虧損或不適用。</p>
 </section>
 <section id="theme" hidden>
-  <div class="top"><a href="#">← 全部主題</a></div>
+  <div class="ehead"><a href="#">← 全部主題</a><a id="tEdit" href="#">✏️ 編輯這個主題</a></div>
   <h1 id="tName" style="margin-top:6px"></h1>
   <p class="take" id="tSum"></p>
   <div class="uslink" id="tUS"></div>
   <div class="panel" style="margin-top:12px"><div class="tbl"><table class="lst" id="tTbl"></table></div></div>
   <p class="foot" id="tFoot" style="margin-top:8px"></p>
+</section>
+<section id="tlist" hidden>
+  <div class="ehead"><a href="#">← 完成</a><span class="meta">存在這支手機上</span></div>
+  <h1 style="font-size:22px;margin:6px 0 0">編輯主題</h1>
+  <p class="take">用 ↑↓ 調整首頁順序；點名稱編輯成份股。</p>
+  <div class="panel" style="margin-top:12px" id="olist"></div>
+  <div class="ebar"><a class="ib pri" href="#e/new">＋ 新增主題</a></div>
+  <details class="ind" style="margin-top:22px"><summary><b>💾 備份／換手機</b><span>複製設定碼</span></summary>
+    <div style="padding:0 12px 12px">
+      <p class="foot">設定只存在這支手機的這個瀏覽器。換手機、清除 Safari 資料前，先複製設定碼存起來（例如貼到備忘錄），之後在新手機貼回來按「匯入」。</p>
+      <label class="efield" for="bk">設定碼<textarea id="bk" spellcheck="false"></textarea></label>
+      <div class="ebar"><button type="button" class="ib" id="bkCopy">複製</button><button type="button" class="ib" id="bkLoad">匯入</button><button type="button" class="ib warn" id="bkReset">全部還原預設</button></div>
+      <p class="foot" id="bkMsg" role="status"></p>
+    </div>
+  </details>
+</section>
+<section id="tedit" hidden>
+  <div class="ehead"><a href="#e" id="eBack">← 取消</a><span class="meta" id="eKind"></span></div>
+  <h1 style="font-size:22px;margin:6px 0 0" id="eTitle">編輯主題</h1>
+  <label class="efield" for="eName">主題名稱（開頭可放一個 emoji）<input id="eName" type="text" placeholder="例：🔋 電池材料" autocomplete="off"></label>
+  <div class="efield"><span>成份股（<span id="eCnt">0</span> 檔）・備註寫這檔在主題裡的角色</span></div>
+  <div class="panel" style="margin-top:4px" id="eStocks"></div>
+  <div class="search" role="search" style="margin-top:10px">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <input id="eQ" type="search" inputmode="search" autocomplete="off" placeholder="加入股票：輸入代號或名稱" aria-label="加入股票">
+    <div class="results" id="eRes" hidden></div>
+  </div>
+  <label class="efield" for="eUS">對應美股（選填，用空白或逗號分隔）<input id="eUS" type="text" placeholder="例：TSLA ALB" autocomplete="off" autocapitalize="characters"></label>
+  <div class="ebar"><button type="button" class="ib pri" id="eSave">儲存</button><button type="button" class="ib warn" id="eDel"></button><button type="button" class="ib" id="eReset" hidden>還原預設成份股</button></div>
+  <p class="foot" id="eMsg" role="status"></p>
 </section>
 <header class="quote">
   <div class="crumb"><a href="#" id="back">← 主題</a><button type="button" class="star" id="fav" aria-pressed="false">☆ 加入自選</button></div>
@@ -436,7 +488,7 @@ bindSearch('q','res');bindSearch('q2','res2');
 document.addEventListener('click',e=>{if(!e.target.closest('.search'))document.querySelectorAll('.results').forEach(b=>b.hidden=true)});
 
 // ---------- 主題／產業／自選 ----------
-let THEMES=[],S=null;
+let THEMES=[],BASE=[],S=null;
 const SF={close:0,chg:1,pe:2,pb:3,yld:4,yoy:5,rev:6,ym:7};
 const sv=(id,k)=>S&&S.d[id]?S.d[id][SF[k]]:null;
 const nameOf=id=>{const it=LIST.find(s=>s[0]===id);return it?it[1].replace(/\*$/,''):id};
@@ -478,6 +530,7 @@ function showTheme(tid){
   try{sessionStorage.setItem('lastTheme',tid)}catch(e){}
   $('tName').textContent=t.name;document.title=`${t.name} 估值看板`;
   const ids=t.stocks.map(x=>x[0]),y=median(ids.map(i=>sv(i,'yoy'))),pe=median(ids.map(i=>sv(i,'pe'))),pb=median(ids.map(i=>sv(i,'pb')));
+  $('tEdit').href='#e/'+t.id;
   $('tSum').innerHTML=S?`${ids.length} 檔中位數：營收年增 <strong class="${sign(y)}">${pct(y)}</strong>・本益比 <strong>${fmt(pe,1)}</strong>・淨值比 <strong>${fmt(pb,2)}</strong>`:'全市場數字尚未產生（等 Actions 第一次執行）';
   $('tUS').innerHTML=t.us&&t.us.length?'對應美股 '+t.us.map(u=>`<a href="us/#${u}">${u}</a>`).join(''):'';
   $('tTbl').dataset.sort='';table($('tTbl'),t.stocks);
@@ -495,11 +548,100 @@ function stockExtras(id){
 $('fav').addEventListener('click',()=>{const id=D&&D.id;if(!id)return;let f=store.get('fav')||[];f=f.includes(id)?f.filter(x=>x!==id):[id,...f];store.set('fav',f.slice(0,30));stockExtras(id)});
 function route(){
   const h=decodeURIComponent(location.hash.slice(1));
-  const show=v=>{document.body.dataset.view=v;$('home').hidden=v!=='home';$('theme').hidden=v!=='theme'};
+  const show=v=>{document.body.dataset.view=v;['home','theme','tlist','tedit'].forEach(k=>$(k).hidden=v!==k)};
   if(/^\d{4,6}[A-Z]?$/.test(h)){show('stock');stockExtras(h);if(!D||D.id!==h)load(h);else setTimeout(()=>Object.values(charts).forEach(c=>c.resize()),0);scrollTo(0,0)}
+  else if(h==='e'){show('tlist');document.title='編輯主題';renderOrder();scrollTo(0,0)}
+  else if(h.startsWith('e/')){show('tedit');openEditor(h.slice(2));scrollTo(0,0)}
   else if(h.startsWith('t/')){show('theme');showTheme(h.slice(2));scrollTo(0,0)}
   else if(!h||h==='home'){show('home');document.title='台股估值看板';renderHome();scrollTo(0,0)}
 }
+
+// ---------- 自訂主題（存在這支手機的 localStorage） ----------
+// themeCfg = {order:[id…], hidden:[id…], themes:{id: {id,name,stocks:[[代號,備註]],us:[…],custom:true}}}
+// themes 只存「改過的內建主題」與「自己新增的主題」；沒改過的內建主題一律用 data/themes.json 最新版
+const cfgGet=()=>{const c=store.get('themeCfg')||{};return {order:c.order||[],hidden:c.hidden||[],themes:c.themes||{}}};
+function allThemes(){
+  const c=cfgGet(),bm=Object.fromEntries(BASE.map(t=>[t.id,t]));
+  const ids=[...c.order.filter(i=>bm[i]||c.themes[i]),...BASE.map(t=>t.id),...Object.keys(c.themes)].filter((v,i,a)=>a.indexOf(v)===i&&(bm[v]||c.themes[v]));
+  return ids.map(i=>({...(c.themes[i]||bm[i]),id:i,hidden:c.hidden.includes(i),edited:!!(c.themes[i]&&bm[i]),custom:!bm[i]}));
+}
+function applyCfg(){THEMES=allThemes().filter(t=>!t.hidden)}
+function cfgSave(c){store.set('themeCfg',c);applyCfg()}
+function renderOrder(){
+  const A=allThemes();
+  $('olist').innerHTML=A.map((t,i)=>`<div class="erow ${t.hidden?'off':''}" data-id="${t.id}">
+    <button type="button" class="ib" data-mv="-1" ${i?'':'disabled'} aria-label="上移">↑</button><button type="button" class="ib" data-mv="1" ${i<A.length-1?'':'disabled'} aria-label="下移">↓</button>
+    <a class="grow" href="#e/${t.id}" style="color:inherit;text-decoration:none"><b>${esc(t.name)}${t.custom?'<span class="tag">自訂</span>':t.edited?'<span class="tag">已修改</span>':''}</b><small>${t.stocks.length} 檔${t.hidden?'・已隱藏':''}</small></a>
+    <button type="button" class="ib" data-hide>${t.hidden?'顯示':'隱藏'}</button></div>`).join('');
+  $('bk').value=JSON.stringify(cfgGet());$('bkMsg').textContent='';
+}
+$('olist').addEventListener('click',e=>{
+  const r=e.target.closest('.erow');if(!r)return;const b=e.target.closest('button');if(!b)return;
+  const c=cfgGet(),ids=allThemes().map(t=>t.id),i=ids.indexOf(r.dataset.id);
+  if(b.dataset.mv){const j=i+ +b.dataset.mv;[ids[i],ids[j]]=[ids[j],ids[i]];c.order=ids}
+  else if(b.hasAttribute('data-hide')){c.hidden=c.hidden.includes(ids[i])?c.hidden.filter(x=>x!==ids[i]):[...c.hidden,ids[i]];c.order=ids}
+  cfgSave(c);renderOrder();
+  const nb=$('olist').querySelector(`.erow[data-id="${CSS.escape(r.dataset.id)}"] button[data-mv="${b.dataset.mv}"]`);if(nb&&!nb.disabled)nb.focus();
+});
+$('bkCopy').addEventListener('click',async()=>{try{await navigator.clipboard.writeText($('bk').value);$('bkMsg').textContent='已複製設定碼'}catch(e){$('bk').select();$('bkMsg').textContent='請長按選取後複製'}});
+$('bkLoad').addEventListener('click',()=>{try{const c=JSON.parse($('bk').value);if(!c||typeof c!=='object'||!('themes' in c))throw 0;cfgSave({order:c.order||[],hidden:c.hidden||[],themes:c.themes||{}});renderOrder();$('bkMsg').textContent='已匯入'}catch(e){$('bkMsg').textContent='設定碼格式不對：請貼上完整的設定碼（{ 開頭、} 結尾）'}});
+let resetArm=0;
+$('bkReset').addEventListener('click',()=>{if(Date.now()-resetArm>4000){resetArm=Date.now();$('bkMsg').textContent='會刪除所有自訂主題與排序。4 秒內再按一次確認';return}
+  store.set('themeCfg',null);try{localStorage.removeItem('themeCfg')}catch(e){}applyCfg();renderOrder();$('bkMsg').textContent='已還原預設'});
+const esc=v=>String(v??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let ED=null;
+function openEditor(id){
+  const isNew=id==='new',t=isNew?null:allThemes().find(x=>x.id===id);
+  if(!isNew&&!t){location.hash='e';return}
+  ED={id:isNew?'my'+Date.now().toString(36):id,isNew,custom:isNew||t.custom,edited:t&&t.edited,stocks:isNew?[]:t.stocks.map(x=>[x[0],x[1]||''])};
+  $('eTitle').textContent=isNew?'新增主題':'編輯主題';$('eKind').textContent=isNew||t.custom?'自訂主題':'內建主題';
+  $('eName').value=isNew?'':t.name;$('eUS').value=isNew?'':(t.us||[]).join(' ');
+  $('eDel').textContent=isNew?'':ED.custom?'刪除主題':(t.hidden?'取消隱藏':'從首頁隱藏');$('eDel').hidden=isNew;delArm=0;
+  $('eReset').hidden=!ED.edited;$('eMsg').textContent='';$('eQ').value='';$('eRes').hidden=true;
+  $('eBack').href=isNew?'#e':'#t/'+id;$('eBack').textContent=isNew?'← 取消':'← 取消';
+  drawStocks();if(isNew)setTimeout(()=>$('eName').focus(),50);
+}
+function syncRoles(){$('eStocks').querySelectorAll('input[data-i]').forEach(inp=>{ED.stocks[+inp.dataset.i][1]=inp.value})}
+function drawStocks(){
+  const n=ED.stocks.length;$('eCnt').textContent=n;
+  $('eStocks').innerHTML=n?ED.stocks.map(([c,r],i)=>`<div class="erow"><button type="button" class="ib" data-mv="-1" data-k="${i}" ${i?'':'disabled'} aria-label="上移">↑</button>
+    <div class="grow"><b>${esc(nameOf(c))} <span class="cd">${c}</span></b><input data-i="${i}" id="role-${c}" value="${esc(r)}" placeholder="角色備註（選填）" aria-label="${esc(nameOf(c))} 角色備註"></div>
+    <button type="button" class="ib warn" data-rm="${i}" aria-label="移除 ${esc(nameOf(c))}">✕</button></div>`).join(''):'<p class="foot" style="padding:10px 0">還沒有成份股，用下面的搜尋框加入。</p>';
+}
+$('eStocks').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;syncRoles();
+  if(b.dataset.rm){ED.stocks.splice(+b.dataset.rm,1)}
+  else if(b.dataset.mv){const i=+b.dataset.k,j=i-1;[ED.stocks[i],ED.stocks[j]]=[ED.stocks[j],ED.stocks[i]]}
+  drawStocks()});
+function eSearch(){
+  const v=$('eQ').value.trim(),box=$('eRes');if(!v){box.hidden=true;return}
+  const lv=v.toLowerCase(),has=new Set(ED.stocks.map(x=>x[0]));
+  const hit=LIST.filter(s=>s[0].startsWith(v)||s[1].toLowerCase().includes(lv)).sort((a,b)=>(b[0].startsWith(v)-a[0].startsWith(v))||a[0].localeCompare(b[0])).slice(0,12);
+  box.innerHTML=hit.length?hit.map(s=>has.has(s[0])?row(s).replace('<button','<button disabled').replace('</button>','<span class="rmeta">已在清單</span></button>'):row(s)).join(''):'<div class="rhead">找不到符合的股票</div>';box.hidden=false;
+}
+$('eQ').addEventListener('input',eSearch);
+$('eQ').addEventListener('keydown',e=>{if(e.key==='Enter'){const b=$('eRes').querySelector('button:not([disabled])');if(b)b.click()}if(e.key==='Escape'){$('eRes').hidden=true}});
+$('eRes').addEventListener('mousedown',e=>e.preventDefault());
+$('eRes').addEventListener('click',e=>{const b=e.target.closest('button');if(!b||b.disabled)return;syncRoles();ED.stocks.push([b.dataset.id,'']);$('eQ').value='';$('eRes').hidden=true;drawStocks();
+  const last=$('eStocks').querySelector(`#role-${b.dataset.id}`);if(last)last.scrollIntoView({block:'center'});$('eMsg').textContent=`已加入 ${nameOf(b.dataset.id)}，記得按「儲存」`});
+$('eSave').addEventListener('click',()=>{
+  syncRoles();const name=$('eName').value.trim();
+  if(!name){$('eMsg').textContent='請填主題名稱';$('eName').focus();return}
+  if(!ED.stocks.length){$('eMsg').textContent='請至少加入一檔股票';$('eQ').focus();return}
+  const c=cfgGet(),us=$('eUS').value.toUpperCase().split(/[\s,，、]+/).filter(Boolean);
+  c.themes[ED.id]={id:ED.id,name,us,stocks:ED.stocks.map(([a,r])=>[a,r.trim()])};
+  if(ED.isNew&&!c.order.length)c.order=allThemes().map(t=>t.id);
+  if(ED.isNew)c.order=[...c.order.filter(i=>i!==ED.id),ED.id];
+  cfgSave(c);location.hash='t/'+ED.id;
+});
+let delArm=0;
+$('eDel').addEventListener('click',()=>{
+  const c=cfgGet();
+  if(ED.custom){if(Date.now()-delArm>4000){delArm=Date.now();$('eMsg').textContent='4 秒內再按一次「刪除主題」確認';return}
+    delete c.themes[ED.id];c.order=c.order.filter(i=>i!==ED.id);c.hidden=c.hidden.filter(i=>i!==ED.id);cfgSave(c);location.hash='e';return}
+  if(!c.order.length)c.order=allThemes().map(t=>t.id);
+  c.hidden=c.hidden.includes(ED.id)?c.hidden.filter(i=>i!==ED.id):[...c.hidden,ED.id];cfgSave(c);location.hash='e';
+});
+$('eReset').addEventListener('click',()=>{const c=cfgGet();delete c.themes[ED.id];cfgSave(c);openEditor(ED.id);$('eMsg').textContent='已還原成預設成份股'});
 addEventListener('hashchange',route);
 (async()=>{
   try{const r=await fetch('data/index.json?t='+Date.now());if(r.ok)WATCH=await r.json()}catch(e){}
@@ -508,7 +650,8 @@ addEventListener('hashchange',route);
     const r=await fetch(`${FM}?dataset=TaiwanStockInfo`);const js=await r.json();const m={};
     (js.data||[]).filter(s=>(s.type==='twse'||s.type==='tpex')&&/^[1-9]\d{3}$/.test(s.stock_id)).forEach(s=>{if(!m[s.stock_id]||s.date>m[s.stock_id].date)m[s.stock_id]=s});
     LIST=Object.values(m).map(s=>[s.stock_id,s.stock_name,s.type==='twse'?'上市':'上櫃',s.industry_category]).sort((a,b)=>a[0].localeCompare(b[0]));store.set('list',{t:Date.now(),d:LIST})}catch(e){}}}
-  try{const r=await fetch('data/themes.json?t='+Date.now());if(r.ok)THEMES=(await r.json()).themes||[]}catch(e){}
+  try{const r=await fetch('data/themes.json?t='+Date.now());if(r.ok)BASE=(await r.json()).themes||[]}catch(e){}
+  applyCfg();
   try{const r=await fetch('data/summary.json?t='+Date.now());if(r.ok)S=await r.json()}catch(e){}
   route();
 })();
