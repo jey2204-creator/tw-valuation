@@ -10,6 +10,12 @@ import urllib.request, urllib.parse
 STOCKS = ["2330", "2344", "6488"]   # 想追蹤的股票加在這裡
 CYCLICAL = {"2344", "6488"}          # 景氣循環股：網頁會提醒以淨值比為主
 YEARS = 6                  # 河流圖回溯年數
+# 資本支出：現金流量表「取得不動產、廠房及設備」（優先比對中文科目名，其次英文 type）
+CAPEX_NAMES = ("取得不動產、廠房及設備",)
+CAPEX_TYPES = ("PropertyAndPlantAndEquipment", "AcquisitionOfPropertyPlantAndEquipment",
+               "PaymentsToAcquirePropertyPlantAndEquipment")
+DEP_NAMES = ("折舊費用",)
+DEP_TYPES = ("Depreciation", "DepreciationExpense")
 API = "https://api.finmindtrade.com/api/v4/data"
 OUT = Path(__file__).resolve().parent / "data"
 TOKEN = os.environ.get("FINMIND_TOKEN", "")
@@ -40,6 +46,48 @@ def month_last(rows, key):
     return m
 
 
+def cf_item(rows, names, types):
+    """從現金流量表取出單一科目 {日期: 金額絕對值}，中文科目名優先"""
+    for ok in (lambda r: (r.get("origin_name") or "").strip() in names,
+               lambda r: r.get("type") in types):
+        d = {r["date"]: abs(r["value"]) for r in rows if ok(r) and r.get("value") is not None}
+        if d:
+            return d
+    return {}
+
+
+def to_quarter(d):
+    """{日期: 值} → {(年, 季): 單季值}。台灣現金流量表多為年初至今累計，自動判斷後相鄰相減"""
+    ys = {}
+    for k, v in d.items():
+        if k[5:] in ("03-31", "06-30", "09-30", "12-31"):
+            ys.setdefault(int(k[:4]), {})[int(k[5:7]) // 3] = v
+    ratio = sorted(y[4] / y[1] for y in ys.values() if 1 in y and 4 in y and y[1] > 0)
+    cum = bool(ratio) and ratio[len(ratio) // 2] > 2.5   # 累計數：Q4 約為 Q1 的 4 倍
+    out = {}
+    for y, qs in ys.items():
+        for n, v in qs.items():
+            if not cum or n == 1:
+                out[(y, n)] = v
+            elif n - 1 in qs:
+                out[(y, n)] = v - qs[n - 1]
+    return out
+
+
+def build_capex(cf, q):
+    """[季別, 資本支出(億), 折舊(億或None), 資本支出÷營收(%)]，只保留有營收的季度"""
+    cx = to_quarter(cf_item(cf, CAPEX_NAMES, CAPEX_TYPES))
+    dp = to_quarter(cf_item(cf, DEP_NAMES, DEP_TYPES))
+    out = []
+    for lbl, rv_, *_ in q:
+        k = (2000 + int(lbl[:2]), int(lbl[3]))
+        if k in cx:
+            c = cx[k] / 1e8
+            out.append([lbl, round(c, 1), round(dp[k] / 1e8, 1) if k in dp else None,
+                        round(c / rv_ * 100, 1) if rv_ else None])
+    return out
+
+
 def build(sid, today=None, fetch=get):
     today = today or dt.date.today()
     start = f"{today.year - YEARS}-01-01"
@@ -49,6 +97,11 @@ def build(sid, today=None, fetch=get):
     rv = fetch("TaiwanStockMonthRevenue", sid, f"{today.year - YEARS - 1}-01-01")
     bs = fetch("TaiwanStockBalanceSheet", sid, f"{today.year - 2}-01-01")
     info = fetch("TaiwanStockInfo", sid, "") if fetch is get else []
+    try:
+        cf = fetch("TaiwanStockCashFlowsStatement", sid, f"{today.year - YEARS - 1}-01-01")
+    except Exception as e:   # 現金流量表失敗不影響其他圖
+        print(f"{sid} cashflow FAILED: {e}", file=sys.stderr)
+        cf = []
 
     # 股數（億股）＝ 普通股股本 / 面額10元
     cap = [r for r in bs if r["type"] in ("OrdinaryShare", "CapitalStock")]
@@ -100,7 +153,8 @@ def build(sid, today=None, fetch=get):
                 pe=pers[-1]["PER"], pb=pers[-1]["PBR"])
     name = info[0].get("stock_name", "") if info else ""
     return dict(id=sid, name=name, cyclical=sid in CYCLICAL, updated=dt.datetime.utcnow().strftime("%Y-%m-%dT%H:%MZ"),
-                shares=round(shares, 4) if shares else None, last=last, rev=rev, q=q, riv=riv)
+                shares=round(shares, 4) if shares else None, last=last, rev=rev, q=q, riv=riv,
+                capex=build_capex(cf, q))
 
 
 def build_list():
@@ -130,7 +184,8 @@ def main():
             d = build(sid)
             (OUT / f"{sid}.json").write_text(json.dumps(d, ensure_ascii=False, separators=(",", ":")), "utf-8")
             ok.append({"id": sid, "name": d["name"]})
-            print(f"{sid} {d['name']} ok  close={d['last']['close']} rev={d['rev'][-1][0]} q={d['q'][-1][0]}")
+            print(f"{sid} {d['name']} ok  close={d['last']['close']} rev={d['rev'][-1][0]} q={d['q'][-1][0]}"
+                  f" capex={d['capex'][-1][:2] if d['capex'] else '無'}")
         except Exception as e:
             print(f"{sid} FAILED: {e}", file=sys.stderr)
         time.sleep(1)

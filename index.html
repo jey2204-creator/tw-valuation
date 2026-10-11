@@ -35,6 +35,7 @@
   --b1:#1b2b40; --b2:#20374f; --b3:#2d3a28; --b4:#463821; --b5:#4d2b24;
   --price:#f4f6fa; --est:#3b5687; color-scheme:dark}
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.55;-webkit-text-size-adjust:100%}
 .num{font-family:var(--f-num);font-variant-numeric:tabular-nums}
 .wrap{max-width:560px;margin:0 auto;padding-inline:16px;padding-block:0 40px}
@@ -243,7 +244,7 @@ details.ind .tbl{padding:0 10px 6px;margin-top:0}
   </div>
 </header>
   <nav class="chips" aria-label="圖表">
-    <a href="#rev">營收</a><a href="#margin">三率</a><a href="#eps">EPS</a><a href="#fwd">預估EPS</a><a href="#pe">本益比河流</a><a href="#pb">淨值比河流</a>
+    <a href="#rev">營收</a><a href="#margin">三率</a><a href="#eps">EPS</a><a href="#capex" id="chipCx">資本支出</a><a href="#fwd">預估EPS</a><a href="#pe">本益比河流</a><a href="#pb">淨值比河流</a>
   </nav>
 <p class="err" id="err" hidden></p>
 
@@ -264,6 +265,12 @@ details.ind .tbl{padding:0 10px 6px;margin-top:0}
   <p class="take" id="tEps"></p>
   <div class="chart" id="cEps"></div>
   <p class="foot">柱：單季 EPS　線：近四季累計（右軸）</p>
+</section>
+<section class="card" id="capex">
+  <h2>資本支出 <small>季｜億元</small></h2>
+  <p class="take" id="tCx"></p>
+  <div class="chart" id="cCx"></div>
+  <p class="foot" id="fCx">柱：單季資本支出（取得不動產、廠房及設備）　線：資本支出 ÷ 營收（右軸 %）</p>
 </section>
 <section class="card" id="fwd">
   <h2>預估 EPS <small>自建模型｜可調假設</small></h2>
@@ -375,7 +382,25 @@ function render(){
    o.series=[{name:'單季EPS',type:'bar',data:Q.map(x=>x[5]),itemStyle:{color:acc2,borderRadius:[2,2,0,0]},label:{show:true,position:'top',fontSize:9,color:css('--muted'),fontFamily:'IBM Plex Mono',formatter:p=>p.dataIndex>=Q.length-4?p.value:''}},
      {name:'近四季',type:'line',yAxisIndex:1,data:ttm,symbol:'none',lineStyle:{width:2,color:warm},itemStyle:{color:warm}}];
    c.setOption(o,true)}
+  renderCx();
   renderFwd();river('cPE',PEM,2,'倍 PE');river('cPB',PBM,3,'倍 PB');
+}
+function renderCx(){
+  const X=(D.capex||[]).slice(-20),has=X.length>=2;
+  $('capex').hidden=!has;$('chipCx').hidden=!has;if(!has)return;
+  const o=base(),c=mk('cCx'),hasDp=X.some(x=>x[2]!=null);o.xAxis.data=X.map(x=>x[0]);o.yAxis.scale=false;
+  o.yAxis=[o.yAxis,{...o.yAxis,scale:true,splitLine:{show:false},axisLabel:{...o.yAxis.axisLabel,formatter:'{value}%'}}];
+  o.series=[{name:'資本支出',type:'bar',data:X.map(x=>x[1]),itemStyle:{color:css('--accent'),borderRadius:[2,2,0,0]},barGap:'10%'}];
+  if(hasDp)o.series.push({name:'折舊',type:'bar',data:X.map(x=>x[2]),itemStyle:{color:css('--est'),borderRadius:[2,2,0,0]}});
+  o.series.push({name:'占營收',type:'line',yAxisIndex:1,data:X.map(x=>x[3]),symbol:'none',lineStyle:{width:2,color:css('--warm')},itemStyle:{color:css('--warm')}});
+  o.tooltip.formatter=ps=>{const x=X[ps[0].dataIndex];return `<b>${x[0]}</b><br>資本支出 ${fmt(x[1],x[1]<100?1:0)} 億<br>`+(x[2]!=null?`折舊 ${fmt(x[2],x[2]<100?1:0)} 億<br>`:'')+`占營收 ${x[3]??'—'}%`};
+  c.setOption(o,true);c.resize();
+  const A=D.capex,l=A[A.length-1],ly=A.find(x=>x[0]===(+l[0].slice(0,2)-1)+l[0].slice(2)),f=v=>fmt(v,v<100?1:0);
+  const l4=A.slice(-4),s4=sum(l4.map(x=>x[1])),q4=Q.filter(x=>l4.some(z=>z[0]===x[0])),r4=sum(q4.map(x=>x[1]));
+  const p4=A.slice(-8,-4),s4p=p4.length===4?sum(p4.map(x=>x[1])):null,d4=l4.every(x=>x[2]!=null)?sum(l4.map(x=>x[2])):null;
+  $('tCx').innerHTML=`${l[0]} <strong>${f(l[1])} 億</strong>${ly&&ly[1]>0?`，年增 <strong>${((l[1]/ly[1]-1)*100).toFixed(0)}%</strong>`:''}；近四季合計 <strong>${f(s4)} 億</strong>${s4p?`（前四季 ${f(s4p)} 億，${s4>=s4p?'+':''}${((s4/s4p-1)*100).toFixed(0)}%）`:''}，占營收 <strong>${r4?(s4/r4*100).toFixed(1):'—'}%</strong>`+
+    (d4?`<br>資本支出 ÷ 折舊 <strong>${(s4/d4).toFixed(2)} 倍</strong>（&gt;1 代表產能仍在擴張，未來折舊會增加，壓抑毛利率）`:'');
+  $('fCx').textContent=`柱：單季資本支出（現金流量表「取得不動產、廠房及設備」，不含預付設備款）${hasDp?'、折舊':''}　線：資本支出 ÷ 營收（右軸 %）。若財報為年初累計數，單季已自動以相鄰兩季相減。`;
 }
 function renderFwd(){
   const m=model(),acc2=css('--accent2'),est=css('--est');
@@ -424,6 +449,7 @@ async function fm(dataset,id,start){
 async function live(id){
   const y=new Date().getFullYear(),start=`${y-6}-01-01`,start2=`${y-7}-01-01`;
   const [px,per,fs,rv,bs]=await Promise.all([fm('TaiwanStockPrice',id,start),fm('TaiwanStockPER',id,start),fm('TaiwanStockFinancialStatements',id,start2),fm('TaiwanStockMonthRevenue',id,start2),fm('TaiwanStockBalanceSheet',id,`${y-2}-01-01`)]);
+  const cf=await fm('TaiwanStockCashFlowsStatement',id,start2).catch(()=>[]);
   if(!px.length)throw new Error(`查無 ${id} 的股價資料（可能是興櫃、已下市或代號錯誤）`);
   const cap=bs.filter(r=>r.type==='OrdinaryShare'||r.type==='CapitalStock').sort((a,b)=>a.date<b.date?-1:1);
   const shares=cap.length?cap[cap.length-1].value/10/1e8:null;
@@ -442,11 +468,30 @@ async function live(id){
   const P=px.slice().sort((a,b)=>a.date<b.date?-1:1),E=per.slice().sort((a,b)=>a.date<b.date?-1:1);
   const it=LIST.find(s=>s[0]===id);
   return {id,name:it?it[1]:id,live:true,updated:new Date().toISOString().slice(0,16)+'Z',shares:shares?+shares.toFixed(4):null,
-    last:{date:P[P.length-1].date,close:P[P.length-1].close,prev:(P[P.length-2]||P[P.length-1]).close,pe:E.length?E[E.length-1].PER:null,pb:E.length?E[E.length-1].PBR:null},rev,q,riv};
+    capex:buildCapex(cf,q),last:{date:P[P.length-1].date,close:P[P.length-1].close,prev:(P[P.length-2]||P[P.length-1]).close,pe:E.length?E[E.length-1].PER:null,pb:E.length?E[E.length-1].PBR:null},rev,q,riv};
+}
+// 與 fetch.py 的 build_capex() 相同邏輯
+function cfItem(rows,names,types){
+  for(const ok of [r=>names.includes((r.origin_name||'').trim()),r=>types.includes(r.type)]){
+    const d={};rows.forEach(r=>{if(ok(r)&&r.value!=null)d[r.date]=Math.abs(r.value)});if(Object.keys(d).length)return d}
+  return {};
+}
+function toQuarter(d){
+  const ys={};Object.entries(d).forEach(([k,v])=>{if(['03-31','06-30','09-30','12-31'].includes(k.slice(5)))(ys[+k.slice(0,4)]=ys[+k.slice(0,4)]||{})[+k.slice(5,7)/3]=v});
+  const ra=Object.values(ys).filter(y=>y[1]>0&&y[4]!=null).map(y=>y[4]/y[1]).sort((a,b)=>a-b);
+  const cum=ra.length>0&&ra[Math.floor(ra.length/2)]>2.5,out={};
+  Object.entries(ys).forEach(([y,qs])=>Object.entries(qs).forEach(([n,v])=>{n=+n;if(!cum||n===1)out[`${y}-${n}`]=v;else if(qs[n-1]!=null)out[`${y}-${n}`]=v-qs[n-1]}));
+  return out;
+}
+function buildCapex(cf,q){
+  const cx=toQuarter(cfItem(cf,['取得不動產、廠房及設備'],['PropertyAndPlantAndEquipment','AcquisitionOfPropertyPlantAndEquipment','PaymentsToAcquirePropertyPlantAndEquipment']));
+  const dp=toQuarter(cfItem(cf,['折舊費用'],['Depreciation','DepreciationExpense']));
+  return q.filter(x=>cx[`${2000+ +x[0].slice(0,2)}-${+x[0][3]}`]!=null).map(x=>{const k=`${2000+ +x[0].slice(0,2)}-${+x[0][3]}`,c=cx[k]/1e8;
+    return [x[0],+c.toFixed(1),dp[k]!=null?+(dp[k]/1e8).toFixed(1):null,x[1]?+(c/x[1]*100).toFixed(1):null]});
 }
 async function getData(id){
   try{const r=await fetch(`data/${id}.json?t=${Date.now()}`);if(r.ok)return await r.json()}catch(e){}
-  const k='live_'+id,c=store.get(k);
+  const k='live2_'+id,c=store.get(k);
   if(c&&Date.now()-c.t<6*3600e3)return c.d;
   const d=await live(id);store.set(k,{t:Date.now(),d});return d;
 }
