@@ -16,6 +16,8 @@ jobs:
           python-version: "3.12"
       - name: 全市場摘要（主題頁用）
         continue-on-error: true
+        env:
+          FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
         run: python fetch_summary.py
       - name: 抓資料
         env:

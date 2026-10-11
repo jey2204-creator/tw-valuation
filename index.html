@@ -454,7 +454,7 @@ function table(el,items,sortKey){
     return `<tr data-id="${id}"><td><span class="nm">${nameOf(id)}</span><span class="cd">${id}</span>${role?`<div class="role">${role}</div>`:''}</td>
       <td>${fmt(c,c!=null&&c<100?2:c!=null&&c<1000?1:0)}<span class="sub ${sign(ch)}">${pct(ch,2)}</span></td>
       <td>${fmt(sv(id,'pe'),1)}</td><td>${fmt(sv(id,'pb'),2)}<span class="sub">殖 ${sv(id,'yld')==null?'—':fmt(sv(id,'yld'),1)+'%'}</span></td>
-      <td class="${sign(y)}">${pct(y)}<span class="sub">${ym?(+ym.slice(5))+'月':''}</span></td></tr>`}).join('')+'</tbody>';
+      <td class="${sign(y)}">${pct(y)}<span class="sub" ${ym&&S.revYM&&ym<S.revYM?'style="color:var(--warm)" title="尚未公布最新月份"':''}>${ym?(+ym.slice(5))+'月':''}</span></td></tr>`}).join('')+'</tbody>';
   el.onclick=e=>{const h=e.target.closest('th[data-k]');if(h){const nk=h.dataset.k,cur=(el.dataset.sort||'').split(':');el.dataset.sort=cur[0]===nk?(cur[1]==='-1'?nk+':1':''):nk+':-1';table(el,items);return}
     const r=e.target.closest('tr[data-id]');if(r)location.hash=r.dataset.id};
 }

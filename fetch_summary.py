@@ -68,6 +68,41 @@ def ym_of(v):
     return None
 
 
+def patch_revenue(d, latest):
+    """證交所開放資料的上市月營收常晚幾天才更新；主題成份股若落後，用 FinMind 補到最新月份。"""
+    import os, urllib.parse
+    th = json.loads((OUT / "themes.json").read_text("utf-8"))["themes"]
+    ids = sorted({s[0] for t in th for s in t["stocks"]})
+    lag = [c for c in ids if c in d and (d[c][7] or "") < latest]
+    if not lag:
+        return
+    tok = os.environ.get("FINMIND_TOKEN", "")
+    start = (dt.date.today() - dt.timedelta(days=430)).strftime("%Y-%m-01")
+    n = 0
+    for c in lag:
+        q = urllib.parse.urlencode({"dataset": "TaiwanStockMonthRevenue", "data_id": c, "start_date": start})
+        req = urllib.request.Request("https://api.finmindtrade.com/api/v4/data?" + q)
+        if tok:
+            req.add_header("Authorization", "Bearer " + tok)
+        try:
+            with urllib.request.urlopen(req, timeout=60) as r:
+                rows = json.load(r).get("data", [])
+        except Exception as e:
+            print(f"  {c} 補營收失敗: {e}", file=sys.stderr)
+            continue
+        m = {f"{r['revenue_year']}-{r['revenue_month']:02d}": r["revenue"] for r in rows}
+        k = max(m) if m else None
+        if not k or k <= (d[c][7] or ""):
+            continue
+        prev = m.get(f"{int(k[:4]) - 1}{k[4:]}")
+        d[c][5] = round((m[k] / prev - 1) * 100, 1) if prev else None
+        d[c][6] = round(m[k] / 1e8, 1)
+        d[c][7] = k
+        n += 1
+        time.sleep(0.3)
+    print(f"FinMind 補營收：落後 {len(lag)} 檔，補到 {n} 檔")
+
+
 def main():
     OUT.mkdir(exist_ok=True)
     d, errs, src = {}, [], {}
@@ -108,7 +143,8 @@ def main():
     def rev(c, r):
         x = row(c)
         cur = num(pick(r, "營業收入-當月營收", "當月營收"))
-        x[5] = num(pick(r, "營業收入-去年同月增減(%)", "去年同月增減"))
+        y = num(pick(r, "營業收入-去年同月增減(%)", "去年同月增減"))
+        x[5] = round(y, 1) if y is not None else None
         x[6] = round(cur / 1e5, 1) if cur is not None else None   # 千元 → 億
         x[7] = ym_of(pick(r, "資料年月"))
 
@@ -126,6 +162,13 @@ def main():
     if not d:
         print("全部來源都失敗，保留舊檔", file=sys.stderr)
         sys.exit(1)
+    yms = sorted({x[7] for x in d.values() if x[7]})
+    if yms:
+        try:
+            patch_revenue(d, yms[-1])
+        except Exception as e:
+            errs.append(f"FinMind 補營收: {e}")
+            print(f"FinMind 補營收 FAILED: {e}", file=sys.stderr)
     for x in d.values():                     # 本益比 0 = 虧損或不適用
         if x[2] == 0:
             x[2] = None
