@@ -511,7 +511,8 @@ const COLS=[['pe','本益比'],['pb','淨值比'],['yoy','營收年增']];
 // 格式 [季別, 本季EPS, 去年同季EPS, 年增%, 業外旗標]
 function EP(id){const a=S&&S.eps?S.eps[id]:null,l=(store.get('epsLocal')||{})[id];return a&&l?(l[0]>a[0]?l:a):(a||l||null)}
 const epsY=id=>{const e=EP(id);return e&&e[3]!=null?e[3]:null};
-const peg=id=>{const pe=sv(id,'pe'),y=epsY(id);return pe!=null&&y!=null&&y>0?+(pe/y).toFixed(2):null};
+// 年增 >300%（去年同季 EPS 很小）時 PEG 失真，不計算
+const peg=id=>{const pe=sv(id,'pe'),y=epsY(id);return pe!=null&&y!=null&&y>0&&y<=300?+(pe/y).toFixed(2):null};
 let QN='';
 function modeQ(){const c={};Object.values((S&&S.eps)||{}).forEach(e=>c[e[0]]=(c[e[0]]||0)+1);QN=Object.keys(c).sort((a,b)=>c[b]-c[a])[0]||''}
 function epsCell(id){
@@ -524,7 +525,8 @@ function epsCell(id){
   const qs=q!==QN?` <span style="color:var(--warm)" title="跟其他檔不同季">${q}</span>`:'';
   const nb=nonop?' <span class="flag" title="本季淨利率比營益率高 5 個百分點以上，EPS 可能含一次性業外收益">業外</span>':'';
   const g=peg(id),gc=g==null?'':g<1?'cheap':g>2?'pricey':'';
-  const l2=(g!=null?`<span class="${gc}">PEG ${fmt(g,g<10?2:1)}</span>`:'')+qs+nb;
+  const lb=y!=null&&y>300?`<span title="去年同季 EPS 只有 ${fmt(prev,2)}，年增率與 PEG 失真">低基期</span>`:'';
+  const l2=(g!=null?`<span class="${gc}">PEG ${fmt(g,g<10?2:1)}</span>`:lb)+qs+nb;
   return `<span class="sub ${cl}">${t}</span>`+(l2?`<span class="sub">${l2}</span>`:'');
 }
 const SORTV={pe:id=>sv(id,'pe'),eps:epsY,peg:peg,px:id=>sv(id,'chg')};
@@ -570,7 +572,7 @@ function showTheme(tid){
   $('tSum').innerHTML=S?`${ids.length} 檔中位數：營收年增 <strong class="${sign(y)}">${pct(y)}</strong>・EPS 年增 <strong class="${sign(ey)}">${pct(ey)}</strong>・本益比 <strong>${fmt(pe,1)}</strong>・PEG <strong>${fmt(pg,2)}</strong>・淨值比 <strong>${fmt(pb,2)}</strong>`:'全市場數字尚未產生（等 Actions 第一次執行）';
   $('tUS').innerHTML=t.us&&t.us.length?'對應美股 '+t.us.map(u=>`<a href="us/#${u}">${u}</a>`).join(''):'';
   $('tTbl').dataset.sort='';table($('tTbl'),t.stocks);
-  $('tFoot').innerHTML=`EPS 年增＝最新一季${QN?'（'+QN+'）':''}單季 EPS 對比去年同季，橘色季別＝跟其他檔不同季；<span class="flag">業外</span>＝本季 EPS 可能含一次性收益。PEG＝本益比 ÷ EPS 年增，<span class="cheap">&lt;1 偏便宜</span>、<span class="pricey">&gt;2 偏貴</span>；記憶體等循環股的 PEG 參考性低。<br>點欄位標題排序；「本益比」連點可切換成 EPS 年增、PEG 排序。點一列看個股圖表。`+(S?` 資料更新 ${S.updated.slice(0,10)}`:'');
+  $('tFoot').innerHTML=`EPS 年增＝最新一季${QN?'（'+QN+'）':''}單季 EPS 對比去年同季，橘色季別＝跟其他檔不同季；<span class="flag">業外</span>＝本季 EPS 可能含一次性收益。<span>低基期</span>＝去年同季 EPS 太小、年增超過 300%，不算 PEG。PEG＝本益比 ÷ EPS 年增，<span class="cheap">&lt;1 偏便宜</span>、<span class="pricey">&gt;2 偏貴</span>；記憶體等循環股的 PEG 參考性低。<br>點欄位標題排序；「本益比」連點可切換成 EPS 年增、PEG 排序。點一列看個股圖表。`+(S?` 資料更新 ${S.updated.slice(0,10)}`:'');
 }
 function stockExtras(id){
   const fav=store.get('fav')||[],on=fav.includes(id);
