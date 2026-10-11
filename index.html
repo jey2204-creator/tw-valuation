@@ -89,18 +89,85 @@ tr.e td{color:var(--accent)}
 @media (max-width:380px){.stats{grid-template-columns:repeat(2,1fr)}.name{font-size:20px}}
 @media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
 html{scroll-behavior:smooth}
+
+/* ---- 首頁／主題頁 ---- */
+body:not([data-view=stock]) :is(header.quote,nav.chips,section.card,#note){display:none}
+.hhead{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-top:14px}
+.hhead h1,#theme h1{font-size:22px;font-weight:900;margin:0}
+.ghost{flex:none;font-size:13px;color:var(--accent);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:3px 11px;background:var(--card)}
+h2.sec{font-size:13px;color:var(--muted);font-weight:700;letter-spacing:.06em;margin:22px 0 8px;display:flex;justify-content:space-between;align-items:baseline}
+h2.sec small{font-weight:500;letter-spacing:0}
+.tgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tcard{display:flex;flex-direction:column;gap:2px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;color:var(--fg);text-decoration:none;min-width:0}
+.tcard b{font-size:15px;line-height:1.35}
+.tcard .k{font-size:12px;color:var(--muted);display:flex;justify-content:space-between;gap:6px}
+.tcard .k .num{color:var(--fg)}
+.up{color:var(--up)!important}.dn{color:var(--down)!important}
+.lst{font-size:13px}
+.lst tbody tr{cursor:pointer}
+.lst tbody tr:active{background:var(--bg)}
+.lst td{padding-block:8px;vertical-align:top}
+.lst td:first-child{white-space:normal;font-family:var(--f-body)}
+.lst .nm{font-weight:700;font-size:14px}
+.lst .cd{font-family:var(--f-num);font-size:11.5px;color:var(--muted);margin-left:4px}
+.lst .role{font-size:11.5px;color:var(--muted);line-height:1.35}
+.lst .sub{display:block;font-size:11px;color:var(--muted)}
+.lst th[data-k]{cursor:pointer;user-select:none}
+.lst th.on{color:var(--fg);font-weight:700}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:4px 12px 6px}
+.panel .tbl{margin-top:0}
+details.ind{background:var(--card);border:1px solid var(--line);border-radius:10px;margin-top:6px}
+details.ind summary{padding:10px 12px;cursor:pointer;display:flex;justify-content:space-between;list-style:none;font-size:14px}
+details.ind summary::-webkit-details-marker{display:none}
+details.ind summary span{color:var(--muted);font-size:12px;font-family:var(--f-num)}
+details.ind .tbl{padding:0 10px 6px;margin-top:0}
+.uslink{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:10px;font-size:12px;color:var(--muted)}
+.uslink a,.peers a{color:var(--fg);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:1px 9px;background:var(--card);font-family:var(--f-num);font-size:12px}
+.crumb{display:flex;justify-content:space-between;align-items:center;padding-top:12px;font-size:13px}
+.crumb a,.top a{color:var(--accent);text-decoration:none}
+.top{padding-top:14px;font-size:13px}
+.star{font:inherit;font-size:13px;border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:999px;padding:3px 11px;cursor:pointer}
+.star[aria-pressed=true]{background:var(--b4);border-color:var(--warm)}
+.peers{margin-top:6px;font-size:12px;color:var(--muted);display:flex;flex-wrap:wrap;gap:5px 6px;align-items:center}
+.peers a{font-family:var(--f-body)}
+.peers a.cur{border-color:var(--accent);color:var(--accent);font-weight:700}
+.tip{font-size:13px;color:var(--muted);background:var(--card);border:1px dashed var(--line);border-radius:10px;padding:10px 12px;margin:0}
 </style>
 
 </head>
 <body>
 <div class="wrap">
+<section id="home" hidden>
+  <div class="hhead"><h1>台股估值看板</h1><a class="ghost" href="us/">美股看板 →</a></div>
+  <div class="search" role="search">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <input id="q2" type="search" inputmode="search" autocomplete="off" placeholder="輸入代號或名稱，例如 2454、聯發科" aria-label="搜尋股票">
+    <div class="results" id="res2" hidden></div>
+  </div>
+  <h2 class="sec">⭐ 自選</h2>
+  <div id="favBox"></div>
+  <h2 class="sec">產業主題 <small><span id="sumAsof"></span>・中位數</small></h2>
+  <div class="tgrid" id="tgrid"></div>
+  <details class="ind" id="indAll" style="margin-top:22px"><summary><b>🏭 官方產業別</b><span>點開瀏覽全部上市櫃</span></summary><div id="indBox" style="padding:0 8px 8px"></div></details>
+  <p class="note">主題成份股寫在 data/themes.json，可直接在 GitHub 網頁編輯。數字為證交所／櫃買每日資料，本益比空白＝虧損或不適用。</p>
+</section>
+<section id="theme" hidden>
+  <div class="top"><a href="#">← 全部主題</a></div>
+  <h1 id="tName" style="margin-top:6px"></h1>
+  <p class="take" id="tSum"></p>
+  <div class="uslink" id="tUS"></div>
+  <div class="panel" style="margin-top:12px"><div class="tbl"><table class="lst" id="tTbl"></table></div></div>
+  <p class="foot" id="tFoot" style="margin-top:8px"></p>
+</section>
 <header class="quote">
+  <div class="crumb"><a href="#" id="back">← 主題</a><button type="button" class="star" id="fav" aria-pressed="false">☆ 加入自選</button></div>
   <div class="qrow">
     <span class="code" id="code"></span>
     <span class="name" id="nm">—</span>
     <span class="px" id="px">—</span>
   </div>
   <div class="meta" id="meta"></div>
+  <div class="peers" id="peers"></div>
   <div class="qrow" style="justify-content:space-between">
     <span class="foot" id="asof">載入中…</span><span class="chg" id="chg"></span>
   </div>
@@ -345,8 +412,8 @@ async function load(id){
 }
 // ---------- 搜尋 ----------
 function row(s){return `<button type="button" data-id="${s[0]}"><span class="rid">${s[0]}</span><span>${s[1]}</span><span class="rmeta">${s[2]||''}${s[3]?'・'+s[3]:''}</span></button>`}
-function showRes(){
-  const v=$('q').value.trim(),box=$('res');let html='';
+function showRes(q,box){
+  const v=q.value.trim();let html='';
   if(!v){
     const w=WATCH.map(x=>LIST.find(s=>s[0]===x.id)||[x.id,x.name,'','']);
     const rc=(store.get('recent')||[]).filter(i=>!WATCH.some(x=>x.id===i)).map(i=>LIST.find(s=>s[0]===i)||[i,i,'','']);
@@ -358,14 +425,82 @@ function showRes(){
   }
   box.innerHTML=html;box.hidden=!html;
 }
-function pick(id){$('res').hidden=true;$('q').value='';$('q').blur();if(location.hash.slice(1)!==id)location.hash=id;else load(id)}
-$('q').addEventListener('focus',showRes);
-$('q').addEventListener('input',showRes);
-$('q').addEventListener('keydown',e=>{if(e.key==='Enter'){const b=$('res').querySelector('button');if(b)pick(b.dataset.id)}if(e.key==='Escape'){$('res').hidden=true;$('q').blur()}});
-$('res').addEventListener('mousedown',e=>e.preventDefault());
-$('res').addEventListener('click',e=>{const b=e.target.closest('button');if(b)pick(b.dataset.id)});
-document.addEventListener('click',e=>{if(!e.target.closest('.search'))$('res').hidden=true});
-addEventListener('hashchange',()=>{const id=location.hash.slice(1);if(/^\d{4,6}[A-Z]?$/.test(id))load(id)});
+function go(id){document.querySelectorAll('.results').forEach(b=>b.hidden=true);document.querySelectorAll('.search input').forEach(i=>{i.value='';i.blur()});if(location.hash.slice(1)!==id)location.hash=id;else route()}
+function bindSearch(qid,rid){const q=$(qid),box=$(rid);
+  q.addEventListener('focus',()=>showRes(q,box));
+  q.addEventListener('input',()=>showRes(q,box));
+  q.addEventListener('keydown',e=>{if(e.key==='Enter'){const b=box.querySelector('button');if(b)go(b.dataset.id)}if(e.key==='Escape'){box.hidden=true;q.blur()}});
+  box.addEventListener('mousedown',e=>e.preventDefault());
+  box.addEventListener('click',e=>{const b=e.target.closest('button');if(b)go(b.dataset.id)});}
+bindSearch('q','res');bindSearch('q2','res2');
+document.addEventListener('click',e=>{if(!e.target.closest('.search'))document.querySelectorAll('.results').forEach(b=>b.hidden=true)});
+
+// ---------- 主題／產業／自選 ----------
+let THEMES=[],S=null;
+const SF={close:0,chg:1,pe:2,pb:3,yld:4,yoy:5,rev:6,ym:7};
+const sv=(id,k)=>S&&S.d[id]?S.d[id][SF[k]]:null;
+const nameOf=id=>{const it=LIST.find(s=>s[0]===id);return it?it[1].replace(/\*$/,''):id};
+const sign=v=>v==null?'':v>0?'up':v<0?'dn':'';
+const pct=(v,d=1)=>v==null?'—':(v>0?'+':'')+fmt(v,d)+'%';
+const median=a=>{a=a.filter(x=>x!=null).sort((x,y)=>x-y);if(!a.length)return null;const m=a.length>>1;return a.length%2?a[m]:(a[m-1]+a[m])/2};
+const COLS=[['pe','本益比'],['pb','淨值比'],['yoy','營收年增']];
+function table(el,items,sortKey){
+  // items: [[代號, 角色]]；sortKey: el.dataset.sort（例 'yoy:-1'）
+  const [k,dir]=(el.dataset.sort||sortKey||'').split(':');let rows=items.slice();
+  if(k){rows.sort((a,b)=>{const x=k==='px'?sv(a[0],'chg'):sv(a[0],k),y=k==='px'?sv(b[0],'chg'):sv(b[0],k);if(x==null)return 1;if(y==null)return -1;return (x-y)*(+dir||-1)})}
+  const th=(key,lb)=>`<th data-k="${key}" class="${k===key?'on':''}">${lb}${k===key?(+dir>0?' ▲':' ▼'):''}</th>`;
+  el.innerHTML=`<thead><tr><th>股票</th>${th('px','收盤')}${COLS.map(c=>th(...c)).join('')}</tr></thead><tbody>`+rows.map(([id,role])=>{
+    const c=sv(id,'close'),ch=sv(id,'chg'),y=sv(id,'yoy'),ym=sv(id,'ym');
+    return `<tr data-id="${id}"><td><span class="nm">${nameOf(id)}</span><span class="cd">${id}</span>${role?`<div class="role">${role}</div>`:''}</td>
+      <td>${fmt(c,c!=null&&c<100?2:c!=null&&c<1000?1:0)}<span class="sub ${sign(ch)}">${pct(ch,2)}</span></td>
+      <td>${fmt(sv(id,'pe'),1)}</td><td>${fmt(sv(id,'pb'),2)}<span class="sub">殖 ${sv(id,'yld')==null?'—':fmt(sv(id,'yld'),1)+'%'}</span></td>
+      <td class="${sign(y)}">${pct(y)}<span class="sub">${ym?(+ym.slice(5))+'月':''}</span></td></tr>`}).join('')+'</tbody>';
+  el.onclick=e=>{const h=e.target.closest('th[data-k]');if(h){const nk=h.dataset.k,cur=(el.dataset.sort||'').split(':');el.dataset.sort=cur[0]===nk?(cur[1]==='-1'?nk+':1':''):nk+':-1';table(el,items);return}
+    const r=e.target.closest('tr[data-id]');if(r)location.hash=r.dataset.id};
+}
+function renderHome(){
+  $('sumAsof').textContent=S?`資料 ${S.updated.slice(5,10).replace('-','/')}・營收 ${S.revYM?+S.revYM.slice(5)+'月':'—'}`:'數字待 Actions 產生';
+  const fav=store.get('fav')||[];
+  $('favBox').innerHTML=fav.length?'<div class="panel"><div class="tbl"><table class="lst" id="favTbl"></table></div></div>':'<p class="tip">在個股頁點「☆ 加入自選」，就會出現在這裡。</p>';
+  if(fav.length)table($('favTbl'),fav.map(id=>[id,'']));
+  $('tgrid').innerHTML=THEMES.map(t=>{const ids=t.stocks.map(x=>x[0]),y=median(ids.map(i=>sv(i,'yoy'))),pe=median(ids.map(i=>sv(i,'pe')));
+    return `<a class="tcard" href="#t/${t.id}"><b>${t.name}</b><span class="k"><span>營收年增</span><span class="num ${sign(y)}">${y==null?'—':pct(y,0)}</span></span><span class="k"><span>本益比</span><span class="num">${pe==null?'—':fmt(pe,1)}</span></span><span class="k"><span>成份股</span><span class="num">${ids.length}</span></span></a>`}).join('');
+  if(!$('indBox').dataset.done&&LIST.length){
+    const g={};LIST.forEach(s=>{let k=(s[3]||'其他').replace(/類$/,'');if(k==='其他電子')k='其他電子業';(g[k]=g[k]||[]).push(s[0])});
+    $('indBox').innerHTML=Object.entries(g).sort((a,b)=>b[1].length-a[1].length).map(([k,v],i)=>`<details class="ind" data-i="${i}"><summary>${k}<span>${v.length} 檔</span></summary><div class="tbl"><table class="lst"></table></div></details>`).join('');
+    const ents=Object.entries(g).sort((a,b)=>b[1].length-a[1].length);
+    $('indBox').querySelectorAll('details.ind').forEach(d=>d.addEventListener('toggle',()=>{if(d.open){const t=d.querySelector('table');if(!t.innerHTML)table(t,ents[+d.dataset.i][1].map(id=>[id,'']),'yoy:-1')}}));
+    $('indBox').dataset.done=1;
+  }
+}
+function showTheme(tid){
+  const t=THEMES.find(x=>x.id===tid);if(!t){location.hash='';return}
+  try{sessionStorage.setItem('lastTheme',tid)}catch(e){}
+  $('tName').textContent=t.name;document.title=`${t.name} 估值看板`;
+  const ids=t.stocks.map(x=>x[0]),y=median(ids.map(i=>sv(i,'yoy'))),pe=median(ids.map(i=>sv(i,'pe'))),pb=median(ids.map(i=>sv(i,'pb')));
+  $('tSum').innerHTML=S?`${ids.length} 檔中位數：營收年增 <strong class="${sign(y)}">${pct(y)}</strong>・本益比 <strong>${fmt(pe,1)}</strong>・淨值比 <strong>${fmt(pb,2)}</strong>`:'全市場數字尚未產生（等 Actions 第一次執行）';
+  $('tUS').innerHTML=t.us&&t.us.length?'對應美股 '+t.us.map(u=>`<a href="us/#${u}">${u}</a>`).join(''):'';
+  $('tTbl').dataset.sort='';table($('tTbl'),t.stocks);
+  $('tFoot').textContent='點欄位標題可排序（再點一次反向、第三次回到預設順序）；點一列看個股圖表。'+(S?` 資料更新 ${S.updated.slice(0,10)}`:'');
+}
+function stockExtras(id){
+  const fav=store.get('fav')||[],on=fav.includes(id);
+  $('fav').setAttribute('aria-pressed',on);$('fav').textContent=on?'★ 已自選':'☆ 加入自選';
+  let last='';try{last=sessionStorage.getItem('lastTheme')||''}catch(e){}
+  const mine=THEMES.filter(t=>t.stocks.some(x=>x[0]===id));
+  const bt=mine.find(t=>t.id===last)||mine[0];
+  $('back').href=bt?'#t/'+bt.id:'#';$('back').textContent=bt?'← '+bt.name:'← 全部主題';
+  $('peers').innerHTML=mine.map(t=>`<span>${t.name.split(' ')[0]}</span>`+t.stocks.map(([s])=>`<a href="#${s}" class="${s===id?'cur':''}">${nameOf(s)}</a>`).join('')).join('<br style="flex-basis:100%">');
+}
+$('fav').addEventListener('click',()=>{const id=D&&D.id;if(!id)return;let f=store.get('fav')||[];f=f.includes(id)?f.filter(x=>x!==id):[id,...f];store.set('fav',f.slice(0,30));stockExtras(id)});
+function route(){
+  const h=decodeURIComponent(location.hash.slice(1));
+  const show=v=>{document.body.dataset.view=v;$('home').hidden=v!=='home';$('theme').hidden=v!=='theme'};
+  if(/^\d{4,6}[A-Z]?$/.test(h)){show('stock');stockExtras(h);if(!D||D.id!==h)load(h);else setTimeout(()=>Object.values(charts).forEach(c=>c.resize()),0);scrollTo(0,0)}
+  else if(h.startsWith('t/')){show('theme');showTheme(h.slice(2));scrollTo(0,0)}
+  else if(!h||h==='home'){show('home');document.title='台股估值看板';renderHome();scrollTo(0,0)}
+}
+addEventListener('hashchange',route);
 (async()=>{
   try{const r=await fetch('data/index.json?t='+Date.now());if(r.ok)WATCH=await r.json()}catch(e){}
   try{const r=await fetch('data/list.json?t='+Date.now());if(r.ok)LIST=await r.json()}catch(e){}
@@ -373,8 +508,9 @@ addEventListener('hashchange',()=>{const id=location.hash.slice(1);if(/^\d{4,6}[
     const r=await fetch(`${FM}?dataset=TaiwanStockInfo`);const js=await r.json();const m={};
     (js.data||[]).filter(s=>(s.type==='twse'||s.type==='tpex')&&/^[1-9]\d{3}$/.test(s.stock_id)).forEach(s=>{if(!m[s.stock_id]||s.date>m[s.stock_id].date)m[s.stock_id]=s});
     LIST=Object.values(m).map(s=>[s.stock_id,s.stock_name,s.type==='twse'?'上市':'上櫃',s.industry_category]).sort((a,b)=>a[0].localeCompare(b[0]));store.set('list',{t:Date.now(),d:LIST})}catch(e){}}}
-  const want=location.hash.slice(1);
-  load(/^\d{4,6}[A-Z]?$/.test(want)?want:(WATCH[0]?.id||'2330'));
+  try{const r=await fetch('data/themes.json?t='+Date.now());if(r.ok)THEMES=(await r.json()).themes||[]}catch(e){}
+  try{const r=await fetch('data/summary.json?t='+Date.now());if(r.ok)S=await r.json()}catch(e){}
+  route();
 })();
 ['iMon','iNm','iQg','iYg'].forEach(id=>$(id).addEventListener('input',()=>D&&renderFwd()));
 let rt;addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>Object.values(charts).forEach(c=>c.resize()),120)});
