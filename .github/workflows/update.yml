@@ -23,6 +23,10 @@ jobs:
         continue-on-error: true
         timeout-minutes: 20
         run: python fetch_momentum.py
+      - name: 集保大戶持股比（每週）
+        continue-on-error: true
+        timeout-minutes: 12
+        run: python fetch_tdcc.py
       - name: 抓資料
         env:
           FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
