@@ -25,6 +25,9 @@ HIST = OUT / "hist"
 NEED_PX, NEED_INST = 61, 20          # 季%要 60 個交易日前的收盤
 KEEP = 70                            # 保留最近幾個交易日的檔案
 MAX_REQ = 220                        # 單次執行請求上限（避免被證交所封鎖）
+BUDGET = 15 * 60                     # 單次執行最多抓 15 分鐘，沒抓完的下次繼續
+T0 = time.time()
+fails = {}                           # 各來源連續失敗次數，連 3 次就本次跳過
 FIELDS = ["w", "m", "q", "vr", "f5", "t5", "f20", "t20", "tS", "fS", "fire"]
 UA = {"User-Agent": "Mozilla/5.0 (tw-valuation; GitHub Actions)", "Accept": "application/json,text/plain,*/*"}
 diag, nreq = {}, 0
@@ -40,16 +43,16 @@ def get(url, host):
         time.sleep(w)
     nreq += 1
     req = urllib.request.Request(url, headers=UA)
-    for i in range(3):
+    for i in range(2):
         try:
-            with urllib.request.urlopen(req, timeout=40) as r:
+            with urllib.request.urlopen(req, timeout=20) as r:
                 last_hit[host] = time.time()
                 return json.loads(r.read().decode("utf-8-sig"))
         except Exception as e:
             last_hit[host] = time.time()
-            if i == 2:
+            if i == 1:
                 raise RuntimeError(f"{e}")
-            time.sleep(6 * (i + 1))
+            time.sleep(5)
 
 
 def num(v):
@@ -254,14 +257,16 @@ def collect():
         want += [k for k in ("iL", "iO") if k not in src and have_inst < NEED_INST]
         changed = False
         for k in want:
-            if nreq >= MAX_REQ:
-                break
+            if nreq >= MAX_REQ or time.time() - T0 > BUDGET or fails.get(k, 0) >= 3:
+                continue
             fn, slot = SOURCES[k]
             try:
                 r = fn(d)
             except Exception as e:
+                fails[k] = fails.get(k, 0) + 1
                 errs.append(f"{d:%m/%d} {k}: {str(e)[:80]}")
                 continue
+            fails[k] = 0
             if r is None:
                 if k == "pL" and d < today and not rec.get("p"):   # 過去的平日證交所沒資料 = 休市
                     rec = {"closed": 1}
@@ -279,8 +284,11 @@ def collect():
                 have_px += 1
             if "iL" in src:
                 have_inst += 1
-        if nreq >= MAX_REQ:
-            errs.append(f"達到單次請求上限 {MAX_REQ}，下次執行繼續回補")
+        if nreq >= MAX_REQ or time.time() - T0 > BUDGET:
+            errs.append(f"達到單次上限（{nreq} 次請求／{int(time.time() - T0)} 秒），下次執行繼續回補")
+            break
+        if all(fails.get(k, 0) >= 3 for k in ("pL", "iL")):
+            errs.append("證交所連續失敗，本次停止")
             break
         d -= dt.timedelta(days=1)
     return errs
@@ -362,7 +370,7 @@ def main():
     res = dict(updated=dt.datetime.utcnow().strftime("%Y-%m-%dT%H:%MZ"),
                asof=pdays[-1][0] if pdays else None, instAsof=idays[-1][0] if idays else None,
                nPx=len(pdays), nInst=len(idays), firstPx=pdays[0][0] if pdays else None,
-               fields=FIELDS, req=nreq, errors=errs[:30], diag=diag, d=d)
+               fields=FIELDS, req=nreq, secs=int(time.time() - T0), fails=fails, errors=errs[:30], diag=diag, d=d)
     (OUT / "momentum.json").write_text(json.dumps(res, ensure_ascii=False, separators=(",", ":")), "utf-8")
     print(f"momentum.json: {len(d)} 檔，股價 {len(pdays)} 天、法人 {len(idays)} 天，請求 {nreq} 次，錯誤 {len(errs)}")
 

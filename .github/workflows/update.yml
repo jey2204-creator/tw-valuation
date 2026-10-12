@@ -21,7 +21,7 @@ jobs:
         run: python fetch_summary.py
       - name: 股價動能＋法人（動能模式用）
         continue-on-error: true
-        timeout-minutes: 25
+        timeout-minutes: 20
         run: python fetch_momentum.py
       - name: 抓資料
         env:
@@ -33,4 +33,5 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data/
           git diff --cached --quiet || git commit -m "data: $(TZ=Asia/Taipei date +%F)"
+          git pull --rebase -X theirs || (git rebase --abort; git pull --no-rebase -X ours)
           git push
