@@ -255,7 +255,7 @@ details.ind.hot summary b{color:var(--up)}
   </div>
 </header>
   <nav class="chips" aria-label="圖表">
-    <a href="#rev">營收</a><a href="#margin">三率</a><a href="#eps">EPS</a><a href="#capex" id="chipCx">資本支出</a><a href="#fwd">預估EPS</a><a href="#pe">本益比河流</a><a href="#pb">淨值比河流</a>
+    <a href="#rev">營收</a><a href="#chip">籌碼</a><a href="#margin">三率</a><a href="#eps">EPS</a><a href="#capex" id="chipCx">資本支出</a><a href="#fwd">預估EPS</a><a href="#pe">本益比河流</a><a href="#pb">淨值比河流</a>
   </nav>
 <p class="err" id="err" hidden></p>
 
@@ -264,6 +264,13 @@ details.ind.hot summary b{color:var(--up)}
   <p class="take" id="tRev"></p>
   <div class="chart" id="cRev"></div>
   <p class="foot">柱：單月營收　線：年增率（右軸 %）</p>
+</section>
+<section class="card" id="chip">
+  <h2 style="display:flex;align-items:center;gap:8px">逐日籌碼 <small>張｜近 60 個交易日</small><span class="segm" id="chipSeg" style="margin-left:auto"><button aria-pressed="true" data-m="i">法人</button><button aria-pressed="false" data-m="m">融資券</button></span></h2>
+  <p class="take" id="tChip"></p>
+  <div class="chart" id="cChip"></div>
+  <div class="tbl"><table id="tbChip"></table></div>
+  <p class="foot" id="fChip"></p>
 </section>
 <section class="card" id="margin">
   <h2>三率 <small>季｜%</small></h2>
@@ -393,7 +400,7 @@ function render(){
    o.series=[{name:'單季EPS',type:'bar',data:Q.map(x=>x[5]),itemStyle:{color:acc2,borderRadius:[2,2,0,0]},label:{show:true,position:'top',fontSize:9,color:css('--muted'),fontFamily:'IBM Plex Mono',formatter:p=>p.dataIndex>=Q.length-4?p.value:''}},
      {name:'近四季',type:'line',yAxisIndex:1,data:ttm,symbol:'none',lineStyle:{width:2,color:warm},itemStyle:{color:warm}}];
    c.setOption(o,true)}
-  renderCx();
+  renderCx();renderChip();
   renderFwd();river('cPE',PEM,2,'倍 PE');river('cPB',PBM,3,'倍 PB');
 }
 function renderCx(){
@@ -413,6 +420,50 @@ function renderCx(){
     (d4?`<br>資本支出 ÷ 折舊 <strong>${(s4/d4).toFixed(2)} 倍</strong>（&gt;1 代表產能仍在擴張，未來折舊會增加，壓抑毛利率）`:'');
   $('fCx').textContent=`柱：單季資本支出（現金流量表「取得不動產、廠房及設備」，不含預付設備款）${hasDp?'、折舊':''}　線：資本支出 ÷ 營收（右軸 %）。若財報為年初累計數，單季已自動以相鄰兩季相減。`;
 }
+// ---- 逐日籌碼（chip.json）：每天 [收盤, 成交張, 外資, 投信, 自營, 融資增減, 融券增減, 融資餘額] ----
+let CH=null,chipMode='i';
+async function renderChip(){
+  if(CH===null){CH=false;try{const r=await fetch('data/chip.json?t='+Date.now());if(r.ok)CH=await r.json()}catch(e){}}
+  const rows=CH&&CH.d&&CH.d[D.id],sec=$('chip');
+  if(!rows){$('tChip').innerHTML=CH?'這檔還沒有逐日籌碼資料。<br>試做階段只涵蓋 <strong>主題成份股＋志聖 2467</strong>。':'籌碼資料載入失敗';$('cChip').hidden=true;$('tbChip').innerHTML='';$('fChip').textContent='';return}
+  $('cChip').hidden=false;
+  const days=CH.days.map(x=>x.slice(4,6)+'/'+x.slice(6)),n=rows.length;
+  const tot=r=>r[2]==null?null:r[2]+r[3]+r[4];
+  const S=(i,k,f)=>{const a=rows.slice(-k).map(f).filter(x=>x!=null);return a.length?sum(a):null};
+  const sg=v=>v==null?'—':(v>0?'+':'')+fmt(v);
+  const cls=v=>v>0?'up':v<0?'dn':'';
+  const o=base(),c=mk('cChip'),up=css('--up'),dn=css('--down'),pr=css('--price')||css('--fg');
+  o.xAxis.data=days;o.yAxis.scale=false;
+  o.yAxis=[o.yAxis,{...o.yAxis,scale:true,splitLine:{show:false}}];
+  o.legend.show=true;
+  let tb='';
+  if(chipMode==='i'){
+    const T=rows.map(tot);
+    o.series=[{name:'三大法人合計',type:'bar',itemStyle:{color:up},data:T.map(v=>v==null?null:{value:v,itemStyle:{color:v>=0?up:dn}}),barCategoryGap:'20%'},
+      {name:'收盤',type:'line',yAxisIndex:1,data:rows.map(r=>r[0]),symbol:'none',lineStyle:{width:1.5,color:pr},itemStyle:{color:pr}}];
+    o.tooltip.formatter=ps=>{const i=ps[0].dataIndex,r=rows[i];return `<b>${days[i]}</b>　收盤 ${r[0]??'—'}<br>外資 ${sg(r[2])}<br>投信 ${sg(r[3])}<br>自營 ${sg(r[4])}<br><b>合計 ${sg(tot(r))}</b>　成交 ${fmt(r[1])}`};
+    const c5=(k)=>{const t=S(0,k,tot),v=S(0,k,r=>r[1]);return t!=null&&v?(t/v*100).toFixed(1):null};
+    const l=rows[n-1],a5=S(0,5,tot),a20=S(0,20,tot);
+    $('tChip').innerHTML=`${days[n-1]} 三大法人 <strong class="${cls(tot(l))}">${sg(tot(l))}</strong> 張（外 ${sg(l[2])}／投 ${sg(l[3])}／自 ${sg(l[4])}）<br>5 日 <strong class="${cls(a5)}">${sg(a5)}</strong>（集中 ${c5(5)??'—'}%）；20 日 <strong class="${cls(a20)}">${sg(a20)}</strong>（集中 ${c5(20)??'—'}%）`;
+    tb='<tr><th>日期</th><th>收盤</th><th>外資</th><th>投信</th><th>自營</th><th>合計</th></tr>'+rows.slice(-10).reverse().map((r,j)=>`<tr><td>${days[n-1-j]}</td><td>${r[0]??'—'}</td>${[r[2],r[3],r[4],tot(r)].map(v=>`<td class="${cls(v)}">${sg(v)}</td>`).join('')}</tr>`).join('');
+    $('fChip').textContent='柱：外資＋投信＋自營商買賣超合計（紅買綠賣）　線：收盤（右軸）。集中 = 法人合計買賣超 ÷ 同期成交量。⚠️ 這不是券商分點的「主力」，看不到隔日沖與地緣券商；自營商含避險部位，常跟權證進出有關，參考性較低。';
+  }else{
+    const has=rows.some(r=>r[5]!=null);
+    o.series=[{name:'融資增減',type:'bar',data:rows.map(r=>r[5]),itemStyle:{color:css('--warm')},barGap:'10%'},
+      {name:'融券增減',type:'bar',data:rows.map(r=>r[6]),itemStyle:{color:css('--accent')}},
+      {name:'收盤',type:'line',yAxisIndex:1,data:rows.map(r=>r[0]),symbol:'none',lineStyle:{width:1.5,color:pr},itemStyle:{color:pr}}];
+    o.tooltip.formatter=ps=>{const i=ps[0].dataIndex,r=rows[i];return `<b>${days[i]}</b>　收盤 ${r[0]??'—'}<br>融資 ${sg(r[5])}（餘額 ${fmt(r[7])}）<br>融券 ${sg(r[6])}<br>法人合計 ${sg(tot(r))}`};
+    const m5=S(0,5,r=>r[5]),m20=S(0,20,r=>r[5]),i20=S(0,20,tot),lb=[...rows].reverse().find(r=>r[7]!=null);
+    const b20=rows.length>20?rows[n-21][7]:null;
+    let hint='';if(i20!=null&&m20!=null){hint=i20>0&&m20<0?'📈 法人買、融資減 → 籌碼由散戶流向法人（較健康）':i20<0&&m20>0?'⚠️ 法人賣、融資增 → 籌碼由法人流向散戶（較危險）':i20>0&&m20>0?'法人與融資同步增加 → 追價資金多，留意波動':'法人與融資同步減少 → 人氣退潮'}
+    $('tChip').innerHTML=has?`融資餘額 <strong>${fmt(lb&&lb[7])}</strong> 張${b20?`（20 日 ${sg(lb[7]-b20)}，${((lb[7]/b20-1)*100).toFixed(1)}%）`:''}；5 日融資 <strong>${sg(m5)}</strong><br>${hint}`:'融資融券資料回補中，下次更新後就會出現';
+    tb='<tr><th>日期</th><th>收盤</th><th>資增減</th><th>券增減</th><th>資餘額</th><th>法人</th></tr>'+rows.slice(-10).reverse().map((r,j)=>`<tr><td>${days[n-1-j]}</td><td>${r[0]??'—'}</td><td>${sg(r[5])}</td><td>${sg(r[6])}</td><td>${fmt(r[7])}</td><td class="${cls(tot(r))}">${sg(tot(r))}</td></tr>`).join('');
+    $('fChip').textContent='柱：融資、融券餘額的每日增減（張）　線：收盤（右軸）。融資多半是散戶，融資大增而股價不漲常是警訊。';
+  }
+  $('tbChip').innerHTML=tb;c.setOption(o,true);c.resize();
+}
+document.addEventListener('click',e=>{const b=e.target.closest('#chipSeg button');if(!b)return;chipMode=b.dataset.m;
+  document.querySelectorAll('#chipSeg button').forEach(x=>x.setAttribute('aria-pressed',x===b));renderChip()});
 function renderFwd(){
   const m=model(),acc2=css('--accent2'),est=css('--est');
   const o=base(),c=mk('cFwd');o.yAxis.scale=false;
