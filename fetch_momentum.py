@@ -125,8 +125,8 @@ def twse_px(d):
 
 def tpex_px(d):
     roc = f"{d.year - 1911}/{d:%m/%d}"
-    urls = [f"https://www.tpex.org.tw/www/zh-tw/afterTrading/dailyQuotes?date={d:%Y}%2F{d:%m}%2F{d:%d}&id=&response=json",
-            f"https://www.tpex.org.tw/web/stock/aftertrading/daily_close_quotes/stk_quote_result.php?l=zh-tw&o=json&d={urllib.parse.quote(roc)}"]
+    urls = [f"https://www.tpex.org.tw/web/stock/aftertrading/daily_close_quotes/stk_quote_result.php?l=zh-tw&o=json&d={urllib.parse.quote(roc)}",
+            f"https://www.tpex.org.tw/www/zh-tw/afterTrading/dailyQuotes?date={d:%Y}%2F{d:%m}%2F{d:%d}&id=&response=json"]
     err = None
     for u in urls:
         try:
@@ -187,11 +187,13 @@ def tpex_inst(d):
             err = e
             continue
         for fields, rows in tables_of(js):
-            if fields:
+            if fields and col(fields, "投信") is not None:
                 ic = col(fields, "代號")
                 jf = col(fields, "外", "買賣超", prefer="不含")
                 jt = col(fields, "投信", "買賣超")
-            else:                                     # 舊版：外資(不含自營)買賣超=4、投信買賣超=13
+            else:                                     # 新版欄名只寫「買賣超股數」：外資(不含自營)=4、投信=13
+                if fields and len(fields) < 24:
+                    continue                                     # 舊版：外資(不含自營)買賣超=4、投信買賣超=13
                 ic, jf, jt = 0, 4, 13
             if None in (ic, jf, jt):
                 continue
@@ -334,6 +336,7 @@ def compute():
               if c in r["i"] or {"iL", "iO"} <= set(r.get("src", []))]
         fi = [x[0] for x in iv]
         ti = [x[1] for x in iv]
+        has_i = bool(iv)
         f5, t5 = sum(fi[-5:]), sum(ti[-5:])
         f20, t20 = sum(fi[-20:]), sum(ti[-20:])
 
@@ -351,7 +354,10 @@ def compute():
         k = lambda x: round(x / 1000)       # 股 → 張
         if all(x is None for x in (w, m, q, vr)) and not idays:
             continue
-        out[c] = [w, m, q, vr, k(f5), k(t5), k(f20), k(t20), streak(ti), streak(fi), fire]
+        if has_i:
+            out[c] = [w, m, q, vr, k(f5), k(t5), k(f20), k(t20), streak(ti), streak(fi), fire]
+        else:                                # 沒有法人資料 → 顯示「—」而不是 0
+            out[c] = [w, m, q, vr, None, None, None, None, None, None, 0]
     return out, pdays, idays
 
 
