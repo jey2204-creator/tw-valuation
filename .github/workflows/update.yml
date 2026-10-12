@@ -19,6 +19,10 @@ jobs:
         env:
           FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
         run: python fetch_summary.py
+      - name: 股價動能＋法人（動能模式用）
+        continue-on-error: true
+        timeout-minutes: 25
+        run: python fetch_momentum.py
       - name: 抓資料
         env:
           FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
