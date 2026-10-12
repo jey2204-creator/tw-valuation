@@ -45,7 +45,7 @@ def get(url, host):
     req = urllib.request.Request(url, headers=UA)
     for i in range(2):
         try:
-            with urllib.request.urlopen(req, timeout=20) as r:
+            with urllib.request.urlopen(req, timeout=45) as r:
                 last_hit[host] = time.time()
                 return json.loads(r.read().decode("utf-8-sig"))
         except Exception as e:
@@ -123,16 +123,38 @@ def twse_px(d):
     return None
 
 
+def resp_date(js):
+    """回應裡的資料日期 → date；找不到回 None。舊版 php 會忽略日期參數、永遠回傳最新一天，要靠這個擋掉。"""
+    if not isinstance(js, dict):
+        return None
+    cands = [js.get(k) for k in ("date", "reportDate", "Date")]
+    cands += [t.get("date") for t in (js.get("tables") or []) if isinstance(t, dict)]
+    for v in cands:
+        dg = "".join(ch for ch in str(v or "") if ch.isdigit())
+        try:
+            if len(dg) == 8:
+                return dt.date(int(dg[:4]), int(dg[4:6]), int(dg[6:]))
+            if len(dg) == 7:                                   # 民國 1150901
+                return dt.date(int(dg[:3]) + 1911, int(dg[3:5]), int(dg[5:]))
+        except ValueError:
+            pass
+    return None
+
+
 def tpex_px(d):
     roc = f"{d.year - 1911}/{d:%m/%d}"
-    urls = [f"https://www.tpex.org.tw/web/stock/aftertrading/daily_close_quotes/stk_quote_result.php?l=zh-tw&o=json&d={urllib.parse.quote(roc)}",
-            f"https://www.tpex.org.tw/www/zh-tw/afterTrading/dailyQuotes?date={d:%Y}%2F{d:%m}%2F{d:%d}&id=&response=json"]
+    urls = [f"https://www.tpex.org.tw/www/zh-tw/afterTrading/dailyQuotes?date={d:%Y}%2F{d:%m}%2F{d:%d}&id=&response=json",
+            f"https://www.tpex.org.tw/web/stock/aftertrading/daily_close_quotes/stk_quote_result.php?l=zh-tw&o=json&d={urllib.parse.quote(roc)}"]
     err = None
     for u in urls:
         try:
             js = get(u, "tpex")
         except Exception as e:
             err = e
+            continue
+        rd = resp_date(js)
+        diag.setdefault("pO_dates", []).append(f"{d:%m%d}->{rd:%m%d}" if rd else f"{d:%m%d}->?")
+        if rd != d:                                   # 日期對不上（或沒有日期）就不採用
             continue
         for fields, rows in tables_of(js):
             if fields:
@@ -186,6 +208,9 @@ def tpex_inst(d):
         except Exception as e:
             err = e
             continue
+        rd = resp_date(js)
+        if rd is not None and rd != d:
+            continue
         for fields, rows in tables_of(js):
             if fields and col(fields, "投信") is not None:
                 ic = col(fields, "代號")
@@ -238,11 +263,12 @@ def tw_today():
 
 def collect():
     today, hour = tw_today()
-    have_px = have_inst = 0
+    need = {"pL": NEED_PX, "pO": NEED_PX, "iL": NEED_INST, "iO": NEED_INST}
+    have = {k: 0 for k in need}
     errs = []
     d = today
     for _ in range(130):                      # 最多往回看 130 天
-        if have_px >= NEED_PX and have_inst >= NEED_INST:
+        if all(have[k] >= need[k] for k in need):
             break
         if d.weekday() >= 5:
             d -= dt.timedelta(days=1)
@@ -255,8 +281,7 @@ def collect():
             d -= dt.timedelta(days=1)
             continue
         src = set(rec.get("src", []))
-        want = [k for k in ("pL", "pO") if k not in src and have_px < NEED_PX]
-        want += [k for k in ("iL", "iO") if k not in src and have_inst < NEED_INST]
+        want = [k for k in ("pL", "pO", "iL", "iO") if k not in src and have[k] < need[k]]
         changed = False
         for k in want:
             if nreq >= MAX_REQ or time.time() - T0 > BUDGET or fails.get(k, 0) >= 3:
@@ -274,6 +299,9 @@ def collect():
                     rec = {"closed": 1}
                     changed = True
                     break
+                if k != "pL" and d < today:              # 交易日卻沒資料 = 這個來源有問題
+                    fails[k] = fails.get(k, 0) + 1
+                    errs.append(f"{d:%m/%d} {k}: 無資料或日期不符")
                 continue
             rec.setdefault(slot, {}).update(r)
             src.add(k)
@@ -282,10 +310,9 @@ def collect():
         if changed:
             save_day(d, rec)
         if not rec.get("closed"):
-            if "pL" in src:
-                have_px += 1
-            if "iL" in src:
-                have_inst += 1
+            for k in need:
+                if k in src:
+                    have[k] += 1
         if nreq >= MAX_REQ or time.time() - T0 > BUDGET:
             errs.append(f"達到單次上限（{nreq} 次請求／{int(time.time() - T0)} 秒），下次執行繼續回補")
             break
@@ -376,7 +403,7 @@ def main():
     res = dict(updated=dt.datetime.utcnow().strftime("%Y-%m-%dT%H:%MZ"),
                asof=pdays[-1][0] if pdays else None, instAsof=idays[-1][0] if idays else None,
                nPx=len(pdays), nInst=len(idays), firstPx=pdays[0][0] if pdays else None,
-               fields=FIELDS, req=nreq, secs=int(time.time() - T0), fails=fails, errors=errs[:30], diag=diag, d=d)
+               fields=FIELDS, req=nreq, secs=int(time.time() - T0), fails=fails, errors=errs[:30], diag={k: (v[:12] if isinstance(v, list) and k.endswith("_dates") else v) for k, v in diag.items()}, d=d)
     (OUT / "momentum.json").write_text(json.dumps(res, ensure_ascii=False, separators=(",", ":")), "utf-8")
     print(f"momentum.json: {len(d)} 檔，股價 {len(pdays)} 天、法人 {len(idays)} 天，請求 {nreq} 次，錯誤 {len(errs)}")
 
