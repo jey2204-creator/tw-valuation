@@ -161,11 +161,11 @@ details.ind .tbl{padding:0 10px 6px;margin-top:0}
 .erow.dragging{background:var(--card);box-shadow:0 8px 24px rgba(0,0,0,.25);border-radius:10px}
 .erow .cd{font-family:var(--f-num);font-size:11.5px;color:var(--muted);font-weight:400}
 .tag{font-size:10.5px;font-weight:500;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:0 6px;margin-left:4px;vertical-align:2px}
-.segm{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:var(--card)}
-.segm button{font:inherit;font-size:12.5px;font-weight:700;letter-spacing:0;border:0;background:none;color:var(--muted);padding:4px 11px;cursor:pointer}
+.segm{flex:none;display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:var(--card)}
+.segm button{white-space:nowrap;font:inherit;font-size:12.5px;font-weight:700;letter-spacing:0;border:0;background:none;color:var(--muted);padding:4px 11px;cursor:pointer}
 .segm button[aria-pressed=true]{background:var(--accent);color:#fff}
 .mrow{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:12px}
-.mrow .meta{font-size:11.5px;color:var(--muted);font-family:var(--f-num)}
+.mrow .meta{text-align:right;font-size:11.5px;color:var(--muted);font-family:var(--f-num)}
 .beta{font-size:12px;color:var(--warm);border:1px dashed var(--warm);border-radius:8px;padding:6px 10px;margin-top:10px;display:flex;justify-content:space-between;gap:8px}
 .beta a{color:var(--accent)}
 .fire{font-size:13px;margin-left:3px}
@@ -557,6 +557,10 @@ document.addEventListener('click',e=>{if(!e.target.closest('.search'))document.q
 let THEMES=[],BASE=[],S=null,MO=null,MODE=(()=>{try{return localStorage.getItem('tMode')==='"m"'?'m':'v'}catch(e){return 'v'}})();
 // ---- 動能（momentum.json）：[週%, 月%, 季%, 量比, 外資5日張, 投信5日張, 外資20日張, 投信20日張, 投信連買天數, 外資連買天數, 🔥] ----
 const MF={w:0,m:1,q:2,vr:3,f5:4,t5:5,f20:6,t20:7,tS:8,fS:9,fire:10};
+// ---- 集保（tdcc.json，每週）：[≥400張%, 週變化, 4週變化, ≥1000張%, 週變化, 股東人數, 人數週變化%] ----
+let TD=null;const TF={b4:0,b4w:1,b4m:2,b10:3,b10w:4,ppl:5,pplw:6};
+const tv=(id,k)=>TD&&TD.d[id]?TD.d[id][TF[k]]:null;
+const pp=(v,d=2)=>v==null?'':(v>0?'+':'')+v.toFixed(d);
 const mv=(id,k)=>MO&&MO.d[id]?MO.d[id][MF[k]]:null;
 const lots=v=>v==null?'—':(v>0?'+':v<0?'−':'')+(Math.abs(v)>=10000?(Math.abs(v)/10000).toFixed(1)+'萬':Math.abs(v).toLocaleString('zh-TW'));
 const ymd=s=>s?(+s.slice(4,6))+'/'+(+s.slice(6)):'';
@@ -596,14 +600,17 @@ function epsCell(id){
 }
 const SORTV={pe:id=>sv(id,'pe'),eps:epsY,peg:peg,px:id=>sv(id,'chg')};
 ['w','m','q','vr','t5','f5','tS'].forEach(k=>SORTV['m_'+k]=id=>mv(id,k));
-const VR_CYCLE=['m_vr:-1','m_t5:-1','m_f5:-1','m_tS:-1',''];
-const VR_LABEL={m_vr:'量比',m_t5:'投信5日',m_f5:'外資5日',m_tS:'投信連買'};
+SORTV.m_b4w=id=>tv(id,'b4w');SORTV.m_b4m=id=>tv(id,'b4m');
+const VR_CYCLE=['m_vr:-1','m_t5:-1','m_f5:-1','m_tS:-1','m_b4w:-1','m_b4m:-1',''];
+const VR_LABEL={m_vr:'量比',m_t5:'投信5日',m_f5:'外資5日',m_tS:'投信連買',m_b4w:'大戶週增',m_b4m:'大戶4週'};
 function mCells(id,role){
   const c=sv(id,'close'),ch=sv(id,'chg'),fire=mv(id,'fire'),t5=mv(id,'t5'),f5=mv(id,'f5'),tS=mv(id,'tS'),vr=mv(id,'vr');
   const p=k=>{const v=mv(id,k);return `<td class="${sign(v)}">${pct(v)}</td>`};
-  return `<td><span class="nm">${nameOf(id)}</span><span class="cd">${id}</span>${fire?'<span class="fire" title="主力訊號：月漲、量比≥1.5、法人5日買超">🔥</span>':''}${role?`<div class="role">${role}</div>`:''}<span class="sub">${fmt(c,c!=null&&c<100?2:c!=null&&c<1000?1:0)} <span class="${sign(ch)}">${pct(ch,2)}</span></span></td>`
+  const b4=tv(id,'b4'),b4w=tv(id,'b4w'),b4m=tv(id,'b4m'),up=fire&&b4w!=null&&b4w>0;
+  const bd=b4==null?'':`<span class="sub" title="持股 400 張以上大戶占比 ${fmt(b4,1)}%（集保，每週）${b4m!=null?'；4 週變化 '+pp(b4m,2):''}">大 ${fmt(b4,0)}%${b4w!=null?` <span class="${sign(b4w)}">${pp(b4w,1)}</span>`:''}</span>`;
+  return `<td><span class="nm">${nameOf(id)}</span><span class="cd">${id}</span>${fire?'<span class="fire" title="主力訊號：月漲、量比≥1.5、法人5日買超">🔥</span>':''}${up?'<span class="flag" style="color:var(--up);border-color:var(--up)" title="🔥 且大戶持股比本週增加">大戶↑</span>':''}${role?`<div class="role">${role}</div>`:''}<span class="sub">${fmt(c,c!=null&&c<100?2:c!=null&&c<1000?1:0)} <span class="${sign(ch)}">${pct(ch,2)}</span></span></td>`
     +p('w')+p('m')+p('q')
-    +`<td><span class="${vr!=null&&vr>=1.5?'up':''}">${vr==null?'—':fmt(vr,2)}</span><span class="sub">投 <span class="${sign(t5)}">${lots(t5)}</span></span><span class="sub">外 <span class="${sign(f5)}">${lots(f5)}</span></span>${tS>=3?`<span class="sub up">投連${tS}天</span>`:''}</td>`;
+    +`<td><span class="${vr!=null&&vr>=1.5?'up':''}">${vr==null?'—':fmt(vr,2)}</span><span class="sub">投 <span class="${sign(t5)}">${lots(t5)}</span></span><span class="sub">外 <span class="${sign(f5)}">${lots(f5)}</span></span>${bd}${tS>=3?`<span class="sub up">投連${tS}天</span>`:''}</td>`;
 }
 const PE_CYCLE=['pe:-1','pe:1','eps:-1','peg:1',''];
 const PE_LABEL={pe:'本益比',eps:'EPS年增',peg:'PEG'};
@@ -655,11 +662,11 @@ function showTheme(tid){
   $('tSum').innerHTML=S?`${ids.length} 檔中位數：營收年增 <strong class="${sign(y)}">${pct(y)}</strong>・EPS 年增 <strong class="${sign(ey)}">${pct(ey)}</strong>・本益比 <strong>${fmt(pe,1)}</strong>・PEG <strong>${fmt(pg,2)}</strong>・淨值比 <strong>${fmt(pb,2)}</strong>`:'全市場數字尚未產生（等 Actions 第一次執行）';
   $('tUS').innerHTML=t.us&&t.us.length?'對應美股 '+t.us.map(u=>`<a href="us/#${u}">${u}</a>`).join(''):'';
   paintSeg();
-  $('tAsof').textContent=MODE==='m'&&MO?`股價 ${ymd(MO.asof)}・法人 ${ymd(MO.instAsof)}`:'';
+  $('tAsof').textContent=MODE==='m'&&MO?`${ymd(MO.asof)}${MO.instAsof!==MO.asof?'・法人 '+ymd(MO.instAsof):''}${TD?'・集保 '+ymd(TD.asof):''}`:'';
   if(MODE==='m'){const mw=median(ids.map(i=>mv(i,'w'))),mm=median(ids.map(i=>mv(i,'m'))),mq=median(ids.map(i=>mv(i,'q'))),vr=median(ids.map(i=>mv(i,'vr'))),nf=ids.filter(i=>mv(i,'fire')).length;
-    $('tSum').innerHTML=MO?`${ids.length} 檔中位數：週 <strong class="${sign(mw)}">${pct(mw)}</strong>・月 <strong class="${sign(mm)}">${pct(mm)}</strong>・季 <strong class="${sign(mq)}">${pct(mq)}</strong>・量比 <strong>${fmt(vr,2)}</strong>・🔥 <strong>${nf}</strong> 檔`:'動能資料尚未產生（第一次需回補約 3 個月歷史資料）'}
+    $('tSum').innerHTML=MO?`${ids.length} 檔中位數：週 <strong class="${sign(mw)}">${pct(mw)}</strong>・月 <strong class="${sign(mm)}">${pct(mm)}</strong>・季 <strong class="${sign(mq)}">${pct(mq)}</strong>・量比 <strong>${fmt(vr,2)}</strong>${(()=>{const bw=median(ids.map(i=>tv(i,'b4w')));return bw==null?'':`・大戶週變化 <strong class="${sign(bw)}">${pp(bw,2)}</strong>`})()}・🔥 <strong>${nf}</strong> 檔`:'動能資料尚未產生（第一次需回補約 3 個月歷史資料）'}
   $('tTbl').dataset.sort='';table($('tTbl'),t.stocks);
-  if(MODE==='m'){$('tFoot').innerHTML=`週／月／季＝收盤對比 5／20／60 個交易日前（未還原除權息，跨除息日會略低）。量比＝5 日均量 ÷ 20 日均量，≥1.5 標紅＝放量。投／外＝投信、外資近 5 日買賣超張數；「投連N天」＝投信連續買超 3 天以上。🔥＝月漲＋量比≥1.5＋法人 5 日買超≥成交量 1%。<br>點欄位標題排序；「量比」連點可切換投信 5 日、外資 5 日、投信連買排序。`+(MO&&MO.nPx<61?`<br>⚠️ 歷史資料目前 ${MO.nPx} 個交易日，季%需要 61 天，回補完成前顯示「—」。`:'');return}
+  if(MODE==='m'){$('tFoot').innerHTML=`週／月／季＝收盤對比 5／20／60 個交易日前（未還原除權息，跨除息日會略低）。量比＝5 日均量 ÷ 20 日均量，≥1.5 標紅＝放量。投／外＝投信、外資近 5 日買賣超張數；「投連N天」＝投信連續買超 3 天以上。🔥＝月漲＋量比≥1.5＋法人 5 日買超≥成交量 1%。<br>大＝集保持股 400 張以上大戶的持股占比（每週六更新上週五資料），後面是週變化（百分點）；<span class="flag" style="color:var(--up);border-color:var(--up)">大戶↑</span>＝🔥 且大戶比本週上升（籌碼往大戶集中，訊號較可信）。<br>點欄位標題排序；「量比」連點可切換投信 5 日、外資 5 日、投信連買、大戶週增、大戶 4 週排序。`+(TD&&TD.weeks.length<2?'<br>⚠️ 集保資料目前只有 1 週，週變化要等下週六更新後才有。':'')+(MO&&MO.nPx<61?`<br>⚠️ 歷史資料目前 ${MO.nPx} 個交易日，季%需要 61 天，回補完成前顯示「—」。`:'');return}
   $('tFoot').innerHTML=`EPS 年增＝最新一季${QN?'（'+QN+'）':''}單季 EPS 對比去年同季，橘色季別＝跟其他檔不同季；<span class="flag">業外</span>＝本季 EPS 可能含一次性收益。<span>低基期</span>＝去年同季 EPS 太小、年增超過 300%，不算 PEG。PEG＝本益比 ÷ EPS 年增，<span class="cheap">&lt;1 偏便宜</span>、<span class="pricey">&gt;2 偏貴</span>；記憶體等循環股的 PEG 參考性低。<br>點欄位標題排序；「本益比」連點可切換成 EPS 年增、PEG 排序。點一列看個股圖表。`+(S?` 資料更新 ${S.updated.slice(0,10)}`:'');
 }
 function stockExtras(id){
@@ -782,6 +789,7 @@ addEventListener('hashchange',route);
   applyCfg();
   try{const r=await fetch('data/summary.json?t='+Date.now());if(r.ok)S=await r.json()}catch(e){}
   try{const r=await fetch('data/momentum.json?t='+Date.now());if(r.ok)MO=await r.json()}catch(e){}
+  try{const r=await fetch('data/tdcc.json?t='+Date.now());if(r.ok)TD=await r.json()}catch(e){}
   route();
 })();
 ['iMon','iNm','iQg','iYg'].forEach(id=>$(id).addEventListener('input',()=>D&&renderFwd()));
