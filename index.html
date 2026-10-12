@@ -558,7 +558,11 @@ let THEMES=[],BASE=[],S=null,MO=null,MODE=(()=>{try{return localStorage.getItem(
 // ---- 動能（momentum.json）：[週%, 月%, 季%, 量比, 外資5日張, 投信5日張, 外資20日張, 投信20日張, 投信連買天數, 外資連買天數, 🔥] ----
 const MF={w:0,m:1,q:2,vr:3,f5:4,t5:5,f20:6,t20:7,tS:8,fS:9,fire:10};
 // ---- 集保（tdcc.json，每週）：[≥400張%, 週變化, 4週變化, ≥1000張%, 週變化, 股東人數, 人數週變化%] ----
-let TD=null;const TF={b4:0,b4w:1,b4m:2,b10:3,b10w:4,ppl:5,pplw:6};
+let TD=null;const TF={b4:0,b4w:1,b4m:2,b10:3,b10w:4,ppl:5,pplw:6,pplm:7};
+// 籌碼標籤（4 週）：集中＝大戶↑人數↓；散戶追＝大戶↑人數↑>3%；分散＝大戶↓人數↑；變化太小（大戶±0.3、人數±1%）不標
+function chip(id){const b=tv(id,'b4m'),p=tv(id,'pplm');if(b==null||p==null)return null;
+  if(b>0.3&&p<-1)return 'c';if(b>0.3&&p>3)return 'r';if(b<-0.3&&p>1)return 'd';return null}
+const CHIP={c:['集中','var(--up)','大戶 4 週增加、股東人數減少：散戶賣、大戶接'],r:['散戶追','var(--warm)','大戶與股東人數 4 週都增加（人數 >3%）：熱度高，留意追高'],d:['分散','var(--down)','大戶 4 週減少、股東人數增加：大戶賣、散戶接']};
 const tv=(id,k)=>TD&&TD.d[id]?TD.d[id][TF[k]]:null;
 const pp=(v,d=2)=>v==null?'':(v>0?'+':'')+v.toFixed(d);
 const mv=(id,k)=>MO&&MO.d[id]?MO.d[id][MF[k]]:null;
@@ -600,15 +604,16 @@ function epsCell(id){
 }
 const SORTV={pe:id=>sv(id,'pe'),eps:epsY,peg:peg,px:id=>sv(id,'chg')};
 ['w','m','q','vr','t5','f5','tS'].forEach(k=>SORTV['m_'+k]=id=>mv(id,k));
-SORTV.m_b4w=id=>tv(id,'b4w');SORTV.m_b4m=id=>tv(id,'b4m');
-const VR_CYCLE=['m_vr:-1','m_t5:-1','m_f5:-1','m_tS:-1','m_b4w:-1','m_b4m:-1',''];
-const VR_LABEL={m_vr:'量比',m_t5:'投信5日',m_f5:'外資5日',m_tS:'投信連買',m_b4w:'大戶週增',m_b4m:'大戶4週'};
+SORTV.m_b4w=id=>tv(id,'b4w');SORTV.m_b4m=id=>tv(id,'b4m');SORTV.m_pplm=id=>{const v=tv(id,'pplm');return v==null?null:-v};
+const VR_CYCLE=['m_vr:-1','m_t5:-1','m_f5:-1','m_tS:-1','m_b4w:-1','m_b4m:-1','m_pplm:-1',''];
+const VR_LABEL={m_vr:'量比',m_t5:'投信5日',m_f5:'外資5日',m_tS:'投信連買',m_b4w:'大戶週增',m_b4m:'大戶4週',m_pplm:'人數4週減'};
 function mCells(id,role){
   const c=sv(id,'close'),ch=sv(id,'chg'),fire=mv(id,'fire'),t5=mv(id,'t5'),f5=mv(id,'f5'),tS=mv(id,'tS'),vr=mv(id,'vr');
   const p=k=>{const v=mv(id,k);return `<td class="${sign(v)}">${pct(v)}</td>`};
-  const b4=tv(id,'b4'),b4w=tv(id,'b4w'),b4m=tv(id,'b4m'),up=fire&&b4w!=null&&b4w>0;
-  const bd=b4==null?'':`<span class="sub" title="持股 400 張以上大戶占比 ${fmt(b4,1)}%（集保，每週）${b4m!=null?'；4 週變化 '+pp(b4m,2):''}">大 ${fmt(b4,0)}%${b4w!=null?` <span class="${sign(b4w)}">${pp(b4w,1)}</span>`:''}</span>`;
-  return `<td><span class="nm">${nameOf(id)}</span><span class="cd">${id}</span>${fire?'<span class="fire" title="主力訊號：月漲、量比≥1.5、法人5日買超">🔥</span>':''}${up?'<span class="flag" style="color:var(--up);border-color:var(--up)" title="🔥 且大戶持股比本週增加">大戶↑</span>':''}${role?`<div class="role">${role}</div>`:''}<span class="sub">${fmt(c,c!=null&&c<100?2:c!=null&&c<1000?1:0)} <span class="${sign(ch)}">${pct(ch,2)}</span></span></td>`
+  const b4=tv(id,'b4'),b4w=tv(id,'b4w'),b4m=tv(id,'b4m'),pm=tv(id,'pplm'),ck=chip(id),up=fire&&ck==='c';
+  const bd=b4==null?'':`<span class="sub" title="持股 400 張以上大戶占比 ${fmt(b4,1)}%（集保，每週）${b4m!=null?'；4 週變化 '+pp(b4m,2):''}${pm!=null?'；股東人數 4 週 '+pp(pm,1)+'%':''}">大 ${fmt(b4,0)}%${b4w!=null?` <span class="${sign(b4w)}">${pp(b4w,1)}</span>`:''}</span>`
+    +(ck?`<span class="sub"><span class="flag" style="color:${CHIP[ck][1]};border-color:${CHIP[ck][1]}" title="${CHIP[ck][2]}">${CHIP[ck][0]}</span> <span style="font-size:10.5px">人${pp(pm,0)}%</span></span>`:'');
+  return `<td><span class="nm">${nameOf(id)}</span><span class="cd">${id}</span>${fire?'<span class="fire" title="主力訊號：月漲、量比≥1.5、法人5日買超">🔥</span>':''}${up?'<span class="flag" style="color:var(--up);border-color:var(--up)" title="🔥 且籌碼集中（大戶 4 週增加、股東人數減少）">集中↑</span>':''}${role?`<div class="role">${role}</div>`:''}<span class="sub">${fmt(c,c!=null&&c<100?2:c!=null&&c<1000?1:0)} <span class="${sign(ch)}">${pct(ch,2)}</span></span></td>`
     +p('w')+p('m')+p('q')
     +`<td><span class="${vr!=null&&vr>=1.5?'up':''}">${vr==null?'—':fmt(vr,2)}</span><span class="sub">投 <span class="${sign(t5)}">${lots(t5)}</span></span><span class="sub">外 <span class="${sign(f5)}">${lots(f5)}</span></span>${bd}${tS>=3?`<span class="sub up">投連${tS}天</span>`:''}</td>`;
 }
@@ -666,7 +671,7 @@ function showTheme(tid){
   if(MODE==='m'){const mw=median(ids.map(i=>mv(i,'w'))),mm=median(ids.map(i=>mv(i,'m'))),mq=median(ids.map(i=>mv(i,'q'))),vr=median(ids.map(i=>mv(i,'vr'))),nf=ids.filter(i=>mv(i,'fire')).length;
     $('tSum').innerHTML=MO?`${ids.length} 檔中位數：週 <strong class="${sign(mw)}">${pct(mw)}</strong>・月 <strong class="${sign(mm)}">${pct(mm)}</strong>・季 <strong class="${sign(mq)}">${pct(mq)}</strong>・量比 <strong>${fmt(vr,2)}</strong>${(()=>{const bw=median(ids.map(i=>tv(i,'b4w')));return bw==null?'':`・大戶週變化 <strong class="${sign(bw)}">${pp(bw,2)}</strong>`})()}・🔥 <strong>${nf}</strong> 檔`:'動能資料尚未產生（第一次需回補約 3 個月歷史資料）'}
   $('tTbl').dataset.sort='';table($('tTbl'),t.stocks);
-  if(MODE==='m'){$('tFoot').innerHTML=`週／月／季＝收盤對比 5／20／60 個交易日前（未還原除權息，跨除息日會略低）。量比＝5 日均量 ÷ 20 日均量，≥1.5 標紅＝放量。投／外＝投信、外資近 5 日買賣超張數；「投連N天」＝投信連續買超 3 天以上。🔥＝月漲＋量比≥1.5＋法人 5 日買超≥成交量 1%。<br>大＝集保持股 400 張以上大戶的持股占比（每週六更新上週五資料），後面是週變化（百分點）；<span class="flag" style="color:var(--up);border-color:var(--up)">大戶↑</span>＝🔥 且大戶比本週上升（籌碼往大戶集中，訊號較可信）。<br>點欄位標題排序；「量比」連點可切換投信 5 日、外資 5 日、投信連買、大戶週增、大戶 4 週排序。`+(TD&&TD.weeks.length<2?'<br>⚠️ 集保資料目前只有 1 週，週變化要等下週六更新後才有。':'')+(MO&&MO.nPx<61?`<br>⚠️ 歷史資料目前 ${MO.nPx} 個交易日，季%需要 61 天，回補完成前顯示「—」。`:'');return}
+  if(MODE==='m'){$('tFoot').innerHTML=`週／月／季＝收盤對比 5／20／60 個交易日前（未還原除權息，跨除息日會略低）。量比＝5 日均量 ÷ 20 日均量，≥1.5 標紅＝放量。投／外＝投信、外資近 5 日買賣超張數；「投連N天」＝投信連續買超 3 天以上。🔥＝月漲＋量比≥1.5＋法人 5 日買超≥成交量 1%。<br>大＝集保持股 400 張以上大戶的持股占比（每週六更新上週五資料），後面是週變化（百分點）；籌碼標籤看 4 週：<span class="flag" style="color:var(--up);border-color:var(--up)">集中</span>＝大戶↑、股東人數↓（散戶賣大戶接）；<span class="flag" style="color:var(--warm);border-color:var(--warm)">散戶追</span>＝大戶↑但人數也增加超過 3%（熱度高、留意追高）；<span class="flag" style="color:var(--down);border-color:var(--down)">分散</span>＝大戶↓、人數↑；變化很小不標。🔥 旁的 <span class="flag" style="color:var(--up);border-color:var(--up)">集中↑</span>＝🔥 且籌碼集中。增資、可轉債轉換會讓大戶比失真，大幅變化請查公告。<br>點欄位標題排序；「量比」連點可切換投信 5 日、外資 5 日、投信連買、大戶週增、大戶 4 週、股東人數 4 週減少排序。`+(TD&&TD.weeks.length<2?'<br>⚠️ 集保資料目前只有 1 週，週變化要等下週六更新後才有。':'')+(MO&&MO.nPx<61?`<br>⚠️ 歷史資料目前 ${MO.nPx} 個交易日，季%需要 61 天，回補完成前顯示「—」。`:'');return}
   $('tFoot').innerHTML=`EPS 年增＝最新一季${QN?'（'+QN+'）':''}單季 EPS 對比去年同季，橘色季別＝跟其他檔不同季；<span class="flag">業外</span>＝本季 EPS 可能含一次性收益。<span>低基期</span>＝去年同季 EPS 太小、年增超過 300%，不算 PEG。PEG＝本益比 ÷ EPS 年增，<span class="cheap">&lt;1 偏便宜</span>、<span class="pricey">&gt;2 偏貴</span>；記憶體等循環股的 PEG 參考性低。<br>點欄位標題排序；「本益比」連點可切換成 EPS 年增、PEG 排序。點一列看個股圖表。`+(S?` 資料更新 ${S.updated.slice(0,10)}`:'');
 }
 function stockExtras(id){

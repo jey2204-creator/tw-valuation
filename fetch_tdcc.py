@@ -6,7 +6,7 @@
      → 只對 themes.json 成份股回補過去幾週，讓「週變化」第一天就有數字；失敗不影響 1
 
 每週一個檔 data/tdcc/YYYYMMDD.json = {代號: [≥400張%, ≥1000張%, 股東人數]}（全市場週檔另含 "_all":1）
-輸出 d[代號] = [≥400張%, 週變化, 4週變化, ≥1000張%, 週變化, 股東人數, 人數週變化%]
+輸出 d[代號] = [≥400張%, 週變化, 4週變化, ≥1000張%, 週變化, 股東人數, 人數週變化%, 人數4週變化%]
   持股分級 12～15 = 400 張以上；15 = 1000 張以上；17 = 合計
 任何一步失敗都不會讓程式以錯誤結束（除非完全沒有資料）。
 用法：python fetch_tdcc.py
@@ -232,7 +232,8 @@ def compute():
         b4, b10, ppl = v
         out[c] = [b4, round(b4 - p1[0], 2) if p1 else None, round(b4 - p4[0], 2) if p4 else None,
                   b10, round(b10 - p1[1], 2) if p1 else None, ppl,
-                  round((ppl / p1[2] - 1) * 100, 1) if p1 and p1[2] else None]
+                  round((ppl / p1[2] - 1) * 100, 1) if p1 and p1[2] else None,
+                  round((ppl / p4[2] - 1) * 100, 1) if p4 and p4[2] else None]
     return out, [d for d, _ in weeks]
 
 
@@ -256,7 +257,7 @@ def main():
         print("沒有集保資料，不輸出", errs, diag, file=sys.stderr)
         sys.exit(0)
     res = dict(updated=dt.datetime.utcnow().strftime("%Y-%m-%dT%H:%MZ"), asof=weeks[-1], weeks=weeks[-8:],
-               fields=["b400", "b400w", "b400m", "b1000", "b1000w", "ppl", "pplw"],
+               fields=["b400", "b400w", "b400m", "b1000", "b1000w", "ppl", "pplw", "pplm"],
                errors=errs[:20], diag=diag, secs=int(time.time() - T0), d=d)
     (OUT / "tdcc.json").write_text(json.dumps(res, ensure_ascii=False, separators=(",", ":")), "utf-8")
     print(f"tdcc.json: {len(d)} 檔，最新 {weeks[-1]}，共 {len(weeks)} 週，錯誤 {len(errs)}")

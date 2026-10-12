@@ -349,6 +349,8 @@ def compute():
         if len(cl) <= n or cl[-1] is None:
             return None
         base = next((x for x in reversed(cl[:len(cl) - n]) if x), None)
+        if base is None:                     # 基準日沒成交（暫停交易等）→ 往後找 3 個交易日內最近的一筆
+            base = next((x for x in cl[len(cl) - n:len(cl) - n + 3] if x), None)
         return round((cl[-1] / base - 1) * 100, 1) if base else None
 
     for c in ids:
