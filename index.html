@@ -161,6 +161,15 @@ details.ind .tbl{padding:0 10px 6px;margin-top:0}
 .erow.dragging{background:var(--card);box-shadow:0 8px 24px rgba(0,0,0,.25);border-radius:10px}
 .erow .cd{font-family:var(--f-num);font-size:11.5px;color:var(--muted);font-weight:400}
 .tag{font-size:10.5px;font-weight:500;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:0 6px;margin-left:4px;vertical-align:2px}
+.segm{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:var(--card)}
+.segm button{font:inherit;font-size:12.5px;font-weight:700;letter-spacing:0;border:0;background:none;color:var(--muted);padding:4px 11px;cursor:pointer}
+.segm button[aria-pressed=true]{background:var(--accent);color:#fff}
+.mrow{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:12px}
+.mrow .meta{font-size:11.5px;color:var(--muted);font-family:var(--f-num)}
+.beta{font-size:12px;color:var(--warm);border:1px dashed var(--warm);border-radius:8px;padding:6px 10px;margin-top:10px;display:flex;justify-content:space-between;gap:8px}
+.beta a{color:var(--accent)}
+.fire{font-size:13px;margin-left:3px}
+details.ind.hot summary b{color:var(--up)}
 .tip{font-size:13px;color:var(--muted);background:var(--card);border:1px dashed var(--line);border-radius:10px;padding:10px 12px;margin:0}
 </style>
 
@@ -174,10 +183,11 @@ details.ind .tbl{padding:0 10px 6px;margin-top:0}
     <input id="q2" type="search" inputmode="search" autocomplete="off" placeholder="輸入代號或名稱，例如 2454、聯發科" aria-label="搜尋股票">
     <div class="results" id="res2" hidden></div>
   </div>
-  <h2 class="sec">⭐ 自選</h2>
+  <h2 class="sec"><span>⭐ 自選</span><span class="segm" data-seg></span></h2>
   <div id="favBox"></div>
   <h2 class="sec"><span>產業主題 <small><span id="sumAsof"></span>・中位數</small></span><a class="act" href="#e">✏️ 編輯</a></h2>
   <div class="tgrid" id="tgrid"></div>
+  <details class="ind hot" id="hotBox" style="margin-top:14px"><summary><b>🔥 主力訊號</b><span id="hotN">主題＋自選</span></summary><div style="padding:0 10px 8px"><div class="tbl"><table class="lst" id="hotTbl"></table></div><p class="foot" id="hotFoot"></p></div></details>
   <details class="ind" id="indAll" style="margin-top:22px"><summary><b>🏭 官方產業別</b><span>點開瀏覽全部上市櫃</span></summary><div id="indBox" style="padding:0 8px 8px"></div></details>
   <p class="note">點「✏️ 編輯」可新增主題、增減成份股、調整順序（存在這支手機上）。數字為證交所／櫃買每日資料，本益比空白＝虧損或不適用。</p>
 </section>
@@ -186,7 +196,8 @@ details.ind .tbl{padding:0 10px 6px;margin-top:0}
   <h1 id="tName" style="margin-top:6px"></h1>
   <p class="take" id="tSum"></p>
   <div class="uslink" id="tUS"></div>
-  <div class="panel" style="margin-top:12px"><div class="tbl"><table class="lst" id="tTbl"></table></div></div>
+  <div class="mrow"><span class="segm" data-seg></span><span class="meta" id="tAsof"></span></div>
+  <div class="panel" style="margin-top:8px"><div class="tbl"><table class="lst" id="tTbl"></table></div></div>
   <p class="foot" id="tFoot" style="margin-top:8px"></p>
 </section>
 <section id="tlist" hidden>
@@ -543,7 +554,16 @@ bindSearch('q','res');bindSearch('q2','res2');
 document.addEventListener('click',e=>{if(!e.target.closest('.search'))document.querySelectorAll('.results').forEach(b=>b.hidden=true)});
 
 // ---------- 主題／產業／自選 ----------
-let THEMES=[],BASE=[],S=null;
+let THEMES=[],BASE=[],S=null,MO=null,MODE=(()=>{try{return localStorage.getItem('tMode')==='"m"'?'m':'v'}catch(e){return 'v'}})();
+// ---- 動能（momentum.json）：[週%, 月%, 季%, 量比, 外資5日張, 投信5日張, 外資20日張, 投信20日張, 投信連買天數, 外資連買天數, 🔥] ----
+const MF={w:0,m:1,q:2,vr:3,f5:4,t5:5,f20:6,t20:7,tS:8,fS:9,fire:10};
+const mv=(id,k)=>MO&&MO.d[id]?MO.d[id][MF[k]]:null;
+const lots=v=>v==null?'—':(v>0?'+':v<0?'−':'')+(Math.abs(v)>=10000?(Math.abs(v)/10000).toFixed(1)+'萬':Math.abs(v).toLocaleString('zh-TW'));
+const ymd=s=>s?(+s.slice(4,6))+'/'+(+s.slice(6)):'';
+function segHTML(){return `<button type="button" data-m="v" aria-pressed="${MODE==='v'}">📈 估值</button><button type="button" data-m="m" aria-pressed="${MODE==='m'}">🚀 動能</button>`}
+function paintSeg(){document.querySelectorAll('[data-seg]').forEach(e=>e.innerHTML=segHTML())}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-seg] button');if(!b)return;MODE=b.dataset.m;store.set('tMode',MODE);
+  const v=document.body.dataset.view;if(v==='theme')showTheme(decodeURIComponent(location.hash.slice(3)));else if(v==='home')renderHome()});
 const SF={close:0,chg:1,pe:2,pb:3,yld:4,yoy:5,rev:6,ym:7};
 const sv=(id,k)=>S&&S.d[id]?S.d[id][SF[k]]:null;
 const nameOf=id=>{const it=LIST.find(s=>s[0]===id);return it?it[1].replace(/\*$/,''):id};
@@ -575,14 +595,26 @@ function epsCell(id){
   return `<span class="sub ${cl}">${t}</span>`+(l2?`<span class="sub">${l2}</span>`:'');
 }
 const SORTV={pe:id=>sv(id,'pe'),eps:epsY,peg:peg,px:id=>sv(id,'chg')};
+['w','m','q','vr','t5','f5','tS'].forEach(k=>SORTV['m_'+k]=id=>mv(id,k));
+const VR_CYCLE=['m_vr:-1','m_t5:-1','m_f5:-1','m_tS:-1',''];
+const VR_LABEL={m_vr:'量比',m_t5:'投信5日',m_f5:'外資5日',m_tS:'投信連買'};
+function mCells(id,role){
+  const c=sv(id,'close'),ch=sv(id,'chg'),fire=mv(id,'fire'),t5=mv(id,'t5'),f5=mv(id,'f5'),tS=mv(id,'tS'),vr=mv(id,'vr');
+  const p=k=>{const v=mv(id,k);return `<td class="${sign(v)}">${pct(v)}</td>`};
+  return `<td><span class="nm">${nameOf(id)}</span><span class="cd">${id}</span>${fire?'<span class="fire" title="主力訊號：月漲、量比≥1.5、法人5日買超">🔥</span>':''}${role?`<div class="role">${role}</div>`:''}<span class="sub">${fmt(c,c!=null&&c<100?2:c!=null&&c<1000?1:0)} <span class="${sign(ch)}">${pct(ch,2)}</span></span></td>`
+    +p('w')+p('m')+p('q')
+    +`<td><span class="${vr!=null&&vr>=1.5?'up':''}">${vr==null?'—':fmt(vr,2)}</span><span class="sub">投 <span class="${sign(t5)}">${lots(t5)}</span></span><span class="sub">外 <span class="${sign(f5)}">${lots(f5)}</span></span>${tS>=3?`<span class="sub up">投連${tS}天</span>`:''}</td>`;
+}
 const PE_CYCLE=['pe:-1','pe:1','eps:-1','peg:1',''];
 const PE_LABEL={pe:'本益比',eps:'EPS年增',peg:'PEG'};
-function table(el,items,sortKey){
+function table(el,items,sortKey,mode){
+  const md=mode||MODE;
   // items: [[代號, 角色]]；sortKey: el.dataset.sort（例 'yoy:-1'）
   const [k,dir]=(el.dataset.sort||sortKey||'').split(':');let rows=items.slice();
   if(k){const f=SORTV[k]||(id=>sv(id,k));rows.sort((a,b)=>{const x=f(a[0]),y=f(b[0]);if(x==null)return 1;if(y==null)return -1;return (x-y)*(+dir||-1)})}
-  const th=(key,lb)=>{const on=key==='pe'?['pe','eps','peg'].includes(k):k===key;return `<th data-k="${key}" class="${on?'on':''}">${key==='pe'&&on?PE_LABEL[k]:lb}${on?(+dir>0?' ▲':' ▼'):''}</th>`};
-  el.innerHTML=`<thead><tr><th>股票</th>${th('px','收盤')}${COLS.map(c=>th(...c)).join('')}</tr></thead><tbody>`+rows.map(([id,role])=>{
+  const th=(key,lb)=>{const on=key==='pe'?['pe','eps','peg'].includes(k):key==='m_vr'?k in VR_LABEL:k===key;return `<th data-k="${key}" class="${on?'on':''}">${key==='pe'&&on?PE_LABEL[k]:key==='m_vr'&&on?VR_LABEL[k]:lb}${on?(+dir>0?' ▲':' ▼'):''}</th>`};
+  if(md==='m')el.innerHTML=`<thead><tr><th>股票</th>${th('m_w','週')}${th('m_m','月')}${th('m_q','季')}${th('m_vr','量比')}</tr></thead><tbody>`+rows.map(([id,role])=>`<tr data-id="${id}">${mCells(id,role)}</tr>`).join('')+'</tbody>';
+  else el.innerHTML=`<thead><tr><th>股票</th>${th('px','收盤')}${COLS.map(c=>th(...c)).join('')}</tr></thead><tbody>`+rows.map(([id,role])=>{
     const c=sv(id,'close'),ch=sv(id,'chg'),y=sv(id,'yoy'),ym=sv(id,'ym');
     return `<tr data-id="${id}"><td><span class="nm">${nameOf(id)}</span><span class="cd">${id}</span>${role?`<div class="role">${role}</div>`:''}</td>
       <td>${fmt(c,c!=null&&c<100?2:c!=null&&c<1000?1:0)}<span class="sub ${sign(ch)}">${pct(ch,2)}</span></td>
@@ -590,7 +622,8 @@ function table(el,items,sortKey){
       <td class="${sign(y)}">${pct(y)}<span class="sub" ${ym&&S.revYM&&ym<S.revYM?'style="color:var(--warm)" title="尚未公布最新月份"':''}>${ym?(+ym.slice(5))+'月':''}</span></td></tr>`}).join('')+'</tbody>';
   el.onclick=e=>{const h=e.target.closest('th[data-k]');if(h){const nk=h.dataset.k,cs=el.dataset.sort||'',cur=cs.split(':');
     if(nk==='pe'){const i=PE_CYCLE.indexOf(cs);el.dataset.sort=PE_CYCLE[i<0?0:(i+1)%PE_CYCLE.length]}
-    else el.dataset.sort=cur[0]===nk?(cur[1]==='-1'?nk+':1':''):nk+':-1';table(el,items);return}
+    else if(nk==='m_vr'){const i=VR_CYCLE.indexOf(cs);el.dataset.sort=VR_CYCLE[i<0?0:(i+1)%VR_CYCLE.length]}
+    else el.dataset.sort=cur[0]===nk?(cur[1]==='-1'?nk+':1':''):nk+':-1';table(el,items,undefined,mode);return}
     const r=e.target.closest('tr[data-id]');if(r)location.hash=r.dataset.id};
 }
 function renderHome(){
@@ -598,8 +631,13 @@ function renderHome(){
   const fav=store.get('fav')||[];
   $('favBox').innerHTML=fav.length?'<div class="panel"><div class="tbl"><table class="lst" id="favTbl"></table></div></div>':'<p class="tip">在個股頁點「☆ 加入自選」，就會出現在這裡。</p>';
   if(fav.length)table($('favTbl'),fav.map(id=>[id,'']));
-  $('tgrid').innerHTML=THEMES.map(t=>{const ids=t.stocks.map(x=>x[0]),y=median(ids.map(i=>sv(i,'yoy'))),pe=median(ids.map(i=>sv(i,'pe'))),ey=median(ids.map(epsY)),pg=median(ids.map(peg));
-    return `<a class="tcard" href="#t/${t.id}"><b>${t.name}</b><span class="k"><span>營收年增</span><span class="num ${sign(y)}">${y==null?'—':pct(y,0)}</span></span><span class="k"><span>EPS 年增</span><span class="num ${sign(ey)}">${ey==null?'—':pct(ey,0)}</span></span><span class="k"><span>本益比</span><span class="num">${pe==null?'—':fmt(pe,1)}</span></span><span class="k"><span>PEG</span><span class="num ${pg==null?'':pg<1?'cheap':pg>2?'pricey':''}">${pg==null?'—':fmt(pg,2)}</span></span></a>`}).join('');
+  paintSeg();
+  {const pool=[...new Set([...THEMES.flatMap(t=>t.stocks.map(x=>x[0])),...fav])],hot=pool.filter(id=>mv(id,'fire'));
+   $('hotN').textContent=MO?`主題＋自選 ${pool.length} 檔中 ${hot.length} 檔`:'資料準備中';
+   const ht=$('hotTbl');ht.dataset.sort=ht.dataset.sort||'m_m:-1';table(ht,hot.map(id=>[id,(THEMES.find(t=>t.stocks.some(x=>x[0]===id))||{name:'⭐ 自選'}).name]),undefined,'m');
+   $('hotFoot').innerHTML=MO?`🔥＝月漲幅 &gt; 0、量比（5 日均量 ÷ 20 日均量）≥ 1.5、且投信或外資 5 日買超 ≥ 5 日成交量的 1%。是「有資金在推」的訊號，不是買進訊號，要搭配估值位階看。資料 ${ymd(MO.asof)}`:'第一次需要回補約 3 個月的歷史資料，Actions 跑完後就會出現。'}
+  $('tgrid').innerHTML=THEMES.map(t=>{const ids=t.stocks.map(x=>x[0]),y=median(ids.map(i=>sv(i,'yoy'))),pe=median(ids.map(i=>sv(i,'pe'))),ey=median(ids.map(epsY)),pg=median(ids.map(peg)),mm=median(ids.map(i=>mv(i,'m'))),nf=ids.filter(i=>mv(i,'fire')).length;
+    return `<a class="tcard" href="#t/${t.id}"><b>${t.name}</b><span class="k"><span>營收年增</span><span class="num ${sign(y)}">${y==null?'—':pct(y,0)}</span></span><span class="k"><span>EPS 年增</span><span class="num ${sign(ey)}">${ey==null?'—':pct(ey,0)}</span></span><span class="k"><span>本益比</span><span class="num">${pe==null?'—':fmt(pe,1)}</span></span><span class="k"><span>PEG</span><span class="num ${pg==null?'':pg<1?'cheap':pg>2?'pricey':''}">${pg==null?'—':fmt(pg,2)}</span></span><span class="k"><span>月漲幅</span><span class="num ${sign(mm)}">${mm==null?'—':pct(mm,1)}${nf?' 🔥'+nf:''}</span></span></a>`}).join('');
   if(!$('indBox').dataset.done&&LIST.length){
     const g={};LIST.forEach(s=>{let k=(s[3]||'其他').replace(/類$/,'');if(k==='其他電子')k='其他電子業';(g[k]=g[k]||[]).push(s[0])});
     $('indBox').innerHTML=Object.entries(g).sort((a,b)=>b[1].length-a[1].length).map(([k,v],i)=>`<details class="ind" data-i="${i}"><summary>${k}<span>${v.length} 檔</span></summary><div class="tbl"><table class="lst"></table></div></details>`).join('');
@@ -616,7 +654,12 @@ function showTheme(tid){
   $('tEdit').href='#e/'+t.id;
   $('tSum').innerHTML=S?`${ids.length} 檔中位數：營收年增 <strong class="${sign(y)}">${pct(y)}</strong>・EPS 年增 <strong class="${sign(ey)}">${pct(ey)}</strong>・本益比 <strong>${fmt(pe,1)}</strong>・PEG <strong>${fmt(pg,2)}</strong>・淨值比 <strong>${fmt(pb,2)}</strong>`:'全市場數字尚未產生（等 Actions 第一次執行）';
   $('tUS').innerHTML=t.us&&t.us.length?'對應美股 '+t.us.map(u=>`<a href="us/#${u}">${u}</a>`).join(''):'';
+  paintSeg();
+  $('tAsof').textContent=MODE==='m'&&MO?`股價 ${ymd(MO.asof)}・法人 ${ymd(MO.instAsof)}`:'';
+  if(MODE==='m'){const mw=median(ids.map(i=>mv(i,'w'))),mm=median(ids.map(i=>mv(i,'m'))),mq=median(ids.map(i=>mv(i,'q'))),vr=median(ids.map(i=>mv(i,'vr'))),nf=ids.filter(i=>mv(i,'fire')).length;
+    $('tSum').innerHTML=MO?`${ids.length} 檔中位數：週 <strong class="${sign(mw)}">${pct(mw)}</strong>・月 <strong class="${sign(mm)}">${pct(mm)}</strong>・季 <strong class="${sign(mq)}">${pct(mq)}</strong>・量比 <strong>${fmt(vr,2)}</strong>・🔥 <strong>${nf}</strong> 檔`:'動能資料尚未產生（第一次需回補約 3 個月歷史資料）'}
   $('tTbl').dataset.sort='';table($('tTbl'),t.stocks);
+  if(MODE==='m'){$('tFoot').innerHTML=`週／月／季＝收盤對比 5／20／60 個交易日前（未還原除權息，跨除息日會略低）。量比＝5 日均量 ÷ 20 日均量，≥1.5 標紅＝放量。投／外＝投信、外資近 5 日買賣超張數；「投連N天」＝投信連續買超 3 天以上。🔥＝月漲＋量比≥1.5＋法人 5 日買超≥成交量 1%。<br>點欄位標題排序；「量比」連點可切換投信 5 日、外資 5 日、投信連買排序。`+(MO&&MO.nPx<61?`<br>⚠️ 歷史資料目前 ${MO.nPx} 個交易日，季%需要 61 天，回補完成前顯示「—」。`:'');return}
   $('tFoot').innerHTML=`EPS 年增＝最新一季${QN?'（'+QN+'）':''}單季 EPS 對比去年同季，橘色季別＝跟其他檔不同季；<span class="flag">業外</span>＝本季 EPS 可能含一次性收益。<span>低基期</span>＝去年同季 EPS 太小、年增超過 300%，不算 PEG。PEG＝本益比 ÷ EPS 年增，<span class="cheap">&lt;1 偏便宜</span>、<span class="pricey">&gt;2 偏貴</span>；記憶體等循環股的 PEG 參考性低。<br>點欄位標題排序；「本益比」連點可切換成 EPS 年增、PEG 排序。點一列看個股圖表。`+(S?` 資料更新 ${S.updated.slice(0,10)}`:'');
 }
 function stockExtras(id){
@@ -738,6 +781,7 @@ addEventListener('hashchange',route);
   try{const r=await fetch('data/themes.json?t='+Date.now());if(r.ok)BASE=(await r.json()).themes||[]}catch(e){}
   applyCfg();
   try{const r=await fetch('data/summary.json?t='+Date.now());if(r.ok)S=await r.json()}catch(e){}
+  try{const r=await fetch('data/momentum.json?t='+Date.now());if(r.ok)MO=await r.json()}catch(e){}
   route();
 })();
 ['iMon','iNm','iQg','iYg'].forEach(id=>$(id).addEventListener('input',()=>D&&renderFwd()));
