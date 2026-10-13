@@ -390,6 +390,42 @@ def compute():
     return out, pdays, idays
 
 
+def patch_summary(pdays):
+    """summary.json 的上市收盤（OpenAPI STOCK_DAY_ALL）晚上常還停在前一交易日 → 用 hist 最新一天（MI_INDEX／櫃買當日行情）覆蓋收盤、漲跌%，
+    本益比／淨值比／殖利率依收盤比例調整（BWIBBU 是用它自己那天的收盤算的）"""
+    f = OUT / "summary.json"
+    if not f.exists():
+        return "無 summary.json"
+    full = [x for x in pdays if {"pL", "pO"} <= set(x[1].get("src", []))]
+    if len(full) < 2:
+        return "hist 不足"
+    day, last = full[-1]
+    S = json.loads(f.read_text("utf-8"))
+    if (S.get("pxAsof") or "") > day:
+        return "summary 已較新"
+    n = 0
+    for c, (cl, _) in last["p"].items():
+        x = S["d"].get(c)
+        if x is None or not cl:
+            continue
+        prev = next((r["p"][c][0] for _, r in reversed(full[:-1]) if r["p"].get(c) and r["p"][c][0]), None)
+        old = x[0]
+        if old and old > 0 and abs(cl - old) > 1e-9:
+            k = cl / old
+            if x[2]:
+                x[2] = round(x[2] * k, 2)
+            if x[3]:
+                x[3] = round(x[3] * k, 2)
+            if x[4]:
+                x[4] = round(x[4] / k, 2)
+        x[0] = cl
+        x[1] = round((cl / prev - 1) * 100, 2) if prev else None
+        n += 1
+    S["pxAsof"] = day
+    f.write_text(json.dumps(S, ensure_ascii=False, separators=(",", ":")), "utf-8")
+    return f"收盤改用 {day}：{n} 檔"
+
+
 def main():
     OUT.mkdir(exist_ok=True)
     errs = collect()
@@ -398,6 +434,10 @@ def main():
     except Exception as e:
         errs.append(f"prune: {e}")
     d, pdays, idays = compute()
+    try:
+        diag["summaryPatch"] = patch_summary(pdays)
+    except Exception as e:
+        errs.append(f"patch summary: {e}")
     if not d:
         print("沒有任何資料，不輸出", file=sys.stderr)
         print(json.dumps({"errors": errs, "diag": diag}, ensure_ascii=False), file=sys.stderr)
