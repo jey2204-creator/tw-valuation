@@ -620,6 +620,30 @@ def build(code, jq_recs, td_recs, master):
         t, b = ttm_at(d), bps_at(d)
         riv.append([ym, round(c, 1), None if t is None else round(t, 2), None if b is None else round(b, 1),
                     round(c / t, 1) if t and t > 0 else None, round(c / b, 2) if b and b > 0 else None])
+    val_chk = None
+    if VALIDATE and JQ_KEY:
+        # 交叉比對：自己算的本益比／淨值比 vs J-Quants 官方估值（最近 8 個月底）。
+        # 比例不受分割影響，所以同時驗證近四季 EPS、每股淨值、分割調整與 Yahoo 股價；只輸出比例
+        try:
+            import bisect
+            pxd = dict(px)
+            dates = sorted(pxd)
+            px_on = lambda d: pxd[dates[bisect.bisect_right(dates, d) - 1]] if bisect.bisect_right(dates, d) else None
+            bym = {}
+            for v in jq("/equities/valuation", {"code": code}):
+                if num(v.get("PER")) and num(v.get("PBR")):
+                    bym[v["Date"][:7]] = v
+            pe_r, pb_r = [], []
+            for ym in sorted(bym)[-8:]:
+                v = bym[ym]
+                c, t0, b0 = px_on(v["Date"]), ttm_at(v["Date"]), bps_at(v["Date"])
+                if c and t0 and t0 > 0:
+                    pe_r.append(round(c / t0 / num(v["PER"]), 3))
+                if c and b0 and b0 > 0:
+                    pb_r.append(round(c / b0 / num(v["PBR"]), 3))
+            val_chk = dict(pe=pe_r, pb=pb_r)
+        except Exception as e:  # noqa
+            err(f"估值比對 {code}: {e}")
     (ld, lc), (pd, pc) = px[-1], px[-2] if len(px) > 1 else px[-1]
     t, b = ttm_at(ld), bps_at(ld)
     feps = None
@@ -641,8 +665,9 @@ def build(code, jq_recs, td_recs, master):
     DIAG["stocks"][code] = dict(px_n=len(px), px_last=ld, q_n=len(Q), q_first=Q[0]["cal"] if Q else None,
                                 q_last=Q[-1]["cal"] if Q else None, q_src="".join(x["src"] for x in Q),
                                 fc_n=len(fc["hist"]) if fc else 0, fc_fy=fc["fy"] if fc else None,
-                                eps_np_ok=f"{sum(chk)}/{len(chk)}", splits=len(splits), std=std,
-                                riv_pe=sum(1 for r in riv if r[4]), riv_pb=sum(1 for r in riv if r[5]))
+                                eps_np_ok=f"{sum(chk)}/{len(chk)}", splits=[[d, round(n, 4)] for d, n in splits], std=std,
+                                riv_pe=sum(1 for r in riv if r[4]), riv_pb=sum(1 for r in riv if r[5]),
+                                **({"val_vs_jq": val_chk} if val_chk else {}))
     return dict(id=code, name=cfg["zh"], jname=m.get("CoName", ""), sector=m.get("S33Nm", ""), mkt=m.get("MktNm", ""),
                 theme=cfg["theme"], cyclical="C" in cfg["flags"], tw=cfg["tw"], std=std,
                 updated=NOW_JST.strftime("%Y-%m-%d %H:%M"), last=last, q=q, riv=riv, fc=fc, note=note)
