@@ -1,15 +1,521 @@
 {
- "asof": "2026-10-14 20:49 JST",
- "key_set": false,
- "sec": 54.0,
+ "asof": "2026-10-14 20:52 JST",
+ "key_set": true,
+ "sec": 202.8,
  "results": {
-  "jquants": {
-   "ok": false,
-   "err": "未設定 JQUANTS_API_KEY，跳過"
+  "jq_master": {
+   "items": {
+    "8035": {
+     "status": 200,
+     "sec": 0.46,
+     "n": 1,
+     "err": "",
+     "code_returned": "80350",
+     "date": "2026-07-22",
+     "name": "東京エレクトロン",
+     "fields": [
+      "Date",
+      "Code",
+      "CoName",
+      "CoNameEn",
+      "S17",
+      "S17Nm",
+      "S33",
+      "S33Nm",
+      "ScaleCat",
+      "Mkt",
+      "MktNm",
+      "Mrgn",
+      "MrgnNm",
+      "ProdCat"
+     ]
+    },
+    "285A": {
+     "status": 200,
+     "sec": 0.46,
+     "n": 1,
+     "err": "",
+     "code_returned": "285A0",
+     "date": "2026-07-22",
+     "name": "キオクシアホールディングス",
+     "fields": [
+      "Date",
+      "Code",
+      "CoName",
+      "CoNameEn",
+      "S17",
+      "S17Nm",
+      "S33",
+      "S33Nm",
+      "ScaleCat",
+      "Mkt",
+      "MktNm",
+      "Mrgn",
+      "MrgnNm",
+      "ProdCat"
+     ]
+    }
+   },
+   "ok": true
+  },
+  "jq_bars": {
+   "status": 200,
+   "sec": 0.97,
+   "n": 488,
+   "err": "",
+   "first": "2024-07-22",
+   "last": "2026-07-22",
+   "last_days_ago": 84,
+   "has_pagination_key": false,
+   "fields": [
+    "Date",
+    "Code",
+    "O",
+    "H",
+    "L",
+    "C",
+    "UL",
+    "LL",
+    "Vo",
+    "Va",
+    "AdjFactor",
+    "AdjO",
+    "AdjH",
+    "AdjL",
+    "AdjC",
+    "AdjVo",
+    "MktCap",
+    "ExRT"
+   ],
+   "split_events": 0,
+   "ok": true
+  },
+  "jq_valuation": {
+   "status": 200,
+   "sec": 0.67,
+   "n": 488,
+   "err": "",
+   "first": "2024-07-22",
+   "last": "2026-07-22",
+   "last_days_ago": 84,
+   "fields": [
+    "Date",
+    "Code",
+    "EPS",
+    "FwdEPS",
+    "BPS",
+    "ROE",
+    "FwdROE",
+    "PER",
+    "FwdPER",
+    "PBR",
+    "MktCap"
+   ],
+   "last_filled": [
+    "BPS",
+    "Code",
+    "Date",
+    "EPS",
+    "MktCap",
+    "PBR",
+    "PER",
+    "ROE"
+   ],
+   "ok": true
+  },
+  "jq_calendar": {
+   "status": 200,
+   "sec": 0.54,
+   "n": 1,
+   "err": "",
+   "dates": [
+    "2026-10-05"
+   ],
+   "fields": [
+    "Date",
+    "Code",
+    "CoName",
+    "FY",
+    "SectorNm",
+    "FQ",
+    "Section"
+   ],
+   "sample_in_calendar": {
+    "8035": false,
+    "6981": false,
+    "4063": false
+   },
+   "ok": true
+  },
+  "jq_bars_by_date": {
+   "status": 200,
+   "sec": 3.84,
+   "date": "20260722",
+   "n": 4445,
+   "err": "",
+   "has_pagination_key": false,
+   "ok": true
+  },
+  "jq_fins": {
+   "items": {
+    "8035": {
+     "status": 200,
+     "sec": 0.5,
+     "n": 8,
+     "err": "",
+     "periods": [
+      [
+       "2024-08-08",
+       "1Q",
+       "2024-06-30",
+       "1QFinancialStatements_Consolidated_JP"
+      ],
+      [
+       "2024-11-12",
+       "2Q",
+       "2024-09-30",
+       "2QFinancialStatements_Consolidated_JP"
+      ],
+      [
+       "2025-02-06",
+       "3Q",
+       "2024-12-31",
+       "3QFinancialStatements_Consolidated_JP"
+      ],
+      [
+       "2025-04-30",
+       "FY",
+       "2025-03-31",
+       "FYFinancialStatements_Consolidated_JP"
+      ],
+      [
+       "2025-07-31",
+       "1Q",
+       "2025-06-30",
+       "1QFinancialStatements_Consolidated_JP"
+      ],
+      [
+       "2025-10-31",
+       "2Q",
+       "2025-09-30",
+       "2QFinancialStatements_Consolidated_JP"
+      ],
+      [
+       "2026-02-06",
+       "3Q",
+       "2025-12-31",
+       "3QFinancialStatements_Consolidated_JP"
+      ],
+      [
+       "2026-04-30",
+       "FY",
+       "2026-03-31",
+       "FYFinancialStatements_Consolidated_JP"
+      ]
+     ],
+     "last_disc_days_ago": 167,
+     "last_filled": [
+      "AvgSh",
+      "BPS",
+      "CFF",
+      "CFI",
+      "CFO",
+      "CashEq",
+      "ChgAcEst",
+      "ChgByASRev",
+      "ChgNoASRev",
+      "Code",
+      "CurFYEn",
+      "CurFYSt",
+      "CurPerEn",
+      "CurPerSt",
+      "CurPerType",
+      "DEPS",
+      "DiscDate",
+      "DiscNo",
+      "DiscTime",
+      "Div2Q",
+      "DivAnn",
+      "DivFY",
+      "DivTotalAnn",
+      "DocType",
+      "EPS",
+      "Eq",
+      "EqAR",
+      "NCBPS",
+      "NCEPS",
+      "NCEq",
+      "NCEqAR",
+      "NCNP",
+      "NCOP",
+      "NCOdP",
+      "NCSales",
+      "NCShEq",
+      "NCTA",
+      "NP",
+      "NxFDiv2Q",
+      "NxFEPS2Q",
+      "NxFNp2Q",
+      "NxFOP2Q",
+      "NxFOdP2Q",
+      "NxFSales2Q",
+      "NxtFYEn",
+      "NxtFYSt",
+      "OP",
+      "OdP",
+      "PayoutRatioAnn",
+      "ROE",
+      "RetroRst",
+      "Sales",
+      "ShEq",
+      "ShOutFY",
+      "SigChgInC",
+      "TA",
+      "TrShFY"
+     ]
+    },
+    "6981": {
+     "status": 200,
+     "sec": 0.56,
+     "n": 8,
+     "err": "",
+     "periods": [
+      [
+       "2024-07-30",
+       "1Q",
+       "2024-06-30",
+       "1QFinancialStatements_Consolidated_IFRS"
+      ],
+      [
+       "2024-11-01",
+       "2Q",
+       "2024-09-30",
+       "2QFinancialStatements_Consolidated_IFRS"
+      ],
+      [
+       "2025-02-03",
+       "3Q",
+       "2024-12-31",
+       "3QFinancialStatements_Consolidated_IFRS"
+      ],
+      [
+       "2025-04-30",
+       "FY",
+       "2025-03-31",
+       "FYFinancialStatements_Consolidated_IFRS"
+      ],
+      [
+       "2025-07-30",
+       "1Q",
+       "2025-06-30",
+       "1QFinancialStatements_Consolidated_IFRS"
+      ],
+      [
+       "2025-10-31",
+       "2Q",
+       "2025-09-30",
+       "2QFinancialStatements_Consolidated_IFRS"
+      ],
+      [
+       "2026-02-02",
+       "3Q",
+       "2025-12-31",
+       "3QFinancialStatements_Consolidated_IFRS"
+      ],
+      [
+       "2026-04-30",
+       "FY",
+       "2026-03-31",
+       "FYFinancialStatements_Consolidated_IFRS"
+      ]
+     ],
+     "last_disc_days_ago": 167,
+     "last_filled": [
+      "AvgSh",
+      "BPS",
+      "CFF",
+      "CFI",
+      "CFO",
+      "CashEq",
+      "ChgAcEst",
+      "ChgByASRev",
+      "ChgNoASRev",
+      "Code",
+      "CurFYEn",
+      "CurFYSt",
+      "CurPerEn",
+      "CurPerSt",
+      "CurPerType",
+      "DEPS",
+      "DiscDate",
+      "DiscNo",
+      "DiscTime",
+      "Div2Q",
+      "DivAnn",
+      "DivFY",
+      "DivTotalAnn",
+      "DocType",
+      "EPS",
+      "Eq",
+      "EqAR",
+      "NCBPS",
+      "NCEPS",
+      "NCEq",
+      "NCEqAR",
+      "NCNP",
+      "NCOP",
+      "NCOdP",
+      "NCSales",
+      "NCShEq",
+      "NCTA",
+      "NP",
+      "NxFDiv2Q",
+      "NxFDivAnn",
+      "NxFDivFY",
+      "NxFEPS",
+      "NxFEPS2Q",
+      "NxFNp",
+      "NxFNp2Q",
+      "NxFOP",
+      "NxFOP2Q",
+      "NxFPayoutRatioAnn",
+      "NxFSales",
+      "NxFSales2Q",
+      "NxtFYEn",
+      "NxtFYSt",
+      "OP",
+      "PayoutRatioAnn",
+      "ROE",
+      "Sales",
+      "ShEq",
+      "ShOutFY",
+      "SigChgInC",
+      "TA",
+      "TrShFY"
+     ]
+    },
+    "4063": {
+     "status": 200,
+     "sec": 0.51,
+     "n": 9,
+     "err": "",
+     "periods": [
+      [
+       "2024-07-26",
+       "1Q",
+       "2024-06-30",
+       "1QFinancialStatements_Consolidated_JP"
+      ],
+      [
+       "2024-10-25",
+       "2Q",
+       "2024-09-30",
+       "2QFinancialStatements_Consolidated_JP"
+      ],
+      [
+       "2025-01-29",
+       "3Q",
+       "2024-12-31",
+       "3QFinancialStatements_Consolidated_JP"
+      ],
+      [
+       "2025-02-12",
+       "FY",
+       "2025-03-31",
+       "EarnForecastRevision"
+      ],
+      [
+       "2025-04-25",
+       "FY",
+       "2025-03-31",
+       "FYFinancialStatements_Consolidated_JP"
+      ],
+      [
+       "2025-07-24",
+       "1Q",
+       "2025-06-30",
+       "1QFinancialStatements_Consolidated_JP"
+      ],
+      [
+       "2025-10-24",
+       "2Q",
+       "2025-09-30",
+       "2QFinancialStatements_Consolidated_JP"
+      ],
+      [
+       "2026-01-27",
+       "3Q",
+       "2025-12-31",
+       "3QFinancialStatements_Consolidated_JP"
+      ],
+      [
+       "2026-04-28",
+       "FY",
+       "2026-03-31",
+       "FYFinancialStatements_Consolidated_JP"
+      ]
+     ],
+     "last_disc_days_ago": 169,
+     "last_filled": [
+      "AvgSh",
+      "BPS",
+      "CFF",
+      "CFI",
+      "CFO",
+      "CashEq",
+      "ChgAcEst",
+      "ChgByASRev",
+      "ChgNoASRev",
+      "Code",
+      "CurFYEn",
+      "CurFYSt",
+      "CurPerEn",
+      "CurPerSt",
+      "CurPerType",
+      "DEPS",
+      "DiscDate",
+      "DiscNo",
+      "DiscTime",
+      "Div2Q",
+      "DivAnn",
+      "DivFY",
+      "DivTotalAnn",
+      "DocType",
+      "EPS",
+      "Eq",
+      "EqAR",
+      "NCBPS",
+      "NCEPS",
+      "NCEq",
+      "NCEqAR",
+      "NCNP",
+      "NCOP",
+      "NCOdP",
+      "NCSales",
+      "NCShEq",
+      "NCTA",
+      "NP",
+      "NxtFYEn",
+      "NxtFYSt",
+      "OP",
+      "OdP",
+      "PayoutRatioAnn",
+      "ROE",
+      "RetroRst",
+      "Sales",
+      "ShEq",
+      "ShOutFY",
+      "SigChgInC",
+      "TA",
+      "TrShFY"
+     ]
+    }
+   },
+   "ok": true
   },
   "yahoo_chart": {
    "status": 200,
-   "sec": 0.17,
+   "sec": 0.2,
    "n": 2462,
    "first": "2016-10-14",
    "last": "2026-10-14",
@@ -26,7 +532,7 @@
    "items": {
     "quarterly": {
      "status": 200,
-     "sec": 0.07,
+     "sec": 0.06,
      "periods": {
       "StockholdersEquity": [
        "2025-03-31",
@@ -50,7 +556,7 @@
     },
     "annual": {
      "status": 200,
-     "sec": 0.1,
+     "sec": 0.06,
      "periods": {
       "OperatingIncome": [
        "2023-03-31",
@@ -126,7 +632,7 @@
     {
      "date": "2026-10-14",
      "status": 200,
-     "sec": 0.24,
+     "sec": 0.2,
      "rows": 106,
      "tanshin": 22,
      "tanshin_xbrl": 16,
@@ -135,7 +641,7 @@
     {
      "date": "2026-10-13",
      "status": 200,
-     "sec": 0.24,
+     "sec": 0.15,
      "rows": 106,
      "tanshin": 22,
      "tanshin_xbrl": 18,
@@ -144,7 +650,7 @@
     {
      "date": "2026-10-12",
      "status": 200,
-     "sec": 0.28,
+     "sec": 0.14,
      "rows": 4,
      "tanshin": 0,
      "tanshin_xbrl": 0,
@@ -153,7 +659,7 @@
     {
      "date": "2026-10-09",
      "status": 200,
-     "sec": 0.26,
+     "sec": 0.28,
      "rows": 106,
      "tanshin": 27,
      "tanshin_xbrl": 27,
@@ -162,7 +668,7 @@
     {
      "date": "2026-10-08",
      "status": 200,
-     "sec": 0.25,
+     "sec": 0.14,
      "rows": 106,
      "tanshin": 17,
      "tanshin_xbrl": 16,
@@ -171,7 +677,7 @@
     {
      "date": "2026-10-07",
      "status": 200,
-     "sec": 0.27,
+     "sec": 0.14,
      "rows": 106,
      "tanshin": 11,
      "tanshin_xbrl": 11,
@@ -185,7 +691,7 @@
    },
    "zip": {
     "status": 200,
-    "sec": 0.13,
+    "sec": 0.02,
     "bytes": 52065,
     "files": [
      "XBRLData/Summary/tse-qcedjpsm-464A0-202610143464A0.xsd",
@@ -692,7 +1198,7 @@
   },
   "stooq": {
    "status": 200,
-   "sec": 0.45,
+   "sec": 0.63,
    "n": 2,
    "is_csv": false,
    "head": "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><meta name=\"robots\" content=\"no",
