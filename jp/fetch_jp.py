@@ -29,9 +29,28 @@ THEMES = [
      [("2344", "華邦電"), ("2408", "南亞科"), ("8299", "群聯"), ("3661", "世芯-KY"), ("3443", "創意")]),
     ("🔌 電力／重電", [("6501", "日立", ""), ("6503", "三菱電機", ""), ("6504", "富士電機", "")],
      [("1519", "華城"), ("1503", "士電"), ("1513", "中興電"), ("1514", "亞力")]),
+    # 一檔股票可以出現在多個主題（第 4 欄＝在這個主題的角色；旗標 O＝選配／題材股）
+    ("🖥️ AI 伺服器供應鏈", [
+        ("5803", "藤倉", "", "資料中心高密度光纖、MPO"), ("5801", "古河電工", "", "資料中心光纖、散熱模組"),
+        ("4062", "揖斐電", "", "AI 晶片 ABF 載板"), ("3110", "日東紡", "", "低介電玻纖布（載板、高階 CCL）"),
+        ("5706", "三井金屬", "", "HVLP 高頻銅箔"), ("6981", "村田製作所", "", "MLCC、電源模組"),
+        ("6516", "山洋電氣", "", "伺服器風扇、UPS"), ("285A", "鎧俠", "C", "企業級 SSD（NAND）"),
+        ("6594", "尼得科", "O", "液冷 CDU、風扇（馬達、車用為主）"), ("6762", "TDK", "O", "伺服器電源、電感（電池為主）"),
+        ("6963", "羅姆", "O", "SiC／GaN 功率元件（車用、工業為主）"),
+        ("6997", "日本貴彌功", "O", "伺服器電源電容（車用占比高）"),
+        ("5802", "住友電工", "O", "資料中心光纖（車用線束為主）")],
+     [("2382", "廣達"), ("3231", "緯創"), ("6669", "緯穎"), ("3017", "奇鋐"), ("3324", "雙鴻"), ("2308", "台達電"),
+      ("2383", "台光電"), ("8358", "金居")]),
 ]
-CFG = {c: dict(theme=th, zh=zh, flags=f, tw=tw) for th, items, tw in THEMES for c, zh, f in items}
+CFG = {}
+for th, items, tw in THEMES:
+    for it in items:
+        c, zh, f = it[:3]
+        CFG.setdefault(c, dict(theme=th, zh=zh, flags=f.replace("O", ""), tw=tw))   # 第一次出現的主題＝主要主題
 STOCKS = list(CFG)
+# 給網頁用的主題清單：[{t: 主題, tw: 對應台股, m: [[代號, 角色, 選配]]}]
+THEME_META = [dict(t=th, tw=tw, m=[[it[0], it[3] if len(it) > 3 else "", "O" in it[2]] for it in items])
+              for th, items, tw in THEMES]
 
 ROOT = Path(__file__).resolve().parent
 OUT, RAW = ROOT / "data", ROOT / "raw"
@@ -762,7 +781,8 @@ def main():
     # 組合、加密輸出
     idx_p = OUT / "index.bin"
     try:
-        idx = {s["id"]: s for s in dec(aes, idx_p.read_bytes())} if idx_p.exists() else {}
+        old = dec(aes, idx_p.read_bytes()) if idx_p.exists() else []
+        idx = {s["id"]: s for s in (old["stocks"] if isinstance(old, dict) else old)}
     except Exception:  # noqa
         idx = {}
     fx = None
@@ -795,7 +815,7 @@ def main():
             err(f"{c}: {e}")
         time.sleep(0.5)
     order = [c for c in STOCKS if c in idx]
-    idx_p.write_bytes(enc(aes, [idx[c] for c in order]))
+    idx_p.write_bytes(enc(aes, {"stocks": [idx[c] for c in order], "themes": THEME_META}))
     (RAW / "tdnet.bin").write_bytes(enc(aes, td))
     (RAW / "jq.bin").write_bytes(enc(aes, jqa))
     (OUT / "meta.json").write_text(json.dumps(meta, ensure_ascii=False, indent=1), "utf-8")

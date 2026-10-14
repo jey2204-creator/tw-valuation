@@ -16,7 +16,7 @@ on:
 permissions:
   contents: write
 concurrency:
-  group: push-data
+  group: push-data-jp   # 只動 jp/，不必排在韓股、台股的長任務後面；push 失敗會 rebase 重試
   cancel-in-progress: false
 jobs:
   update:
@@ -43,5 +43,8 @@ jobs:
           git add jp/data/ jp/raw/ 2>/dev/null || true
           git diff --cached --quiet && exit 0
           git commit -m "jp data: $(TZ=Asia/Taipei date '+%F %H:%M')"
-          git pull --rebase -X theirs origin main
-          git push
+          for i in 1 2 3 4 5; do
+            git pull --rebase -X theirs origin main && git push && exit 0
+            sleep $((i * 10))
+          done
+          exit 1
