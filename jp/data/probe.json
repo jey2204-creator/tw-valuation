@@ -1,7 +1,7 @@
 {
- "asof": "2026-10-14 20:45 JST",
+ "asof": "2026-10-14 20:49 JST",
  "key_set": false,
- "sec": 12.5,
+ "sec": 54.0,
  "results": {
   "jquants": {
    "ok": false,
@@ -9,7 +9,7 @@
   },
   "yahoo_chart": {
    "status": 200,
-   "sec": 0.27,
+   "sec": 0.17,
    "n": 2462,
    "first": "2016-10-14",
    "last": "2026-10-14",
@@ -26,7 +26,7 @@
    "items": {
     "quarterly": {
      "status": 200,
-     "sec": 0.17,
+     "sec": 0.07,
      "periods": {
       "StockholdersEquity": [
        "2025-03-31",
@@ -50,7 +50,7 @@
     },
     "annual": {
      "status": 200,
-     "sec": 0.11,
+     "sec": 0.1,
      "periods": {
       "OperatingIncome": [
        "2023-03-31",
@@ -126,7 +126,7 @@
     {
      "date": "2026-10-14",
      "status": 200,
-     "sec": 0.3,
+     "sec": 0.24,
      "rows": 106,
      "tanshin": 22,
      "tanshin_xbrl": 16,
@@ -135,7 +135,7 @@
     {
      "date": "2026-10-13",
      "status": 200,
-     "sec": 0.33,
+     "sec": 0.24,
      "rows": 106,
      "tanshin": 22,
      "tanshin_xbrl": 18,
@@ -144,7 +144,7 @@
     {
      "date": "2026-10-12",
      "status": 200,
-     "sec": 0.38,
+     "sec": 0.28,
      "rows": 4,
      "tanshin": 0,
      "tanshin_xbrl": 0,
@@ -153,7 +153,7 @@
     {
      "date": "2026-10-09",
      "status": 200,
-     "sec": 0.34,
+     "sec": 0.26,
      "rows": 106,
      "tanshin": 27,
      "tanshin_xbrl": 27,
@@ -162,7 +162,7 @@
     {
      "date": "2026-10-08",
      "status": 200,
-     "sec": 0.32,
+     "sec": 0.25,
      "rows": 106,
      "tanshin": 17,
      "tanshin_xbrl": 16,
@@ -185,7 +185,7 @@
    },
    "zip": {
     "status": 200,
-    "sec": 0.3,
+    "sec": 0.13,
     "bytes": 52065,
     "files": [
      "XBRLData/Summary/tse-qcedjpsm-464A0-202610143464A0.xsd",
@@ -210,9 +210,489 @@
    },
    "ok": true
   },
+  "tdnet_xbrl": {
+   "days_scanned": 10,
+   "rows_with_xbrl": 367,
+   "candidates": 367,
+   "zips_parsed": 10,
+   "kinds": {
+    "tse-qcedjpsm": {
+     "samples": [
+      {
+       "date": "2026-10-14",
+       "code": "464A0",
+       "title": "2027年５月期第１四半期決算短信〔日本基準〕（連結）"
+      },
+      {
+       "date": "2026-10-14",
+       "code": "78790",
+       "title": "2026年11月期第3四半期決算短信〔日本基準〕（連結）"
+      }
+     ],
+     "names": [
+      "AverageNumberOfShares",
+      "CapitalAdequacyRatio",
+      "ChangeInComprehensiveIncome",
+      "ChangeInNetSales",
+      "ChangeInOperatingIncome",
+      "ChangeInOrdinaryIncome",
+      "ChangeInProfitAttributableToOwnersOfParent",
+      "ComprehensiveIncome",
+      "DilutedNetIncomePerShare",
+      "DividendPerShare",
+      "NetAssets",
+      "NetAssetsPerShare",
+      "NetIncomePerShare",
+      "NetSales",
+      "NumberOfIssuedAndOutstandingSharesAtTheEndOfFiscalYearIncludingTreasuryStock",
+      "NumberOfTreasuryStockAtTheEndOfFiscalYear",
+      "OperatingIncome",
+      "OrdinaryIncome",
+      "OwnersEquity",
+      "ProfitAttributableToOwnersOfParent",
+      "QuarterlyPeriod",
+      "TotalAssets"
+     ],
+     "contexts": [
+      "CurrentAccumulatedQ1Duration_ConsolidatedMember_ResultMember",
+      "CurrentAccumulatedQ1Duration_NonConsolidatedMember_ResultMember",
+      "CurrentAccumulatedQ1Instant",
+      "CurrentAccumulatedQ1Instant_ConsolidatedMember_ResultMember",
+      "CurrentAccumulatedQ1Instant_NonConsolidatedMember_ResultMember",
+      "CurrentAccumulatedQ3Duration_ConsolidatedMember_ResultMember",
+      "CurrentAccumulatedQ3Duration_NonConsolidatedMember_ResultMember",
+      "CurrentAccumulatedQ3Instant",
+      "CurrentAccumulatedQ3Instant_ConsolidatedMember_ResultMember",
+      "CurrentAccumulatedQ3Instant_NonConsolidatedMember_ResultMember",
+      "CurrentYearDuration_AnnualMember_NonConsolidatedMember_ForecastMember",
+      "CurrentYearDuration_AnnualMember_NonConsolidatedMember_LowerMember",
+      "CurrentYearDuration_AnnualMember_NonConsolidatedMember_UpperMember",
+      "CurrentYearDuration_ConsolidatedMember_ForecastMember",
+      "CurrentYearDuration_ConsolidatedMember_LowerMember",
+      "CurrentYearDuration_ConsolidatedMember_UpperMember",
+      "CurrentYearDuration_FirstQuarterMember_NonConsolidatedMember_ResultMember",
+      "CurrentYearDuration_SecondQuarterMember_NonConsolidatedMember_ForecastMember",
+      "CurrentYearDuration_SecondQuarterMember_NonConsolidatedMember_LowerMember",
+      "CurrentYearDuration_SecondQuarterMember_NonConsolidatedMember_ResultMember",
+      "CurrentYearDuration_SecondQuarterMember_NonConsolidatedMember_UpperMember",
+      "CurrentYearDuration_ThirdQuarterMember_NonConsolidatedMember_ForecastMember",
+      "CurrentYearDuration_ThirdQuarterMember_NonConsolidatedMember_LowerMember",
+      "CurrentYearDuration_ThirdQuarterMember_NonConsolidatedMember_ResultMember",
+      "CurrentYearDuration_ThirdQuarterMember_NonConsolidatedMember_UpperMember",
+      "CurrentYearDuration_YearEndMember_NonConsolidatedMember_ForecastMember",
+      "CurrentYearDuration_YearEndMember_NonConsolidatedMember_LowerMember",
+      "CurrentYearDuration_YearEndMember_NonConsolidatedMember_UpperMember",
+      "PriorAccumulatedQ1Duration_ConsolidatedMember_ResultMember",
+      "PriorAccumulatedQ1Duration_NonConsolidatedMember_ResultMember",
+      "PriorAccumulatedQ3Duration_ConsolidatedMember_ResultMember",
+      "PriorAccumulatedQ3Duration_NonConsolidatedMember_ResultMember",
+      "PriorYearDuration_AnnualMember_NonConsolidatedMember_ResultMember",
+      "PriorYearDuration_FirstQuarterMember_NonConsolidatedMember_ResultMember",
+      "PriorYearDuration_SecondQuarterMember_NonConsolidatedMember_ResultMember",
+      "PriorYearDuration_ThirdQuarterMember_NonConsolidatedMember_ResultMember",
+      "PriorYearDuration_YearEndMember_NonConsolidatedMember_ResultMember",
+      "PriorYearInstant_ConsolidatedMember_ResultMember",
+      "PriorYearInstant_NonConsolidatedMember_ResultMember"
+     ],
+     "scales": [
+      "",
+      "-2",
+      "0",
+      "6"
+     ]
+    },
+    "tse-scedjpsy": {
+     "samples": [
+      {
+       "date": "2026-10-14",
+       "code": "30830",
+       "title": "2027年２月期第２四半期（中間期）決算短信〔日本基準〕（連結）"
+      },
+      {
+       "date": "2026-10-14",
+       "code": "323A0",
+       "title": "2027年２月期第２四半期（中間期）決算短信〔日本基準〕(連結)"
+      }
+     ],
+     "names": [
+      "AverageNumberOfShares",
+      "CapitalAdequacyRatio",
+      "ChangeInComprehensiveIncome",
+      "ChangeInNetSales",
+      "ChangeInOperatingIncome",
+      "ChangeInOrdinaryIncome",
+      "ChangeInProfitAttributableToOwnersOfParent",
+      "ComprehensiveIncome",
+      "DilutedNetIncomePerShare",
+      "DividendPerShare",
+      "NetAssets",
+      "NetIncomePerShare",
+      "NetSales",
+      "NumberOfIssuedAndOutstandingSharesAtTheEndOfFiscalYearIncludingTreasuryStock",
+      "NumberOfSubsidiariesExcludedFromConsolidation",
+      "NumberOfSubsidiariesNewlyConsolidated",
+      "NumberOfTreasuryStockAtTheEndOfFiscalYear",
+      "OperatingIncome",
+      "OrdinaryIncome",
+      "OwnersEquity",
+      "ProfitAttributableToOwnersOfParent",
+      "QuarterlyPeriod",
+      "TotalAssets"
+     ],
+     "contexts": [
+      "CurrentAccumulatedQ1Duration_ConsolidatedMember_ResultMember",
+      "CurrentAccumulatedQ2Duration_ConsolidatedMember_ResultMember",
+      "CurrentAccumulatedQ2Duration_NonConsolidatedMember_ResultMember",
+      "CurrentAccumulatedQ2Instant",
+      "CurrentAccumulatedQ2Instant_ConsolidatedMember_ResultMember",
+      "CurrentAccumulatedQ2Instant_NonConsolidatedMember_ResultMember",
+      "CurrentYearDuration_AnnualMember_NonConsolidatedMember_ForecastMember",
+      "CurrentYearDuration_AnnualMember_NonConsolidatedMember_LowerMember",
+      "CurrentYearDuration_AnnualMember_NonConsolidatedMember_UpperMember",
+      "CurrentYearDuration_ConsolidatedMember_ForecastMember",
+      "CurrentYearDuration_ConsolidatedMember_LowerMember",
+      "CurrentYearDuration_ConsolidatedMember_UpperMember",
+      "CurrentYearDuration_FirstQuarterMember_NonConsolidatedMember_ResultMember",
+      "CurrentYearDuration_SecondQuarterMember_NonConsolidatedMember_ResultMember",
+      "CurrentYearDuration_ThirdQuarterMember_NonConsolidatedMember_ForecastMember",
+      "CurrentYearDuration_ThirdQuarterMember_NonConsolidatedMember_LowerMember",
+      "CurrentYearDuration_ThirdQuarterMember_NonConsolidatedMember_UpperMember",
+      "CurrentYearDuration_YearEndMember_NonConsolidatedMember_ForecastMember",
+      "CurrentYearDuration_YearEndMember_NonConsolidatedMember_LowerMember",
+      "CurrentYearDuration_YearEndMember_NonConsolidatedMember_UpperMember",
+      "PriorAccumulatedQ2Duration_ConsolidatedMember_ResultMember",
+      "PriorAccumulatedQ2Duration_NonConsolidatedMember_ResultMember",
+      "PriorYearDuration_AnnualMember_NonConsolidatedMember_ResultMember",
+      "PriorYearDuration_FirstQuarterMember_NonConsolidatedMember_ResultMember",
+      "PriorYearDuration_SecondQuarterMember_NonConsolidatedMember_ResultMember",
+      "PriorYearDuration_ThirdQuarterMember_NonConsolidatedMember_ResultMember",
+      "PriorYearDuration_YearEndMember_NonConsolidatedMember_ResultMember",
+      "PriorYearInstant_ConsolidatedMember_ResultMember",
+      "PriorYearInstant_NonConsolidatedMember_ResultMember"
+     ],
+     "scales": [
+      "",
+      "-2",
+      "0",
+      "6"
+     ]
+    },
+    "tse-acedjpsm": {
+     "samples": [
+      {
+       "date": "2026-10-14",
+       "code": "55780",
+       "title": "2026年８月期決算短信〔日本基準〕（連結）"
+      },
+      {
+       "date": "2026-10-14",
+       "code": "51290",
+       "title": "2026年８月期決算短信〔日本基準〕(連結)"
+      }
+     ],
+     "names": [
+      "AverageNumberOfShares",
+      "CapitalAdequacyRatio",
+      "CashAndEquivalentsEndOfPeriod",
+      "CashFlowsFromFinancingActivities",
+      "CashFlowsFromInvestingActivities",
+      "CashFlowsFromOperatingActivities",
+      "ChangeInComprehensiveIncome",
+      "ChangeInNetIncome",
+      "ChangeInNetSales",
+      "ChangeInOperatingIncome",
+      "ChangeInOrdinaryIncome",
+      "ChangeInProfitAttributableToOwnersOfParent",
+      "ComprehensiveIncome",
+      "DilutedNetIncomePerShare",
+      "DividendPerShare",
+      "InvestmentProfitLossOnEquityMethod",
+      "NetAssets",
+      "NetAssetsPerShare",
+      "NetIncome",
+      "NetIncomePerShare",
+      "NetIncomeToShareholdersEquityRatio",
+      "NetSales",
+      "NumberOfIssuedAndOutstandingSharesAtTheEndOfFiscalYearIncludingTreasuryStock",
+      "NumberOfSubsidiariesExcludedFromConsolidation",
+      "NumberOfSubsidiariesNewlyConsolidated",
+      "NumberOfTreasuryStockAtTheEndOfFiscalYear",
+      "OperatingIncome",
+      "OperatingIncomeToNetSalesRatio",
+      "OrdinaryIncome",
+      "OrdinaryIncomeToTotalAssetsRatio",
+      "OwnersEquity",
+      "PayoutRatio",
+      "ProfitAttributableToOwnersOfParent",
+      "RatioOfTotalAmountOfDividendsToNetAssets",
+      "TotalAssets",
+      "TotalDividendPaidAnnual"
+     ],
+     "contexts": [
+      "CurrentYearDuration_AnnualMember_ConsolidatedMember_ResultMember",
+      "CurrentYearDuration_AnnualMember_NonConsolidatedMember_ResultMember",
+      "CurrentYearDuration_ConsolidatedMember_ResultMember",
+      "CurrentYearDuration_FirstQuarterMember_NonConsolidatedMember_ResultMember",
+      "CurrentYearDuration_NonConsolidatedMember_ResultMember",
+      "CurrentYearDuration_SecondQuarterMember_NonConsolidatedMember_ResultMember",
+      "CurrentYearDuration_ThirdQuarterMember_NonConsolidatedMember_ResultMember",
+      "CurrentYearDuration_YearEndMember_NonConsolidatedMember_ResultMember",
+      "CurrentYearInstant_ConsolidatedMember_ResultMember",
+      "CurrentYearInstant_NonConsolidatedMember_ResultMember",
+      "NextAccumulatedQ2Duration_ConsolidatedMember_ForecastMember",
+      "NextAccumulatedQ2Duration_ConsolidatedMember_LowerMember",
+      "NextAccumulatedQ2Duration_ConsolidatedMember_UpperMember",
+      "NextYearDuration_AnnualMember_ConsolidatedMember_ForecastMember",
+      "NextYearDuration_AnnualMember_NonConsolidatedMember_ForecastMember",
+      "NextYearDuration_AnnualMember_NonConsolidatedMember_LowerMember",
+      "NextYearDuration_AnnualMember_NonConsolidatedMember_UpperMember",
+      "NextYearDuration_ConsolidatedMember_ForecastMember",
+      "NextYearDuration_ConsolidatedMember_LowerMember",
+      "NextYearDuration_ConsolidatedMember_UpperMember",
+      "NextYearDuration_FirstQuarterMember_NonConsolidatedMember_ForecastMember",
+      "NextYearDuration_FirstQuarterMember_NonConsolidatedMember_LowerMember",
+      "NextYearDuration_FirstQuarterMember_NonConsolidatedMember_UpperMember",
+      "NextYearDuration_SecondQuarterMember_NonConsolidatedMember_ForecastMember",
+      "NextYearDuration_SecondQuarterMember_NonConsolidatedMember_LowerMember",
+      "NextYearDuration_SecondQuarterMember_NonConsolidatedMember_UpperMember",
+      "NextYearDuration_ThirdQuarterMember_NonConsolidatedMember_ForecastMember",
+      "NextYearDuration_ThirdQuarterMember_NonConsolidatedMember_LowerMember",
+      "NextYearDuration_ThirdQuarterMember_NonConsolidatedMember_UpperMember",
+      "NextYearDuration_YearEndMember_NonConsolidatedMember_ForecastMember",
+      "NextYearDuration_YearEndMember_NonConsolidatedMember_LowerMember",
+      "NextYearDuration_YearEndMember_NonConsolidatedMember_UpperMember",
+      "PriorYearDuration_AnnualMember_ConsolidatedMember_ResultMember",
+      "PriorYearDuration_AnnualMember_NonConsolidatedMember_ResultMember",
+      "PriorYearDuration_ConsolidatedMember_ResultMember",
+      "PriorYearDuration_FirstQuarterMember_NonConsolidatedMember_ResultMember",
+      "PriorYearDuration_NonConsolidatedMember_ResultMember",
+      "PriorYearDuration_SecondQuarterMember_NonConsolidatedMember_ResultMember",
+      "PriorYearDuration_ThirdQuarterMember_NonConsolidatedMember_ResultMember",
+      "PriorYearDuration_YearEndMember_NonConsolidatedMember_ResultMember",
+      "PriorYearInstant_ConsolidatedMember_ResultMember",
+      "PriorYearInstant_NonConsolidatedMember_ResultMember"
+     ],
+     "scales": [
+      "",
+      "-2",
+      "0",
+      "6"
+     ]
+    },
+    "tse-scedifsy": {
+     "samples": [
+      {
+       "date": "2026-10-14",
+       "code": "33870",
+       "title": "2027年２月期第２四半期（中間期）決算短信〔ＩＦＲＳ〕（連結）"
+      }
+     ],
+     "names": [
+      "AverageNumberOfShares",
+      "BasicEarningsPerShareIFRS",
+      "ChangeInOperatingIncomeIFRS",
+      "ChangeInProfitAttributableToOwnersOfParentIFRS",
+      "ChangeInProfitBeforeTaxIFRS",
+      "ChangeInProfitIFRS",
+      "ChangeInSalesIFRS",
+      "ChangesInTotalComprehensiveIncomeIFRS",
+      "DilutedEarningsPerShareIFRS",
+      "DividendPerShare",
+      "EquityAttributableToOwnersOfParentIFRS",
+      "EquityAttributableToOwnersOfParentToTotalAssetsRatioIFRS",
+      "NumberOfIssuedAndOutstandingSharesAtTheEndOfFiscalYearIncludingTreasuryStock",
+      "NumberOfSubsidiariesExcludedFromConsolidationIFRS",
+      "NumberOfSubsidiariesNewlyConsolidatedIFRS",
+      "NumberOfTreasuryStockAtTheEndOfFiscalYear",
+      "OperatingIncomeIFRS",
+      "ProfitAttributableToOwnersOfParentIFRS",
+      "ProfitBeforeTaxIFRS",
+      "ProfitIFRS",
+      "QuarterlyPeriod",
+      "SalesIFRS",
+      "TotalAssetsIFRS",
+      "TotalComprehensiveIncomeIFRS",
+      "TotalEquityIFRS"
+     ],
+     "contexts": [
+      "CurrentAccumulatedQ2Duration_ConsolidatedMember_ResultMember",
+      "CurrentAccumulatedQ2Duration_NonConsolidatedMember_ResultMember",
+      "CurrentAccumulatedQ2Instant",
+      "CurrentAccumulatedQ2Instant_ConsolidatedMember_ResultMember",
+      "CurrentAccumulatedQ2Instant_NonConsolidatedMember_ResultMember",
+      "CurrentYearDuration_AnnualMember_NonConsolidatedMember_ForecastMember",
+      "CurrentYearDuration_AnnualMember_NonConsolidatedMember_LowerMember",
+      "CurrentYearDuration_AnnualMember_NonConsolidatedMember_UpperMember",
+      "CurrentYearDuration_ConsolidatedMember_ForecastMember",
+      "CurrentYearDuration_ConsolidatedMember_LowerMember",
+      "CurrentYearDuration_ConsolidatedMember_UpperMember",
+      "CurrentYearDuration_FirstQuarterMember_NonConsolidatedMember_ResultMember",
+      "CurrentYearDuration_SecondQuarterMember_NonConsolidatedMember_ResultMember",
+      "CurrentYearDuration_ThirdQuarterMember_NonConsolidatedMember_ForecastMember",
+      "CurrentYearDuration_ThirdQuarterMember_NonConsolidatedMember_LowerMember",
+      "CurrentYearDuration_ThirdQuarterMember_NonConsolidatedMember_UpperMember",
+      "CurrentYearDuration_YearEndMember_NonConsolidatedMember_ForecastMember",
+      "CurrentYearDuration_YearEndMember_NonConsolidatedMember_LowerMember",
+      "CurrentYearDuration_YearEndMember_NonConsolidatedMember_UpperMember",
+      "PriorAccumulatedQ2Duration_ConsolidatedMember_ResultMember",
+      "PriorAccumulatedQ2Duration_NonConsolidatedMember_ResultMember",
+      "PriorYearDuration_AnnualMember_NonConsolidatedMember_ResultMember",
+      "PriorYearDuration_FirstQuarterMember_NonConsolidatedMember_ResultMember",
+      "PriorYearDuration_SecondQuarterMember_NonConsolidatedMember_ResultMember",
+      "PriorYearDuration_ThirdQuarterMember_NonConsolidatedMember_ResultMember",
+      "PriorYearDuration_YearEndMember_NonConsolidatedMember_ResultMember",
+      "PriorYearInstant_ConsolidatedMember_ResultMember",
+      "PriorYearInstant_NonConsolidatedMember_ResultMember"
+     ],
+     "scales": [
+      "",
+      "-2",
+      "0",
+      "6"
+     ]
+    },
+    "tse-snedjpsy": {
+     "samples": [
+      {
+       "date": "2026-10-14",
+       "code": "135A0",
+       "title": "2027年２月期第２四半期（中間期）決算短信〔日本基準〕(非連結)"
+      },
+      {
+       "date": "2026-10-14",
+       "code": "28720",
+       "title": "2027年２月期第２四半期（中間期）決算短信〔日本基準〕（非連結）"
+      }
+     ],
+     "names": [
+      "AverageNumberOfShares",
+      "CapitalAdequacyRatio",
+      "ChangeInNetIncome",
+      "ChangeInNetSales",
+      "ChangeInOperatingIncome",
+      "ChangeInOrdinaryIncome",
+      "DilutedNetIncomePerShare",
+      "DividendPerShare",
+      "NetAssets",
+      "NetIncome",
+      "NetIncomePerShare",
+      "NetSales",
+      "NumberOfIssuedAndOutstandingSharesAtTheEndOfFiscalYearIncludingTreasuryStock",
+      "NumberOfTreasuryStockAtTheEndOfFiscalYear",
+      "OperatingIncome",
+      "OrdinaryIncome",
+      "OwnersEquity",
+      "QuarterlyPeriod",
+      "TotalAssets"
+     ],
+     "contexts": [
+      "CurrentAccumulatedQ2Duration_NonConsolidatedMember_ResultMember",
+      "CurrentAccumulatedQ2Instant",
+      "CurrentAccumulatedQ2Instant_NonConsolidatedMember_ResultMember",
+      "CurrentYearDuration_AnnualMember_NonConsolidatedMember_ForecastMember",
+      "CurrentYearDuration_AnnualMember_NonConsolidatedMember_LowerMember",
+      "CurrentYearDuration_AnnualMember_NonConsolidatedMember_UpperMember",
+      "CurrentYearDuration_FirstQuarterMember_NonConsolidatedMember_ResultMember",
+      "CurrentYearDuration_NonConsolidatedMember_ForecastMember",
+      "CurrentYearDuration_NonConsolidatedMember_LowerMember",
+      "CurrentYearDuration_NonConsolidatedMember_UpperMember",
+      "CurrentYearDuration_SecondQuarterMember_NonConsolidatedMember_ResultMember",
+      "CurrentYearDuration_ThirdQuarterMember_NonConsolidatedMember_ForecastMember",
+      "CurrentYearDuration_ThirdQuarterMember_NonConsolidatedMember_LowerMember",
+      "CurrentYearDuration_ThirdQuarterMember_NonConsolidatedMember_UpperMember",
+      "CurrentYearDuration_YearEndMember_NonConsolidatedMember_ForecastMember",
+      "CurrentYearDuration_YearEndMember_NonConsolidatedMember_LowerMember",
+      "CurrentYearDuration_YearEndMember_NonConsolidatedMember_UpperMember",
+      "PriorAccumulatedQ2Duration_NonConsolidatedMember_ResultMember",
+      "PriorYearDuration_AnnualMember_NonConsolidatedMember_ResultMember",
+      "PriorYearDuration_FirstQuarterMember_NonConsolidatedMember_ResultMember",
+      "PriorYearDuration_SecondQuarterMember_NonConsolidatedMember_ResultMember",
+      "PriorYearDuration_ThirdQuarterMember_NonConsolidatedMember_ResultMember",
+      "PriorYearDuration_YearEndMember_NonConsolidatedMember_ResultMember",
+      "PriorYearInstant_NonConsolidatedMember_ResultMember"
+     ],
+     "scales": [
+      "",
+      "-2",
+      "0",
+      "6"
+     ]
+    },
+    "tse-qnedjpsm": {
+     "samples": [
+      {
+       "date": "2026-10-14",
+       "code": "505A0",
+       "title": "2027年５月期第１四半期決算短信〔日本基準〕（非連結）"
+      }
+     ],
+     "names": [
+      "AverageNumberOfShares",
+      "CapitalAdequacyRatio",
+      "ChangeInNetIncome",
+      "ChangeInNetSales",
+      "ChangeInOperatingIncome",
+      "ChangeInOrdinaryIncome",
+      "DilutedNetIncomePerShare",
+      "DividendPerShare",
+      "NetAssets",
+      "NetIncome",
+      "NetIncomePerShare",
+      "NetSales",
+      "NumberOfIssuedAndOutstandingSharesAtTheEndOfFiscalYearIncludingTreasuryStock",
+      "NumberOfTreasuryStockAtTheEndOfFiscalYear",
+      "OperatingIncome",
+      "OrdinaryIncome",
+      "OwnersEquity",
+      "QuarterlyPeriod",
+      "TotalAssets"
+     ],
+     "contexts": [
+      "CurrentAccumulatedQ1Duration_NonConsolidatedMember_ResultMember",
+      "CurrentAccumulatedQ1Instant",
+      "CurrentAccumulatedQ1Instant_NonConsolidatedMember_ResultMember",
+      "CurrentYearDuration_AnnualMember_NonConsolidatedMember_ForecastMember",
+      "CurrentYearDuration_AnnualMember_NonConsolidatedMember_LowerMember",
+      "CurrentYearDuration_AnnualMember_NonConsolidatedMember_UpperMember",
+      "CurrentYearDuration_FirstQuarterMember_NonConsolidatedMember_ResultMember",
+      "CurrentYearDuration_NonConsolidatedMember_ForecastMember",
+      "CurrentYearDuration_NonConsolidatedMember_LowerMember",
+      "CurrentYearDuration_NonConsolidatedMember_UpperMember",
+      "CurrentYearDuration_SecondQuarterMember_NonConsolidatedMember_ForecastMember",
+      "CurrentYearDuration_SecondQuarterMember_NonConsolidatedMember_LowerMember",
+      "CurrentYearDuration_SecondQuarterMember_NonConsolidatedMember_UpperMember",
+      "CurrentYearDuration_ThirdQuarterMember_NonConsolidatedMember_ForecastMember",
+      "CurrentYearDuration_ThirdQuarterMember_NonConsolidatedMember_LowerMember",
+      "CurrentYearDuration_ThirdQuarterMember_NonConsolidatedMember_UpperMember",
+      "CurrentYearDuration_YearEndMember_NonConsolidatedMember_ForecastMember",
+      "CurrentYearDuration_YearEndMember_NonConsolidatedMember_LowerMember",
+      "CurrentYearDuration_YearEndMember_NonConsolidatedMember_UpperMember",
+      "PriorAccumulatedQ1Duration_NonConsolidatedMember_ResultMember",
+      "PriorYearDuration_AnnualMember_NonConsolidatedMember_ResultMember",
+      "PriorYearDuration_FirstQuarterMember_NonConsolidatedMember_ResultMember",
+      "PriorYearDuration_SecondQuarterMember_NonConsolidatedMember_ResultMember",
+      "PriorYearDuration_ThirdQuarterMember_NonConsolidatedMember_ResultMember",
+      "PriorYearDuration_YearEndMember_NonConsolidatedMember_ResultMember",
+      "PriorYearInstant_NonConsolidatedMember_ResultMember"
+     ],
+     "scales": [
+      "",
+      "-2",
+      "0",
+      "6"
+     ]
+    }
+   },
+   "sample_codes_seen": {
+    "8035": [],
+    "6981": [],
+    "4063": []
+   },
+   "ok": true
+  },
   "stooq": {
    "status": 200,
-   "sec": 0.67,
+   "sec": 0.45,
    "n": 2,
    "is_csv": false,
    "head": "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><meta name=\"robots\" content=\"no",
