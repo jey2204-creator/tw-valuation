@@ -31,6 +31,7 @@ KST = dt.timezone(dt.timedelta(hours=9))
 TODAY = dt.datetime.now(KST).date()
 
 # 報告代碼 → (季別, 季末月日, 法定申報期限天數)
+CACHE_V = 2   # 抽取規則改版就 +1：舊版快取會重抓
 REPORTS = [("11013", 1, "03-31", 45), ("11012", 2, "06-30", 45), ("11014", 3, "09-30", 45), ("11011", 4, "12-31", 90)]
 
 
@@ -122,6 +123,9 @@ def extract(lst):
         if not hit:
             hit = [x for x in rows if re.sub(r"\s", "", x.get("account_nm", "")) in [re.sub(r"\s", "", n) for n in names]
                    and "Comprehensive" not in (x.get("account_id") or "")]
+        if not hit and k == "eps":   # 名稱五花八門（보통주기본주당순이익…）：找含「기본」「주당」的列
+            hit = [x for x in rows if "BasicEarnings" in (x.get("account_id") or "")
+                   or ("기본" in x.get("account_nm", "") and "주당" in x.get("account_nm", ""))]
         if k == "eps" and len(hit) > 1:   # 普通股／特別股各一列 → 取普通股
             hit = sorted(hit, key=lambda x: (0 if "보통주" in x.get("account_nm", "") else 1,
                                              1 if "우선주" in x.get("account_nm", "") else 0))
@@ -132,6 +136,7 @@ def extract(lst):
         if sj == "IS":
             out[k + "_c"] = num(x.get("thstrm_add_amount"))
     out["rcept"] = (lst[0].get("rcept_no") or "")[:8] if lst else ""
+    out["v"] = CACHE_V
     return out
 
 
@@ -164,7 +169,7 @@ def fin_cache(code, corp):
     for y in range(TODAY.year - YEARS, TODAY.year + 1):
         for rc, qn, md, due in REPORTS:
             k = f"{y}-{rc}"
-            if k in cache and cache[k] is not None:
+            if k in cache and cache[k] is not None and (cache[k] == {} or cache[k].get("v") == CACHE_V):
                 continue
             end = dt.date.fromisoformat(f"{y}-{md}")
             if TODAY < end + dt.timedelta(days=14):     # 還沒到可能公布的時間
@@ -227,7 +232,18 @@ def quarters(cache):
                              eps=None if v["eps"] is None else round(v["eps"], 1),
                              capex=None if v["capex"] is None else round(v["capex"] / 1e8, 1),
                              sh=None if not sh or sh <= 0 else round(sh / 1e6, 2),
-                             eq=None if eq is None else round(eq / 1e8, 1), fs=r.get("fs")))
+                             eq=None if eq is None else round(eq / 1e8, 1), fs=r.get("fs"), ni=ni))
+    # 財報沒有 EPS 的季：用最接近一季的股數推算（EPS = 歸屬母公司淨利 ÷ 股數）
+    for i, x in enumerate(rows):
+        if x["eps"] is None and x["ni"] is not None:
+            near = sorted((abs(i - j), y["sh"]) for j, y in enumerate(rows) if y["sh"])
+            if near:
+                x["sh"] = near[0][1]
+                x["eps"] = round(x["ni"] / (x["sh"] * 1e6), 1)
+                x["eps_est"] = True
+        elif not x["sh"]:
+            near = sorted((abs(i - j), y["sh"]) for j, y in enumerate(rows) if y["sh"])
+            x["sh"] = near[0][1] if near else None
     return rows
 
 
@@ -359,6 +375,9 @@ def build(code, corps):
     fr = [[r["date"], r["c"], r["fr"]] for r in px if r["date"] >= cut and r["fr"] is not None]
     q = [[x["cal"], x["cal"], x["rev"], x["gm"], x["om"], x["nm"], x["eps"], x["capex"], x["sh"], x["end"], x["filed"]]
          for x in Q]
+    est = [x["cal"] for x in Q if x.get("eps_est")]
+    if est:
+        note.append(f"{est[0]}～{est[-1]} 共 {len(est)} 季財報未列 EPS，以淨利 ÷ 鄰近季股數推算")
     if Q and len(Q) < 4:
         note.append(f"財報只有 {len(Q)} 季，歷史資料不足")
     if Q and Q[-1].get("fs") == "OFS":
