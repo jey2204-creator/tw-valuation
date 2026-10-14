@@ -473,7 +473,7 @@ function homeRender(){
   $('groups').innerHTML=groups.filter(g=>g.items.length).map(g=>`<div class="grp"><h3>${esc(g.t)}</h3>`+
     (g.tw.length?`<div class="gtw">台股：${g.tw.map(([c,n])=>`<a href="../#${c}">${c} ${esc(n)}</a>`).join('、')}</div>`:'')+
     g.items.map(s=>{const col=s.chg>0?'var(--up)':s.chg<0?'var(--down)':'var(--muted)';
-      return `<a class="it" href="#${s.id}"><span class="t">${s.id}</span><span class="n">${esc(s.name||'')}${s.cyc?' <span class="pill">循環</span>':''}<small>${esc(s.jname||'')}</small></span>`+
+      return `<a class="it" href="#${s.id}"><span class="t">${s.id}</span><span class="n">${esc(s.name||'')}${s.cyc?' <span class="pill">循環</span>':''}<small>${s.jname&&s.jname!==s.name?esc(s.jname):'&nbsp;'}</small></span>`+
       `<span class="p" style="color:${col}">${fmt(s.close,0)}<br><small>${s.chg==null?'':(s.chg>0?'+':'')+s.chg+'%'}</small></span>`+
       `<span class="v">PE ${s.pe??'—'}｜預 ${s.fpe??'—'}<br>PB ${s.pb??'—'}</span></a>`}).join('')+'</div>').join('')||'<p class="meta" style="margin-top:14px">找不到符合的股票</p>';
   const d=IDX.map(s=>s.date).sort().pop();$('hMeta').textContent=`${IDX.length} 檔日股，依台股供應鏈主題分組${d?`；收盤 ${d.replaceAll('-','/')}`:''}`;
