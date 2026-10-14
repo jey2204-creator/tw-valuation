@@ -250,6 +250,84 @@ def tdnet():
             "ok": any(x["status"] == 200 for x in days)}
 
 
+IX_TAG = re.compile(r"<ix:(nonFraction|nonNumeric)\b([^>]*)>", re.I)
+IX_ATTR = re.compile(r'([\w:.-]+)="([^"]*)"')
+
+
+def tdnet_rows(day):
+    """某一天 TDnet 清單（含分頁）→ [(時間, 代號, 標題, zip)]，只留有 XBRL 的列。"""
+    out, page = [], 1
+    while page <= 6:
+        s, b, t = http(f"https://www.release.tdnet.info/inbs/I_list_{page:03d}_{day:%Y%m%d}.html")
+        if s != 200:
+            break
+        html = b.decode("utf-8", "replace")
+        for r in re.findall(r"<tr>(.*?)</tr>", html, re.S):
+            z = re.search(r'href="([^"]+\.zip)"', r)
+            if not z:
+                continue
+            code = re.search(r'kjCode"[^>]*>\s*([0-9A-Z]{4,5})', r)
+            title = re.search(r'kjTitle"[^>]*>(.*?)</td>', r, re.S)
+            tm = re.search(r'kjTime"[^>]*>\s*([0-9:]+)', r)
+            out.append((tm.group(1) if tm else "", code.group(1) if code else "",
+                        re.sub(r"<[^>]+>|\s+", "", title.group(1)) if title else "", z.group(1)))
+        if f"I_list_{page + 1:03d}_" not in html:
+            break
+        page += 1
+        time.sleep(0.7)
+    return out
+
+
+def tdnet_xbrl():
+    """下載近 10 個營業日的決算短信／業績予想修正 XBRL，盤點 Summary iXBRL 的科目名稱與期間 context。
+    只記錄名稱，不記錄數值。依 Summary 檔名前綴分類（tse-qcedjpsm = 季報、合併、日本基準…）。"""
+    rows, d, n = [], TODAY, 0
+    while n < 10:
+        if d.weekday() < 5:
+            rows += [(f"{d:%Y-%m-%d}",) + r for r in tdnet_rows(d)]
+            n += 1
+            time.sleep(0.7)
+        d -= dt.timedelta(days=1)
+    want = [r for r in rows if "決算短信" in r[3] or "予想" in r[3]]
+    kinds, got, tried = {}, 0, 0
+    for r in want:
+        if tried >= 18:
+            break
+        tried += 1
+        s, b, t = http("https://www.release.tdnet.info/inbs/" + r[4])
+        time.sleep(0.7)
+        if s != 200:
+            continue
+        zf = zipfile.ZipFile(io.BytesIO(b))
+        summ = [x for x in zf.namelist() if "/Summary/" in x and x.endswith("ixbrl.htm")]
+        if not summ:
+            continue
+        prefix = re.search(r"(tse-[a-z]+)-", summ[0].split("/")[-1])
+        prefix = prefix.group(1) if prefix else "?"
+        if len(kinds.get(prefix, {}).get("samples", [])) >= 2:
+            continue
+        html = zf.read(summ[0]).decode("utf-8", "replace")
+        names, ctxs = set(), set()
+        for kind, attrs in IX_TAG.findall(html):
+            a = dict(IX_ATTR.findall(attrs))
+            if kind.lower() == "nonfraction" and a.get("name"):
+                names.add(a["name"].split(":")[-1])
+                ctxs.add(a.get("contextRef", ""))
+        k = kinds.setdefault(prefix, {"samples": [], "names": set(), "contexts": set(),
+                                      "scales": set()})
+        k["samples"].append({"date": r[0], "code": r[2], "title": r[3][:40]})
+        k["names"] |= names
+        k["contexts"] |= ctxs
+        k["scales"] |= {dict(IX_ATTR.findall(x[1])).get("scale", "") for x in IX_TAG.findall(html)
+                        if x[0].lower() == "nonfraction"}
+        got += 1
+    for k in kinds.values():
+        k["names"], k["contexts"], k["scales"] = sorted(k["names"]), sorted(k["contexts"]), sorted(k["scales"])
+    watch = {c: [r[:4] for r in rows if r[2][:4] == c] for c in SAMPLE}
+    return {"days_scanned": n, "rows_with_xbrl": len(rows), "candidates": len(want),
+            "zips_parsed": got, "kinds": kinds, "sample_codes_seen": watch, "ok": got > 0}
+
+
 # ======================= Stooq（股價備援，免金鑰） =======================
 def stooq():
     s, b, t = http("https://stooq.com/q/d/l/?s=8035.jp&i=d")
@@ -276,6 +354,7 @@ if __name__ == "__main__":
     probe("yahoo_fundamentals", yahoo_fundamentals)
     probe("yfinance_lib", yfinance_lib)
     probe("tdnet", tdnet)
+    probe("tdnet_xbrl", tdnet_xbrl)
     probe("stooq", stooq)
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     with open(OUT, "w", encoding="utf-8") as f:
