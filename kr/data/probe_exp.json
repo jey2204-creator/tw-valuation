@@ -1,205 +1,4 @@
 {
- "list": {
-  "status": 200,
-  "sec": 2.71,
-  "rows": [
-   [
-    "10179605",
-    "0f8a9958a2a2a2905f59d9887bb2906f",
-    "'싸다고 샀다가 안전까지 위협'… 두 달 새 &apos;짝퉁&apos; 28만 점 국경에서 막았다",
-    "2026.10.14"
-   ],
-   [
-    "10179604",
-    "6547a366b7903adfa436d4ad3ed7432f",
-    "관세청, 국회 지적 사항을 실질적 정책개선으로 연계",
-    "2026.10.14"
-   ],
-   [
-    "10179603",
-    "47cb644bccbdff7f7ec30781a15601d3",
-    "관세청·부산세관, 북극항로 개척 지원 위해 관세행정 역량 집중",
-    "2026.10.14"
-   ],
-   [
-    "10179244",
-    "fb5934e3d036f12d4a05f5e6a0e9718d",
-    "관세청, 인도·이집트 세관공무원 대상  관세행정 심화연수 실시",
-    "2026.10.12"
-   ],
-   [
-    "10179243",
-    "fa230b5fafd0632ce4a59d50bac3e371",
-    "관세청, 9월의 관세인 및 3분기 핵심가치상 시상",
-    "2026.10.12"
-   ],
-   [
-    "10179143",
-    "2fbd97b6ed3711c34f4810ce485a72ce",
-    "2026년 10월 1일 ~ 10월 10일 수출입 현황 [잠정치]",
-    "2026.10.12"
-   ],
-   [
-    "10178583",
-    "a6f95354f05515e73c3d21ba798d39e9",
-    "원유 수입선 다변화 관세행정 지원대책 확대",
-    "2026.10.02"
-   ],
-   [
-    "10178304",
-    "9714bd0f6916ae89827b90b1f37f4b19",
-    "2026년 9월 수출입 현황 [잠정치]",
-    "2026.10.01"
-   ],
-   [
-    "10178163",
-    "349032eff155b3da1fb55c7b38eec78e",
-    "2026년 8월 기업규모별 수출입 현황",
-    "2026.09.29"
-   ],
-   [
-    "10177943",
-    "56d132375ca6378fe236553b8ba2b436",
-    "관세청, 관세주권과 경제국경 수호의 뿌리 ‘두모진 해관’ 기념식 개최",
-    "2026.09.28"
-   ]
-  ],
-  "inputs": [
-   "aditCol1",
-   "authChk",
-   "bbsId",
-   "bbsTy",
-   "cntntsId",
-   "collection",
-   "confmUseAt",
-   "csnstOpinion",
-   "csnstScore",
-   "currPage",
-   "listCo",
-   "listUseAt",
-   "manageAt",
-   "maxSn",
-   "menuId",
-   "menuTy",
-   "mi",
-   "minSn",
-   "newHour",
-   "noticeAt",
-   "nttSn",
-   "nttSnUrl",
-   "paramGubun",
-   "paramNm",
-   "paramVal",
-   "query",
-   "searchType",
-   "searchValue",
-   "sysId",
-   "sysid",
-   "useAt",
-   "wrterId"
-  ],
-  "form_heads": [
-   "<form name=\"search\" id=\"search\" method=\"post\" action=\"/search/search.jsp\" class=\"clearfix\" onsubmit=\"return false;\" title=\"통합검색\">\n\t\t\t\t\t\t\t<input type=\"hidden\" name=\"sysid\" id=\"sysid\" value=\"kcs\" />\n\t\t\t\t\t\t\t<input type=\"hidden\" name=\"collection\" id=\"collection\"/>\n\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t<fieldset>\n\t\t\t\t\t\t\t\t\t<le",
-   "<form name=\"srchForm\" id=\"srchForm\" method=\"post\">\r\n\r\n\r\n<!-- 단어 설정 -->\r\n\r\n\t\r\n\t\r\n\t\r\n\t\r\n\t\r\n\t\r\n\t\r\n\t\r\n\t\r\n\t\r\n\t\r\n\t\r\n\t\r\n\t\r\n\r\n\r\n\r\n<!-- 게시판 검색 -->\r\n<input type=\"hidden\" name=\"bbsId\"  value=\"1362\" id=\"bbsId\"/>\r\n<input type=\"hidden\" name=\"nttSn\"  value=\"\" id=\"nttSn\"/>\r\n<input type=\"hidden\" name=\"nttSnUrl\"  val",
-   "<form name=\"pagingForm\" action=\"/kcs/na/ntt/selectNttList.do\" method=\"post\">\n<input type=\"hidden\" name=\"currPage\" value=\"1\" />\n<input type=\"hidden\" name=\"confmUseAt\" value=\"N\" />\n<input type=\"hidden\" name=\"bbsId\" value=\"1362\" />\n<input type=\"hidden\" name=\"minSn\" value=\"0\" />\n<input type=\"hidden\" nam",
-   "<form name=\"srchForm2\" id=\"srchForm2\" method=\"post\">\r\n<input type=\"hidden\" name=\"mi\"  value=\"2891\" />\r\n</form>"
-  ],
-  "scripts": [
-   "\r\n\r\n\t//검색\r\n\tfunction searchEvent() {\r\n\t    var frm = document.getElementById('srchForm');\r\n\t    frm.currPage.value = '';\r\n\t\tfrm.action = '/kcs/na/ntt/selectNttList.do';\r\n\t\tfrm.submit();\r\n\t}\r\n\t\r\n \t$(function(){\r\n \t\t\r\n \t\t//검색 ( 엔터 )\r\n \t\t$('#searchValue').keypress(function(event){\r\n \t\t    if ( event.which == 13 ) {\r\n \t\t    \tsearchEvent();\r\n \t\t         return false;\r\n \t\t    }\r\n \t\t});\r\n\r\n \t\t// xml 입력 삭제\r\n \t\tif($(\"#searchValue\").val().indexOf(\"xml\") != -1)\r\n \t\t\t$(\"#searchValue\").val(\"\");\r\n\r\n\t\t$(\".loginNttPage\").click(function() {\r\n\t\t\tvar bbsId = $(this).attr('data-id');\r\n\t\t\t//$(\"#bbsId\").val(bbsId);\r\n\t\t\t$(\"#srchForm2\").attr('action', \"/kcs/lo/login/loginPage.do?bbsId=\"+bbsId+\"\").submit();\t\r\n\t\t});\r\n\r\n \t\t//게시물 보기\r\n \t\t$(\".nttInfoBtn\").click(function() {\r\n \t\t\tvar nttSn = $(this).attr('data-id');\r\n \t\t\tvar nttSnUrl = $(this).attr('data-url');\r\n \t\t\t$(\"#nttSn\").val(nttSn);\r\n \t\t\t$(\"#nttSnUrl\").val(nttSnUrl);\r\n \t\t\t$(\"#srchForm\").attr('action', \"/kcs/na/ntt/selectNttInfo.do\").submit();\t\r\n \t\t});\r\n\r\n\r\n\t\t\r\n\r\n \t\t \t\t \t\t\r\n \t\t//첨부파일 다운(팝오버)\r\n \t\t$(\".listFileDown\").click(function(){\r\n\t\t\tvar obj = $(this);\r\n\t\t\tvar nttSn = $(this).attr(\"data-id\");\r\n\t\t\t\r\n\t\t\t$(\"#nttSn\").val(nttSn);\r\n\t\t\t\r\n\t\t\tchk = obj.attr('chk');\r\n\t\t\t\r\n\t\t\tif (chk == null) {\r\n \t\t\t\tobj.attr('chk','1');\r\n \t\t\t\tchk = 1;\r\n\t\t\t}\r\n\t\t\t\r\n \t\t\tif (chk == 1) {\r\n \t\t\t\t\r\n \t\t\t\t/* 게시물 권한 체크 */\r\n \t\t\t\t$.ajax({\r\n \t\t\t\t\ttype : \"get\",\r\n \t\t\t\t\turl : \"/kcs/na/ntt/fileDownChk.do\",\r\n \t\t\t\t\tdata : $(\"form[name='srchForm']\").serialize(),\r\n \t\t\t\t\tdataType : \"json\",\r\n \t\t\t\t\tsuccess:function(data){\r\n \t\t\t\t\t\tmssage = data.mssage;\r\n \t\t\t\t\t\t\r\n \t\t\t\t\t\tif(mssage.length == 0){\r\n \t\t\t\t\t\t\tobj.popover({\r\n\t \t\t\t\t\t\t\ttitle : '첨부파일',\r\n\t \t\t\t\t\t\t\thtml : true, \r\n\t \t\t\t\t\t\t\tcontainer : \"body\",\r\n\t \t\t\t\t\t\t\ttoggle : \"popover\", \r\n\t \t\t\t\t\t\t\ttrigger: 'focus',\r\n\t \t\t\t\t\t\t\tplacement : \"bottom\",\r\n\t \t\t\t\t\t\t\tcontent : function(){\r\n\t\t\t\t\t\t\t\t\thtml = \"\";\r\n\t \t\t\t\t\t\t\t\t$.each(data.nttFileList, function(i, item) { \r\n\t \t\t\t\t\t\t\t\t\thtml += \"<img style='cursor:pointer'\";\r\n\t \t\t\t\t\t\t\t\t\tif (item.extsn == \"hwp\") {\r\n\t \t\t\t\t\t\t\t\t\t\thtml += \"src=\\\"/images/co/na/ico_hwp.gif\\\" \";\r\n\t\t\t\t\t\t\t\t\t\t} else if (item.extsn == \"img\" || item.extsn == \"png\" || item.extsn == \"jpg\") {\r\n\t\t\t\t\t\t\t\t\t\t\thtml += \"src=\\\"/images/co/na/ico_img.gif\\\" \";\r\n\t\t\t\t\t\t\t\t\t\t} else if (item.extsn == \"pdf\") {\r\n\t\t\t\t\t\t\t\t\t\t\thtml += \"src=\\\"/images/co/na/ico_pdf.gif\\\" \";\r\n\t\t\t\t\t\t\t\t\t\t} else if (item.extsn == \"ppt\" || item.extsn == \"pptx\") {\r\n\t\t\t\t\t\t\t\t\t\t\thtml += \"src=\\\"/images/co/na/ico_ppt.gif\\\" \";\r\n\t\t\t\t\t\t\t\t\t\t} else if (item.extsn == \"word\") {\r\n\t\t\t\t\t\t\t\t\t\t\thtml += \"src=\\\""
-  ],
-  "jsfiles": [
-   "/js/html5shiv.js",
-   "/js/jquery.min.js",
-   "/js/jquery-ui.min.js",
-   "/js/jquery.form.min.js",
-   "/js/jquery.bpopup.min.js",
-   "/js/web/kcs/jquery.cookie.js",
-   "/js/web/kcs/slick.min.js",
-   "/js/web/kcs/common.js?20261015005429",
-   "/js/web/kcs/common-scroll.js",
-   "/js/web/kcs/sub.js?20261015005429",
-   "/js/common.js?20261015005429",
-   "/js/search/ark/js/beta.fix.js?v2.0",
-   "/js/search/ark/js/ark.js?v3.0",
-   "/js/calendar.js",
-   "/js/ap/hc/bootstrap.min.js",
-   "/js/template/00042/sub.js",
-   "/js/template/00042/common.js",
-   "/js/common-scroll.js",
-   "/js/common.js"
-  ],
-  "paging": [
-   "<input type=\"hidden\" name=\"currPage\" value=\"1\" />\r",
-   "<input type=\"hidden\" name=\"currPage\" value=\"1\" />",
-   "<script>function goPaging(pageSn){document.pagingForm.currPage.value=pageSn;document.pagingForm.submit();}</script>",
-   "\t    frm.currPage.value = '';\r"
-  ]
- },
- "pages": {
-  "currPage=2": [
-   [
-    "10177905",
-    "9719a52228070911f9935d7432ba7db8",
-    "관세평가분류원, 제27회 품목분류 경진대회 결과 발표"
-   ],
-   10
-  ],
-  "pageIndex=2": [
-   [
-    "10179605",
-    "0f8a9958a2a2a2905f59d9887bb2906f",
-    "'싸다고 샀다가 안전까지 위협'… 두 달 새 &apos;짝퉁&apos; 28만 점 국경에서 막았다"
-   ],
-   10
-  ],
-  "page=2": [
-   [
-    "10179605",
-    "0f8a9958a2a2a2905f59d9887bb2906f",
-    "'싸다고 샀다가 안전까지 위협'… 두 달 새 &apos;짝퉁&apos; 28만 점 국경에서 막았다"
-   ],
-   10
-  ],
-  "pg=2": [
-   [
-    "10179605",
-    "0f8a9958a2a2a2905f59d9887bb2906f",
-    "'싸다고 샀다가 안전까지 위협'… 두 달 새 &apos;짝퉁&apos; 28만 점 국경에서 막았다"
-   ],
-   10
-  ]
- },
- "search": {
-  "searchCnd=1&searchWrd=%EC%88%98%EC%B6%9C%EC%9E%85%20%ED%98%84%ED%99%A9": [
-   0,
-   0,
-   []
-  ],
-  "searchCnd=sj&searchWrd=%EC%88%98%EC%B6%9C%EC%9E%85%20%ED%98%84%ED%99%A9": [
-   0,
-   0,
-   []
-  ],
-  "srchWrd=%EC%88%98%EC%B6%9C%EC%9E%85%20%ED%98%84%ED%99%A9": [
-   0,
-   0,
-   []
-  ],
-  "searchKrwd=%EC%88%98%EC%B6%9C%EC%9E%85%20%ED%98%84%ED%99%A9&searchCnd=1": [
-   0,
-   0,
-   []
-  ],
-  "searchCondition=1&searchKeyword=%EC%88%98%EC%B6%9C%EC%9E%85%20%ED%98%84%ED%99%A9": [
-   10,
-   3,
-   [
-    "'싸다고 샀다가 안전까지 위협'… 두 달 새 &apos",
-    "관세청, 국회 지적 사항을 실질적 정책개선으로 연계",
-    "관세청·부산세관, 북극항로 개척 지원 위해 관세행정 역"
-   ]
-  ]
- },
  "view": {
   "target": [
    "10179143",
@@ -207,425 +6,185 @@
    "2026년 10월 1일 ~ 10월 10일 수출입 현황 [잠정치]",
    "2026.10.12"
   ],
-  "info_nttSn": {
+  "post": {
    "status": 200,
-   "sec": 0.66,
-   "len": 183,
-   "title": "시스템안내",
-   "has_semi": false,
-   "links": [],
-   "file_snips": []
+   "sec": 2.75,
+   "len": 124204,
+   "title": "관세청-2026년 10월 1일 ~ 10월 10일 수출입 현황 [잠정치]",
+   "has_semi": true,
+   "links": [
+    "/common/nttFileDownload.do?fileKey=219bdbd7af0574dadb8d57117993dc92",
+    "/common/nttFileDownload.do?fileKey=b131f55bb2389ad969a1063cb34d97f6"
+   ],
+   "file_snips": [
+    "-size: 12pt; font-family: '맑은 고딕'; text-align: center;\"><span style=\"font-size: 14pt;\"><이하 내용은 첨부파일을 참고하시기 바랍니다></span></p>\r\n\t\t\t\t</div>\r\n\t\t\t</td>\r\n\t\t</tr>\r\n\t\t\r\n\t\r\n\t\r\n\t\r\n\r\n\t\t<tr >\r\n\t\t\t<th scope=\"row\">첨부파일</th>\r\n\t\t\t<td colspan=\"3\">\r\n\t\t\t\t<ul class=\"list_file\">\r\n\t\t\t\t\r\n\t\t\t\t\t<li>\r\n\t\t\t\t\t\t<a href=\"/common/nttFileDownload.do?fileKey=b131f55bb2389ad969a1063cb34d97f6\" title=\"261012 26년 10월 1일 - 10월 10일 수출입현황.hwpx 다운로드\">\r\n\t\t\t\t\t\t\t261012 26년 10월 1일 - 10월 10일 수출입현황.hwpx&nbsp;\r\n\t\t\t\t\t\t\t[<span>854973</span>]\r\n\t\t\t\t\t\t\t<strong>&nbsp;(다운로드 : 820회)</strong>\r\n\t\t\t\t\t\t</a>\r\n\t\t\t\t\t\t\r\n\t\t\t\t\t\t\r\n\t\t\t\t\t</li>\r\n\t\t\t\t\r\n\t\t\t\t\t<li>\r\n\t\t\t\t\t\t<a href=\"/common/nttFileDownload.do?fileKey=219bdbd7af0574dadb8d57117993dc92\" title=\"261012 26년",
+    "\"><span style=\"font-size: 14pt;\"><이하 내용은 첨부파일을 참고하시기 바랍니다></span></p>\r\n\t\t\t\t</div>\r\n\t\t\t</td>\r\n\t\t</tr>\r\n\t\t\r\n\t\r\n\t\r\n\t\r\n\r\n\t\t<tr >\r\n\t\t\t<th scope=\"row\">첨부파일</th>\r\n\t\t\t<td colspan=\"3\">\r\n\t\t\t\t<ul class=\"list_file\">\r\n\t\t\t\t\r\n\t\t\t\t\t<li>\r\n\t\t\t\t\t\t<a href=\"/common/nttFileDownload.do?fileKey=b131f55bb2389ad969a1063cb34d97f6\" title=\"261012 26년 10월 1일 - 10월 10일 수출입현황.hwpx 다운로드\">\r\n\t\t\t\t\t\t\t261012 26년 10월 1일 - 10월 10일 수출입현황.hwpx&nbsp;\r\n\t\t\t\t\t\t\t[<span>854973</span>]\r\n\t\t\t\t\t\t\t<strong>&nbsp;(다운로드 : 820회)</strong>\r\n\t\t\t\t\t\t</a>\r\n\t\t\t\t\t\t\r\n\t\t\t\t\t\t\r\n\t\t\t\t\t</li>\r\n\t\t\t\t\r\n\t\t\t\t\t<li>\r\n\t\t\t\t\t\t<a href=\"/common/nttFileDownload.do?fileKey=219bdbd7af0574dadb8d57117993dc92\" title=\"261012 26년 10월 1일 - 10월 10일 수출입현황.pdf 다운로드\">\r\n\t\t\t\t\t\t\t261012 26년 ",
+    "ey=b131f55bb2389ad969a1063cb34d97f6\" title=\"261012 26년 10월 1일 - 10월 10일 수출입현황.hwpx 다운로드\">\r\n\t\t\t\t\t\t\t261012 26년 10월 1일 - 10월 10일 수출입현황.hwpx&nbsp;\r\n\t\t\t\t\t\t\t[<span>854973</span>]\r\n\t\t\t\t\t\t\t<strong>&nbsp;(다운로드 : 820회)</strong>\r\n\t\t\t\t\t\t</a>\r\n\t\t\t\t\t\t\r\n\t\t\t\t\t\t\r\n\t\t\t\t\t</li>\r\n\t\t\t\t\r\n\t\t\t\t\t<li>\r\n\t\t\t\t\t\t<a href=\"/common/nttFileDownload.do?fileKey=219bdbd7af0574dadb8d57117993dc92\" title=\"261012 26년 10월 1일 - 10월 10일 수출입현황.pdf 다운로드\">\r\n\t\t\t\t\t\t\t261012 26년 10월 1일 - 10월 10일 수출입현황.pdf&nbsp;\r\n\t\t\t\t\t\t\t[<span>454191</span>]\r\n\t\t\t\t\t\t\t<strong>&nbsp;(다운로드 : 969회)</strong>\r\n\t\t\t\t\t\t</a>\r\n\t\t\t\t\t\t\r\n\t\t\t\t\t\t\r\n\t\t\t\t\t\t\t<a href=\"#viewer\" onClick=\"viewer('/streamdocs/v4/documents/view/tnnf/219bdbd7af0574dadb8d57117993dc92')\" class=\"btnFile_view",
+    "년 10월 1일 - 10월 10일 수출입현황.hwpx 다운로드\">\r\n\t\t\t\t\t\t\t261012 26년 10월 1일 - 10월 10일 수출입현황.hwpx&nbsp;\r\n\t\t\t\t\t\t\t[<span>854973</span>]\r\n\t\t\t\t\t\t\t<strong>&nbsp;(다운로드 : 820회)</strong>\r\n\t\t\t\t\t\t</a>\r\n\t\t\t\t\t\t\r\n\t\t\t\t\t\t\r\n\t\t\t\t\t</li>\r\n\t\t\t\t\r\n\t\t\t\t\t<li>\r\n\t\t\t\t\t\t<a href=\"/common/nttFileDownload.do?fileKey=219bdbd7af0574dadb8d57117993dc92\" title=\"261012 26년 10월 1일 - 10월 10일 수출입현황.pdf 다운로드\">\r\n\t\t\t\t\t\t\t261012 26년 10월 1일 - 10월 10일 수출입현황.pdf&nbsp;\r\n\t\t\t\t\t\t\t[<span>454191</span>]\r\n\t\t\t\t\t\t\t<strong>&nbsp;(다운로드 : 969회)</strong>\r\n\t\t\t\t\t\t</a>\r\n\t\t\t\t\t\t\r\n\t\t\t\t\t\t\r\n\t\t\t\t\t\t\t<a href=\"#viewer\" onClick=\"viewer('/streamdocs/v4/documents/view/tnnf/219bdbd7af0574dadb8d57117993dc92')\" class=\"btnFile_view\" title=\"261012 26년 10월 1일 - 10월 10일 수출입현황.pdf 바로보기(새"
+   ],
+   "body_semi": [
+    "bsp; 관세청은 12 일 , 10 월 1 일 ~10 일 기간의 수출입 현황 잠정치를 발표 했다 . ◇ 동기간 수출은 261 억 달러 로 전년동기대비 102.0% 증가 , 수입은 223 억 달러 로 65.5% 증가 했으며 , 무역수지는 38 억 달러 흑자 를 기록했다고 밝혔다 . → 동기간 (1 ~ 10 일 ) &nbsp; 수출 10 월 기준 역대최대 / 반도체 (122 억 달러 ) &nbsp; 수출 10 월 기준 역대최대 &nbsp; &nbsp; &nbsp; &nbsp;동기간 (1 ~ 10 일 ) 일평균 수출액 ( 조업일수 기준 ) &nbsp; 47.5 억 달러 역대최대 &nbsp; &nbsp;1.&nbsp; 총 괄 &nbsp; &nbsp; ㅇ (10.1. ∼ 10.10.) 수출 261 억 달러 , 수입 223 억 달러 로 전년동기대비 &nbsp; 수출 102.0% (131.8 억 달러 ↑ ) &nbsp; 증가 , 수입 65.5% (88.4 억 달러 ↑ ) &nbsp; 증가 &nb"
+   ]
   },
-  "info_post": {
+  "get": {
    "status": 200,
-   "sec": 0.66,
-   "len": 183,
-   "title": "시스템안내",
-   "has_semi": false,
-   "links": [],
-   "file_snips": []
+   "sec": 3.01,
+   "len": 124204,
+   "title": "관세청-2026년 10월 1일 ~ 10월 10일 수출입 현황 [잠정치]",
+   "has_semi": true,
+   "links": [
+    "/common/nttFileDownload.do?fileKey=219bdbd7af0574dadb8d57117993dc92",
+    "/common/nttFileDownload.do?fileKey=b131f55bb2389ad969a1063cb34d97f6"
+   ],
+   "file_snips": [
+    "-size: 12pt; font-family: '맑은 고딕'; text-align: center;\"><span style=\"font-size: 14pt;\"><이하 내용은 첨부파일을 참고하시기 바랍니다></span></p>\r\n\t\t\t\t</div>\r\n\t\t\t</td>\r\n\t\t</tr>\r\n\t\t\r\n\t\r\n\t\r\n\t\r\n\r\n\t\t<tr >\r\n\t\t\t<th scope=\"row\">첨부파일</th>\r\n\t\t\t<td colspan=\"3\">\r\n\t\t\t\t<ul class=\"list_file\">\r\n\t\t\t\t\r\n\t\t\t\t\t<li>\r\n\t\t\t\t\t\t<a href=\"/common/nttFileDownload.do?fileKey=b131f55bb2389ad969a1063cb34d97f6\" title=\"261012 26년 10월 1일 - 10월 10일 수출입현황.hwpx 다운로드\">\r\n\t\t\t\t\t\t\t261012 26년 10월 1일 - 10월 10일 수출입현황.hwpx&nbsp;\r\n\t\t\t\t\t\t\t[<span>854973</span>]\r\n\t\t\t\t\t\t\t<strong>&nbsp;(다운로드 : 820회)</strong>\r\n\t\t\t\t\t\t</a>\r\n\t\t\t\t\t\t\r\n\t\t\t\t\t\t\r\n\t\t\t\t\t</li>\r\n\t\t\t\t\r\n\t\t\t\t\t<li>\r\n\t\t\t\t\t\t<a href=\"/common/nttFileDownload.do?fileKey=219bdbd7af0574dadb8d57117993dc92\" title=\"261012 26년",
+    "\"><span style=\"font-size: 14pt;\"><이하 내용은 첨부파일을 참고하시기 바랍니다></span></p>\r\n\t\t\t\t</div>\r\n\t\t\t</td>\r\n\t\t</tr>\r\n\t\t\r\n\t\r\n\t\r\n\t\r\n\r\n\t\t<tr >\r\n\t\t\t<th scope=\"row\">첨부파일</th>\r\n\t\t\t<td colspan=\"3\">\r\n\t\t\t\t<ul class=\"list_file\">\r\n\t\t\t\t\r\n\t\t\t\t\t<li>\r\n\t\t\t\t\t\t<a href=\"/common/nttFileDownload.do?fileKey=b131f55bb2389ad969a1063cb34d97f6\" title=\"261012 26년 10월 1일 - 10월 10일 수출입현황.hwpx 다운로드\">\r\n\t\t\t\t\t\t\t261012 26년 10월 1일 - 10월 10일 수출입현황.hwpx&nbsp;\r\n\t\t\t\t\t\t\t[<span>854973</span>]\r\n\t\t\t\t\t\t\t<strong>&nbsp;(다운로드 : 820회)</strong>\r\n\t\t\t\t\t\t</a>\r\n\t\t\t\t\t\t\r\n\t\t\t\t\t\t\r\n\t\t\t\t\t</li>\r\n\t\t\t\t\r\n\t\t\t\t\t<li>\r\n\t\t\t\t\t\t<a href=\"/common/nttFileDownload.do?fileKey=219bdbd7af0574dadb8d57117993dc92\" title=\"261012 26년 10월 1일 - 10월 10일 수출입현황.pdf 다운로드\">\r\n\t\t\t\t\t\t\t261012 26년 ",
+    "ey=b131f55bb2389ad969a1063cb34d97f6\" title=\"261012 26년 10월 1일 - 10월 10일 수출입현황.hwpx 다운로드\">\r\n\t\t\t\t\t\t\t261012 26년 10월 1일 - 10월 10일 수출입현황.hwpx&nbsp;\r\n\t\t\t\t\t\t\t[<span>854973</span>]\r\n\t\t\t\t\t\t\t<strong>&nbsp;(다운로드 : 820회)</strong>\r\n\t\t\t\t\t\t</a>\r\n\t\t\t\t\t\t\r\n\t\t\t\t\t\t\r\n\t\t\t\t\t</li>\r\n\t\t\t\t\r\n\t\t\t\t\t<li>\r\n\t\t\t\t\t\t<a href=\"/common/nttFileDownload.do?fileKey=219bdbd7af0574dadb8d57117993dc92\" title=\"261012 26년 10월 1일 - 10월 10일 수출입현황.pdf 다운로드\">\r\n\t\t\t\t\t\t\t261012 26년 10월 1일 - 10월 10일 수출입현황.pdf&nbsp;\r\n\t\t\t\t\t\t\t[<span>454191</span>]\r\n\t\t\t\t\t\t\t<strong>&nbsp;(다운로드 : 969회)</strong>\r\n\t\t\t\t\t\t</a>\r\n\t\t\t\t\t\t\r\n\t\t\t\t\t\t\r\n\t\t\t\t\t\t\t<a href=\"#viewer\" onClick=\"viewer('/streamdocs/v4/documents/view/tnnf/219bdbd7af0574dadb8d57117993dc92')\" class=\"btnFile_view",
+    "년 10월 1일 - 10월 10일 수출입현황.hwpx 다운로드\">\r\n\t\t\t\t\t\t\t261012 26년 10월 1일 - 10월 10일 수출입현황.hwpx&nbsp;\r\n\t\t\t\t\t\t\t[<span>854973</span>]\r\n\t\t\t\t\t\t\t<strong>&nbsp;(다운로드 : 820회)</strong>\r\n\t\t\t\t\t\t</a>\r\n\t\t\t\t\t\t\r\n\t\t\t\t\t\t\r\n\t\t\t\t\t</li>\r\n\t\t\t\t\r\n\t\t\t\t\t<li>\r\n\t\t\t\t\t\t<a href=\"/common/nttFileDownload.do?fileKey=219bdbd7af0574dadb8d57117993dc92\" title=\"261012 26년 10월 1일 - 10월 10일 수출입현황.pdf 다운로드\">\r\n\t\t\t\t\t\t\t261012 26년 10월 1일 - 10월 10일 수출입현황.pdf&nbsp;\r\n\t\t\t\t\t\t\t[<span>454191</span>]\r\n\t\t\t\t\t\t\t<strong>&nbsp;(다운로드 : 969회)</strong>\r\n\t\t\t\t\t\t</a>\r\n\t\t\t\t\t\t\r\n\t\t\t\t\t\t\r\n\t\t\t\t\t\t\t<a href=\"#viewer\" onClick=\"viewer('/streamdocs/v4/documents/view/tnnf/219bdbd7af0574dadb8d57117993dc92')\" class=\"btnFile_view\" title=\"261012 26년 10월 1일 - 10월 10일 수출입현황.pdf 바로보기(새"
+   ],
+   "body_semi": [
+    "bsp; 관세청은 12 일 , 10 월 1 일 ~10 일 기간의 수출입 현황 잠정치를 발표 했다 . ◇ 동기간 수출은 261 억 달러 로 전년동기대비 102.0% 증가 , 수입은 223 억 달러 로 65.5% 증가 했으며 , 무역수지는 38 억 달러 흑자 를 기록했다고 밝혔다 . → 동기간 (1 ~ 10 일 ) &nbsp; 수출 10 월 기준 역대최대 / 반도체 (122 억 달러 ) &nbsp; 수출 10 월 기준 역대최대 &nbsp; &nbsp; &nbsp; &nbsp;동기간 (1 ~ 10 일 ) 일평균 수출액 ( 조업일수 기준 ) &nbsp; 47.5 억 달러 역대최대 &nbsp; &nbsp;1.&nbsp; 총 괄 &nbsp; &nbsp; ㅇ (10.1. ∼ 10.10.) 수출 261 억 달러 , 수입 223 억 달러 로 전년동기대비 &nbsp; 수출 102.0% (131.8 억 달러 ↑ ) &nbsp; 증가 , 수입 65.5% (88.4 억 달러 ↑ ) &nbsp; 증가 &nb"
+   ]
   }
  },
- "titles": [
-  [
-   "10179605",
-   "'싸다고 샀다가 안전까지 위협'… 두 달 새 &apos;짝퉁&apos; 28만 점 국경에서 막았다",
-   "2026.10.14"
+ "misc": {
+  "listCo=100": [
+   100,
+   18,
+   [
+    "'싸다고 샀다가 안전까지 위협'… 두 달 새 &apos",
+    "관세청, 국회 지적 사항을 실질적 정책개선으로 연계",
+    "관세청·부산세관, 북극항로 개척 지원 위해 관세행정 역"
+   ],
+   "2026.07.21"
   ],
-  [
-   "10179604",
-   "관세청, 국회 지적 사항을 실질적 정책개선으로 연계",
-   "2026.10.14"
-  ],
-  [
-   "10179603",
-   "관세청·부산세관, 북극항로 개척 지원 위해 관세행정 역량 집중",
-   "2026.10.14"
-  ],
-  [
-   "10179244",
-   "관세청, 인도·이집트 세관공무원 대상  관세행정 심화연수 실시",
-   "2026.10.12"
-  ],
-  [
-   "10179243",
-   "관세청, 9월의 관세인 및 3분기 핵심가치상 시상",
-   "2026.10.12"
-  ],
-  [
-   "10179143",
-   "2026년 10월 1일 ~ 10월 10일 수출입 현황 [잠정치]",
-   "2026.10.12"
-  ],
-  [
-   "10178583",
-   "원유 수입선 다변화 관세행정 지원대책 확대",
-   "2026.10.02"
-  ],
-  [
-   "10178304",
-   "2026년 9월 수출입 현황 [잠정치]",
-   "2026.10.01"
-  ],
-  [
-   "10178163",
-   "2026년 8월 기업규모별 수출입 현황",
-   "2026.09.29"
-  ],
-  [
-   "10177943",
-   "관세청, 관세주권과 경제국경 수호의 뿌리 ‘두모진 해관’ 기념식 개최",
-   "2026.09.28"
-  ],
-  [
-   "10177905",
-   "관세평가분류원, 제27회 품목분류 경진대회 결과 발표",
-   "2026.09.28"
-  ],
-  [
-   "10177904",
-   "한-멕시코 세관당국,  마약 및 K-브랜드 위조상품 단속 협력 강화",
-   "2026.09.28"
-  ],
-  [
-   "10177823",
-   "관세청 8월의 마약단속왕에 김미나 주무관 선정",
-   "2026.09.23"
-  ],
-  [
-   "10177803",
-   "관세청, 전자담배 용액 고강도 통관관리 대책 시행중",
-   "2026.09.23"
-  ],
-  [
-   "10177703",
-   "관세청, 현장형 인공지능 혁신으로 일하는 방식 바꾼다",
-   "2026.09.22"
-  ],
-  [
-   "10177603",
-   "관세청장, 추석 맞아 전통시장, 보육원 방문",
-   "2026.09.21"
-  ],
-  [
-   "10177504",
-   "관세청, 2026년 8월의 관세인에 조혜정 주무관 선정",
-   "2026.09.21"
-  ],
-  [
-   "10177463",
-   "관세청, 신고 포상금 ‘상한액 전면 폐지’ 등 대대적 개편",
-   "2026.09.21"
-  ],
-  [
-   "10177443",
-   "2026년 9월 1일 ~ 9월 20일 수출입 현황 [잠정치]",
-   "2026.09.21"
-  ],
-  [
-   "10177283",
-   "관세청 차장, 추석 명절 물가안정을 위한 현장점검",
-   "2026.09.17"
-  ],
-  [
-   "10177225",
-   "해외 반입 ‘짝퉁 마운자로’ 주의···  관세청, 유해 의약품 반입 차단 강화",
-   "2026.09.17"
-  ],
-  [
-   "10177223",
-   "K-뷰티 위조상품 근절을 위한 중앙아시아 협력 강화",
-   "2026.09.17"
-  ],
-  [
-   "10177084",
-   "관세청, 한국화학산업협회와 공정무역질서 확립을 위한 업무협약 체결",
-   "2026.09.16"
-  ],
-  [
-   "10177083",
-   "관세청, 납세자의 효능감 제고를 위해 권리보호 제도 개편 논의",
-   "2026.09.16"
-  ],
-  [
-   "10176985",
-   "관세청, 8월 추가 발표된 미(美) 품목관세 대상  한-미 품목번호 연계표 공개",
-   "2026.09.16"
-  ],
-  [
-   "10176923",
-   "관세청, 국세청과 체납자 합동 가택수색 우수팀 마약류 정밀 분석 우수팀 특별성과 포상",
-   "2026.09.15"
-  ],
-  [
-   "10176746",
-   "기안84·빠니보틀이 관세청에?…  추석 연휴 맞춤형 올바른 해외여행 성실신고 캠페인 추진",
-   "2026.09.15"
-  ],
-  [
-   "10176744",
-   "2026년 8월 수출입 운송비용 현황",
-   "2026.09.15"
-  ],
-  [
-   "10176743",
-   "2026년 8월 월간 수출입 현황 [확정치]",
-   "2026.09.15"
-  ],
-  [
-   "10176583",
-   "반도체 장비부터 유리섬유 제품까지... 관세 품목분류 기준 명쾌하게 정립",
-   "2026.09.14"
-  ],
-  [
-   "10176503",
-   "“관세행정 미래혁신, 현장과 소통하며 속도감 있게 추진”··· 관세청, 제5차 미래성장혁신위원회 개최",
-   "2026.09.11"
-  ],
-  [
-   "10176444",
-   "2026년 9월 1일 ~ 9월 10일 수출입 현황 [잠정치]",
-   "2026.09.11"
-  ],
-  [
-   "10176383",
-   "중앙관세분석소, 한-미 양국 분석기관 간 협력 논의",
-   "2026.09.10"
-  ],
-  [
-   "10176347",
-   "관세청, 할당관세 악용업체 단속 특별 성과자 포상",
-   "2026.09.10"
-  ],
-  [
-   "10176346",
-   "공공사업·신산업 유치로 지식산업센터 수요 창출, 공정한 경제질서 확립 위한 무역기반 재정·금융범죄 근절",
-   "2026.09.10"
-  ],
-  [
-   "10176345",
-   "관세청, 시에라리온과 「싱글윈도우 구축 협력」  상호양해각서(MOU) 체결",
-   "2026.09.10"
-  ],
-  [
-   "10176344",
-   "관세청, 할당관세제도 악용 행위 특별단속 결과 총 5,468억 원 규모 불법행위 적발",
-   "2026.09.10"
-  ],
-  [
-   "10176343",
-   "관세청, 마약류 밀반입 막는 「N차 저지선」 운영 현황 점검",
-   "2026.09.10"
-  ],
-  [
-   "10176104",
-   "관세국경인재개발원, 외국 세관 공무원 초청 ‘제21차수출입안전관리우수업체(AEO) 전문가 연수회’ 개최",
-   "2026.09.08"
-  ],
-  [
-   "10176103",
-   "관세청, 「전국 관세조사 관계관 회의」 개최",
-   "2026.09.08"
-  ],
-  [
-   "10175905",
-   "관세평가분류원, 「품목분류(HS) 통관애로 집중 신고기간」 운영",
-   "2026.09.07"
-  ],
-  [
-   "10175904",
-   "제1회 ‘이달의 마약단속왕’ 인천공항세관 김영재 주무관",
-   "2026.09.07"
-  ],
-  [
-   "10175864",
-   "9월 5일 13시 기준, 수출 7,094억 달러... 지난해 연간 실적 넘어 역대 최대 기록",
-   "2026.09.07"
-  ],
-  [
-   "10175787",
-   "대학생의 시각으로 무역통계를 읽는다",
-   "2026.09.04"
-  ],
-  [
-   "10175786",
-   "관세청, 추석 맞아 특별지원대책 시행",
-   "2026.09.04"
-  ],
-  [
-   "10175785",
-   "2026년 7월의 관세인에 허훈 주무관 선정",
-   "2026.09.04"
-  ],
-  [
-   "10175630",
-   "관세청, 무역기반 재정·금융범죄(TBFC) 특별수사단 공식 출범...수출입실적 조작 통한 국가 재정·금융 편취행위 집중단속 나선다",
-   "2026.09.03"
-  ],
-  [
-   "10175625",
-   "관세청, 미국·네덜란드와 마약단속 국제공조 박차",
-   "2026.09.03"
-  ],
-  [
-   "10175564",
-   "관세청장, 여행자·특송 마약밀수 N차 저지선 구축을 위한 사전 현장점검",
+  "listCo=50&currPage=1": [
+   50,
+   9,
+   [
+    "'싸다고 샀다가 안전까지 위협'… 두 달 새 &apos",
+    "관세청, 국회 지적 사항을 실질적 정책개선으로 연계",
+    "관세청·부산세관, 북극항로 개척 지원 위해 관세행정 역"
+   ],
    "2026.09.02"
   ],
-  [
-   "10175563",
-   "탄소국경조정제도(CBAM) 대응역량 강화를 위한 정부 합동설명회 개최",
-   "2026.09.02"
-  ],
-  [
-   "10175483",
-   "관세청, 세계관세기구(WCO) 인증 전문가 2명 배출",
-   "2026.09.02"
-  ],
-  [
-   "10175303",
-   "관세청 “내년 예산안, 마약차단·인공지능(AI) 혁신에 집중···현장맞춤형 연구개발(R&amp;D)도”",
-   "2026.09.01"
-  ],
-  [
-   "10175205",
-   "2026년 8월 수출입 현황 [잠정치]",
-   "2026.09.01"
-  ],
-  [
-   "10175204",
-   "관세청, 직원 참여로 ‘수평적 조직문화’ 만든다",
-   "2026.09.01"
-  ],
-  [
-   "10175203",
-   "관세청, 추석 명절 원산지표시 위반 특별단속 실시",
-   "2026.09.01"
-  ],
-  [
-   "10174904",
-   "2026년 제5회 보세판매장 특허심사위원회 결과 발표",
-   "2026.08.28"
-  ],
-  [
-   "10174903",
-   "국민과 함께 뽑은 ’26년 관세청 적극행정 우수사례",
-   "2026.08.28"
-  ],
-  [
-   "10174886",
-   "관세청, ‘원산지 국민감시단’ 위촉 국민 참여형 감시체계 강화",
-   "2026.08.28"
-  ],
-  [
-   "10174866",
-   "2026년, 16개 광역 지자체 모두 수출 증가",
-   "2026.08.28"
-  ],
-  [
-   "10174865",
-   "관세청, 「개청 제56주년 기념식」 개최",
-   "2026.08.28"
-  ],
-  [
-   "10174864",
-   "국제우편 2차 마약 저지선 10건 적발 , 밀수사범 100% 검거",
-   "2026.08.28"
-  ],
-  [
-   "10174863",
-   "관세청, 중국해관 초청 K-푸드 수출 지원 설명회 개최",
-   "2026.08.28"
-  ],
-  [
-   "10174485",
-   "2026년 7월 기업규모별 수출입 현황",
-   "2026.08.26"
-  ],
-  [
-   "10174484",
-   "관세청, 수출기업대상 「해외통관제도 설명회」 개최",
-   "2026.08.26"
-  ],
-  [
-   "10174483",
-   "관세청, 말레이시아 원유 원산지증명서 발급 소요 기간 ‘184일 → 45일’ 대폭 단축",
-   "2026.08.26"
-  ],
-  [
-   "10174184",
-   "더 안전하게 지키고, 더 편하게 누리는  국민 맞춤형 통관의 시작",
-   "2026.08.24"
-  ],
-  [
-   "10173983",
-   "2026년 8월 1일 ~ 8월 20일 수출입 현황 [잠정치]",
-   "2026.08.21"
-  ],
-  [
-   "10173965",
-   "「2026년 을지연습」  관세청, ‘감시정 위기대응 훈련’ 실시",
-   "2026.08.20"
-  ],
-  [
-   "10173964",
-   "관세청, 집중호우 피해 수출입기업에 신속한 관세행정 지원 실시",
-   "2026.08.20"
-  ],
-  [
-   "10173963",
-   "「2026년 을지연습」 관세청, ‘비상상황 대응역량 강화 훈련’ 실시",
-   "2026.08.20"
-  ],
-  [
-   "10173586",
-   "수출입의 첫 단추, 품목분류 최강자를 찾습니다",
+  "searchType=sj&searchValue=%EC%88%98%EC%B6%9C%EC%9E%85%20%ED%98%84%ED%99%A9": [
+   10,
+   10,
+   [
+    "2026년 10월 1일 ~ 10월 10일 수출입 현황 ",
+    "2026년 9월 수출입 현황 [잠정치]",
+    "2026년 8월 기업규모별 수출입 현황"
+   ],
    "2026.08.18"
   ],
-  [
-   "10173585",
-   "2026년 7월 수출입 운송비용 현황",
+  "searchType=all&searchValue=%EC%88%98%EC%B6%9C%EC%9E%85%20%ED%98%84%ED%99%A9": [
+   10,
+   10,
+   [
+    "2026년 10월 1일 ~ 10월 10일 수출입 현황 ",
+    "2026년 9월 수출입 현황 [잠정치]",
+    "2026년 8월 기업규모별 수출입 현황"
+   ],
    "2026.08.18"
   ],
-  [
-   "10173584",
-   "2026년 7월 월간 수출입 현황 [확정치]",
-   "2026.08.18"
+  "searchType=1&searchValue=%EC%88%98%EC%B6%9C%EC%9E%85%20%ED%98%84%ED%99%A9": [
+   10,
+   3,
+   [
+    "'싸다고 샀다가 안전까지 위협'… 두 달 새 &apos",
+    "관세청, 국회 지적 사항을 실질적 정책개선으로 연계",
+    "관세청·부산세관, 북극항로 개척 지원 위해 관세행정 역"
+   ],
+   "2026.09.28"
   ],
-  [
-   "10173427",
-   "혹서기 폭염에도 국경 최일선은 멈추지 않는다",
-   "2026.08.14"
+  "searchValue=%EC%88%98%EC%B6%9C%EC%9E%85%20%ED%98%84%ED%99%A9": [
+   0,
+   0,
+   [],
+   null
   ],
-  [
-   "10173426",
-   "관세청, 산업 현장에 적용 가능한 품목분류 기준 제시",
-   "2026.08.14"
-  ],
-  [
-   "10173425",
-   "관세청, ‘관세 성실신고 확인제도’ 도입 추진",
-   "2026.08.14"
-  ],
-  [
-   "10173424",
-   "관세청, 2026년 보세사 시험 합격자 발표",
-   "2026.08.14"
-  ],
-  [
-   "10173423",
-   "한-인도 관세당국, 고위급 면담으로  상호협력 강화방안 논의",
-   "2026.08.14"
-  ],
-  [
-   "10172863",
-   "관세청-코트라, 인도 진출기업을 위한 현지 공동설명회 개최",
-   "2026.08.12"
-  ],
-  [
-   "10172805",
-   "2026년 2분기  기업특성별 무역통계(잠정) 결과",
-   "2026.08.11"
+  "searchType_opts": [
+   [
+    "10",
+    "10건"
+   ],
+   [
+    "20",
+    "20건"
+   ],
+   [
+    "30",
+    "30건"
+   ],
+   [
+    "40",
+    "40건"
+   ],
+   [
+    "50",
+    "50건"
+   ],
+   [
+    "",
+    "구분"
+   ],
+   [
+    "통관",
+    "통관"
+   ],
+   [
+    "심사",
+    "심사"
+   ],
+   [
+    "조사",
+    "조사"
+   ],
+   [
+    "운영",
+    "운영"
+   ],
+   [
+    "대변인",
+    "대변인"
+   ],
+   [
+    "감사",
+    "감사"
+   ],
+   [
+    "연수원",
+    "연수원"
+   ],
+   [
+    "분석소",
+    "분석소"
+   ],
+   [
+    "분류원",
+    "분류원"
+   ],
+   [
+    "정보데이터",
+    "정보데이터"
+   ],
+   [
+    "기타",
+    "기타"
+   ],
+   [
+    "국제관세협력",
+    "국제관세협력"
+   ],
+   [
+    "all",
+    "제목+내용"
+   ],
+   [
+    "sj",
+    "제목"
+   ]
   ]
- ]
+ }
 }
