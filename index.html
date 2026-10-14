@@ -725,7 +725,9 @@ function showTheme(tid){
   modeQ();const ids=t.stocks.map(x=>x[0]),y=median(ids.map(i=>sv(i,'yoy'))),pe=median(ids.map(i=>sv(i,'pe'))),pb=median(ids.map(i=>sv(i,'pb'))),ey=median(ids.map(epsY)),pg=median(ids.map(peg));
   $('tEdit').href='#e/'+t.id;
   $('tSum').innerHTML=S?`${ids.length} 檔中位數：營收年增 <strong class="${sign(y)}">${pct(y)}</strong>・EPS 年增 <strong class="${sign(ey)}">${pct(ey)}</strong>・本益比 <strong>${fmt(pe,1)}</strong>・PEG <strong>${fmt(pg,2)}</strong>・淨值比 <strong>${fmt(pb,2)}</strong>`:'全市場數字尚未產生（等 Actions 第一次執行）';
-  $('tUS').innerHTML=t.us&&t.us.length?'對應美股 '+t.us.map(u=>`<a href="us/#${u}">${u}</a>`).join(''):'';
+  {const jp=t.jp||(BASE.find(x=>x.id===t.id)||{}).jp||[];
+   $('tUS').innerHTML=(t.us&&t.us.length?'對應美股 '+t.us.map(u=>`<a href="us/#${u}">${u}</a>`).join(''):'')+
+    (jp.length?`${t.us&&t.us.length?'<span style="flex-basis:100%;height:0"></span>':''}對應日股 `+jp.map(([c,n])=>`<a href="jp/#${c}">${c} ${esc(n)}</a>`).join(''):'')}
   paintSeg();
   $('tAsof').textContent=MODE==='m'&&MO?`${ymd(MO.asof)}${MO.instAsof!==MO.asof?'・法人 '+ymd(MO.instAsof):''}${TD?'・集保 '+ymd(TD.asof):''}`:'';
   if(MODE==='m'){const mw=median(ids.map(i=>mv(i,'w'))),mm=median(ids.map(i=>mv(i,'m'))),mq=median(ids.map(i=>mv(i,'q'))),vr=median(ids.map(i=>mv(i,'vr'))),nf=ids.filter(i=>mv(i,'fire')).length;
