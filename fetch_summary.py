@@ -140,6 +140,9 @@ def carry_revenue(d):
     return n
 
 
+PAR = {}   # 面額分布（診斷用）
+
+
 def shares_of(r):
     """公司基本資料的已發行普通股數；欄名各來源不一，找不到就用 實收資本額 ÷ 每股面額"""
     v = num(pick(r, "已發行普通股數或TDR原股發行股數", "已發行普通股數", "IssueShares", "NumberOfSharesIssued"))
@@ -151,10 +154,15 @@ def shares_of(r):
                     break
     if v:
         return int(v)
-    cap = num(pick(r, "實收資本額", "PaidInCapital", "Paidin.Capital.NTDollars"))
-    par = pick(r, "普通股每股面額", "ParValue")
+    # 證交所／櫃買公司基本資料沒有股數欄 → 實收資本額 ÷ 普通股面額 − 特別股股數
+    cap = num(pick(r, "實收資本額", "Paidin.Capital.NTDollars", "PaidInCapital"))
+    par = pick(r, "普通股每股面額", "ParValueOfCommonStock", "ParValue")
     pv = num("".join(ch for ch in str(par or "") if ch.isdigit() or ch == ".")) or 10
-    return int(cap / pv) if cap else None
+    pref = num(pick(r, "特別股", "PreferredStock.shares")) or 0
+    if not cap:
+        return None
+    PAR[pv] = PAR.get(pv, 0) + 1
+    return int(cap / pv - pref) if pref * 1.0 < cap / pv else int(cap / pv)
 
 
 def fetch_shares(errs, src, diag):
@@ -172,11 +180,13 @@ def fetch_shares(errs, src, diag):
                         n += 1
             src[name] = n
             if rows:
-                diag[name + "欄位"] = list(rows[0].keys())[:40]
+                ex = [r for r in rows if code_of(r) in ("2330", "4958", "3665", "2002", "6669")]
+                diag[name + "樣本"] = [{k: r.get(k) for k in r if any(w in k for w in ("代號", "Code", "面額", "Par", "資本", "Capital", "特別", "Preferred", "私募", "Private"))} for r in ex]
             print(f"{name}: {n} 檔")
         except Exception as e:
             errs.append(f"{name}: {e}")
             print(f"{name} FAILED: {e}", file=sys.stderr)
+    diag["面額分布"] = {str(k): v for k, v in sorted(PAR.items())}
     try:                                     # 抓不到的沿用上一版
         old = json.loads((OUT / "summary.json").read_text("utf-8")).get("sh", {})
         for c, v in old.items():
