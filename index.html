@@ -113,6 +113,8 @@ h2.sec small{font-weight:500;letter-spacing:0}
 .lst .cd{font-family:var(--f-num);font-size:11.5px;color:var(--muted);margin-left:4px}
 .lst .role{font-size:11.5px;color:var(--muted);line-height:1.35}
 .lst .sub{display:block;font-size:11px;color:var(--muted)}
+.lst .cap{display:block;font-size:11px;color:var(--muted);font-family:var(--f-num)}.lst .cap b{color:var(--warm);font-weight:600}
+.crown{margin-left:3px;font-size:12px}
 .lst th[data-k]{cursor:pointer;user-select:none}
 .lst th.on{color:var(--fg);font-weight:700}
 .panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:4px 12px 6px}
@@ -623,7 +625,18 @@ function segHTML(){return `<button type="button" data-m="v" aria-pressed="${MODE
 function paintSeg(){document.querySelectorAll('[data-seg]').forEach(e=>e.innerHTML=segHTML())}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-seg] button');if(!b)return;MODE=b.dataset.m;store.set('tMode',MODE);
   const v=document.body.dataset.view;if(v==='theme')showTheme(decodeURIComponent(location.hash.slice(3)));else if(v==='home')renderHome()});
-const SF={close:0,chg:1,pe:2,pb:3,yld:4,yoy:5,rev:6,ym:7};
+const SF={close:0,chg:1,pe:2,pb:3,yld:4,yoy:5,rev:6,ym:7,ytd:8};
+// ---- 市值與營收規模（龍頭辨識）----
+// 市值（億）＝收盤 × 已發行普通股數（summary.json 的 sh）；營收規模＝今年累計營收 ÷ 月數（月均，億）
+const cap=id=>{const c=sv(id,'close'),n=S&&S.sh?S.sh[id]:null;return c!=null&&n?c*n/1e8:null};
+const revSc=id=>{const t=sv(id,'ytd'),ym=sv(id,'ym');return t!=null&&ym?t/(+ym.slice(5)):null};
+const capTxt=v=>v==null?'—':v>=10000?fmt(v/10000,v>=100000?1:2)+'兆':fmt(v,0)+'億';
+let RANK=null; // 主題頁才有：{代號:[市值名次, 營收名次]}
+function ranks(ids){const r={};const by=f=>ids.filter(i=>f(i)!=null).sort((a,b)=>f(b)-f(a));
+  by(cap).forEach((i,k)=>(r[i]=r[i]||[null,null])[0]=k+1);by(revSc).forEach((i,k)=>(r[i]=r[i]||[null,null])[1]=k+1);return r}
+function capLine(id){const v=cap(id);if(v==null)return '';const rk=RANK&&RANK[id];
+  return `<span class="cap" title="市值">${capTxt(v)}${rk&&rk[0]&&rk[0]<=3?` <b>#${rk[0]}</b>`:''}</span>`}
+const crown=id=>RANK&&RANK[id]&&RANK[id][0]===1&&RANK[id][1]===1?'<span class="crown dtip" data-tip="👑 主題內市值和營收規模（今年月均營收）都是第 1 名">👑</span>':'';
 const sv=(id,k)=>S&&S.d[id]?S.d[id][SF[k]]:null;
 const nameOf=id=>{const it=LIST.find(s=>s[0]===id);return it?it[1].replace(/\*$/,''):id};
 const sign=v=>v==null?'':v>0?'up':v<0?'dn':'';
@@ -653,7 +666,7 @@ function epsCell(id){
   const l2=(g!=null?`<span class="${gc}">PEG ${fmt(g,g<10?2:1)}</span>`:lb)+qs+nb;
   return `<span class="sub ${cl}">${t}</span>`+(l2?`<span class="sub">${l2}</span>`:'');
 }
-const SORTV={pe:id=>sv(id,'pe'),eps:epsY,peg:peg,px:id=>sv(id,'chg')};
+const SORTV={pe:id=>sv(id,'pe'),eps:epsY,peg:peg,px:id=>sv(id,'chg'),cap:cap};
 ['w','m','q','vr','t5','f5','tS'].forEach(k=>SORTV['m_'+k]=id=>mv(id,k));
 SORTV.m_b4w=id=>tv(id,'b4w');SORTV.m_b4m=id=>tv(id,'b4m');SORTV.m_pplm=id=>{const v=tv(id,'pplm');return v==null?null:-v};
 const VR_CYCLE=['m_vr:-1','m_t5:-1','m_f5:-1','m_tS:-1','m_b4w:-1','m_b4m:-1','m_pplm:-1',''];
@@ -673,7 +686,7 @@ function mCells(id,role){
     else bd=head+'</span>'+`<span class="sub"><span class="sm">週</span><span class="${sign(b4w)}">${b4w==null?'—':pp(b4w,1)}</span> <span class="sm">4週</span><span class="${sign(b4m)}">${b4m==null?'—':pp(b4m,1)}</span></span>`;
     bd+=ppl+(fl?`<span class="sub">${fl}</span>`:'');
   }
-  return `<td><span class="nm">${nameOf(id)}</span><span class="cd">${id}</span>${fire?'<span class="fire" title="主力訊號：月漲、量比≥1.5、法人5日買超">🔥</span>':''}${up?'<span class="flag" style="color:var(--up);border-color:var(--up)" data-tip="集中↑：🔥 主力訊號，而且籌碼集中（大戶 4 週增加、股東人數減少）">集中↑</span>':''}${role?`<div class="role">${role}</div>`:''}<span class="sub">${fmt(c,c!=null&&c<100?2:c!=null&&c<1000?1:0)} <span class="${sign(ch)}">${pct(ch,2)}</span></span></td>`
+  return `<td><span class="nm">${nameOf(id)}</span>${crown(id)}<span class="cd">${id}</span>${fire?'<span class="fire" title="主力訊號：月漲、量比≥1.5、法人5日買超">🔥</span>':''}${up?'<span class="flag" style="color:var(--up);border-color:var(--up)" data-tip="集中↑：🔥 主力訊號，而且籌碼集中（大戶 4 週增加、股東人數減少）">集中↑</span>':''}${role?`<div class="role">${role}</div>`:''}<span class="sub">${fmt(c,c!=null&&c<100?2:c!=null&&c<1000?1:0)} <span class="${sign(ch)}">${pct(ch,2)}</span></span></td>`
     +p('w')+p('m')+p('q')
     +`<td><span class="${vr!=null&&vr>=1.5?'up':''}">${vr==null?'—':fmt(vr,2)}</span><span class="sub">${tip('投','投信近 5 個交易日買賣超（張）')}<span class="sm">5日</span> <span class="${sign(t5)}">${lots(t5)}</span></span><span class="sub">${tip('外','外資（不含自營）近 5 個交易日買賣超（張）')}<span class="sm">5日</span> <span class="${sign(f5)}">${lots(f5)}</span></span>${bd}${tS>=3?`<span class="sub up">投連${tS}天</span>`:''}</td>`;
 }
@@ -684,11 +697,11 @@ function table(el,items,sortKey,mode){
   // items: [[代號, 角色]]；sortKey: el.dataset.sort（例 'yoy:-1'）
   const [k,dir]=(el.dataset.sort||sortKey||'').split(':');let rows=items.slice();
   if(k){const f=SORTV[k]||(id=>sv(id,k));rows.sort((a,b)=>{const x=f(a[0]),y=f(b[0]);if(x==null)return 1;if(y==null)return -1;return (x-y)*(+dir||-1)})}
-  const th=(key,lb)=>{const on=key==='pe'?['pe','eps','peg'].includes(k):key==='m_vr'?k in VR_LABEL:k===key;return `<th data-k="${key}" class="${on?'on':''}">${key==='pe'&&on?PE_LABEL[k]:key==='m_vr'&&on?VR_LABEL[k]:lb}${on?(+dir>0?' ▲':' ▼'):''}</th>`};
-  if(md==='m')el.innerHTML=`<thead><tr><th>股票</th>${th('m_w','週')}${th('m_m','月')}${th('m_q','季')}${th('m_vr','量比')}</tr></thead><tbody>`+rows.map(([id,role])=>`<tr data-id="${id}">${mCells(id,role)}</tr>`).join('')+'</tbody>';
-  else el.innerHTML=`<thead><tr><th>股票</th>${th('px','收盤')}${COLS.map(c=>th(...c)).join('')}</tr></thead><tbody>`+rows.map(([id,role])=>{
+  const th=(key,lb)=>{const on=key==='pe'?['pe','eps','peg'].includes(k):key==='m_vr'?k in VR_LABEL:k===key;return `<th data-k="${key}" class="${on?'on':''}">${key==='pe'&&on?PE_LABEL[k]:key==='m_vr'&&on?VR_LABEL[k]:key==='cap'&&on?'市值':lb}${on?(+dir>0?' ▲':' ▼'):''}</th>`};
+  if(md==='m')el.innerHTML=`<thead><tr>${th('cap','股票')}${th('m_w','週')}${th('m_m','月')}${th('m_q','季')}${th('m_vr','量比')}</tr></thead><tbody>`+rows.map(([id,role])=>`<tr data-id="${id}">${mCells(id,role)}</tr>`).join('')+'</tbody>';
+  else el.innerHTML=`<thead><tr>${th('cap','股票')}${th('px','收盤')}${COLS.map(c=>th(...c)).join('')}</tr></thead><tbody>`+rows.map(([id,role])=>{
     const c=sv(id,'close'),ch=sv(id,'chg'),y=sv(id,'yoy'),ym=sv(id,'ym');
-    return `<tr data-id="${id}"><td><span class="nm">${nameOf(id)}</span><span class="cd">${id}</span>${role?`<div class="role">${role}</div>`:''}</td>
+    return `<tr data-id="${id}"><td><span class="nm">${nameOf(id)}</span>${crown(id)}<span class="cd">${id}</span>${capLine(id)}${role?`<div class="role">${role}</div>`:''}</td>
       <td>${fmt(c,c!=null&&c<100?2:c!=null&&c<1000?1:0)}<span class="sub ${sign(ch)}">${pct(ch,2)}</span></td>
       <td>${fmt(sv(id,'pe'),1)}${epsCell(id)}</td><td>${fmt(sv(id,'pb'),2)}<span class="sub">殖 ${sv(id,'yld')==null?'—':fmt(sv(id,'yld'),1)+'%'}</span></td>
       <td class="${sign(y)}">${pct(y)}<span class="sub" ${ym&&S.revYM&&ym<S.revYM?'style="color:var(--warm)" title="尚未公布最新月份"':''}>${ym?(+ym.slice(5))+'月':''}</span></td></tr>`}).join('')+'</tbody>';
@@ -699,6 +712,7 @@ function table(el,items,sortKey,mode){
     const r=e.target.closest('tr[data-id]');if(r)location.hash=r.dataset.id};
 }
 function renderHome(){
+  RANK=null;
   modeQ();$('sumAsof').textContent=S?`收盤 ${S.pxAsof?S.pxAsof.slice(4,6)+'/'+S.pxAsof.slice(6):S.updated.slice(5,10).replace('-','/')}・營收 ${S.revYM?+S.revYM.slice(5)+'月':'—'}${QN?'・EPS '+QN:''}`:'數字待 Actions 產生';
   const fav=store.get('fav')||[];
   $('favBox').innerHTML=fav.length?'<div class="panel"><div class="tbl"><table class="lst" id="favTbl"></table></div></div>':'<p class="dtip">在個股頁點「☆ 加入自選」，就會出現在這裡。</p>';
@@ -723,8 +737,12 @@ function showTheme(tid){
   try{sessionStorage.setItem('lastTheme',tid)}catch(e){}
   $('tName').textContent=t.name;document.title=`${t.name} 估值看板`;
   modeQ();const ids=t.stocks.map(x=>x[0]),y=median(ids.map(i=>sv(i,'yoy'))),pe=median(ids.map(i=>sv(i,'pe'))),pb=median(ids.map(i=>sv(i,'pb'))),ey=median(ids.map(epsY)),pg=median(ids.map(peg));
-  $('tEdit').href='#e/'+t.id;
-  $('tSum').innerHTML=S?`${ids.length} 檔中位數：營收年增 <strong class="${sign(y)}">${pct(y)}</strong>・EPS 年增 <strong class="${sign(ey)}">${pct(ey)}</strong>・本益比 <strong>${fmt(pe,1)}</strong>・PEG <strong>${fmt(pg,2)}</strong>・淨值比 <strong>${fmt(pb,2)}</strong>`:'全市場數字尚未產生（等 Actions 第一次執行）';
+  $('tEdit').href='#e/'+t.id;RANK=ranks(ids);
+  const lead=(()=>{const tc=ids.reduce((a,i)=>a+(cap(i)||0),0),c1=ids.find(i=>RANK[i]&&RANK[i][0]===1),r1=ids.find(i=>RANK[i]&&RANK[i][1]===1);if(!c1||!tc)return '';
+    const sh=Math.round(cap(c1)/tc*100);
+    return c1===r1?`<br>👑 龍頭 <strong>${nameOf(c1)}</strong>（市值 ${capTxt(cap(c1))}，占主題 ${sh}%）・主題總市值 ${capTxt(tc)}`
+      :`<br>💰 市值最大 <strong>${nameOf(c1)}</strong>（占 ${sh}%）・🏭 營收最大 <strong>${r1?nameOf(r1):'—'}</strong>・總市值 ${capTxt(tc)}`})();
+  $('tSum').innerHTML=S?`${ids.length} 檔中位數：營收年增 <strong class="${sign(y)}">${pct(y)}</strong>・EPS 年增 <strong class="${sign(ey)}">${pct(ey)}</strong>・本益比 <strong>${fmt(pe,1)}</strong>・PEG <strong>${fmt(pg,2)}</strong>・淨值比 <strong>${fmt(pb,2)}</strong>${lead}`:'全市場數字尚未產生（等 Actions 第一次執行）';
   {const jp=t.jp||(BASE.find(x=>x.id===t.id)||{}).jp||[],kr=t.kr||(BASE.find(x=>x.id===t.id)||{}).kr||[];
    $('tUS').innerHTML=(t.us&&t.us.length?'對應美股 '+t.us.map(u=>`<a href="us/#${u}">${u}</a>`).join(''):'')+
     (jp.length?`${t.us&&t.us.length?'<span style="flex-basis:100%;height:0"></span>':''}對應日股 `+jp.map(([c,n])=>`<a href="jp/#${c}">${c} ${esc(n)}</a>`).join(''):'')+
@@ -735,7 +753,7 @@ function showTheme(tid){
     $('tSum').innerHTML=MO?`${ids.length} 檔中位數：週 <strong class="${sign(mw)}">${pct(mw)}</strong>・月 <strong class="${sign(mm)}">${pct(mm)}</strong>・季 <strong class="${sign(mq)}">${pct(mq)}</strong>・量比 <strong>${fmt(vr,2)}</strong>${(()=>{const bw=median(ids.map(i=>tv(i,'b4w')));return bw==null?'':`・大戶週變化 <strong class="${sign(bw)}">${pp(bw,2)}</strong>`})()}・🔥 <strong>${nf}</strong> 檔`:'動能資料尚未產生（第一次需回補約 3 個月歷史資料）'}
   $('tTbl').dataset.sort='';table($('tTbl'),t.stocks);
   if(MODE==='m'){$('tFoot').innerHTML=`週／月／季＝收盤對比 5／20／60 個交易日前（未還原除權息，跨除息日會略低）。量比＝5 日均量 ÷ 20 日均量，≥1.5 標紅＝放量。投／外＝投信、外資近 5 日買賣超張數；「投連N天」＝投信連續買超 3 天以上。🔥＝月漲＋量比≥1.5＋法人 5 日買超≥成交量 1%。<br>投／外 5日＝投信、外資近 5 個交易日買賣超（張）。大戶＝集保持股 400 張以上的持股占比（每週六更新），後面數字是占比變化（百分點）；股東＝集保股東人數變化%。<b>虛線底的字、標籤都可以點，會跳出說明。</b>籌碼標籤看 4 週：<span class="flag" style="color:var(--up);border-color:var(--up)">集中</span>＝大戶↑、股東人數↓（散戶賣大戶接）；<span class="flag" style="color:var(--warm);border-color:var(--warm)">散戶追</span>＝大戶↑但人數也增加超過 3%（熱度高、留意追高）；<span class="flag" style="color:var(--down);border-color:var(--down)">分散</span>＝大戶↓、人數↑；變化很小不標。🔥 旁的 <span class="flag" style="color:var(--up);border-color:var(--up)">集中↑</span>＝🔥 且籌碼集中。增資、可轉債轉換會讓大戶比失真，大幅變化請查公告。<br>點欄位標題排序；「量比」連點可切換投信 5 日、外資 5 日、投信連買、大戶週增、大戶 4 週、股東人數 4 週減少排序。`+(TD&&TD.weeks.length<2?'<br>⚠️ 集保資料目前只有 1 週，週變化要等下週六更新後才有。':'')+(MO&&MO.nPx<61?`<br>⚠️ 歷史資料目前 ${MO.nPx} 個交易日，季%需要 61 天，回補完成前顯示「—」。`:'');return}
-  $('tFoot').innerHTML=`EPS 年增＝最新一季${QN?'（'+QN+'）':''}單季 EPS 對比去年同季，橘色季別＝跟其他檔不同季；<span class="flag">業外</span>＝本季 EPS 可能含一次性收益。<span>低基期</span>＝去年同季 EPS 太小、年增超過 300%，不算 PEG。PEG＝本益比 ÷ EPS 年增，<span class="cheap">&lt;1 偏便宜</span>、<span class="pricey">&gt;2 偏貴</span>；記憶體等循環股的 PEG 參考性低。<br>點欄位標題排序；「本益比」連點可切換成 EPS 年增、PEG 排序。點一列看個股圖表。`+(S?` 資料更新 ${S.updated.slice(0,10)}`:'');
+  $('tFoot').innerHTML=`EPS 年增＝最新一季${QN?'（'+QN+'）':''}單季 EPS 對比去年同季，橘色季別＝跟其他檔不同季；<span class="flag">業外</span>＝本季 EPS 可能含一次性收益。<span>低基期</span>＝去年同季 EPS 太小、年增超過 300%，不算 PEG。PEG＝本益比 ÷ EPS 年增，<span class="cheap">&lt;1 偏便宜</span>、<span class="pricey">&gt;2 偏貴</span>；記憶體等循環股的 PEG 參考性低。<br>股票名稱下方的「億／兆」＝市值＝收盤 × 已發行普通股數（公司基本資料）；<b>#1～#3</b>＝主題內市值名次。👑＝市值和營收規模（今年累計營收 ÷ 月數）都是主題第 1 名；只有市值第 1 而營收不是，常是估值較高墊高市值，不一定是產業龍頭。龍頭常已反映在估值上，記得搭配本益比位階看。<br>點欄位標題排序；「股票」＝依市值排序，「本益比」連點可切換成 EPS 年增、PEG 排序。點一列看個股圖表。`+(S?` 資料更新 ${S.updated.slice(0,10)}`:'');
 }
 function stockExtras(id){
   const fav=store.get('fav')||[],on=fav.includes(id);
