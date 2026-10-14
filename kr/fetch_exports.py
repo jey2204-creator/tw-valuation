@@ -145,11 +145,11 @@ def parse_month(text):
 
 
 # ---------- 網路 ----------
-def get(url, tries=3):
+def get(url, tries=2):
     h = {"User-Agent": UA, "Accept-Language": "ko-KR,ko;q=0.9", "Accept": "*/*", "Referer": LIST}
     for i in range(tries):
         try:
-            with urllib.request.urlopen(urllib.request.Request(url, headers=h), timeout=60) as r:
+            with urllib.request.urlopen(urllib.request.Request(url, headers=h), timeout=40) as r:
                 return r.read()
         except Exception:
             if i == tries - 1:
@@ -216,15 +216,20 @@ def main():
         pages = 25     # 第一次：回補歷史
     kw = urllib.parse.quote("수출입")
     cand = []
+    n_new, errs = 0, []
     for pg in range(1, pages + 1):
-        rs = rows(dec(get(f"{LIST}&searchType=sj&searchValue={kw}&listCo=50&currPage={pg}")))
+        try:
+            rs = rows(dec(get(f"{LIST}&searchType=sj&searchValue={kw}&listCo=50&currPage={pg}")))
+        except Exception as e:      # 官網偶爾逾時：用已抓到的列表繼續，下次再補
+            errs.append(["list", f"page {pg}", str(e)[:120]])
+            break
         if not rs:
             break
         cand += rs
         if rs[-1]["posted"] < START_MON + "-01":
             break
         time.sleep(0.3)
-    n_new, errs = 0, []
+    fails = 0
     for row in reversed(cand):          # 舊 → 新，同一期間較新的新聞稿（更正）會覆蓋
         k = kind(row["title"])
         prev = seen.get(row["id"])
@@ -237,6 +242,9 @@ def main():
         ym = f"{y}-{mo:02d}"
         if (k == "ten" and ym < START_TEN) or (k in ("mon", "pre") and ym < START_MON):
             continue
+        if fails >= 3:             # 連續 3 篇連不上：官網可能維護中，下次排程再補
+            errs.append(["net", "", "連續失敗 3 次，停止本次抓取"])
+            break
         try:
             text, fname = fetch_text(row)
             r = parse_month(text) if k == "mon" else parse_ten(text)
@@ -254,7 +262,9 @@ def main():
                 n_new += 1
             else:
                 errs.append([row["id"], row["title"][:40], "找不到半導體數字" if k != "pre" else "找不到工作天數"])
+            fails = 0
         except Exception as e:
+            fails += 1
             errs.append([row["id"], row["title"][:40], str(e)[:120]])
             seen[row["id"]] = dict(v=0, ok=False, err=str(e)[:120], title=row["title"][:60])
         time.sleep(0.4)
