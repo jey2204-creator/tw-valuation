@@ -1,6 +1,9 @@
 {
- "asof": "2026-10-14 21:40 JST",
- "errors": [],
+ "asof": "2026-10-14 21:45 JST",
+ "errors": [
+  "tdnet.bin 解密失敗（密語換過？）→ 重新建立",
+  "jq.bin 解密失敗（密語換過？）→ 重新建立"
+ ],
  "stocks": {
   "8035": {
    "px_n": 2462,
@@ -85,10 +88,10 @@
   }
  },
  "tdnet": {
-  "days_scanned": 2,
-  "rows": 169,
+  "days_scanned": 23,
+  "rows": 641,
   "new_records": 0,
-  "backfill": false
+  "backfill": true
  },
  "validate_tdnet": {
   "checked": 4,
