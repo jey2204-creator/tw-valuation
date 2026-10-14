@@ -1,0 +1,47 @@
+name: 更新日股資料
+on:
+  schedule:
+    - cron: "25 9 * * 1-5"    # 台北 17:25（東證 15:30 收盤、決算短信多在 15:00～16:00 公布）
+    - cron: "25 13 * * 1-5"   # 台北 21:25（補晚間公布的決算短信）
+  workflow_dispatch:
+    inputs:
+      codes:
+        description: "指定代號（空白分隔，留空 = 全部）"
+        required: false
+        default: ""
+      validate:
+        description: "加跑交叉比對（1 = 是）"
+        required: false
+        default: ""
+permissions:
+  contents: write
+concurrency:
+  group: push-data
+  cancel-in-progress: false
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: 安裝加密套件
+        run: pip install --quiet cryptography
+      - name: 抓日股資料（Yahoo 股價＋J-Quants＋TDnet，加密輸出）
+        env:
+          JQUANTS_API_KEY: ${{ secrets.JQUANTS_API_KEY }}
+          JP_DATA_KEY: ${{ secrets.JP_DATA_KEY }}
+          JP_VALIDATE: ${{ github.event.inputs.validate }}
+        run: python jp/fetch_jp.py ${{ github.event.inputs.codes }}
+      - name: 有變動才提交
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add jp/data/ jp/raw/ 2>/dev/null || true
+          git diff --cached --quiet && exit 0
+          git commit -m "jp data: $(TZ=Asia/Taipei date '+%F %H:%M')"
+          git pull --rebase -X theirs origin main
+          git push
