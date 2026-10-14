@@ -401,8 +401,7 @@ def build(code, corps):
         av = [q for q in Q if q["filed"] <= day and q["eq"] and q["sh"]]
         if not av:
             return None
-        shs = sorted(q["sh"] for q in av[-3:])   # 股數取近 3 季中位數（虧損季的 淨利÷EPS 推算較不穩）
-        return av[-1]["eq"] * 1e8 / (shs[len(shs) // 2] * 1e6)
+        return av[-1]["eq"] * 1e8 / (av[-1]["sh"] * 1e6)
 
     mon = {}
     for r in px:
