@@ -261,6 +261,27 @@ def quarters(cache):
                              capex=None if v["capex"] is None else round(v["capex"] / 1e8, 1),
                              sh=None if not sh or sh <= 0 else round(sh / 1e6, 2),
                              eq=None if eq is None else round(eq / 1e8, 1), fs=r.get("fs"), ni=ni))
+    # 股票分割／合併：股數（淨利 ÷ EPS）相鄰兩季跳成整數倍 → 之前各季 EPS、股數依倍數調整（Naver 股價已還原）
+    near = lambda u, v: u and v and abs(u / v - 1) < 0.05
+    for i in range(1, len(rows)):
+        a, b = rows[i - 1]["sh"], rows[i]["sh"]
+        if not a or not b:
+            continue
+        # 要前後各一季佐證（股數維持在新／舊水準），避免小額淨利÷EPS 的雜訊誤判；最新一季則只看前面
+        prev2 = next((x["sh"] for x in reversed(rows[:i - 1]) if x["sh"]), None)
+        nxt = next((x["sh"] for x in rows[i + 1:] if x["sh"]), None)
+        if not near(prev2, a) or (nxt is not None and not near(nxt, b)):
+            continue
+        for ratio, inv in ((b / a, False), (a / b, True)):
+            n = round(ratio)
+            if n >= 2 and abs(ratio - n) / n < 0.05:
+                for x in rows[:i]:
+                    f = (1 / n) if inv else n
+                    if x["eps"] is not None:
+                        x["eps"] = round(x["eps"] / f, 1)
+                    if x["sh"]:
+                        x["sh"] = round(x["sh"] * f, 2)
+                rows[i]["split"] = (f"{n}合1" if inv else f"1拆{n}")
     # 財報沒有 EPS 的季：用最接近一季的股數推算（EPS = 歸屬母公司淨利 ÷ 股數）
     for i, x in enumerate(rows):
         if x["eps"] is None and x["ni"] is not None:
@@ -380,7 +401,8 @@ def build(code, corps):
         av = [q for q in Q if q["filed"] <= day and q["eq"] and q["sh"]]
         if not av:
             return None
-        return av[-1]["eq"] * 1e8 / (av[-1]["sh"] * 1e6)
+        shs = sorted(q["sh"] for q in av[-3:])   # 股數取近 3 季中位數（虧損季的 淨利÷EPS 推算較不穩）
+        return av[-1]["eq"] * 1e8 / (shs[len(shs) // 2] * 1e6)
 
     mon = {}
     for r in px:
@@ -403,6 +425,9 @@ def build(code, corps):
     fr = [[r["date"], r["c"], r["fr"]] for r in px if r["date"] >= cut and r["fr"] is not None]
     q = [[x["cal"], x["cal"], x["rev"], x["gm"], x["om"], x["nm"], x["eps"], x["capex"], x["sh"], x["end"], x["filed"]]
          for x in Q]
+    sp = [f"{x['cal']} {x['split']}" for x in Q if x.get("split")]
+    if sp:
+        note.append("股票分割：" + "、".join(sp) + "，之前各季 EPS 已依比例調整")
     if n_new[1]:
         note.append(f"財報回補中：還有 {n_new[1]} 份報告未抓，下次排程補齊")
     est = [x["cal"] for x in Q if x.get("eps_est")]
