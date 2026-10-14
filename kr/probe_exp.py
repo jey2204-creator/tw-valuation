@@ -39,7 +39,7 @@ def rows(html):
 try:
     kw = urllib.parse.quote("수출입")
     allr = []
-    for pg in range(1, 8):          # 2022 年以後就夠
+    for pg in range(1, 10):          # 2022 年以後就夠
         allr += rows(dec(get(f"{LIST}&searchType=sj&searchValue={kw}&listCo=50&currPage={pg}")))
         time.sleep(0.3)
     pat = re.compile(r"1일\s*[~∼]\s*(?:\d+월\s*)?(10|20)일")
@@ -63,6 +63,10 @@ try:
         pick(lambda x: (m := pat.search(x[2])) and m[1] == "10" and x[3].startswith("2026.01")),
         pick(lambda x: "확정" in x[2] and x[3].startswith("2023.07")),
         pick(lambda x: "확정" in x[2] and x[3].startswith("2026.09")),
+        pick(lambda x: "확정" in x[2] and x[3].startswith("2024.03")),
+        pick(lambda x: (m := pat.search(x[2])) and m[1] == "10" and x[3].startswith("2026.10")),
+        pick(lambda x: (m := pat.search(x[2])) and m[1] == "20" and x[3].startswith("2023.01")),
+        pick(lambda x: (m := pat.search(x[2])) and m[1] == "10" and x[3].startswith("2022.03")),
     ]
     sam = []
     for x in [w for w in want if w]:
@@ -80,7 +84,7 @@ try:
             item["used"] = f[1]
             item["sec"] = round(time.time() - t, 2)
             item["len"] = len(txt)
-            item["head"] = txt[:2500]
+            item["text"] = txt
             item["semi"] = [txt[max(0, m.start() - 150): m.start() + 250] for m in re.finditer(r"반\s*도\s*체", txt)][:8]
             item["days"] = [txt[max(0, m.start() - 60): m.start() + 160] for m in re.finditer("조업일수", txt)][:3]
             # 也試 HWP（若剛剛用的是 PDF/HWPX，順便驗證 HWP 解析）
