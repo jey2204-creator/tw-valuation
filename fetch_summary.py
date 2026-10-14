@@ -3,7 +3,8 @@
 來源：證交所與櫃買中心 OpenAPI（全市場一次抓完，不耗 FinMind 額度）
   上市：STOCK_DAY_ALL（收盤）、BWIBBU_ALL（本益比／淨值比／殖利率）、t187ap05_L（月營收）
   上櫃：tpex_mainboard_daily_close_quotes、tpex_mainboard_peratio_analysis、mopsfin_t187ap05_O
-輸出 d[代號] = [收盤, 漲跌%, 本益比, 淨值比, 殖利率%, 月營收年增%, 月營收(億), 營收年月]
+輸出 d[代號] = [收盤, 漲跌%, 本益比, 淨值比, 殖利率%, 月營收年增%, 月營收(億), 營收年月, 今年累計營收(億)]
+     sh[代號] = 已發行普通股數（公司基本資料 t187ap03_L／mopsfin_t187ap03_O；網頁用 收盤 × 股數 算市值）
 任何一個來源失敗只會讓該欄位空白，不會讓整支程式失敗。
 用法：python fetch_summary.py
 """
@@ -14,7 +15,7 @@ import urllib.request
 OUT = Path(__file__).resolve().parent / "data"
 TWSE = "https://openapi.twse.com.tw/v1"
 TPEX = "https://www.tpex.org.tw/openapi/v1"
-FIELDS = ["close", "chg", "pe", "pb", "yld", "revYoY", "rev", "revYM"]
+FIELDS = ["close", "chg", "pe", "pb", "yld", "revYoY", "rev", "revYM", "revYTD"]
 
 
 def get(url):
@@ -133,9 +134,56 @@ def carry_revenue(d):
         o = old.get(c)
         if x[7] is None and o and len(o) > 7 and o[7]:
             x[5], x[6], x[7] = o[5], o[6], o[7]
+            x[8] = o[8] if len(o) > 8 else None
             n += 1
     print(f"營收沿用上一版：{n} 檔")
     return n
+
+
+def shares_of(r):
+    """公司基本資料的已發行普通股數；欄名各來源不一，找不到就用 實收資本額 ÷ 每股面額"""
+    v = num(pick(r, "已發行普通股數或TDR原股發行股數", "已發行普通股數", "IssueShares", "NumberOfSharesIssued"))
+    if v is None:
+        for k in r:
+            if ("股數" in k or "shares" in k.lower()) and not any(w in k for w in ("私募", "特別", "Private", "Preferred")):
+                v = num(r[k])
+                if v:
+                    break
+    if v:
+        return int(v)
+    cap = num(pick(r, "實收資本額", "PaidInCapital", "Paidin.Capital.NTDollars"))
+    par = pick(r, "普通股每股面額", "ParValue")
+    pv = num("".join(ch for ch in str(par or "") if ch.isdigit() or ch == ".")) or 10
+    return int(cap / pv) if cap else None
+
+
+def fetch_shares(errs, src, diag):
+    sh = {}
+    for name, url in (("上市股數", f"{TWSE}/opendata/t187ap03_L"), ("上櫃股數", f"{TPEX}/mopsfin_t187ap03_O")):
+        try:
+            rows = get(url)
+            n = 0
+            for r in rows:
+                c = code_of(r)
+                if len(c) == 4 and c.isdigit() and c[0] != "0":
+                    v = shares_of(r)
+                    if v and v > 0:
+                        sh[c] = v
+                        n += 1
+            src[name] = n
+            if rows:
+                diag[name + "欄位"] = list(rows[0].keys())[:40]
+            print(f"{name}: {n} 檔")
+        except Exception as e:
+            errs.append(f"{name}: {e}")
+            print(f"{name} FAILED: {e}", file=sys.stderr)
+    try:                                     # 抓不到的沿用上一版
+        old = json.loads((OUT / "summary.json").read_text("utf-8")).get("sh", {})
+        for c, v in old.items():
+            sh.setdefault(c, v)
+    except Exception:
+        pass
+    return sh
 
 
 REV_MAX = 260   # FinMind 補營收每次上限（主題成份股優先）
@@ -165,6 +213,8 @@ def patch_revenue(d, latest):
         d[c][5] = round((m[k] / prev - 1) * 100, 1) if prev else None
         d[c][6] = round(m[k] / 1e8, 1)
         d[c][7] = k
+        ytd = [m.get(f"{k[:4]}-{i:02d}") for i in range(1, int(k[5:]) + 1)]
+        d[c][8] = round(sum(ytd) / 1e8, 1) if all(v is not None for v in ytd) else None
         n += 1
         time.sleep(0.3)
     print(f"FinMind 補營收：落後 {len(lag)} 檔，補到 {n} 檔")
@@ -214,6 +264,8 @@ def main():
         x[5] = round(y, 1) if y is not None else None
         x[6] = round(cur / 1e5, 1) if cur is not None else None   # 千元 → 億
         x[7] = ym_of(pick(r, "資料年月"))
+        cum = num(pick(r, "營業收入-當月累計營收", "當月累計營收"))
+        x[8] = round(cum / 1e5, 1) if cum is not None else None
 
     load("上市收盤", f"{TWSE}/exchangeReport/STOCK_DAY_ALL",
          lambda c, r: price(c, r, ("ClosingPrice", "收盤價"), ("Change", "漲跌價差")))
@@ -229,6 +281,8 @@ def main():
     if not d:
         print("全部來源都失敗，保留舊檔", file=sys.stderr)
         sys.exit(1)
+    diag = {}
+    sh = fetch_shares(errs, src, diag)
     yms = sorted({x[7] for x in d.values() if x[7]})
     carry_revenue(d)
     if yms:
@@ -253,7 +307,7 @@ def main():
             eps = {}
     out = dict(updated=dt.datetime.utcnow().strftime("%Y-%m-%dT%H:%MZ"), fields=FIELDS,
                revYM=yms[-1] if yms else None, sources=src, errors=errs, d=d,
-               epsFields=["q", "eps", "epsPrev", "yoy", "nonop"], eps=eps)
+               epsFields=["q", "eps", "epsPrev", "yoy", "nonop"], eps=eps, sh=sh, diag=diag)
     (OUT / "summary.json").write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")), "utf-8")
     print(f"summary.json: {len(d)} 檔，最新營收月份 {out['revYM']}，失敗 {len(errs)} 個來源")
 
