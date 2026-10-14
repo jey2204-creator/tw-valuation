@@ -1,0 +1,129 @@
+{
+ "asof": "2026-10-14 13:41 KST",
+ "r": {
+  "naver_fchart": {
+   "status": 200,
+   "sec": 1.16,
+   "n": 600,
+   "first": [
+    "20240423|76400|76800|75500|75500|18717699"
+   ],
+   "last": [
+    "20261013|241500|244000|228000|234000|26790913",
+    "20261014|233500|241500|233000|238000|9385376"
+   ],
+   "ok": true
+  },
+  "naver_api_chart": {
+   "status": 200,
+   "sec": 1.44,
+   "n": 596,
+   "first": [
+    {
+     "localDate": "20240429",
+     "closePrice": 76700.0,
+     "openPrice": 77400.0,
+     "highPrice": 77600.0,
+     "lowPrice": 76200.0,
+     "accumulatedTradingVolume": 14664474,
+     "foreignRetentionRate": 55.85
+    }
+   ],
+   "last": [
+    {
+     "localDate": "20261014",
+     "closePrice": 238000.0,
+     "openPrice": 233500.0,
+     "highPrice": 241500.0,
+     "lowPrice": 233000.0,
+     "accumulatedTradingVolume": 9385376,
+     "foreignRetentionRate": 46.18
+    }
+   ],
+   "ok": true
+  },
+  "naver_integration": {
+   "status": 200,
+   "sec": 0.94,
+   "keys": [
+    "stockEndType",
+    "itemCode",
+    "reutersCode",
+    "stockName",
+    "totalInfos",
+    "iconInfos",
+    "description",
+    "etfKeyIndicator",
+    "dealTrendInfos",
+    "researches",
+    "industryCode",
+    "industryCompareInfo",
+    "consensusInfo",
+    "shareholdersMeetingInfo",
+    "irScheduleInfo"
+   ],
+   "totalInfos": {
+    "lastClosePrice": "232,000",
+    "openPrice": "238,000",
+    "highPrice": "241,500",
+    "lowPrice": "233,000",
+    "accumulatedTradingVolume": "15,887,544",
+    "accumulatedTradingValue": "3조 7,732억",
+    "marketValue": "1,391조 4,143억",
+    "foreignRate": "46.18%",
+    "highPriceOf52Weeks": "380,000",
+    "lowPriceOf52Weeks": "90,200",
+    "per": "10.68배",
+    "eps": "22,292원",
+    "cnsPer": "5.23배",
+    "cnsEps": "45,521원",
+    "pbr": "2.77배",
+    "bps": "86,052원",
+    "dividendYieldRatio": "0.70%",
+    "dividend": "1,668원"
+   },
+   "ok": true
+  },
+  "naver_foreign": {
+   "status": 200,
+   "sec": 2.13,
+   "len": 131961,
+   "pct_sample": [],
+   "ok": true
+  },
+  "yahoo_chart": {
+   "status": 200,
+   "sec": 0.23,
+   "n": 1221,
+   "last": [
+    1791936000,
+    238000.0
+   ],
+   "first": [
+    1634169600,
+    69400.0
+   ],
+   "splits": false,
+   "ok": true
+  },
+  "krx_all_day": {
+   "ok": false,
+   "err": "HTTPError: HTTP Error 400: Bad Request"
+  },
+  "krx_per_pbr": {
+   "ok": false,
+   "err": "HTTPError: HTTP Error 400: Bad Request"
+  },
+  "kind_list": {
+   "status": 200,
+   "sec": 4.85,
+   "n_rows": 2754,
+   "sample": " <td>브릴스</td> <td> 코스닥 </td> <td style=\"mso-number-format:'@';text-align:center;\">468670</td> <td>특수 목적용 기계 제조업</td> <td>로봇 모듈화 플랫폼 솔루션</td> <td style=\"text-align:center;\">2026-10-01</td> <td style=\"t",
+   "ok": true
+  },
+  "dart": {
+   "ok": false,
+   "err": "DART_KEY 未設定，跳過"
+  }
+ }
+}
