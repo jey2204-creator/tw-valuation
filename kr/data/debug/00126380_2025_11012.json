@@ -1,0 +1,242 @@
+[
+{
+"sj_div": "IS",
+"account_id": "dart_OperatingIncomeLoss",
+"account_nm": "영업이익",
+"thstrm_nm": "제 57 기 반기",
+"thstrm_amount": "4676057000000",
+"thstrm_add_amount": "11361329000000"
+},
+{
+"sj_div": "IS",
+"account_id": "dart_OtherGains",
+"account_nm": "기타수익",
+"thstrm_nm": "제 57 기 반기",
+"thstrm_amount": "302750000000",
+"thstrm_add_amount": "1409055000000"
+},
+{
+"sj_div": "IS",
+"account_id": "dart_OtherLosses",
+"account_nm": "기타비용",
+"thstrm_nm": "제 57 기 반기",
+"thstrm_amount": "283194000000",
+"thstrm_add_amount": "524607000000"
+},
+{
+"sj_div": "IS",
+"account_id": "dart_TotalSellingGeneralAdministrativeExpenses",
+"account_nm": "판매비와관리비",
+"thstrm_nm": "제 57 기 반기",
+"thstrm_amount": "20820694000000",
+"thstrm_add_amount": "42265994000000"
+},
+{
+"sj_div": "IS",
+"account_id": "ifrs-full_CostOfSales",
+"account_nm": "매출원가",
+"thstrm_nm": "제 57 기 반기",
+"thstrm_amount": "49069566000000",
+"thstrm_add_amount": "100079497000000"
+},
+{
+"sj_div": "IS",
+"account_id": "ifrs-full_BasicEarningsLossPerShare",
+"account_nm": "기본주당이익(손실)",
+"thstrm_nm": "제 57 기 반기",
+"thstrm_amount": "737",
+"thstrm_add_amount": "1929"
+},
+{
+"sj_div": "IS",
+"account_id": "ifrs-full_DilutedEarningsLossPerShare",
+"account_nm": "희석주당이익(손실)",
+"thstrm_nm": "제 57 기 반기",
+"thstrm_amount": "737",
+"thstrm_add_amount": "1929"
+},
+{
+"sj_div": "IS",
+"account_id": "ifrs-full_FinanceCosts",
+"account_nm": "금융비용",
+"thstrm_nm": "제 57 기 반기",
+"thstrm_amount": "3444354000000",
+"thstrm_add_amount": "5932679000000"
+},
+{
+"sj_div": "IS",
+"account_id": "ifrs-full_FinanceIncome",
+"account_nm": "금융수익",
+"thstrm_nm": "제 57 기 반기",
+"thstrm_amount": "4345852000000",
+"thstrm_add_amount": "8316736000000"
+},
+{
+"sj_div": "IS",
+"account_id": "ifrs-full_GrossProfit",
+"account_nm": "매출총이익",
+"thstrm_nm": "제 57 기 반기",
+"thstrm_amount": "25496751000000",
+"thstrm_add_amount": "53627323000000"
+},
+{
+"sj_div": "IS",
+"account_id": "ifrs-full_IncomeTaxExpenseContinuingOperations",
+"account_nm": "법인세비용",
+"thstrm_nm": "제 57 기 반기",
+"thstrm_amount": "639694000000",
+"thstrm_add_amount": "1568392000000"
+},
+{
+"sj_div": "IS",
+"account_id": "ifrs-full_ProfitLoss",
+"account_nm": "반기순이익",
+"thstrm_nm": "제 57 기 반기",
+"thstrm_amount": "5116435000000",
+"thstrm_add_amount": "13339313000000"
+},
+{
+"sj_div": "IS",
+"account_id": "ifrs-full_ProfitLossAttributableToNoncontrollingInterests",
+"account_nm": "비지배지분",
+"thstrm_nm": "제 57 기 반기",
+"thstrm_amount": "182401000000",
+"thstrm_add_amount": "376872000000"
+},
+{
+"sj_div": "IS",
+"account_id": "ifrs-full_ProfitLossAttributableToOwnersOfParent",
+"account_nm": "지배기업 소유지분",
+"thstrm_nm": "제 57 기 반기",
+"thstrm_amount": "4934034000000",
+"thstrm_add_amount": "12962441000000"
+},
+{
+"sj_div": "IS",
+"account_id": "ifrs-full_ProfitLossBeforeTax",
+"account_nm": "법인세비용차감전순이익",
+"thstrm_nm": "제 57 기 반기",
+"thstrm_amount": "5756129000000",
+"thstrm_add_amount": "14907705000000"
+},
+{
+"sj_div": "IS",
+"account_id": "ifrs-full_Revenue",
+"account_nm": "매출액",
+"thstrm_nm": "제 57 기 반기",
+"thstrm_amount": "74566317000000",
+"thstrm_add_amount": "153706820000000"
+},
+{
+"sj_div": "IS",
+"account_id": "ifrs-full_ShareOfProfitLossOfAssociatesAndJointVenturesAccountedForUsingEquityMethod",
+"account_nm": "지분법이익",
+"thstrm_nm": "제 57 기 반기",
+"thstrm_amount": "159018000000",
+"thstrm_add_amount": "277871000000"
+},
+{
+"sj_div": "CIS",
+"account_id": "ifrs-full_ComprehensiveIncome",
+"account_nm": "반기총포괄손익",
+"thstrm_nm": "제 57 기 반기",
+"thstrm_amount": "-3454670000000",
+"thstrm_add_amount": "5981246000000"
+},
+{
+"sj_div": "CIS",
+"account_id": "ifrs-full_ComprehensiveIncomeAttributableToNoncontrollingInterests",
+"account_nm": "비지배지분",
+"thstrm_nm": "제 57 기 반기",
+"thstrm_amount": "117135000000",
+"thstrm_add_amount": "240728000000"
+},
+{
+"sj_div": "CIS",
+"account_id": "ifrs-full_ComprehensiveIncomeAttributableToOwnersOfParent",
+"account_nm": "지배기업 소유주지분",
+"thstrm_nm": "제 57 기 반기",
+"thstrm_amount": "-3571805000000",
+"thstrm_add_amount": "5740518000000"
+},
+{
+"sj_div": "CIS",
+"account_id": "ifrs-full_OtherComprehensiveIncome",
+"account_nm": "기타포괄손익",
+"thstrm_nm": "제 57 기 반기",
+"thstrm_amount": "-8571105000000",
+"thstrm_add_amount": "-7358067000000"
+},
+{
+"sj_div": "CIS",
+"account_id": "ifrs-full_OtherComprehensiveIncomeThatWillBeReclassifiedToProfitOrLossNetOfTax",
+"account_nm": "후속적으로 당기손익으로 재분류되는 포괄손익",
+"thstrm_nm": "제 57 기 반기",
+"thstrm_amount": "-9292392000000",
+"thstrm_add_amount": "-7999408000000"
+},
+{
+"sj_div": "CIS",
+"account_id": "ifrs-full_GainsLossesOnCashFlowHedgesNetOfTax",
+"account_nm": "현금흐름위험회피파생상품평가손익",
+"thstrm_nm": "제 57 기 반기",
+"thstrm_amount": "-20716000000",
+"thstrm_add_amount": "-23419000000"
+},
+{
+"sj_div": "CIS",
+"account_id": "ifrs-full_GainsLossesOnExchangeDifferencesOnTranslationNetOfTax",
+"account_nm": "해외사업장환산외환차이",
+"thstrm_nm": "제 57 기 반기",
+"thstrm_amount": "-9038545000000",
+"thstrm_add_amount": "-7773341000000"
+},
+{
+"sj_div": "CIS",
+"account_id": "ifrs-full_ShareOfOtherComprehensiveIncomeOfAssociatesAndJointVenturesAccountedForUsingEquityMethodThatWillBeReclassifiedToProfitOrLossNetOfTax",
+"account_nm": "관계기업 및 공동기업의 기타포괄손익에 대한 지분",
+"thstrm_nm": "제 57 기 반기",
+"thstrm_amount": "-233131000000",
+"thstrm_add_amount": "-202648000000"
+},
+{
+"sj_div": "CIS",
+"account_id": "ifrs-full_OtherComprehensiveIncomeThatWillNotBeReclassifiedToProfitOrLossNetOfTax",
+"account_nm": "후속적으로 당기손익으로 재분류되지 않는 포괄손익",
+"thstrm_nm": "제 57 기 반기",
+"thstrm_amount": "721287000000",
+"thstrm_add_amount": "641341000000"
+},
+{
+"sj_div": "CIS",
+"account_id": "ifrs-full_OtherComprehensiveIncomeNetOfTaxGainsLossesFromInvestmentsInEquityInstruments",
+"account_nm": "기타포괄손익-공정가치금융자산평가손익",
+"thstrm_nm": "제 57 기 반기",
+"thstrm_amount": "738266000000",
+"thstrm_add_amount": "664716000000"
+},
+{
+"sj_div": "CIS",
+"account_id": "ifrs-full_OtherComprehensiveIncomeNetOfTaxGainsLossesOnRemeasurementsOfDefinedBenefitPlans",
+"account_nm": "순확정급여부채(자산) 재측정요소",
+"thstrm_nm": "제 57 기 반기",
+"thstrm_amount": "-35870000000",
+"thstrm_add_amount": "-67650000000"
+},
+{
+"sj_div": "CIS",
+"account_id": "ifrs-full_ShareOfOtherComprehensiveIncomeOfAssociatesAndJointVenturesAccountedForUsingEquityMethodThatWillNotBeReclassifiedToProfitOrLossNetOfTax",
+"account_nm": "관계기업 및 공동기업의 기타포괄손익에 대한 지분",
+"thstrm_nm": "제 57 기 반기",
+"thstrm_amount": "18891000000",
+"thstrm_add_amount": "44275000000"
+},
+{
+"sj_div": "CIS",
+"account_id": "ifrs-full_ProfitLoss",
+"account_nm": "반기순이익",
+"thstrm_nm": "제 57 기 반기",
+"thstrm_amount": "5116435000000",
+"thstrm_add_amount": "13339313000000"
+}
+]
