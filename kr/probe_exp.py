@@ -99,4 +99,4 @@ except Exception:
     import traceback
     res["fatal"] = traceback.format_exc()[-1500:]
 os.makedirs(os.path.dirname(OUT), exist_ok=True)
-json.dump(res, open(OUT, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+open(OUT, "wb").write(json.dumps(res, ensure_ascii=False, indent=1).encode("utf-8", "replace"))

@@ -11,24 +11,22 @@ EXT = {1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23
 
 
 def _para(b):
-    out, i, n = [], 0, len(b) // 2
+    """一般字元先收集成 UTF-16LE 位元組，最後一次解碼（代理對才會正確合併成一個字）"""
+    out, i, n = bytearray(), 0, len(b) // 2
+    rep = {10: "\n", 13: "\n", 24: "-", 30: " ", 31: " "}
     while i < n:
         c = b[2 * i] | (b[2 * i + 1] << 8)
         if c < 32:
             if c in EXT:
                 i += 8
                 continue
-            if c in (10, 13):
-                out.append("\n")
-            elif c == 24:
-                out.append("-")
-            elif c in (30, 31):
-                out.append(" ")
+            if c in rep:
+                out += rep[c].encode("utf-16le")
             i += 1
             continue
-        out.append(chr(c))
+        out += b[2 * i: 2 * i + 2]
         i += 1
-    return "".join(out)
+    return out.decode("utf-16le", errors="replace")
 
 
 def hwp_text(data):
