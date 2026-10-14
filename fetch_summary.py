@@ -121,10 +121,32 @@ def fetch_eps(ids):
     return out
 
 
+def carry_revenue(d):
+    """證交所 t187ap05_L 換新月份時是分批補進來的（2026/10/12 起 9 月只有 868 檔，台塑、中鋼、崇越等 200 多檔整列消失）
+    → 這次沒抓到營收的股票，沿用上一版 summary.json 的舊月份，不要讓欄位變成「—」。"""
+    try:
+        old = json.loads((OUT / "summary.json").read_text("utf-8")).get("d", {})
+    except Exception:
+        return 0
+    n = 0
+    for c, x in d.items():
+        o = old.get(c)
+        if x[7] is None and o and len(o) > 7 and o[7]:
+            x[5], x[6], x[7] = o[5], o[6], o[7]
+            n += 1
+    print(f"營收沿用上一版：{n} 檔")
+    return n
+
+
+REV_MAX = 260   # FinMind 補營收每次上限（主題成份股優先）
+
+
 def patch_revenue(d, latest):
-    """證交所開放資料的上市月營收常晚幾天才更新；主題成份股若落後，用 FinMind 補到最新月份。"""
-    ids = theme_ids()
-    lag = [c for c in ids if c in d and (d[c][7] or "") < latest]
+    """證交所開放資料的上市月營收常晚幾天才更新；落後最新月份的股票用 FinMind 補（主題成份股優先，其餘上限 REV_MAX）。"""
+    th = set(theme_ids())
+    lag = [c for c in d if (d[c][7] or "") < latest and d[c][0] is not None]
+    lag.sort(key=lambda c: (c not in th, c))
+    lag = lag[:REV_MAX]
     if not lag:
         return
     start = (dt.date.today() - dt.timedelta(days=430)).strftime("%Y-%m-01")
@@ -208,6 +230,7 @@ def main():
         print("全部來源都失敗，保留舊檔", file=sys.stderr)
         sys.exit(1)
     yms = sorted({x[7] for x in d.values() if x[7]})
+    carry_revenue(d)
     if yms:
         try:
             patch_revenue(d, yms[-1])
