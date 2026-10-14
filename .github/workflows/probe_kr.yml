@@ -1,0 +1,30 @@
+name: 韓股資料來源探路
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: push-data
+  cancel-in-progress: false
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: 測試各來源
+        env:
+          DART_KEY: ${{ secrets.DART_KEY }}
+        run: python kr/probe_kr.py
+      - name: 提交結果
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add kr/data/
+          git diff --cached --quiet && exit 0
+          git commit -m "kr probe: $(TZ=Asia/Taipei date '+%F %H:%M')"
+          git pull --rebase -X theirs origin main
+          git push
