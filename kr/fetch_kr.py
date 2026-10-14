@@ -11,7 +11,6 @@
 import io, json, os, re, sys, time, zipfile, datetime as dt
 from pathlib import Path
 import urllib.request, urllib.parse
-from concurrent.futures import ThreadPoolExecutor
 
 # ---------- 追蹤清單：主題 → [(代號, 中文名, 旗標)], [(台股代號, 名稱)] ----------
 # 旗標：C = 循環股（以淨值比為主）
@@ -44,6 +43,8 @@ KST = dt.timezone(dt.timedelta(hours=9))
 TODAY = dt.datetime.now(KST).date()
 
 # 報告代碼 → (季別, 季末月日, 法定申報期限天數)
+STATS = []   # 每次 OpenDART 呼叫：[代號, 報告, 秒, 結果]
+DEADLINE = time.time() + float(os.environ.get("KR_BUDGET_MIN", "45")) * 60   # 超過就先不抓新報告，下次排程接著補
 CACHE_V = 2   # 抽取規則改版就 +1：舊版快取會重抓
 REPORTS = [("11013", 1, "03-31", 45), ("11012", 2, "06-30", 45), ("11014", 3, "09-30", 45), ("11011", 4, "12-31", 90)]
 
@@ -156,7 +157,7 @@ def extract(lst):
 def dart_report(corp, year, rc):
     for fs in ("CFS", "OFS"):
         q = urllib.parse.urlencode(dict(crtfc_key=KEY, corp_code=corp, bsns_year=year, reprt_code=rc, fs_div=fs))
-        j = http(f"https://opendart.fss.or.kr/api/fnlttSinglAcntAll.json?{q}")
+        j = http(f"https://opendart.fss.or.kr/api/fnlttSinglAcntAll.json?{q}", tries=2, timeout=40)
         st = j.get("status")
         if st == "000":
             if os.environ.get("KR_DEBUG") and year == TODAY.year - 1 and rc == "11012":
@@ -188,19 +189,30 @@ def fin_cache(code, corp):
             if TODAY < end + dt.timedelta(days=14):     # 還沒到可能公布的時間
                 continue
             todo.append((k, y, rc, end, due))
-    # OpenDART 每次約 7 秒，同時送 4 個請求
-    with ThreadPoolExecutor(4) as ex:
-        res = list(ex.map(lambda t: dart_report(corp, t[1], t[2]), todo))
-    for (k, y, rc, end, due), d in zip(todo, res):
+    n_new = 0
+    for k, y, rc, end, due in todo:
+        if time.time() > DEADLINE:
+            break
+        t0 = time.time()
+        try:
+            d = dart_report(corp, y, rc)
+            STATS.append([code, k, round(time.time() - t0, 1), "ok" if d else "none"])
+        except Exception as e:
+            STATS.append([code, k, round(time.time() - t0, 1), str(e)[:80]])
+            if "OpenDART 0" in str(e) or "OpenDART 1" in str(e) or "OpenDART 9" in str(e):
+                raise
+            continue
+        n_new += 1
         if d is None:
             # 超過法定期限 + 60 天仍查無資料（上市前、或不申報）→ 記成空的，以後不再查
             if TODAY > end + dt.timedelta(days=due + 60):
                 cache[k] = {}
-            continue
-        cache[k] = d
-    n_new = len(todo)
+        else:
+            cache[k] = d
+        p.write_text(json.dumps(cache, ensure_ascii=False, separators=(",", ":"), sort_keys=True), "utf-8")
+    pending = sum(1 for t in todo if t[0] not in cache)
     p.write_text(json.dumps(cache, ensure_ascii=False, separators=(",", ":"), sort_keys=True), "utf-8")
-    return cache, n_new
+    return cache, (n_new, pending)
 
 
 def quarters(cache):
@@ -330,7 +342,7 @@ def naver_cons(code):
 def build(code, corps):
     cfg = CFG.get(code, dict(theme="", zh="", flags="", tw=[]))
     corp, kname = corps.get(code, [None, ""])
-    note, Q, n_new = [], [], 0
+    note, Q, n_new = [], [], (0, 0)
     if corp:
         cache, n_new = fin_cache(code, corp)
         Q = quarters(cache)
@@ -391,6 +403,8 @@ def build(code, corps):
     fr = [[r["date"], r["c"], r["fr"]] for r in px if r["date"] >= cut and r["fr"] is not None]
     q = [[x["cal"], x["cal"], x["rev"], x["gm"], x["om"], x["nm"], x["eps"], x["capex"], x["sh"], x["end"], x["filed"]]
          for x in Q]
+    if n_new[1]:
+        note.append(f"財報回補中：還有 {n_new[1]} 份報告未抓，下次排程補齊")
     est = [x["cal"] for x in Q if x.get("eps_est")]
     if est:
         note.append(f"{est[0]}～{est[-1]} 共 {len(est)} 季財報未列 EPS，以淨利 ÷ 鄰近季股數推算")
@@ -406,8 +420,13 @@ def build(code, corps):
                 fr=fr, cons=cons, note=note, _nv_name=nv.get("name")), n_new
 
 
-def nv_name(d):
-    return d.get("_nv_name")
+def write_diag(diag):
+    calls = [x[2] for x in STATS]
+    (OUT / "diag.json").write_text(json.dumps(dict(
+        at=dt.datetime.now(KST).strftime("%F %H:%M KST"), r=diag,
+        dart=dict(n=len(calls), avg=round(sum(calls) / len(calls), 1) if calls else None, max=max(calls) if calls else None,
+                  slow=[x for x in STATS if x[2] > 20 or x[3] not in ("ok", "none")][:40])),
+        ensure_ascii=False, indent=1), "utf-8")
 
 
 def main():
@@ -434,6 +453,7 @@ def main():
                               miss={k: sum(1 for x in Qs if x[i] is None) for k, i in (("gm", 3), ("om", 4), ("eps", 6), ("capex", 7))},
                               pe=L["pe"], nv_per=L["nv_per"], pb=L["pb"], nv_pbr=L["nv_pbr"], cns=L["cns_per"], fr=L["fr"],
                               note=d["note"], tail=Qs[-2:])
+            write_diag(diag)
             print(f"{code} ok {d['name']} ({d['kname']}) close={L['close']} pe={L['pe']}(Naver {L['nv_per']}) "
                   f"pb={L['pb']}(Naver {L['nv_pbr']}) ttm={L['ttm']}(Naver {L.get('cns_eps')} 共識) fr={L['fr']} "
                   f"q={len(d['q'])} 新抓報告={n_new} {time.time() - t0:.0f}s")
@@ -443,14 +463,14 @@ def main():
         except Exception as e:
             bad.append(code)
             diag[code] = dict(err=str(e)[:300])
+            write_diag(diag)
             print(f"{code} FAILED: {e}", file=sys.stderr)
     idx = OUT / "index.json"
     old = json.loads(idx.read_text("utf-8")) if idx.exists() else []
     m = {s["id"]: s for s in old if s["id"] in CFG}
     m.update({s["id"]: s for s in ok if s["id"] in CFG})
     idx.write_text(json.dumps([m[c] for c in STOCKS if c in m], ensure_ascii=False), "utf-8")
-    (OUT / "diag.json").write_text(json.dumps(dict(at=dt.datetime.now(KST).strftime("%F %H:%M KST"), r=diag),
-                                              ensure_ascii=False, indent=1), "utf-8")
+    write_diag(diag)
     print(f"完成 {len(ok)}／{len(ids)}，失敗：{bad}")
     if not ok:
         sys.exit(1)
