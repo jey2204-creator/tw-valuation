@@ -398,10 +398,17 @@ async function load(id){
   document.body.classList.remove('dim');
 }
 // ---------- 首頁 ----------
+const TID={};
+// 主題順序跟台股首頁一樣（同網域 localStorage 的 themeCfg.order；沒有就用台股 themes.json 的順序）
+let ORD={ids:[],byName:{}};
+async function twOrder(){let base=[];try{const r=await fetch('../data/themes.json?t='+Date.now());if(r.ok)base=(await r.json()).themes||[]}catch(e){}
+  let ord=[];try{ord=(JSON.parse(localStorage.getItem('themeCfg'))||{}).order||[]}catch(e){}
+  ORD={ids:[...ord,...base.map(t=>t.id).filter(i=>!ord.includes(i))],byName:Object.fromEntries(base.map(t=>[t.name,t.id]))}}
+const rankOf=t=>{const i=ORD.ids.indexOf(TID[t]||ORD.byName[t]);return i<0?999:i};
 function homeRender(){
   const v=$('q').value.trim().toLowerCase();
   const hit=s=>!v||s.id.toLowerCase().startsWith(v)||(s.name||'').toLowerCase().includes(v)||s.tw.some(([c,n])=>c.startsWith(v)||n.toLowerCase().includes(v));
-  const groups=[];IDX.forEach(s=>{let g=groups.find(x=>x.t===s.theme);if(!g)groups.push(g={t:s.theme,tw:s.tw,items:[]});if(hit(s))g.items.push(s)});
+  const groups=[];IDX.forEach(s=>{let g=groups.find(x=>x.t===s.theme);if(!g)groups.push(g={t:s.theme,tw:s.tw,items:[]});if(hit(s))g.items.push(s)});groups.sort((a,b)=>rankOf(a.t)-rankOf(b.t));
   $('groups').innerHTML=groups.filter(g=>g.items.length).map(g=>`<div class="grp"><h3>${esc(g.t)}</h3>`+
     (g.tw.length?`<div class="gtw">台股：${g.tw.map(([c,n])=>`<a href="../#${c}">${c} ${esc(n)}</a>`).join('、')}</div>`:'<div class="gtw">台股：全供應鏈（需求層）</div>')+
     g.items.map(s=>{const col=s.chg>0?'var(--up)':s.chg<0?'var(--down)':'var(--muted)';
@@ -437,6 +444,7 @@ $('chips').addEventListener('click',e=>{const a=e.target.closest('a');if(a){e.pr
 addEventListener('hashchange',route);
 (async()=>{
   try{const r=await fetch('data/index.json?t='+Date.now());if(r.ok)IDX=await r.json()}catch(e){}
+  await twOrder();
   homeRender();route();capexAll();
 })();
 ['iQ1','iNm','iQg','iYg'].forEach(id=>$(id).addEventListener('input',()=>D&&renderFwd()));
