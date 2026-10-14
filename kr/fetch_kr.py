@@ -11,14 +11,27 @@
 import io, json, os, re, sys, time, zipfile, datetime as dt
 from pathlib import Path
 import urllib.request, urllib.parse
+from concurrent.futures import ThreadPoolExecutor
 
 # ---------- 追蹤清單：主題 → [(代號, 中文名, 旗標)], [(台股代號, 名稱)] ----------
 # 旗標：C = 循環股（以淨值比為主）
 THEMES = [
-    ("🎯 記憶體", [("005930", "三星電子", "C"), ("000660", "SK海力士", "C")],
+    ("🎯 AI 晶片／記憶體", [("005930", "三星電子", "C"), ("000660", "SK海力士", "C")],
      [("2344", "華邦電"), ("2408", "南亞科"), ("8299", "群聯"), ("2337", "旺宏")]),
-    ("⚡ 被動元件／基板", [("009150", "三星電機", "")],
-     [("2327", "國巨"), ("2492", "華新科"), ("3037", "欣興"), ("8046", "南電")]),
+    ("🧱 先進封裝／設備", [("042700", "韓美半導體", ""), ("095340", "ISC", ""), ("058470", "利諾工業", ""),
+                         ("089030", "泰克榮", ""), ("039030", "EO Technics", ""), ("240810", "圓益IPS", "C"),
+                         ("036930", "周星工程", "C"), ("403870", "HPSP", "")],
+     [("3711", "日月光投控"), ("2449", "京元電子"), ("3131", "弘塑"), ("6187", "萬潤"), ("6223", "旺矽"), ("6515", "穎崴")]),
+    ("🟩 PCB／EMS", [("007660", "ISU Petasys", ""), ("011070", "LG Innotek", ""), ("353200", "大德電子", ""),
+                    ("222800", "Simmtech", "C"), ("007810", "韓國電路", "")],
+     [("2368", "金像電"), ("3037", "欣興"), ("8046", "南電"), ("4958", "臻鼎-KY"), ("2383", "台光電")]),
+    ("⚡ 被動元件", [("009150", "三星電機", "")],
+     [("2327", "國巨"), ("2492", "華新科"), ("3026", "禾伸堂")]),
+    ("💿 矽晶圓／基板", [("011790", "SKC", ""), ("357780", "Soulbrain", ""), ("005290", "東進世美肯", "")],
+     [("6488", "環球晶"), ("5483", "中美晶"), ("6182", "合晶")]),
+    ("🔌 電力", [("267260", "HD現代電機", ""), ("010120", "LS電氣", ""), ("298040", "曉星重工業", ""),
+               ("103590", "日進電氣", "")],
+     [("1519", "華城"), ("1503", "士電"), ("1513", "中興電"), ("1514", "亞力")]),
 ]
 CFG = {c: dict(theme=th, zh=zh, flags=f, tw=tw) for th, items, tw in THEMES for c, zh, f in items}
 STOCKS = list(CFG)
@@ -165,7 +178,7 @@ def fin_cache(code, corp):
     p = OUT / "fin" / f"{code}.json"
     p.parent.mkdir(parents=True, exist_ok=True)
     cache = json.loads(p.read_text("utf-8")) if p.exists() else {}
-    n_new = 0
+    todo = []
     for y in range(TODAY.year - YEARS, TODAY.year + 1):
         for rc, qn, md, due in REPORTS:
             k = f"{y}-{rc}"
@@ -174,15 +187,18 @@ def fin_cache(code, corp):
             end = dt.date.fromisoformat(f"{y}-{md}")
             if TODAY < end + dt.timedelta(days=14):     # 還沒到可能公布的時間
                 continue
-            d = dart_report(corp, y, rc)
-            n_new += 1
-            if d is None:
-                # 超過法定期限 + 60 天仍查無資料（上市前、或不申報）→ 記成空的，以後不再查
-                if TODAY > end + dt.timedelta(days=due + 60):
-                    cache[k] = {}
-                continue
-            cache[k] = d
-            time.sleep(0.2)
+            todo.append((k, y, rc, end, due))
+    # OpenDART 每次約 7 秒，同時送 4 個請求
+    with ThreadPoolExecutor(4) as ex:
+        res = list(ex.map(lambda t: dart_report(corp, t[1], t[2]), todo))
+    for (k, y, rc, end, due), d in zip(todo, res):
+        if d is None:
+            # 超過法定期限 + 60 天仍查無資料（上市前、或不申報）→ 記成空的，以後不再查
+            if TODAY > end + dt.timedelta(days=due + 60):
+                cache[k] = {}
+            continue
+        cache[k] = d
+    n_new = len(todo)
     p.write_text(json.dumps(cache, ensure_ascii=False, separators=(",", ":"), sort_keys=True), "utf-8")
     return cache, n_new
 
@@ -387,7 +403,11 @@ def build(code, corps):
     return dict(id=code, name=cfg["zh"] or nv.get("name") or kname, kname=kname, theme=cfg["theme"],
                 cyclical="C" in cfg["flags"], tw=cfg["tw"], freq="Q", fye=f"{TODAY.year - 1}-12-31", corp=corp,
                 updated=dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%MZ"), last=last, q=q, riv=riv,
-                fr=fr, cons=cons, note=note), n_new
+                fr=fr, cons=cons, note=note, _nv_name=nv.get("name")), n_new
+
+
+def nv_name(d):
+    return d.get("_nv_name")
 
 
 def main():
@@ -396,17 +416,24 @@ def main():
     ids = sys.argv[1:] or STOCKS
     OUT.mkdir(parents=True, exist_ok=True)
     corps = corp_map(ids)
-    ok, bad = [], []
+    ok, bad, diag = [], [], {}
     for code in ids:
         try:
             t0 = time.time()
             d, n_new = build(code, corps)
+            nvn = d.pop("_nv_name", None)
             (OUT / f"{code}.json").write_text(json.dumps(d, ensure_ascii=False, separators=(",", ":")), "utf-8")
             L, lq = d["last"], d["q"][-1] if d["q"] else None
             ok.append(dict(id=code, name=d["name"], kname=d["kname"], theme=d["theme"], n=len(d["q"]),
                            close=L["close"], chg=round((L["close"] / L["prev"] - 1) * 100, 2) if L["prev"] else None,
                            pe=L["pe"], pb=L["pb"], fr=L["fr"], cpe=L["cns_per"], lq=lq[0] if lq else None,
                            cyc=d["cyclical"], tw=d["tw"], date=L["date"]))
+            Qs = d["q"]
+            diag[code] = dict(zh=d["name"], kname=d["kname"], nv=nvn, n=len(Qs), sec=round(time.time() - t0),
+                              first=Qs[0][0] if Qs else None, last=lq[0] if lq else None, new=n_new,
+                              miss={k: sum(1 for x in Qs if x[i] is None) for k, i in (("gm", 3), ("om", 4), ("eps", 6), ("capex", 7))},
+                              pe=L["pe"], nv_per=L["nv_per"], pb=L["pb"], nv_pbr=L["nv_pbr"], cns=L["cns_per"], fr=L["fr"],
+                              note=d["note"], tail=Qs[-2:])
             print(f"{code} ok {d['name']} ({d['kname']}) close={L['close']} pe={L['pe']}(Naver {L['nv_per']}) "
                   f"pb={L['pb']}(Naver {L['nv_pbr']}) ttm={L['ttm']}(Naver {L.get('cns_eps')} 共識) fr={L['fr']} "
                   f"q={len(d['q'])} 新抓報告={n_new} {time.time() - t0:.0f}s")
@@ -415,12 +442,15 @@ def main():
             print("    cons", d["cons"])
         except Exception as e:
             bad.append(code)
+            diag[code] = dict(err=str(e)[:300])
             print(f"{code} FAILED: {e}", file=sys.stderr)
     idx = OUT / "index.json"
     old = json.loads(idx.read_text("utf-8")) if idx.exists() else []
     m = {s["id"]: s for s in old if s["id"] in CFG}
     m.update({s["id"]: s for s in ok if s["id"] in CFG})
     idx.write_text(json.dumps([m[c] for c in STOCKS if c in m], ensure_ascii=False), "utf-8")
+    (OUT / "diag.json").write_text(json.dumps(dict(at=dt.datetime.now(KST).strftime("%F %H:%M KST"), r=diag),
+                                              ensure_ascii=False, indent=1), "utf-8")
     print(f"完成 {len(ok)}／{len(ids)}，失敗：{bad}")
     if not ok:
         sys.exit(1)
