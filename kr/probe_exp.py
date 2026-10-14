@@ -88,24 +88,43 @@ def p_search():
 def p_view():
     s, b, h, t = get(LIST)
     r = rows(dec(b))
-    tgt = next((x for x in r if "1일 ~" in x[2] or "10일" in x[2]), r[0])
+    tgt = next((x for x in r if "1일 ~" in x[2]), r[0])
     out = {"target": tgt}
-    for name, url in [
-        ("info_nttSn", f"{BASE}/kcs/na/ntt/selectNttInfo.do?mi=2891&bbsId=1362&nttSn={tgt[0]}"),
-        ("info_post", f"{BASE}/kcs/na/ntt/selectNttInfo.do"),
+    form = {"mi": "2891", "bbsId": "1362", "nttSn": tgt[0], "nttSnUrl": tgt[1], "currPage": "1"}
+    for name, url, data in [
+        ("post", f"{BASE}/kcs/na/ntt/selectNttInfo.do", form),
+        ("get", f"{BASE}/kcs/na/ntt/selectNttInfo.do?" + urllib.parse.urlencode(form), None),
     ]:
         try:
-            if name == "info_post":
-                s, b, h, t = get(url, data={"mi": "2891", "bbsId": "1362", "nttSn": tgt[0]})
-            else:
-                s, b, h, t = get(url)
+            s, b, h, t = get(url, data=data)
             html = dec(b)
-            links = sorted(set(re.findall(r'(?:href|onclick|data-url|data-file\w*)="([^"]*(?:[Ff]ile|[Dd]own|atch|\.pdf|\.hwp)[^"]*)"', html)))
-            out[name] = {"status": s, "sec": t, "len": len(html), "title": (re.search(r"<title>(.*?)</title>", html, re.S) or [0, ""])[1].strip()[:120],
-                         "has_semi": "반도체" in html, "links": links[:20],
-                         "file_snips": [html[max(0, m.start() - 200): m.start() + 400] for m in re.finditer(r"\.pdf|\.hwp", html)][:3]}
+            links = sorted(set(re.findall(r'(?:href|onclick|data-[\w-]+)="([^"]*(?:[Ff]ile|[Dd]own|atch|\.pdf|\.hwp)[^"]*)"', html)))
+            body = re.sub(r"<[^>]+>", " ", html)
+            body = re.sub(r"\s+", " ", body)
+            out[name] = {"status": s, "sec": t, "len": len(html),
+                         "title": (re.search(r"<title>(.*?)</title>", html, re.S) or [0, ""])[1].strip()[:120],
+                         "has_semi": "반도체" in html, "links": links[:25],
+                         "file_snips": [html[max(0, m.start() - 400): m.start() + 300] for m in re.finditer(r"\.pdf|\.hwp", html)][:4],
+                         "body_semi": [body[max(0, m.start() - 200): m.start() + 300] for m in re.finditer("반도체", body)][:3]}
         except Exception as e:
             out[name] = str(e)[:200]
+    return out
+
+
+def p_misc():
+    out = {}
+    kw = urllib.parse.quote("수출입 현황")
+    for prm in ("listCo=100", "listCo=50&currPage=1", f"searchType=sj&searchValue={kw}", f"searchType=all&searchValue={kw}",
+                f"searchType=1&searchValue={kw}", f"searchValue={kw}"):
+        try:
+            s, b, h, t = get(LIST + "&" + prm)
+            r = rows(dec(b))
+            out[prm] = [len(r), sum(1 for x in r if "수출입" in x[2]), [x[2][:30] for x in r[:3]], r[-1][3] if r else None]
+        except Exception as e:
+            out[prm] = str(e)[:100]
+    s, b, h, t = get(LIST)
+    html = dec(b)
+    out["searchType_opts"] = re.findall(r'<option[^>]*value="([^"]*)"[^>]*>([^<]*)</option>', html)[:20]
     return out
 
 
@@ -122,10 +141,7 @@ def p_titles():
     return [[x[0], x[2], x[3]] for x in allr]
 
 
-step("list", p_list)
-step("pages", p_pages)
-step("search", p_search)
 step("view", p_view)
-step("titles", p_titles)
+step("misc", p_misc)
 os.makedirs(os.path.dirname(OUT), exist_ok=True)
 json.dump(res, open(OUT, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
