@@ -1,22 +1,22 @@
 {
- "asof": "2026-10-14 13:41 KST",
+ "asof": "2026-10-14 21:28 KST",
  "r": {
   "naver_fchart": {
    "status": 200,
-   "sec": 1.16,
+   "sec": 1.2,
    "n": 600,
    "first": [
     "20240423|76400|76800|75500|75500|18717699"
    ],
    "last": [
     "20261013|241500|244000|228000|234000|26790913",
-    "20261014|233500|241500|233000|238000|9385376"
+    "20261014|233500|241500|230000|234500|17382089"
    ],
    "ok": true
   },
   "naver_api_chart": {
    "status": 200,
-   "sec": 1.44,
+   "sec": 1.53,
    "n": 596,
    "first": [
     {
@@ -32,11 +32,11 @@
    "last": [
     {
      "localDate": "20261014",
-     "closePrice": 238000.0,
+     "closePrice": 234500.0,
      "openPrice": 233500.0,
      "highPrice": 241500.0,
-     "lowPrice": 233000.0,
-     "accumulatedTradingVolume": 9385376,
+     "lowPrice": 230000.0,
+     "accumulatedTradingVolume": 17382089,
      "foreignRetentionRate": 46.18
     }
    ],
@@ -44,7 +44,7 @@
   },
   "naver_integration": {
    "status": 200,
-   "sec": 0.94,
+   "sec": 1.05,
    "keys": [
     "stockEndType",
     "itemCode",
@@ -66,38 +66,38 @@
     "lastClosePrice": "232,000",
     "openPrice": "238,000",
     "highPrice": "241,500",
-    "lowPrice": "233,000",
-    "accumulatedTradingVolume": "15,887,544",
-    "accumulatedTradingValue": "3조 7,732억",
-    "marketValue": "1,391조 4,143억",
+    "lowPrice": "230,000",
+    "accumulatedTradingVolume": "27,391,262",
+    "accumulatedTradingValue": "6조 4,593억",
+    "marketValue": "1,370조 9,523억",
     "foreignRate": "46.18%",
     "highPriceOf52Weeks": "380,000",
     "lowPriceOf52Weeks": "90,200",
-    "per": "10.68배",
+    "per": "10.52배",
     "eps": "22,292원",
-    "cnsPer": "5.23배",
+    "cnsPer": "5.15배",
     "cnsEps": "45,521원",
-    "pbr": "2.77배",
+    "pbr": "2.73배",
     "bps": "86,052원",
-    "dividendYieldRatio": "0.70%",
+    "dividendYieldRatio": "0.71%",
     "dividend": "1,668원"
    },
    "ok": true
   },
   "naver_foreign": {
    "status": 200,
-   "sec": 2.13,
+   "sec": 2.53,
    "len": 131961,
    "pct_sample": [],
    "ok": true
   },
   "yahoo_chart": {
    "status": 200,
-   "sec": 0.23,
+   "sec": 0.28,
    "n": 1221,
    "last": [
     1791936000,
-    238000.0
+    232000.0
    ],
    "first": [
     1634169600,
@@ -116,14 +116,149 @@
   },
   "kind_list": {
    "status": 200,
-   "sec": 4.85,
+   "sec": 1.56,
    "n_rows": 2754,
    "sample": " <td>브릴스</td> <td> 코스닥 </td> <td style=\"mso-number-format:'@';text-align:center;\">468670</td> <td>특수 목적용 기계 제조업</td> <td>로봇 모듈화 플랫폼 솔루션</td> <td style=\"text-align:center;\">2026-10-01</td> <td style=\"t",
    "ok": true
   },
-  "dart": {
-   "ok": false,
-   "err": "DART_KEY 未設定，跳過"
+  "dart_corpcode": {
+   "status": 200,
+   "sec": 211.15,
+   "n_listed": 3934,
+   "sample": [
+    [
+     "00126371",
+     "삼성전기",
+     "009150"
+    ],
+    [
+     "00164779",
+     "SK하이닉스",
+     "000660"
+    ],
+    [
+     "00126380",
+     "삼성전자",
+     "005930"
+    ]
+   ],
+   "ok": true
+  },
+  "dart_fs_Q3_2025": {
+   "ok": true,
+   "status": 200,
+   "dart": "000",
+   "msg": "정상",
+   "sec": 6.9,
+   "n": 225,
+   "pick": [
+    {
+     "sj_div": "IS",
+     "account_id": "dart_OperatingIncomeLoss",
+     "account_nm": "영업이익",
+     "thstrm_nm": "제 57 기 3분기",
+     "thstrm_amount": "12166062000000",
+     "thstrm_add_amount": "23527391000000"
+    },
+    {
+     "sj_div": "IS",
+     "account_id": "ifrs-full_BasicEarningsLossPerShare",
+     "account_nm": "기본주당이익",
+     "thstrm_nm": "제 57 기 3분기",
+     "thstrm_amount": "1802",
+     "thstrm_add_amount": "3724"
+    },
+    {
+     "sj_div": "IS",
+     "account_id": "ifrs-full_GrossProfit",
+     "account_nm": "매출총이익",
+     "thstrm_nm": "제 57 기 3분기",
+     "thstrm_amount": "33492127000000",
+     "thstrm_add_amount": "87119450000000"
+    },
+    {
+     "sj_div": "IS",
+     "account_id": "ifrs-full_ProfitLossAttributableToOwnersOfParent",
+     "account_nm": "지배기업 소유주지분",
+     "thstrm_nm": "제 57 기 3분기",
+     "thstrm_amount": "12006461000000",
+     "thstrm_add_amount": "24968902000000"
+    },
+    {
+     "sj_div": "IS",
+     "account_id": "ifrs-full_Revenue",
+     "account_nm": "매출액",
+     "thstrm_nm": "제 57 기 3분기",
+     "thstrm_amount": "86061747000000",
+     "thstrm_add_amount": "239768567000000"
+    },
+    {
+     "sj_div": "CF",
+     "account_id": "ifrs-full_PurchaseOfPropertyPlantAndEquipmentClassifiedAsInvestingActivities",
+     "account_nm": "유형자산의 취득",
+     "thstrm_nm": "제 57 기 3분기",
+     "thstrm_amount": "35972891000000",
+     "thstrm_add_amount": null
+    }
+   ]
+  },
+  "dart_fs_FY_2025": {
+   "ok": true,
+   "status": 200,
+   "dart": "000",
+   "msg": "정상",
+   "sec": 7.24,
+   "n": 229,
+   "pick": [
+    {
+     "sj_div": "IS",
+     "account_id": "dart_OperatingIncomeLoss",
+     "account_nm": "영업이익",
+     "thstrm_nm": "제 57 기",
+     "thstrm_amount": "43601051000000",
+     "thstrm_add_amount": ""
+    },
+    {
+     "sj_div": "IS",
+     "account_id": "ifrs-full_BasicEarningsLossPerShare",
+     "account_nm": "기본주당이익",
+     "thstrm_nm": "제 57 기",
+     "thstrm_amount": "6605",
+     "thstrm_add_amount": ""
+    },
+    {
+     "sj_div": "IS",
+     "account_id": "ifrs-full_GrossProfit",
+     "account_nm": "매출총이익",
+     "thstrm_nm": "제 57 기",
+     "thstrm_amount": "131370425000000",
+     "thstrm_add_amount": ""
+    },
+    {
+     "sj_div": "IS",
+     "account_id": "ifrs-full_ProfitLossAttributableToOwnersOfParent",
+     "account_nm": "지배기업 소유주지분",
+     "thstrm_nm": "제 57 기",
+     "thstrm_amount": "44260956000000",
+     "thstrm_add_amount": ""
+    },
+    {
+     "sj_div": "IS",
+     "account_id": "ifrs-full_Revenue",
+     "account_nm": "매출액",
+     "thstrm_nm": "제 57 기",
+     "thstrm_amount": "333605938000000",
+     "thstrm_add_amount": ""
+    },
+    {
+     "sj_div": "CF",
+     "account_id": "ifrs-full_PurchaseOfPropertyPlantAndEquipmentClassifiedAsInvestingActivities",
+     "account_nm": "유형자산의 취득",
+     "thstrm_nm": "제 57 기",
+     "thstrm_amount": "47522179000000",
+     "thstrm_add_amount": null
+    }
+   ]
   }
  }
 }
