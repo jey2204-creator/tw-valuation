@@ -58,18 +58,25 @@ def pdf_pages(b):
     return [p.extract_text() or "" for p in PdfReader(io.BytesIO(b)).pages]
 
 
-# 樣本：每年挑 1～10 日、1～20 日各一篇（含最舊的）
-pat = re.compile(r"1일\s*~\s*(?:\d+월\s*)?(10|20)일")
-ten = [x for x in allr if pat.search(x[2])]
-by = {}
-for x in ten:
-    y = (x[3] or "")[:4]
-    k = (y, pat.search(x[2])[1])
-    by.setdefault(k, x)          # 列表由新到舊 → 每組留最新的一篇
-samples = sorted(by.values(), key=lambda x: x[3] or "")
-samples = samples[:3] + samples[-2:] if len(samples) > 5 else samples
+# 樣本：2019～2025 每年 6 月 1～10 日、2023 年 6 月 1～20 日、各年 6 月確定值
+pat = re.compile(r"1일\s*[~∼]\s*(?:\d+월\s*)?(10|20)일")
+want = []
+for y in range(2019, 2026):
+    for x in allr:
+        m = pat.search(x[2])
+        if m and m[1] == "10" and (x[3] or "").startswith(f"{y}.06"):
+            want.append(x); break
+for x in allr:
+    m = pat.search(x[2])
+    if m and m[1] == "20" and (x[3] or "").startswith("2023.06"):
+        want.append(x); break
+for y in (2021, 2023, 2025, 2026):
+    for x in allr:
+        if "확정" in x[2] and (x[3] or "").startswith(f"{y}.07"):
+            want.append(x); break
+ten = want
 sam = []
-for x in ten[-2:] + [s for s in samples if s not in ten[-2:]]:
+for x in ten:
     item = {"row": [x[0], x[2], x[3]]}
     try:
         html = dec(get(f"{BASE}/kcs/na/ntt/selectNttInfo.do?mi=2891&bbsId=1362&nttSn={x[0]}&nttSnUrl={x[1]}"))
@@ -81,8 +88,18 @@ for x in ten[-2:] + [s for s in samples if s not in ten[-2:]]:
             item["magic"] = b[:5].decode("latin1")
             pages = pdf_pages(b) if b[:4] == b"%PDF" else []
             item["npages"] = len(pages)
-            item["first"] = pages[0][:1800] if pages else None
-            item["last"] = pages[-1][:1600] if pages else None
+            item["first"] = pages[0][:1500] if pages else None
+            item["pages_semi"] = [[i, pg[:2600]] for i, pg in enumerate(pages) if "반 도 체" in pg or "반도체" in pg][-2:]
+        hx = next((f for f in files if ".hwpx" in f[1].lower()), None)
+        if hx and not pdf:
+            import zipfile
+            b = get(BASE + hx[0])
+            z = zipfile.ZipFile(io.BytesIO(b))
+            names = z.namelist()
+            secs = [n for n in names if n.startswith("Contents/section")]
+            txt = " ".join(re.sub(r"<[^>]+>", " ", z.read(n).decode("utf-8", "replace")) for n in secs)
+            txt = re.sub(r"\s+", " ", txt)
+            item["hwpx"] = {"names": names[:15], "semi": [txt[max(0, m.start() - 300): m.start() + 900] for m in re.finditer("반 ?도 ?체", txt)][:3]}
     except Exception as e:
         item["err"] = f"{type(e).__name__}: {str(e)[:200]}"
     sam.append(item)
