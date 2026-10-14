@@ -15,7 +15,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install pypdf
+      - run: pip install pypdf olefile
       - name: 測試各來源
         run: python kr/probe_exp.py
       - name: 提交結果

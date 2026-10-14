@@ -1,5 +1,8 @@
-"""韓國出口數據來源探路 4：關稅廳新聞稿（搜尋「수출입 현황」）全部標題＋各年度樣本 PDF 格式 → kr/data/probe_exp.json"""
-import io, json, os, re, time, urllib.request, urllib.parse
+"""韓國出口數據探路 6：用 kr/hwp.py 解析各年度 HWP／HWPX／PDF 新聞稿 → kr/data/probe_exp.json"""
+import json, os, re, sys, time, urllib.request, urllib.parse
+
+sys.path.insert(0, os.path.dirname(__file__))
+from hwp import any_text  # noqa: E402
 
 UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36"
 OUT = os.path.join(os.path.dirname(__file__), "data", "probe_exp.json")
@@ -34,76 +37,55 @@ def rows(html):
 
 
 kw = urllib.parse.quote("수출입")
-allr, seen = [], set()
-for pg in range(1, 60):
-    try:
-        r = rows(dec(get(f"{LIST}&searchType=sj&searchValue={kw}&listCo=50&currPage={pg}")))
-    except Exception as e:
-        res.setdefault("errs", []).append(f"page {pg}: {e}")
-        break
-    new = [x for x in r if x[0] not in seen]
-    if not new:
-        break
-    for x in new:
-        seen.add(x[0])
-    allr += new
-    time.sleep(0.4)
-res["n"] = len(allr)
-res["titles"] = [[x[0], x[2], x[3]] for x in allr]
-print("titles", len(allr), allr[-1] if allr else None)
-
-
-def pdf_pages(b):
-    from pypdf import PdfReader
-    return [p.extract_text() or "" for p in PdfReader(io.BytesIO(b)).pages]
-
-
-# 樣本：2019～2025 每年 6 月 1～10 日、2023 年 6 月 1～20 日、各年 6 月確定值
+allr = []
+for pg in range(1, 8):          # 2022 年以後就夠
+    allr += rows(dec(get(f"{LIST}&searchType=sj&searchValue={kw}&listCo=50&currPage={pg}")))
+    time.sleep(0.3)
 pat = re.compile(r"1일\s*[~∼]\s*(?:\d+월\s*)?(10|20)일")
-want = []
-for y in range(2019, 2026):
-    for x in allr:
-        m = pat.search(x[2])
-        if m and m[1] == "10" and (x[3] or "").startswith(f"{y}.06"):
-            want.append(x); break
-for x in allr:
-    m = pat.search(x[2])
-    if m and m[1] == "20" and (x[3] or "").startswith("2023.06"):
-        want.append(x); break
-for y in (2021, 2023, 2025, 2026):
-    for x in allr:
-        if "확정" in x[2] and (x[3] or "").startswith(f"{y}.07"):
-            want.append(x); break
-ten = want
+
+
+def pick(pred):
+    return next((x for x in allr if pred(x)), None)
+
+
+want = [
+    pick(lambda x: (m := pat.search(x[2])) and m[1] == "10" and x[3].startswith("2023.06")),
+    pick(lambda x: (m := pat.search(x[2])) and m[1] == "20" and x[3].startswith("2024.02")),
+    pick(lambda x: (m := pat.search(x[2])) and m[1] == "10" and x[3].startswith("2025.06")),
+    pick(lambda x: (m := pat.search(x[2])) and m[1] == "20" and x[3].startswith("2025.12")),
+    pick(lambda x: (m := pat.search(x[2])) and m[1] == "10" and x[3].startswith("2026.01")),
+    pick(lambda x: "확정" in x[2] and x[3].startswith("2023.07")),
+    pick(lambda x: "확정" in x[2] and x[3].startswith("2026.09")),
+]
 sam = []
-for x in ten:
+for x in [w for w in want if w]:
     item = {"row": [x[0], x[2], x[3]]}
     try:
         html = dec(get(f"{BASE}/kcs/na/ntt/selectNttInfo.do?mi=2891&bbsId=1362&nttSn={x[0]}&nttSnUrl={x[1]}"))
         files = re.findall(r'href="(/common/nttFileDownload\.do\?fileKey=\w+)"\s+title="([^"]+)"', html)
-        item["files"] = files
-        pdf = next((f for f in files if ".pdf" in f[1].lower()), None)
-        if pdf:
-            b = get(BASE + pdf[0])
-            item["magic"] = b[:5].decode("latin1")
-            pages = pdf_pages(b) if b[:4] == b"%PDF" else []
-            item["npages"] = len(pages)
-            item["first"] = pages[0][:1500] if pages else None
-            item["pages_semi"] = [[i, pg[:2600]] for i, pg in enumerate(pages) if "반 도 체" in pg or "반도체" in pg][-2:]
-        hx = next((f for f in files if ".hwpx" in f[1].lower()), None)
-        if hx and not pdf:
-            import zipfile
-            b = get(BASE + hx[0])
-            z = zipfile.ZipFile(io.BytesIO(b))
-            names = z.namelist()
-            secs = [n for n in names if n.startswith("Contents/section")]
-            txt = " ".join(re.sub(r"<[^>]+>", " ", z.read(n).decode("utf-8", "replace")) for n in secs)
-            txt = re.sub(r"\s+", " ", txt)
-            item["hwpx"] = {"names": names[:15], "semi": [txt[max(0, m.start() - 300): m.start() + 900] for m in re.finditer("반 ?도 ?체", txt)][:3]}
+        item["files"] = [f[1] for f in files]
+        # 優先 PDF → HWPX → HWP
+        order = sorted(files, key=lambda f: [".pdf" in f[1].lower(), ".hwpx" in f[1].lower(), ".hwp" in f[1].lower()], reverse=True)
+        f = order[0]
+        b = get(BASE + f[0])
+        t = time.time()
+        txt = any_text(b, f[1])
+        item["used"] = f[1]
+        item["sec"] = round(time.time() - t, 2)
+        item["len"] = len(txt)
+        item["head"] = txt[:2500]
+        item["semi"] = [txt[max(0, m.start() - 150): m.start() + 250] for m in re.finditer(r"반\s*도\s*체", txt)][:8]
+        item["days"] = [txt[max(0, m.start() - 60): m.start() + 160] for m in re.finditer("조업일수", txt)][:3]
+        # 也試 HWP（若剛剛用的是 PDF/HWPX，順便驗證 HWP 解析）
+        hw = next((g for g in files if g[1].lower().endswith(".hwp 다운로드")), None)
+        if hw and hw is not f:
+            t2 = any_text(get(BASE + hw[0]), hw[1])
+            item["hwp_check"] = [t2[max(0, m.start() - 100): m.start() + 200] for m in re.finditer(r"반\s*도\s*체", t2)][:3]
     except Exception as e:
-        item["err"] = f"{type(e).__name__}: {str(e)[:200]}"
+        import traceback
+        item["err"] = traceback.format_exc()[-600:]
     sam.append(item)
-    print("sample", item["row"], item.get("npages"), item.get("err"))
+    print("sample", item["row"], item.get("used"), item.get("len"), item.get("err", "")[:200])
     time.sleep(0.5)
 res["samples"] = sam
 os.makedirs(os.path.dirname(OUT), exist_ok=True)
