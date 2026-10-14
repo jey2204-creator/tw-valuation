@@ -629,6 +629,16 @@ def build(code, jq_recs, td_recs, master):
         av = [q for q in Q if q["first"] < day and q["bps"]]
         return av[-1]["bps"] if av else None
 
+    # 流通股數（期末發行 − 庫藏股），依分割調整到目前股價基準；取 day 之前最新一份財報
+    shr_recs = sorted((r for r in recs if r.get("a", {}).get("sh_out")), key=lambda r: (r["disc"], r.get("time", "")))
+
+    def shares_at(day):
+        av = [r for r in shr_recs if r["disc"] < day]
+        if not av:
+            return None
+        a0 = av[-1]["a"]
+        return (a0["sh_out"] - (a0.get("tr_sh") or 0)) * split_factor(av[-1]["disc"], splits)
+
     mon = {}
     for d, c in px:
         mon[d[:7]] = (d, c)
@@ -651,15 +661,18 @@ def build(code, jq_recs, td_recs, master):
             for v in jq("/equities/valuation", {"code": code}):
                 if num(v.get("PER")) and num(v.get("PBR")):
                     bym[v["Date"][:7]] = v
-            pe_r, pb_r = [], []
+            pe_r, pb_r, mc_r = [], [], []
             for ym in sorted(bym)[-8:]:
                 v = bym[ym]
                 c, t0, b0 = px_on(v["Date"]), ttm_at(v["Date"]), bps_at(v["Date"])
+                s0 = shares_at(v["Date"])
+                if c and s0 and num(v.get("MktCap")):
+                    mc_r.append(round(c * s0 / 1e6 / num(v["MktCap"]), 3))
                 if c and t0 and t0 > 0:
                     pe_r.append(round(c / t0 / num(v["PER"]), 3))
                 if c and b0 and b0 > 0:
                     pb_r.append(round(c / b0 / num(v["PBR"]), 3))
-            val_chk = dict(pe=pe_r, pb=pb_r)
+            val_chk = dict(pe=pe_r, pb=pb_r, cap=mc_r)
         except Exception as e:  # noqa
             err(f"估值比對 {code}: {e}")
     (ld, lc), (pd, pc) = px[-1], px[-2] if len(px) > 1 else px[-1]
@@ -670,6 +683,10 @@ def build(code, jq_recs, td_recs, master):
     last = dict(date=ld, close=round(lc, 1), prev=round(pc, 1), ttm=None if t is None else round(t, 2),
                 bps=None if b is None else round(b, 1), pe=round(lc / t, 1) if t and t > 0 else None,
                 pb=round(lc / b, 2) if b and b > 0 else None, fpe=round(lc / feps, 1) if feps and feps > 0 else None)
+    sh_now = shares_at("9999")
+    last["cap"] = round(lc * sh_now / 1e8, 1) if sh_now else None          # 市值（億日圓）
+    l4 = Q[-4:]
+    last["rev4"] = round(sum(x["sales"] for x in l4) / 100, 1) if len(l4) == 4 else None   # 近四季營收（億日圓）
     q = [[x["cal"], x["fis"], x["sales"], x["om"], x["odm"], x["nm"], x["eps"], x["np"], x["sh"], x["end"],
           x["first"], x["src"], x["fy_end"], x["k"]] for x in Q]
     note = []
@@ -748,6 +765,14 @@ def main():
         idx = {s["id"]: s for s in dec(aes, idx_p.read_bytes())} if idx_p.exists() else {}
     except Exception:  # noqa
         idx = {}
+    fx = None
+    try:   # 日圓 → 台幣匯率（Yahoo JPYTWD=X 最新收盤）
+        j = http("https://query1.finance.yahoo.com/v8/finance/chart/JPYTWD=X?range=5d&interval=1d")
+        cl = [x for x in j["chart"]["result"][0]["indicators"]["quote"][0]["close"] if x]
+        fx = round(cl[-1], 5) if cl else None
+    except Exception as e:  # noqa
+        err(f"匯率: {e}")
+    DIAG["fx_jpytwd"] = fx
     ok = []
     for c in codes:
         try:
@@ -756,7 +781,10 @@ def main():
             L, lq = d["last"], d["q"][-1] if d["q"] else None
             idx[c] = dict(id=c, name=d["name"], jname=d["jname"], theme=d["theme"], tw=d["tw"], cyc=d["cyclical"],
                           close=L["close"], chg=round((L["close"] / L["prev"] - 1) * 100, 2) if L["prev"] else None,
-                          pe=L["pe"], pb=L["pb"], fpe=L["fpe"], lq=lq[0] if lq else None, date=L["date"])
+                          pe=L["pe"], pb=L["pb"], fpe=L["fpe"], lq=lq[0] if lq else None, date=L["date"],
+                          cap=L["cap"], rev4=L["rev4"], fx=fx or (idx.get(c) or {}).get("fx"))
+            d["last"]["fx"] = idx[c]["fx"]
+            (OUT / f"{c}.bin").write_bytes(enc(aes, d))
             ok.append(c)
             print(f"{c} ok  q={len(d['q'])} last={lq[0] if lq else '-'} fc={'Y' if d['fc'] else '-'}")
         except Exception as e:  # noqa
