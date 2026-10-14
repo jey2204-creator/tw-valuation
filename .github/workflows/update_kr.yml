@@ -25,6 +25,7 @@ jobs:
       - name: 抓韓股資料（OpenDART 財報 + Naver 股價）
         env:
           DART_KEY: ${{ secrets.DART_KEY }}
+          KR_BUDGET_MIN: "55"
         run: python kr/fetch_kr.py ${{ github.event.inputs.codes }}
       - name: 有變動才提交
         if: always()

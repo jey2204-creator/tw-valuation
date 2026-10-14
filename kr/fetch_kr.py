@@ -193,6 +193,7 @@ def fin_cache(code, corp):
     for k, y, rc, end, due in todo:
         if time.time() > DEADLINE:
             break
+        n_new += 1
         t0 = time.time()
         try:
             d = dart_report(corp, y, rc)
@@ -202,7 +203,6 @@ def fin_cache(code, corp):
             if "OpenDART 0" in str(e) or "OpenDART 1" in str(e) or "OpenDART 9" in str(e):
                 raise
             continue
-        n_new += 1
         if d is None:
             # 超過法定期限 + 60 天仍查無資料（上市前、或不申報）→ 記成空的，以後不再查
             if TODAY > end + dt.timedelta(days=due + 60):
@@ -210,7 +210,7 @@ def fin_cache(code, corp):
         else:
             cache[k] = d
         p.write_text(json.dumps(cache, ensure_ascii=False, separators=(",", ":"), sort_keys=True), "utf-8")
-    pending = sum(1 for t in todo if t[0] not in cache)
+    pending = len(todo) - n_new   # 因時間上限沒抓到的報告數
     p.write_text(json.dumps(cache, ensure_ascii=False, separators=(",", ":"), sort_keys=True), "utf-8")
     return cache, (n_new, pending)
 
