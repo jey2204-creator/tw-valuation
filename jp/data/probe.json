@@ -1,0 +1,224 @@
+{
+ "asof": "2026-10-14 20:45 JST",
+ "key_set": false,
+ "sec": 12.5,
+ "results": {
+  "jquants": {
+   "ok": false,
+   "err": "未設定 JQUANTS_API_KEY，跳過"
+  },
+  "yahoo_chart": {
+   "status": 200,
+   "sec": 0.27,
+   "n": 2462,
+   "first": "2016-10-14",
+   "last": "2026-10-14",
+   "last_days_ago": 0,
+   "has_adjclose": true,
+   "splits": [
+    "2023-03-30",
+    "2026-09-29"
+   ],
+   "currency": "JPY",
+   "ok": true
+  },
+  "yahoo_fundamentals": {
+   "items": {
+    "quarterly": {
+     "status": 200,
+     "sec": 0.17,
+     "periods": {
+      "StockholdersEquity": [
+       "2025-03-31",
+       "2025-09-30",
+       "2026-03-31"
+      ],
+      "TotalRevenue": [],
+      "DilutedAverageShares": [
+       "2025-06-30",
+       "2026-06-30"
+      ],
+      "DilutedEPS": [
+       "2025-06-30",
+       "2026-06-30"
+      ],
+      "GrossProfit": [],
+      "NetIncomeCommonStockholders": [],
+      "OperatingIncome": [],
+      "CapitalExpenditure": []
+     }
+    },
+    "annual": {
+     "status": 200,
+     "sec": 0.11,
+     "periods": {
+      "OperatingIncome": [
+       "2023-03-31",
+       "2024-03-31",
+       "2025-03-31",
+       "2026-03-31"
+      ],
+      "NetIncomeCommonStockholders": [
+       "2023-03-31",
+       "2024-03-31",
+       "2025-03-31",
+       "2026-03-31"
+      ],
+      "CapitalExpenditure": [
+       "2023-03-31",
+       "2024-03-31",
+       "2025-03-31",
+       "2026-03-31"
+      ],
+      "TotalRevenue": [
+       "2023-03-31",
+       "2024-03-31",
+       "2025-03-31",
+       "2026-03-31"
+      ],
+      "DilutedEPS": [
+       "2022-03-31",
+       "2023-03-31",
+       "2024-03-31",
+       "2026-03-31"
+      ],
+      "StockholdersEquity": [
+       "2023-03-31",
+       "2024-03-31",
+       "2025-03-31",
+       "2026-03-31"
+      ],
+      "DilutedAverageShares": [
+       "2022-03-31",
+       "2023-03-31",
+       "2024-03-31",
+       "2026-03-31"
+      ],
+      "GrossProfit": [
+       "2023-03-31",
+       "2024-03-31",
+       "2025-03-31",
+       "2026-03-31"
+      ]
+     }
+    }
+   },
+   "latest_quarter": null,
+   "ok": false
+  },
+  "yfinance_lib": {
+   "version": "1.7.0",
+   "quarters": [
+    "2026-06-30",
+    "2025-06-30"
+   ],
+   "n_rows": 4,
+   "has_revenue": {},
+   "has_diluted_eps": {
+    "2026-06-30": true,
+    "2025-06-30": true
+   },
+   "price_last": "2026-10-14",
+   "ok": true
+  },
+  "tdnet": {
+   "days": [
+    {
+     "date": "2026-10-14",
+     "status": 200,
+     "sec": 0.3,
+     "rows": 106,
+     "tanshin": 22,
+     "tanshin_xbrl": 16,
+     "more_pages": true
+    },
+    {
+     "date": "2026-10-13",
+     "status": 200,
+     "sec": 0.33,
+     "rows": 106,
+     "tanshin": 22,
+     "tanshin_xbrl": 18,
+     "more_pages": true
+    },
+    {
+     "date": "2026-10-12",
+     "status": 200,
+     "sec": 0.38,
+     "rows": 4,
+     "tanshin": 0,
+     "tanshin_xbrl": 0,
+     "more_pages": false
+    },
+    {
+     "date": "2026-10-09",
+     "status": 200,
+     "sec": 0.34,
+     "rows": 106,
+     "tanshin": 27,
+     "tanshin_xbrl": 27,
+     "more_pages": true
+    },
+    {
+     "date": "2026-10-08",
+     "status": 200,
+     "sec": 0.32,
+     "rows": 106,
+     "tanshin": 17,
+     "tanshin_xbrl": 16,
+     "more_pages": true
+    },
+    {
+     "date": "2026-10-07",
+     "status": 200,
+     "sec": 0.27,
+     "rows": 106,
+     "tanshin": 11,
+     "tanshin_xbrl": 11,
+     "more_pages": true
+    }
+   ],
+   "sample": {
+    "date": "2026-10-14",
+    "zip": "081220261014550614.zip",
+    "code": "464A0"
+   },
+   "zip": {
+    "status": 200,
+    "sec": 0.3,
+    "bytes": 52065,
+    "files": [
+     "XBRLData/Summary/tse-qcedjpsm-464A0-202610143464A0.xsd",
+     "XBRLData/Summary/tse-qcedjpsm-464A0-202610143464A0-def.xml",
+     "XBRLData/Summary/tse-qcedjpsm-464A0-202610143464A0-ixbrl.htm",
+     "XBRLData/Attachment/tse-qcedjpfr-464A0-2026-08-31-01-2026-10-14.xsd",
+     "XBRLData/Attachment/tse-qcedjpfr-464A0-2026-08-31-01-2026-10-14-cal.xml",
+     "XBRLData/Attachment/0103020-qcsg01-tse-qcedjpfr-464A0-2026-08-31-01-2026-10-14-ixbrl.htm",
+     "XBRLData/Attachment/qualitative.htm",
+     "XBRLData/Attachment/0102020-qcci11-tse-qcedjpfr-464A0-2026-08-31-01-2026-10-14-ixbrl.htm",
+     "XBRLData/Attachment/0103010-qcnb01-tse-qcedjpfr-464A0-2026-08-31-01-2026-10-14-ixbrl.htm",
+     "XBRLData/Attachment/tse-qcedjpfr-464A0-2026-08-31-01-2026-10-14-pre.xml",
+     "XBRLData/Attachment/tse-qcedjpfr-464A0-2026-08-31-01-2026-10-14-lab-en.xml",
+     "XBRLData/Attachment/0102010-qcpl11-tse-qcedjpfr-464A0-2026-08-31-01-2026-10-14-ixbrl.htm",
+     "XBRLData/Attachment/tse-qcedjpfr-464A0-2026-08-31-01-2026-10-14-def.xml",
+     "XBRLData/Attachment/0101010-qcbs01-tse-qcedjpfr-464A0-2026-08-31-01-2026-10-14-ixbrl.htm",
+     "XBRLData/Attachment/index.txt",
+     "XBRLData/Attachment/tse-qcedjpfr-464A0-2026-08-31-01-2026-10-14-lab.xml",
+     "XBRLData/Attachment/manifest.xml"
+    ],
+    "has_summary_ixbrl": true
+   },
+   "ok": true
+  },
+  "stooq": {
+   "status": 200,
+   "sec": 0.67,
+   "n": 2,
+   "is_csv": false,
+   "head": "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><meta name=\"robots\" content=\"no",
+   "last": null,
+   "last_days_ago": null,
+   "ok": false
+  }
+ }
+}
