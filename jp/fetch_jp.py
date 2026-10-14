@@ -766,10 +766,14 @@ def main():
     except Exception:  # noqa
         idx = {}
     fx = None
-    try:   # 日圓 → 台幣匯率（Yahoo JPYTWD=X 最新收盤）
-        j = http("https://query1.finance.yahoo.com/v8/finance/chart/JPYTWD=X?range=5d&interval=1d")
+    def yclose(sym):
+        j = http(f"https://query1.finance.yahoo.com/v8/finance/chart/{sym}?range=5d&interval=1d")
         cl = [x for x in j["chart"]["result"][0]["indicators"]["quote"][0]["close"] if x]
-        fx = round(cl[-1], 5) if cl else None
+        return cl[-1] if cl else None
+    try:   # 日圓 → 台幣：用美元交叉匯率（USD/TWD ÷ USD/JPY）；JPYTWD=X 報價只有 1 位小數（0.2），誤差約 5%
+        twd, jpy = yclose("TWD=X"), yclose("JPY=X")
+        fx = round(twd / jpy, 5) if twd and jpy else None
+        DIAG["fx_src"] = {"usdtwd": twd, "usdjpy": jpy}
     except Exception as e:  # noqa
         err(f"匯率: {e}")
     DIAG["fx_jpytwd"] = fx
