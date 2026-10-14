@@ -1,0 +1,108 @@
+{
+ "asof": "2026-10-14 21:20 JST",
+ "errors": [],
+ "stocks": {
+  "8035": {
+   "px_n": 2462,
+   "px_last": "2026-10-14",
+   "q_n": 8,
+   "q_first": "24Q2",
+   "q_last": "26Q1",
+   "q_src": "JJJJJJJJ",
+   "fc_n": 0,
+   "fc_fy": "2027-03",
+   "eps_np_ok": "8/8",
+   "splits": 2,
+   "std": "JP",
+   "riv_pe": 19,
+   "riv_pb": 27
+  },
+  "6981": {
+   "px_n": 2462,
+   "px_last": "2026-10-14",
+   "q_n": 8,
+   "q_first": "24Q2",
+   "q_last": "26Q1",
+   "q_src": "JJJJJJJJ",
+   "fc_n": 1,
+   "fc_fy": "2027-03",
+   "eps_np_ok": "8/8",
+   "splits": 2,
+   "std": "IFRS",
+   "riv_pe": 19,
+   "riv_pb": 28
+  },
+  "4063": {
+   "px_n": 2462,
+   "px_last": "2026-10-14",
+   "q_n": 8,
+   "q_first": "24Q2",
+   "q_last": "26Q1",
+   "q_src": "JJJJJJJJ",
+   "fc_n": 0,
+   "fc_fy": "2027-03",
+   "eps_np_ok": "8/8",
+   "splits": 1,
+   "std": "JP",
+   "riv_pe": 19,
+   "riv_pb": 28
+  }
+ },
+ "jq": {
+  "master": 3,
+  "fins": {
+   "8035": 8,
+   "6981": 8,
+   "4063": 9
+  },
+  "last_disc": {
+   "8035": "2026-04-30",
+   "6981": "2026-04-30",
+   "4063": "2026-04-28"
+  }
+ },
+ "tdnet": {
+  "days_scanned": 23,
+  "rows": 641,
+  "new_records": 0,
+  "backfill": true
+ },
+ "validate_tdnet": {
+  "checked": 12,
+  "fields": {
+   "sales": [
+    12,
+    0
+   ],
+   "op": [
+    12,
+    0
+   ],
+   "odp": [
+    10,
+    0
+   ],
+   "np": [
+    12,
+    0
+   ],
+   "eps": [
+    11,
+    1
+   ]
+  },
+  "mismatch": [
+   [
+    "55780",
+    "acedjpsm",
+    "eps",
+    0.3334
+   ]
+  ]
+ },
+ "ok": [
+  "8035",
+  "6981",
+  "4063"
+ ]
+}
