@@ -135,6 +135,7 @@ html{scroll-behavior:smooth}
       <input id="pw" type="password" autocomplete="current-password" placeholder="密語" aria-label="密語" required>
       <button id="pwBtn" type="submit">解鎖</button>
     </form>
+    <label class="foot" style="display:flex;gap:6px;align-items:center;margin-top:8px"><input type="checkbox" id="pwShow"> 顯示密語（確認有沒有打錯）</label>
     <p class="err" id="lockErr" hidden></p>
     <p class="foot" style="margin-top:10px">iPhone「加入主畫面」的 App 和 Safari 分開儲存，兩邊各要輸入一次。</p>
   </div>
@@ -262,10 +263,10 @@ const importRaw=raw=>crypto.subtle.importKey('raw',raw,'AES-GCM',false,['decrypt
 async function decBytes(u8){const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:u8.slice(0,12)},KEY,u8.slice(12));return JSON.parse(new TextDecoder().decode(pt))}
 async function getBin(path){const r=await fetch(`${path}?t=${Date.now()}`);if(!r.ok)throw new Error(r.status===404?'資料檔不存在':'HTTP '+r.status);return decBytes(new Uint8Array(await r.arrayBuffer()))}
 async function unlock(pw){
-  const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(pw.normalize('NFC')),'PBKDF2',false,['deriveBits']);
+  const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(pw.normalize('NFKC').trim()),'PBKDF2',false,['deriveBits']);
   const bits=new Uint8Array(await crypto.subtle.deriveBits({name:'PBKDF2',salt:b64(META.salt),iterations:META.iter,hash:'SHA-256'},base,256));
   KEY=await importRaw(bits);
-  try{await decBytes(b64(META.kcv))}catch(e){KEY=null;throw new Error('密語不正確')}
+  try{await decBytes(b64(META.kcv))}catch(e){KEY=null;throw new Error(`密語不正確（你輸入了 ${[...pw.normalize('NFKC').trim()].length} 個字）。可勾「顯示密語」檢查大小寫、空白與符號`)}
   try{localStorage.setItem('jpKey',JSON.stringify({s:META.salt,k:ub64(bits)}))}catch(e){}
 }
 function showLock(msg){['home','stock'].forEach(id=>$(id).hidden=true);$('lock').hidden=false;if(msg){$('lockErr').textContent=msg;$('lockErr').hidden=false}}
@@ -273,6 +274,7 @@ $('lockForm').addEventListener('submit',async e=>{e.preventDefault();const pw=$(
   $('pwBtn').disabled=true;$('pwBtn').textContent='驗證中…';$('lockErr').hidden=true;
   try{await unlock(pw);$('pw').value='';$('lock').hidden=true;await start()}catch(err){$('lockErr').textContent=err.message;$('lockErr').hidden=false}
   $('pwBtn').disabled=false;$('pwBtn').textContent='解鎖'});
+$('pwShow').addEventListener('change',e=>{$('pw').type=e.target.checked?'text':'password'});
 $('lockBtn').addEventListener('click',()=>{try{localStorage.removeItem('jpKey')}catch(e){}KEY=null;IDX=[];location.hash='';showLock()});
 
 // ---------- 共用 ----------

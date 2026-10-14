@@ -27,7 +27,8 @@ ROOT = Path(__file__).resolve().parent
 OUT, RAW = ROOT / "data", ROOT / "raw"
 JQ = "https://api.jquants.com/v2"
 JQ_KEY = os.environ.get("JQUANTS_API_KEY", "").strip()
-PASS = unicodedata.normalize("NFC", os.environ.get("JP_DATA_KEY", "").strip())
+# NFKC：全形英數（中文輸入法打出來的）與半形視為相同，手機輸入比較不會對不上
+PASS = unicodedata.normalize("NFKC", os.environ.get("JP_DATA_KEY", "")).strip()
 VALIDATE = os.environ.get("JP_VALIDATE", "") == "1"
 UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36"
 NOW_JST = dt.datetime.utcnow() + dt.timedelta(hours=9)
