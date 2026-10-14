@@ -255,8 +255,8 @@ def main():
     p = sorted(ten.values(), key=lambda x: (x["ym"], x["d"]))
     m = sorted(mon.values(), key=lambda x: x["ym"])
     OUT.parent.mkdir(parents=True, exist_ok=True)
-    OUT.write_text(json.dumps(dict(updated=dt.datetime.now(KST).strftime("%Y-%m-%d %H:%M KST"), p=p, m=m, seen=seen,
-                                   errs=errs[-30:]), ensure_ascii=False, separators=(",", ":")), "utf-8")
+    OUT.write_bytes(json.dumps(dict(updated=dt.datetime.now(KST).strftime("%Y-%m-%d %H:%M KST"), p=p, m=m, seen=seen,
+                                    errs=errs[-30:]), ensure_ascii=False, separators=(",", ":")).encode("utf-8", "replace"))
     print(f"旬報 {len(p)} 筆、整月 {len(m)} 筆，本次新增 {n_new}，錯誤 {len(errs)}")
     for x in errs[:10]:
         print("  ", x)
@@ -267,4 +267,9 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception:
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)
