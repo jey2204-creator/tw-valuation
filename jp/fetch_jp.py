@@ -598,8 +598,9 @@ def build(code, jq_recs, td_recs, master):
     fc = forecast_block(recs, best, splits)
     std = Q[-1]["std"] if Q else ""
 
+    # 財報多在 15:00 收盤前後公布 → 從公布日的「下一個交易日」起才採用（同 J-Quants 估值，不偷看未來）
     def ttm_at(day):
-        av = [q for q in Q if q["first"] <= day and q["eps"] is not None]
+        av = [q for q in Q if q["first"] < day and q["eps"] is not None]
         if len(av) < 4:
             return None
         l4 = av[-4:]
@@ -608,7 +609,7 @@ def build(code, jq_recs, td_recs, master):
         return sum(q["eps"] for q in l4)
 
     def bps_at(day):
-        av = [q for q in Q if q["first"] <= day and q["bps"]]
+        av = [q for q in Q if q["first"] < day and q["bps"]]
         return av[-1]["bps"] if av else None
 
     mon = {}
