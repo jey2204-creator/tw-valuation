@@ -3,6 +3,7 @@
   ① 每月 1～10 日、1～20 日「수출입 현황」（잠정치，11 日／21 日上午 9 點公布）
      → 半導體出口金額與年增、總出口、工作天數（兩年）、前 10 大出口品項與國家
   ② 每月「월간 수출입 현황 [확정치]」（次月 15 日左右）→ 整月半導體出口（수리일 기준）
+  ③ 每月「수출입 현황 [잠정치]」（次月 1 日）→ 整月工作天數（算日均用）與總出口
 附件格式：2025 年底起有 PDF；更早是 HWP（部分有 HWPX）→ kr/hwp.py 轉文字
 已解析過的新聞稿記在 exports.json 的 seen，不重複下載。
 用法：python kr/fetch_exports.py [--pages N]   （第一次回補約 20 頁，之後每天看第 1 頁就夠）
@@ -183,6 +184,8 @@ def kind(title):
         return "ten"
     if "확정" in t:
         return "mon"
+    if "수출입현황" in t and "동향" not in t:
+        return "pre"          # 整月速報（次月 1 日）：只取工作天數與總出口
     return None
 
 
@@ -208,7 +211,8 @@ def main():
     seen = db.get("seen", {})
     ten = {f"{x['ym']}-{x['d']}": x for x in db.get("p", [])}
     mon = {x["ym"]: x for x in db.get("m", [])}
-    if not ten and pages < 20:
+    pre = {x["ym"]: x for x in db.get("mp", [])}
+    if (not ten or not pre) and pages < 20:
         pages = 25     # 第一次：回補歷史
     kw = urllib.parse.quote("수출입")
     cand = []
@@ -231,33 +235,45 @@ def main():
             continue
         y, mo, d = per
         ym = f"{y}-{mo:02d}"
-        if (k == "ten" and ym < START_TEN) or (k == "mon" and ym < START_MON):
+        if (k == "ten" and ym < START_TEN) or (k in ("mon", "pre") and ym < START_MON):
             continue
         try:
             text, fname = fetch_text(row)
-            r = parse_ten(text) if k == "ten" else parse_month(text)
-            ok = r.get("semi") is not None
+            r = parse_month(text) if k == "mon" else parse_ten(text)
+            ok = r.get("semi") is not None if k != "pre" else r.get("wd") is not None
             seen[row["id"]] = dict(v=PARSE_V, ok=ok, f=fname[-60:], title=row["title"][:60])
             if ok:
                 r.update(ym=ym, rel=row["posted"], id=row["id"])
                 if k == "ten":
                     r["d"] = d
                     ten[f"{ym}-{d}"] = r
-                else:
+                elif k == "mon":
                     mon[ym] = r
+                else:
+                    pre[ym] = {kk: r.get(kk) for kk in ("ym", "rel", "id", "wd", "wd0", "tot", "tot_y", "semi", "semi_y")}
                 n_new += 1
             else:
-                errs.append([row["id"], row["title"][:40], "找不到半導體數字"])
+                errs.append([row["id"], row["title"][:40], "找不到半導體數字" if k != "pre" else "找不到工作天數"])
         except Exception as e:
             errs.append([row["id"], row["title"][:40], str(e)[:120]])
             seen[row["id"]] = dict(v=0, ok=False, err=str(e)[:120], title=row["title"][:60])
         time.sleep(0.4)
     p = sorted(ten.values(), key=lambda x: (x["ym"], x["d"]))
     m = sorted(mon.values(), key=lambda x: x["ym"])
+    mp = sorted(pre.values(), key=lambda x: x["ym"])
     OUT.parent.mkdir(parents=True, exist_ok=True)
-    OUT.write_bytes(json.dumps(dict(updated=dt.datetime.now(KST).strftime("%Y-%m-%d %H:%M KST"), p=p, m=m, seen=seen,
-                                    errs=errs[-30:]), ensure_ascii=False, separators=(",", ":")).encode("utf-8", "replace"))
-    print(f"旬報 {len(p)} 筆、整月 {len(m)} 筆，本次新增 {n_new}，錯誤 {len(errs)}")
+    now = dt.datetime.now(KST).strftime("%Y-%m-%d %H:%M KST")
+    dump = lambda o: json.dumps(o, ensure_ascii=False, separators=(",", ":")).encode("utf-8", "replace")
+    OUT.write_bytes(dump(dict(updated=now, p=p, m=m, mp=mp, seen=seen, errs=errs[-30:])))
+    # 網頁用的精簡版（約 15 KB）：欄位順序見 kr/index.html
+    last = p[-1] if p else {}
+    (OUT.parent / "exp.json").write_bytes(dump(dict(
+        updated=now,
+        p=[[x["ym"], x["d"], x["rel"], x["semi"], x["semi_y"], x.get("tot"), x.get("tot_y"), x.get("wd"), x.get("wd0")] for x in p],
+        m=[[x["ym"], x["rel"], x["semi"], x.get("semi0"), x["semi_y"], x.get("tot"), x.get("tot_y")] for x in m],
+        mp=[[x["ym"], x["rel"], x.get("wd"), x.get("wd0"), x.get("tot"), x.get("tot_y")] for x in mp],
+        items=last.get("items", []), cty=last.get("cty", []), last=[last.get("ym"), last.get("d")])))
+    print(f"旬報 {len(p)} 筆、整月確定值 {len(m)} 筆、整月速報 {len(mp)} 筆，本次新增 {n_new}，錯誤 {len(errs)}")
     for x in errs[:10]:
         print("  ", x)
     if p:
