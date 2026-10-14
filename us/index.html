@@ -237,7 +237,7 @@ function base(){
     tooltip:{trigger:'axis',confine:true,backgroundColor:css('--card'),borderColor:css('--line'),textStyle:{color:css('--fg'),fontSize:12},axisPointer:{type:'line',lineStyle:{color:css('--muted')}}},
     legend:{top:0,left:0,itemWidth:12,itemHeight:8,textStyle:{color:css('--muted'),fontSize:11}},
     xAxis:{type:'category',axisLine:{lineStyle:{color:css('--line')}},axisTick:{show:false},axisLabel:t},
-    yAxis:{type:'value',scale:true,splitLine:{lineStyle:{color:css('--grid')}},axisLabel:t},animationDuration:500};
+    yAxis:{type:'value',scale:true,splitLine:{lineStyle:{color:css('--grid')}},axisLabel:{...t}},animationDuration:500};
 }
 const qlbl=x=>D.freq==='Q'?x[0]:x[1];
 const qtip=i=>D.freq==='Q'?`${Q[i][0]}（${Q[i][1]?Q[i][1]+'，':''}季末 ${Q[i][9]}）`:`${Q[i][1]}（年底 ${Q[i][9]}）`;

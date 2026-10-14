@@ -95,7 +95,7 @@ tr.e td{color:var(--accent)}
 .it:hover{background:var(--bg)}
 .it .t{font-family:var(--f-num);font-weight:600}
 .it .n small{display:block;font-size:11px;font-family:var(--f-num)}
-.it .n{font-size:12.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.it .n{font-size:12.5px;color:var(--muted);min-width:0}
 .it .p{font-family:var(--f-num);font-size:13.5px;text-align:right}
 .it .v{font-family:var(--f-num);font-size:11.5px;color:var(--muted);text-align:right;min-width:5.6em}
 .fr-up{color:var(--up)}.fr-dn{color:var(--down)}
@@ -236,7 +236,7 @@ function base(){
     tooltip:{trigger:'axis',confine:true,backgroundColor:css('--card'),borderColor:css('--line'),textStyle:{color:css('--fg'),fontSize:12},axisPointer:{type:'line',lineStyle:{color:css('--muted')}}},
     legend:{top:0,left:0,itemWidth:12,itemHeight:8,textStyle:{color:css('--muted'),fontSize:11}},
     xAxis:{type:'category',axisLine:{lineStyle:{color:css('--line')}},axisTick:{show:false},axisLabel:t},
-    yAxis:{type:'value',scale:true,splitLine:{lineStyle:{color:css('--grid')}},axisLabel:t},animationDuration:500};
+    yAxis:{type:'value',scale:true,splitLine:{lineStyle:{color:css('--grid')}},axisLabel:{...t}},animationDuration:500};
 }
 const qtip=i=>`${Q[i][0]}（季末 ${Q[i][9]}，公布 ${Q[i][10]}）`;
 const consOf=()=>{const m={};(D.cons||[]).forEach(r=>{if(r[4]&&r[3]!=null)m[r[0]]=r});return m};
