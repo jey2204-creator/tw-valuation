@@ -22,6 +22,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - run: pip install pypdf olefile
+      - name: 抓關稅廳出口數據（1～10 日、1～20 日、整月確定值）
+        continue-on-error: true
+        run: python kr/fetch_exports.py
       - name: 抓韓股資料（OpenDART 財報 + Naver 股價）
         env:
           DART_KEY: ${{ secrets.DART_KEY }}
