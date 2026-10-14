@@ -1,0 +1,34 @@
+name: 日股資料來源探路
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: push-data
+  cancel-in-progress: false
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: 安裝 yfinance（只供探路比較用）
+        continue-on-error: true
+        run: pip install --quiet yfinance
+      - name: 測試各來源（只記錄中繼資料，不存數值）
+        env:
+          JQUANTS_API_KEY: ${{ secrets.JQUANTS_API_KEY }}
+        run: python jp/probe_jp.py
+      - name: 提交結果
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add jp/data/
+          git diff --cached --quiet && exit 0
+          git commit -m "jp probe: $(TZ=Asia/Taipei date '+%F %H:%M')"
+          git pull --rebase -X theirs origin main
+          git push
