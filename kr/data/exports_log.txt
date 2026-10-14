@@ -1,12 +1,53 @@
-旬報 123 筆、整月 89 筆，本次新增 213，錯誤 13
-   ['10054991', '’21년 1월 1일 ∼ 1월 10일 수출입 현황', '找不到半導體數字']
-   ['10055067', '’21년 1월 1일 ∼ 1월 20일 수출입 현황', '找不到半導體數字']
-   ['10055257', '’21년 2월 1일 ∼ 2월 10일 수출입 현황', '找不到半導體數字']
-   ['10055301', '’21년 2월 1일 ∼ 2월 20일 수출입 현황', '找不到半導體數字']
-   ['10055503', '’21년 3월 1일 ∼ 3월 10일 수출입 현황', '找不到半導體數字']
-   ['10055692', '’21년 3월 1일 ∼ 3월 20일 수출입 현황', '找不到半導體數字']
-   ['10055911', '’21년 4월 1일 ∼ 4월 10일 수출입 현황', '找不到半導體數字']
-   ['10056022', '2021년 4월 1일 ∼ 4월 20일 수출입 현황', '找不到半導體數字']
-   ['10056210', '’21년 5월 1일 ∼ 5월 10일 수출입 현황', '找不到半導體數字']
-   ['10056314', '’21년 5월 1일 ∼ 5월 20일 수출입 현황', '找不到半導體數字']
-最新：2026-10 1～10 日 半導體 12,198 百萬美元（年增 170.9%），總出口 26104.0，工作天 3.5→5.5
+Traceback (most recent call last):
+  File "/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/urllib/request.py", line 1357, in do_open
+    h.request(req.get_method(), req.selector, req.data, headers,
+  File "/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/http/client.py", line 1386, in request
+    self._send_request(method, url, body, headers, encode_chunked)
+  File "/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/http/client.py", line 1432, in _send_request
+    self.endheaders(body, encode_chunked=encode_chunked)
+  File "/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/http/client.py", line 1381, in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+  File "/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/http/client.py", line 1141, in _send_output
+    self.send(msg)
+  File "/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/http/client.py", line 1085, in send
+    self.connect()
+  File "/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/http/client.py", line 1520, in connect
+    super().connect()
+  File "/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/http/client.py", line 1051, in connect
+    self.sock = self._create_connection(
+                ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/socket.py", line 865, in create_connection
+    raise exceptions[0]
+  File "/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/socket.py", line 850, in create_connection
+    sock.connect(sa)
+TimeoutError: timed out
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/runner/work/tw-valuation/tw-valuation/kr/fetch_exports.py", line 287, in <module>
+    main()
+  File "/home/runner/work/tw-valuation/tw-valuation/kr/fetch_exports.py", line 220, in main
+    rs = rows(dec(get(f"{LIST}&searchType=sj&searchValue={kw}&listCo=50&currPage={pg}")))
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/tw-valuation/tw-valuation/kr/fetch_exports.py", line 152, in get
+    with urllib.request.urlopen(urllib.request.Request(url, headers=h), timeout=60) as r:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/urllib/request.py", line 215, in urlopen
+    return opener.open(url, data, timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/urllib/request.py", line 515, in open
+    response = self._open(req, data)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/urllib/request.py", line 532, in _open
+    result = self._call_chain(self.handle_open, protocol, protocol +
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/urllib/request.py", line 492, in _call_chain
+    result = func(*args)
+             ^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/urllib/request.py", line 1405, in https_open
+    return self.do_open(http.client.HTTPSConnection, req,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/urllib/request.py", line 1360, in do_open
+    raise URLError(err)
+urllib.error.URLError: <urlopen error timed out>
