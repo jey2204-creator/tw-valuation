@@ -13,12 +13,22 @@ import urllib.request, urllib.parse, urllib.error
 
 # ---------- 追蹤清單：(主題, [(代號, 中文名, 旗標)], 對應台股) ；旗標 C = 循環股 ----------
 THEMES = [
-    ("🧱 半導體設備", [("8035", "東京威力科創", "")],
-     [("3131", "弘塑"), ("3583", "辛耘"), ("6187", "萬潤"), ("6223", "旺矽"), ("6515", "穎崴")]),
-    ("⚡ 被動元件", [("6981", "村田製作所", "")],
-     [("2327", "國巨"), ("2492", "華新科"), ("3026", "禾伸堂")]),
-    ("💿 矽晶圓／材料", [("4063", "信越化學", "C")],
+    ("🧱 半導體設備", [("8035", "東京威力科創", ""), ("6857", "愛德萬測試", ""), ("6146", "迪思科", ""),
+                   ("6920", "雷泰光電", ""), ("7735", "斯庫林", ""), ("6525", "國際電氣", ""), ("7729", "東京精密", "")],
+     [("3131", "弘塑"), ("3583", "辛耘"), ("6187", "萬潤"), ("6223", "旺矽"), ("6515", "穎崴"), ("2360", "致茂")]),
+    ("💿 矽晶圓／半導體材料", [("4063", "信越化學", "C"), ("3436", "勝高 SUMCO", "C"), ("4004", "力森諾科", ""),
+                        ("4186", "東京應化", ""), ("2802", "味之素（ABF）", "")],
      [("6488", "環球晶"), ("5483", "中美晶"), ("6182", "合晶")]),
+    ("🟩 載板／PCB 材料", [("4062", "揖斐電", ""), ("3110", "日東紡", "")],
+     [("3037", "欣興"), ("4958", "臻鼎-KY"), ("2383", "台光電"), ("2368", "金像電")]),
+    ("⚡ 被動元件", [("6981", "村田製作所", ""), ("6762", "TDK", ""), ("6976", "太陽誘電", ""), ("6971", "京瓷", "")],
+     [("2327", "國巨"), ("2492", "華新科"), ("3026", "禾伸堂")]),
+    ("💡 光通訊／電線", [("5803", "藤倉", ""), ("5801", "古河電工", ""), ("5802", "住友電工", "")],
+     [("3081", "聯亞"), ("3363", "上詮"), ("3163", "波若威"), ("3450", "聯鈞"), ("4979", "華星光")]),
+    ("🎯 記憶體／IC 設計", [("285A", "鎧俠", "C"), ("6526", "索思未來", ""), ("6723", "瑞薩電子", "")],
+     [("2344", "華邦電"), ("2408", "南亞科"), ("8299", "群聯"), ("3661", "世芯-KY"), ("3443", "創意")]),
+    ("🔌 電力／重電", [("6501", "日立", ""), ("6503", "三菱電機", ""), ("6504", "富士電機", "")],
+     [("1519", "華城"), ("1503", "士電"), ("1513", "中興電"), ("1514", "亞力")]),
 ]
 CFG = {c: dict(theme=th, zh=zh, flags=f, tw=tw) for th, items, tw in THEMES for c, zh, f in items}
 STOCKS = list(CFG)
@@ -134,10 +144,14 @@ def jq(path, params, plan=True):
 
 
 # ======================= Yahoo 股價 =======================
+YNAME = {}
+
+
 def yahoo(code):
     j = http(f"https://query1.finance.yahoo.com/v8/finance/chart/{code}.T"
              f"?range={YEARS}y&interval=1d&events=div%2Csplit&includeAdjustedClose=true")
     r = (j.get("chart", {}).get("result") or [None])[0]
+    YNAME[code] = ((r or {}).get("meta") or {}).get("longName") or ((r or {}).get("meta") or {}).get("shortName")
     if not r or not r.get("timestamp"):
         raise RuntimeError(f"Yahoo 沒有 {code}.T 股價")
     day = lambda t: (dt.datetime.utcfromtimestamp(t) + dt.timedelta(hours=9)).strftime("%Y-%m-%d")
@@ -376,7 +390,8 @@ def td_parse_zip(row):
 
 def td_scan(arch, codes):
     """掃 TDnet 公開清單（只保留約 1 個月）。第一次回補 31 天，之後掃最近 5 天；只下載追蹤股票的 XBRL。"""
-    first = not arch.get("days")
+    added = set(codes) - set(arch.get("codes", []))
+    first = not arch.get("days") or bool(added)   # 第一次或新增追蹤股票 → 回補 31 天
     back = 31 if first else 5
     want = {c + "0": c for c in codes}
     seen = set(arch.setdefault("seen", []))
@@ -408,6 +423,7 @@ def td_scan(arch, codes):
                 err(f"TDnet {c} {r['zip']}: {e}")
             time.sleep(0.5)
         time.sleep(0.5)
+    arch["codes"] = sorted(set(arch.get("codes", [])) | set(codes))
     arch["seen"] = sorted(seen)[-5000:]
     arch["days"] = dict(sorted(days_done.items())[-60:])
     DIAG["tdnet"] = dict(days_scanned=n_days, rows=n_rows, new_records=n_new, backfill=first)
@@ -664,7 +680,7 @@ def build(code, jq_recs, td_recs, master):
     m = master.get(code, {})
     # 檢查（只輸出到 diag）：EPS × 平均股數 ≈ 淨利
     chk = [abs(x["eps"] * x["sh"] / x["np"] - 1) < 0.03 for x in Q if x["eps"] and x["sh"] and x["np"]]
-    DIAG["stocks"][code] = dict(px_n=len(px), px_last=ld, q_n=len(Q), q_first=Q[0]["cal"] if Q else None,
+    DIAG["stocks"][code] = dict(yname=YNAME.get(code), jname=m.get("CoName"), px_n=len(px), px_last=ld, q_n=len(Q), q_first=Q[0]["cal"] if Q else None,
                                 q_last=Q[-1]["cal"] if Q else None, q_src="".join(x["src"] for x in Q),
                                 fc_n=len(fc["hist"]) if fc else 0, fc_fy=fc["fy"] if fc else None,
                                 eps_np_ok=f"{sum(chk)}/{len(chk)}", splits=[[d, round(n, 4)] for d, n in splits], std=std,
