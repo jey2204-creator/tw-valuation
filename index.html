@@ -615,13 +615,17 @@ function injectGuide(d){
     if(hc&&qr){const a=hc.act;d.capex.push([hc.q,a.capexNT,a.dep??null,+(a.capexNT/qr[1]*100).toFixed(1)]);d.injCx=hc.q}}
 }
 // 淨利 ÷ 營業利益（近四季平均，含業外與所得稅）：把財測的營益率換成淨利率
-function gK(){const a=Q.slice(-4).filter(x=>x[3]>0&&x[4]!=null);return a.length?sum(a.map(x=>x[4]/x[3]))/a.length:null}
+// 淨利率比營益率高 5 個百分點以上的季度（一次性業外）剔除；全部都異常時用中位數
+function gK(){let a=Q.slice(-4).filter(x=>x[3]>0&&x[4]!=null);if(!a.length)return null;const n=a.filter(x=>x[4]<=x[3]+5);if(n.length)a=n;const r=a.map(x=>x[4]/x[3]).sort((p,q)=>p-q);return n.length?sum(r)/r.length:r[r.length>>1]}
+// 沒給營益率的公司（聯電只給毛利率）→ 營益率 ≈ 毛利率 − 近四季平均「毛利率 − 營益率」（費用率）
+function gOpx(){const a=Q.slice(-4).filter(x=>x[2]!=null&&x[3]!=null);return a.length?sum(a.map(x=>x[2]-x[3]))/a.length:null}
+const gOm=h=>{if(h.om)return h.om;const x=gOpx();return x==null?null:[+(h.gm[0]-x).toFixed(1),+(h.gm[1]-x).toFixed(1)]};
 // 情境：lo 低標、mid 中位數、hi 高標、beat 比照上一季「實際 vs 財測中位數」的超標幅度
 function gScen(g,s){
-  const n=gNext(g),k=gK();if(!n||k==null||!D.shares)return null;
-  let rev=gMid(n.rev),om=gMid(n.om);
-  if(s==='lo'){rev=n.rev[0];om=n.om[0]}else if(s==='hi'){rev=n.rev[1];om=n.om[1]}
-  else if(s==='beat'){const p=[...g.hist].reverse().find(h=>h.act);if(!p)return null;rev*=p.act.rev/gMid(p.rev);om+=p.act.om-gMid(p.om)}
+  const n=gNext(g),k=gK(),nom=gOm(n);if(!n||k==null||!nom||!D.shares)return null;
+  let rev=gMid(n.rev),om=gMid(nom);
+  if(s==='lo'){rev=n.rev[0];om=nom[0]}else if(s==='hi'){rev=n.rev[1];om=nom[1]}
+  else if(s==='beat'){const p=[...g.hist].reverse().find(h=>h.act),pom=p&&gOm(p);if(!p||!pom)return null;rev*=p.act.rev/gMid(p.rev);om+=p.act.om-gMid(pom)}
   const rNT=rev*(g.cur==='USD'?n.fx:1),nm=om*k;
   return {q:n.q,rev,rNT,om,nm,k,eps:rNT*nm/100/D.shares};
 }
@@ -653,9 +657,9 @@ function renderGuide(){
   $('gdSub').textContent=`${gDate(ref.on)} 法說${n?'｜'+n.q:''}`;
   let t='';
   if(n){const m=gMid(n.rev),qq=prev&&prev.act?`季增 ${pct((m/prev.act.rev-1)*100,0)}`:'',yy=ya&&ya.act?`年增 ${pct((m/ya.act.rev-1)*100,0)}`:'';
-    t=`<strong>${n.q}</strong> 營收 <strong>${gNum(n.rev[0])}～${gNum(n.rev[1])} ${u}</strong>${qq||yy?`（中位數${[qq,yy].filter(Boolean).join('、')}）`:''}、毛利率 <strong>${gNum(n.gm[0])}～${gNum(n.gm[1])}%</strong>、${n.opex?`費用率 <strong>${gNum(n.opex[0])}～${gNum(n.opex[1])}%</strong>（營益率 ≈ ${gNum(n.om[0])}～${gNum(n.om[1])}%）`:`營益率 <strong>${gNum(n.om[0])}～${gNum(n.om[1])}%</strong>`}${n.fx?`（匯率假設 ${n.fx}）`:''}`}
+    t=`<strong>${n.q}</strong> 營收 <strong>${gNum(n.rev[0])}～${gNum(n.rev[1])} ${u}</strong>${qq||yy?`（中位數${[qq,yy].filter(Boolean).join('、')}）`:''}、毛利率 <strong>${gNum(n.gm[0])}～${gNum(n.gm[1])}%</strong>、${(()=>{const o=gOm(n);return n.opex?`費用率 <strong>${gNum(n.opex[0])}～${gNum(n.opex[1])}%</strong>（營益率 ≈ ${gNum(n.om[0])}～${gNum(n.om[1])}%）`:n.om?`營益率 <strong>${gNum(n.om[0])}～${gNum(n.om[1])}%</strong>`:o?`營益率 ≈ ${gNum(o[0])}～${gNum(o[1])}%（公司沒給，用近四季費用率推）`:'營益率未給'})()}${n.fx?`（匯率假設 ${n.fx}）`:''}`+(n.rd?`<br><span class="meta">※ ${esc(n.rd)}</span>`:'')+(n.kpi?`<br><span class="meta">${esc(n.kpi)}</span>`:'')}
   if(g.year){const Y=g.year,yy=String(Y.y).slice(2),act=H.filter(h=>h.q.startsWith(yy)&&h.act);
-    t+=`<br>${Y.y} 全年：美元營收年增 <strong>${esc(Y.revG)}</strong>`+(Y.capex?`・資本支出 <strong>${gNum(Y.capex[0])}～${gNum(Y.capex[1])} ${u}</strong>`:'');
+    t+=`<br>${Y.y} 全年：${g.cur==='USD'?'美元營收年增 ':''}<strong>${esc(Y.revG)}</strong>`+(Y.capex?`・資本支出 <strong>${gNum(Y.capex[0])}～${gNum(Y.capex[1])} ${u}</strong>`:'');
     if(n&&Y.prev&&act.length===3&&n.q===`${yy}Q4`){const fy=sum(act.map(h=>h.act.rev))+gMid(n.rev);
       t+=`<br><span class="meta">核對：前三季實際＋${n.q} 中位數＝全年 ${fmt(fy,0)} ${u}，年增 ${pct((fy/Y.prev-1)*100)}</span>`}}
   if(stale)t+=`<br><span class="pill">待更新</span> ${n?n.q+' 已公布實際數字，':''}這份財測等下次法說後更新`;
@@ -669,10 +673,10 @@ function renderGuide(){
   else $('tGdH').textContent='';
   chartGd(g);
   const cell=(r,a)=>{const c=a==null?'':a>r[1]?'up':a<r[0]?'dn':'';return `<td>${gNum(r[0])}–${gNum(r[1])}<b class="${c}">${a==null?'—':fmt(a,1)+(c==='up'?' ↑':c==='dn'?' ↓':'')}</b></td>`};
-  $('tbGdH').innerHTML=`<tr><th>季別</th><th>營收 ${u}</th><th>毛利率 %</th><th>營益率 %</th></tr>`+[...H].reverse().map(h=>`<tr><td>${h.q}<i>${gDate(h.on)} 給${h.act?'':'・待公布'}</i></td>${cell(h.rev,h.act&&h.act.rev)}${cell(h.gm,h.act&&h.act.gm)}${cell(h.om,h.act&&h.act.om)}</tr>`).join('');
+  $('tbGdH').innerHTML=`<tr><th>季別</th><th>營收 ${u}</th><th>毛利率 %</th><th>營益率 %</th></tr>`+[...H].reverse().map(h=>`<tr><td>${h.q}<i>${gDate(h.on)} 給${h.act?'':'・待公布'}</i></td>${cell(h.rev,h.act&&h.act.rev)}${cell(h.gm,h.act&&h.act.gm)}${h.om?cell(h.om,h.act&&h.act.om):`<td>—<b>${h.act&&h.act.om!=null?fmt(h.act.om,1):'—'}</b></td>`}</tr>`).join('')+(H.some(h=>h.rd)?`<tr><td colspan="4" style="text-align:left;white-space:normal;font-family:var(--f-body);font-size:11px;color:var(--muted)">※ 營收區間為換算值：${esc(H.filter(h=>h.rd).slice(-1)[0].rd)}</td></tr>`:'');
   const YH=g.yearHist||[];$('gdYSub').textContent=g.year?`${g.year.y} 年・歷次法說`:'';
   const hasCx=YH.some(y=>y.capex);
-  $('tbGdY').innerHTML=YH.length?`<tr><th>法說</th><th>美元營收年增</th>${hasCx?`<th>資本支出 ${u}</th>`:''}</tr>`+YH.map((y,i)=>`<tr class="${i===YH.length-1?'on':''}"><td>${gDate(y.on)}</td><td>${esc(y.revG)}</td>${hasCx?`<td>${esc(y.capex||'—')}</td>`:''}</tr>`).join(''):'';
+  $('tbGdY').innerHTML=YH.length?`<tr><th>法說</th><th>${g.cur==='USD'?'美元營收年增':'全年展望'}</th>${hasCx?`<th>資本支出${g.cur==='USD'?' '+u:''}</th>`:''}</tr>`+YH.map((y,i)=>`<tr class="${i===YH.length-1?'on':''}"><td>${gDate(y.on)}</td><td>${esc(y.revG)}</td>${hasCx?`<td>${esc(y.capex||'—')}</td>`:''}</tr>`).join(''):'';
   const cg=gCapex(g),cl=cg&&cg.done.length?cg.done[cg.done.length-1]:null;
   $('tGdCx').innerHTML=cg?`資本支出進度：${cg.done.length?`${cg.done.map(h=>h.q.slice(2)).join('+')} 已花 <strong>${fmt(cg.usd,1)} ${u}</strong>（全年指引的 ${fmt(cg.usd/cg.hi*100,0)}～${fmt(cg.usd/cg.lo*100,0)}%）→ `:''}${cg.rem.join('、')} 要花 <strong>${fmt(cg.uLo*cg.rem.length,1)}～${fmt(cg.uHi*cg.rem.length,1)} ${u}</strong> 才會落在指引內`+
     (cg.rem.length===1&&cl?`（${cl.q} 是 ${fmt(cl.act.capex,1)}，等於季增 ${pct((cg.uLo/cl.act.capex-1)*100,0)}～${pct((cg.uHi/cl.act.capex-1)*100,0)}）`:''):'';
@@ -687,7 +691,7 @@ function paintScen(g){
   const p=[...g.hist].reverse().find(h=>h.act),rows=['lo','mid','hi','beat'].map(s=>[s,gScen(g,s)]).filter(r=>r[1]);
   $('gdScenSub').textContent=`${n.q}・按一下帶入下方預估 EPS`;
   $('gdSeg').innerHTML=rows.map(([s])=>`<button type="button" data-s="${s}" aria-pressed="${GS===s}">${SCN[s]}</button>`).join('');
-  $('tbGd').innerHTML=`<tr><th>情境</th><th>營收(億元)</th><th>營益率<i>淨利率</i></th><th>EPS</th></tr>`+rows.map(([s,x])=>`<tr class="${GS===s?'on':''}"><td>${s==='beat'?'比照上季':SCN[s]}${s==='beat'&&p?`<i>營收 ${pct((p.act.rev/gMid(p.rev)-1)*100)}・營益率 ${pp(p.act.om-gMid(p.om),1)} 點</i>`:''}</td><td>${fmt(x.rNT)}</td><td>${fmt(x.om,1)}%<i>${fmt(x.nm,1)}%</i></td><td><b>${fmt(x.eps,2)}</b></td></tr>`).join('');
+  $('tbGd').innerHTML=`<tr><th>情境</th><th>營收(億元)</th><th>營益率<i>淨利率</i></th><th>EPS</th></tr>`+rows.map(([s,x])=>`<tr class="${GS===s?'on':''}"><td>${s==='beat'?'比照上季':SCN[s]}${s==='beat'&&p?`<i>營收 ${pct((p.act.rev/gMid(p.rev)-1)*100)}・營益率 ${gOm(p)?pp(p.act.om-gMid(gOm(p)),1)+" 點":"—"}</i>`:''}</td><td>${fmt(x.rNT)}</td><td>${fmt(x.om,1)}%<i>${fmt(x.nm,1)}%</i></td><td><b>${fmt(x.eps,2)}</b></td></tr>`).join('');
   const sel=gScen(g,GS||'mid'),yy=n.q.slice(0,2),act=Q.filter(x=>x[0].startsWith(yy)),ea=sum(act.map(x=>x[5]));
   $('gdEY').innerHTML=sel&&+n.q[3]===4&&act.length===3?`${2000+ +yy}E EPS <strong>${fmt(ea+sel.eps,1)}</strong> 元（前三季實際 ${fmt(ea,2)} ＋ ${n.q.slice(2)} ${SCN[GS||'mid']} ${fmt(sel.eps,2)}），以收盤 ${fmt(L.close)} 元計本益比 <strong>${fmt(L.close/(ea+sel.eps),1)}</strong> 倍`:'全年 EPS 看下方「預估 EPS」';
   // 財測季的 3 個月營收都公布了 → 直接跟財測比
