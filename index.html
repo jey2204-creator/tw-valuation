@@ -185,7 +185,7 @@ details.ind.hot summary b{color:var(--up)}
     <input id="q2" type="search" inputmode="search" autocomplete="off" placeholder="輸入代號或名稱，例如 2454、聯發科" aria-label="搜尋股票">
     <div class="results" id="res2" hidden></div>
   </div>
-  <h2 class="sec"><span>⭐ 自選</span><span class="segm" data-seg></span></h2>
+  <h2 class="sec"><span>⭐ 自選<a class="act" href="#f" id="favEdit" hidden>✏️ 排序</a></span><span class="segm" data-seg></span></h2>
   <div id="favBox"></div>
   <h2 class="sec"><span>產業主題 <small><span id="sumAsof"></span>・中位數</small></span><a class="act" href="#e">✏️ 編輯</a></h2>
   <div class="tgrid" id="tgrid"></div>
@@ -210,12 +210,19 @@ details.ind.hot summary b{color:var(--up)}
   <div class="ebar"><a class="ib pri" href="#e/new">＋ 新增主題</a></div>
   <details class="ind" style="margin-top:22px"><summary><b>💾 備份／換手機</b><span>複製設定碼</span></summary>
     <div style="padding:0 12px 12px">
-      <p class="foot">設定只存在這支手機的這個瀏覽器。換手機、清除 Safari 資料前，先複製設定碼存起來（例如貼到備忘錄），之後在新手機貼回來按「匯入」。</p>
+      <p class="foot">設定只存在這支手機的這個瀏覽器。換手機、清除 Safari 資料前，先複製設定碼存起來（包含自訂主題、排序與⭐自選，例如貼到備忘錄），之後在新手機貼回來按「匯入」。</p>
       <label class="efield" for="bk">設定碼<textarea id="bk" spellcheck="false"></textarea></label>
       <div class="ebar"><button type="button" class="ib" id="bkCopy">複製</button><button type="button" class="ib" id="bkLoad">匯入</button><button type="button" class="ib warn" id="bkReset">全部還原預設</button></div>
       <p class="foot" id="bkMsg" role="status"></p>
     </div>
   </details>
+</section>
+<section id="flist" hidden>
+  <div class="ehead"><a href="#">← 完成</a><span class="meta">存在這支手機上</span></div>
+  <h1 style="font-size:22px;margin:6px 0 0">編輯自選</h1>
+  <p class="take">按住右邊 ⠿ 拖曳調整順序；按 ✕ 移除。新加入的自選會排在最後面。</p>
+  <div class="panel" style="margin-top:12px" id="fRows"></div>
+  <p class="foot" id="fMsg" role="status"></p>
 </section>
 <section id="tedit" hidden>
   <div class="ehead"><a href="#e" id="eBack">← 取消</a><span class="meta" id="eKind"></span></div>
@@ -714,7 +721,7 @@ function table(el,items,sortKey,mode){
 function renderHome(){
   RANK=null;
   modeQ();$('sumAsof').textContent=S?`收盤 ${S.pxAsof?S.pxAsof.slice(4,6)+'/'+S.pxAsof.slice(6):S.updated.slice(5,10).replace('-','/')}・營收 ${S.revYM?+S.revYM.slice(5)+'月':'—'}${QN?'・EPS '+QN:''}`:'數字待 Actions 產生';
-  const fav=store.get('fav')||[];
+  const fav=store.get('fav')||[];$('favEdit').hidden=!fav.length;
   $('favBox').innerHTML=fav.length?'<div class="panel"><div class="tbl"><table class="lst" id="favTbl"></table></div></div>':'<p class="dtip">在個股頁點「☆ 加入自選」，就會出現在這裡。</p>';
   if(fav.length)table($('favTbl'),fav.map(id=>[id,'']));
   paintSeg();
@@ -764,11 +771,12 @@ function stockExtras(id){
   $('back').href=bt?'#t/'+bt.id:'#';$('back').textContent=bt?'← '+bt.name:'← 全部主題';
   $('peers').innerHTML=mine.map(t=>`<span>${t.name.split(' ')[0]}</span>`+t.stocks.map(([s])=>`<a href="#${s}" class="${s===id?'cur':''}">${nameOf(s)}</a>`).join('')).join('<br style="flex-basis:100%">');
 }
-$('fav').addEventListener('click',()=>{const id=D&&D.id;if(!id)return;let f=store.get('fav')||[];f=f.includes(id)?f.filter(x=>x!==id):[id,...f];store.set('fav',f.slice(0,30));stockExtras(id)});
+$('fav').addEventListener('click',()=>{const id=D&&D.id;if(!id)return;let f=store.get('fav')||[];if(f.includes(id))f=f.filter(x=>x!==id);else if(f.length>=30){$('fav').textContent='自選已滿 30 檔';setTimeout(()=>stockExtras(id),2500);return}else f=[...f,id];store.set('fav',f);stockExtras(id)});
 function route(){
   const h=decodeURIComponent(location.hash.slice(1));
-  const show=v=>{document.body.dataset.view=v;['home','theme','tlist','tedit'].forEach(k=>$(k).hidden=v!==k)};
+  const show=v=>{document.body.dataset.view=v;['home','theme','tlist','tedit','flist'].forEach(k=>$(k).hidden=v!==k)};
   if(/^\d{4,6}[A-Z]?$/.test(h)){show('stock');stockExtras(h);if(!D||D.id!==h)load(h);else setTimeout(()=>Object.values(charts).forEach(c=>c.resize()),0);scrollTo(0,0)}
+  else if(h==='f'){show('flist');document.title='編輯自選';renderFav();scrollTo(0,0)}
   else if(h==='e'){show('tlist');document.title='編輯主題';renderOrder();scrollTo(0,0)}
   else if(h.startsWith('e/')){show('tedit');openEditor(h.slice(2));scrollTo(0,0)}
   else if(h.startsWith('t/')){show('theme');showTheme(h.slice(2));scrollTo(0,0)}
@@ -791,7 +799,7 @@ function renderOrder(){
   $('olist').innerHTML=A.map((t,i)=>`<div class="erow ${t.hidden?'off':''}" data-id="${t.id}">
     <a class="grow" href="#e/${t.id}" style="color:inherit;text-decoration:none"><b>${esc(t.name)}${t.custom?'<span class="tag">自訂</span>':t.edited?'<span class="tag">已修改</span>':''}</b><small>${t.stocks.length} 檔${t.hidden?'・已隱藏':''}</small></a>
     <button type="button" class="ib" data-hide>${t.hidden?'顯示':'隱藏'}</button><span class="drag" aria-hidden="true">⠿</span></div>`).join('');
-  $('bk').value=JSON.stringify(cfgGet());$('bkMsg').textContent='';
+  $('bk').value=JSON.stringify({...cfgGet(),fav:store.get('fav')||[]});$('bkMsg').textContent='';
 }
 $('olist').addEventListener('click',e=>{
   const r=e.target.closest('.erow');if(!r)return;const b=e.target.closest('button');if(!b)return;
@@ -799,14 +807,28 @@ $('olist').addEventListener('click',e=>{
   if(b.hasAttribute('data-hide')){c.hidden=c.hidden.includes(ids[i])?c.hidden.filter(x=>x!==ids[i]):[...c.hidden,ids[i]];c.order=ids}
   cfgSave(c);renderOrder();
 });
+// ---- 自選排序（#f）：fav = [代號…]，順序就是首頁自選表的預設順序 ----
+let favUndo=null;
+function renderFav(){
+  const f=store.get('fav')||[];
+  $('fRows').innerHTML=f.length?f.map(id=>`<div class="erow" data-id="${id}"><a class="grow" href="#${id}" style="color:inherit;text-decoration:none"><b>${esc(nameOf(id))} <span class="cd">${id}</span></b>${sv(id,'close')!=null?`<small>${fmt(sv(id,'close'),sv(id,'close')<100?2:sv(id,'close')<1000?1:0)}${cap(id)!=null?'・市值 '+capTxt(cap(id)):''}</small>`:''}</a><button type="button" class="ib" data-del aria-label="移除 ${esc(nameOf(id))}">✕</button><span class="drag" aria-hidden="true">⠿</span></div>`).join('')
+    :'<p class="foot" style="padding:8px 12px">還沒有自選。在個股頁點「☆ 加入自選」。</p>';
+}
+$('fRows').addEventListener('click',e=>{const b=e.target.closest('button[data-del]');if(!b)return;
+  const id=b.closest('.erow').dataset.id,f=store.get('fav')||[],i=f.indexOf(id);if(i<0)return;
+  favUndo=[id,i];store.set('fav',f.filter(x=>x!==id));renderFav();
+  $('fMsg').innerHTML=`已移除 ${esc(nameOf(id))}　<button type="button" class="ib" id="fUndo">復原</button>`});
+$('fMsg').addEventListener('click',e=>{if(!e.target.closest('#fUndo')||!favUndo)return;const [id,i]=favUndo,f=store.get('fav')||[];
+  if(!f.includes(id))f.splice(i,0,id);store.set('fav',f);favUndo=null;$('fMsg').textContent='已復原';renderFav()});
 // 拖曳排序（按住右邊 ⠿）
 const SORT={handle:'.drag',animation:160,ghostClass:'ghost',chosenClass:'chosen',dragClass:'dragging',forceFallback:true,fallbackOnBody:true,fallbackTolerance:3,scroll:true,scrollSensitivity:80,scrollSpeed:12,bubbleScroll:true};
 if(window.Sortable){
+  Sortable.create($('fRows'),{...SORT,draggable:'.erow',onEnd(){store.set('fav',[...$('fRows').querySelectorAll('.erow')].map(r=>r.dataset.id));$('fMsg').textContent='已儲存順序'}});
   Sortable.create($('olist'),{...SORT,draggable:'.erow',onEnd(){const c=cfgGet();c.order=[...$('olist').querySelectorAll('.erow')].map(r=>r.dataset.id);cfgSave(c);renderOrder()}});
   Sortable.create($('eStocks'),{...SORT,draggable:'.erow',onEnd(){ED.stocks=[...$('eStocks').querySelectorAll('input[data-i]')].map(inp=>[ED.stocks[+inp.dataset.i][0],inp.value]);drawStocks()}});
 }
 $('bkCopy').addEventListener('click',async()=>{try{await navigator.clipboard.writeText($('bk').value);$('bkMsg').textContent='已複製設定碼'}catch(e){$('bk').select();$('bkMsg').textContent='請長按選取後複製'}});
-$('bkLoad').addEventListener('click',()=>{try{const c=JSON.parse($('bk').value);if(!c||typeof c!=='object'||!('themes' in c))throw 0;cfgSave({order:c.order||[],hidden:c.hidden||[],themes:c.themes||{}});renderOrder();$('bkMsg').textContent='已匯入'}catch(e){$('bkMsg').textContent='設定碼格式不對：請貼上完整的設定碼（{ 開頭、} 結尾）'}});
+$('bkLoad').addEventListener('click',()=>{try{const c=JSON.parse($('bk').value);if(!c||typeof c!=='object'||!('themes' in c))throw 0;cfgSave({order:c.order||[],hidden:c.hidden||[],themes:c.themes||{}});if(Array.isArray(c.fav))store.set('fav',c.fav.filter(x=>/^\d{4,6}[A-Z]?$/.test(x)).slice(0,30));renderOrder();$('bkMsg').textContent=Array.isArray(c.fav)?`已匯入（含自選 ${c.fav.length} 檔）`:'已匯入（這份設定碼沒有自選）'}catch(e){$('bkMsg').textContent='設定碼格式不對：請貼上完整的設定碼（{ 開頭、} 結尾）'}});
 let resetArm=0;
 $('bkReset').addEventListener('click',()=>{if(Date.now()-resetArm>4000){resetArm=Date.now();$('bkMsg').textContent='會刪除所有自訂主題與排序。4 秒內再按一次確認';return}
   store.set('themeCfg',null);try{localStorage.removeItem('themeCfg')}catch(e){}applyCfg();renderOrder();$('bkMsg').textContent='已還原預設'});
