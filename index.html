@@ -224,6 +224,7 @@ details.ind.hot summary b{color:var(--up)}
 .gh td b{display:block;font-size:13.5px;font-weight:600;color:var(--fg)}
 .gnotes{margin:6px 0 0;padding-left:18px;font-size:13px;color:var(--muted);line-height:1.6}
 .gnotes li{margin:3px 0}
+#guide.nog :is(#gdScen,h3,#cGd,.tbl,#tGdH,#tGdCx,#gdNotes,.foot:not(#fGd)){display:none}
 .foot a{color:var(--accent)}
 </style>
 
@@ -651,7 +652,11 @@ function gCapex(g){
   return {y:Y.y,lo:Y.capex[0],hi:Y.capex[1],usd,done,rem,fx,uLo:(Y.capex[0]-usd)/r,uHi:(Y.capex[1]-usd)/r};
 }
 function renderGuide(){
-  const g=gOf(D&&D.id);$('guide').hidden=!g;$('chipGd').hidden=!g;if(!g)return;
+  const g=gOf(D&&D.id),nn=!g&&GD&&GD.none&&GD.none[D.id];
+  // 沒有量化財測的公司：只顯示一行「改看什麼」，其他區塊收起
+  $('guide').classList.toggle('nog',!!nn);$('guide').hidden=!g&&!nn;$('chipGd').hidden=!g&&!nn;
+  if(nn){$('gdSub').textContent='不給量化財測';$('tGd').innerHTML=`<span class="pill">沒有財測</span> ${esc(nn)}`;$('fGd').textContent=`公司法說只給方向性措辭、沒有營收或毛利率區間，硬換算成數字會是猜的，所以不做比對（Claude 查核於 ${esc(GD.updated)}）。`;return}
+  if(!g)return;
   const H=g.hist,n=gNext(g),stale=!n||Q[Q.length-1][0]>=n.q,u=g.cur==='USD'?'億美元':'億元';
   const ref=n||H[H.length-1],prev=n?H[H.indexOf(n)-1]:null,ya=n?H.find(h=>h.q===String(+n.q.slice(0,2)-1).padStart(2,'0')+n.q.slice(2)):null;
   $('gdSub').textContent=`${gDate(ref.on)} 法說${n?'｜'+n.q:''}`;
