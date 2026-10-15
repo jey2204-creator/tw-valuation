@@ -134,6 +134,40 @@ details.ind .tbl{padding:0 10px 6px;margin-top:0}
 .peers{margin-top:6px;font-size:12px;color:var(--muted);display:flex;flex-wrap:wrap;gap:5px 6px;align-items:center}
 .peers a{font-family:var(--f-body)}
 .peers a.cur{border-color:var(--accent);color:var(--accent);font-weight:700}
+/* 同業切換列（個股頁底部固定） */
+#pnav{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--card);border-top:1px solid var(--line);box-shadow:0 -4px 16px rgba(0,0,0,.08);padding:8px 12px calc(8px + env(safe-area-inset-bottom))}
+#pnav[hidden]{display:none}
+#pnav .in{max-width:560px;margin:0 auto;display:flex;align-items:center;gap:8px}
+#pnav button{flex:1 1 0;min-width:0;height:44px;font:inherit;font-size:14px;font-weight:700;color:var(--accent);background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:0 10px;display:flex;align-items:center;gap:4px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+#pnav button span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#pnav button.nx{justify-content:flex-end}
+#pnav button:disabled{color:var(--muted);opacity:.45;cursor:default}
+#pnav button:not(:disabled):active{transform:scale(.97)}
+#pnav .mid{flex:none;text-align:center;font:inherit;font-size:11.5px;color:var(--muted);line-height:1.3;min-width:62px;height:44px;background:none;border:0;padding:0 4px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+#pnav .mid b{display:block;font-family:var(--f-num);font-size:13px;color:var(--fg)}
+body[data-view=stock].pn .wrap{padding-bottom:calc(84px + env(safe-area-inset-bottom))}
+ #pnav .mid b{display:block}
+#pnSheet{position:fixed;inset:0;z-index:30;display:flex;flex-direction:column;justify-content:flex-end;background:rgba(0,0,0,.35);opacity:0;transition:opacity .18s}
+#pnSheet[hidden]{display:none}
+#pnSheet.on{opacity:1}
+#pnSheet .sh{background:var(--card);border-radius:16px 16px 0 0;max-height:72vh;display:flex;flex-direction:column;transform:translateY(24px);transition:transform .2s;padding-bottom:env(safe-area-inset-bottom);width:100%;max-width:560px;margin:0 auto}
+#pnSheet.on .sh{transform:none}
+#pnSheet .grab{width:38px;height:5px;border-radius:3px;background:var(--line);margin:8px auto 2px;flex:none}
+#pnSheet .hd{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 16px 10px;border-bottom:1px solid var(--line);flex:none}
+#pnSheet .hd a{color:var(--accent);text-decoration:none;font-weight:700;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#pnSheet .hd button{flex:none;font:inherit;font-size:13px;color:var(--muted);background:none;border:0;padding:6px 0 6px 10px;cursor:pointer}
+#pnSheet ol{list-style:none;margin:0;padding:4px 0;overflow-y:auto;-webkit-overflow-scrolling:touch}
+#pnSheet li button{width:100%;display:grid;grid-template-columns:26px 1fr auto 62px;align-items:center;gap:8px;font:inherit;text-align:left;color:var(--fg);background:none;border:0;padding:11px 16px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+#pnSheet li button:active{background:var(--bg)}
+#pnSheet li.cur button{background:color-mix(in srgb,var(--accent) 12%,transparent)}
+#pnSheet li.cur .n{color:var(--accent)}
+#pnSheet .i{font-family:var(--f-num);font-size:12px;color:var(--muted);text-align:right}
+#pnSheet .n{font-weight:700;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#pnSheet .n small{font-family:var(--f-num);font-weight:400;font-size:11.5px;color:var(--muted);margin-left:4px}
+#pnSheet .c,#pnSheet .p{font-family:var(--f-num);font-size:13px;text-align:right;white-space:nowrap}
+#pnSheet .p{color:var(--muted);font-size:12px}
+body.sheet{overflow:hidden}
+body[data-view=stock].pn #tipBox{bottom:calc(80px + env(safe-area-inset-bottom))}
 .sec .act{font:inherit;font-size:12.5px;font-weight:700;letter-spacing:0;color:var(--accent);background:none;border:0;padding:2px 0 2px 10px;cursor:pointer}
 .erow{display:flex;align-items:center;gap:6px;padding:8px 0;border-bottom:1px solid var(--line);min-width:0}
 .erow:last-child{border-bottom:0}
@@ -326,6 +360,8 @@ details.ind.hot summary b{color:var(--up)}
 </section>
 <p class="note" id="note"></p>
 </div>
+<div id="pnSheet" hidden role="dialog" aria-modal="true" aria-label="同主題股票"><div class="sh"><div class="grab"></div><div class="hd"><a id="pnBack" href="#"></a><button type="button" id="pnClose">關閉</button></div><ol id="pnList"></ol></div></div>
+<nav id="pnav" aria-label="同主題切換" hidden><div class="in"><button type="button" class="pv" id="pnPrev"></button><button type="button" class="mid" id="pnMid" aria-haspopup="dialog"></button><button type="button" class="nx" id="pnNext"></button></div></nav>
 
 <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
@@ -588,6 +624,42 @@ async function load(id){
   }catch(e){$('err').textContent='資料載入失敗：'+e.message;$('err').hidden=false;$('asof').textContent=''}
   document.body.classList.remove('dim');
 }
+// ---------- 同業切換（底部固定列）：依「從哪個主題進來」的成份股順序切換，並停在同一個圖表區塊 ----------
+let PN=null,KEEP=null;
+function pnPaint(id,t){
+  const ids=t?t.stocks.map(x=>x[0]):[],i=ids.indexOf(id);
+  PN=t&&i>=0&&ids.length>1?{ids,i}:null;
+  $('pnav').hidden=!PN;document.body.classList.toggle('pn',!!PN);if(!PN)return;
+  const pv=ids[i-1],nx=ids[i+1];
+  $('pnPrev').disabled=!pv;$('pnPrev').innerHTML=pv?`‹ <span>${esc(nameOf(pv))}</span>`:'‹ <span>第一檔</span>';
+  $('pnNext').disabled=!nx;$('pnNext').innerHTML=nx?`<span>${esc(nameOf(nx))}</span> ›`:'<span>最後一檔</span> ›';
+  PN.t=t;$('pnMid').innerHTML=`${esc(t.name.split(' ')[0])}<b>${i+1}/${ids.length} ▴</b>`;$('pnMid').setAttribute('aria-label',`${t.name} 第 ${i+1} 檔，共 ${ids.length} 檔，點開選擇`);
+}
+// 目前在看哪個圖表區塊：區塊上緣進到畫面上半部就算（捲到最底時最後一張圖也能被選到）
+function curSec(){const nb=document.querySelector('nav.chips').getBoundingClientRect().bottom;let cur=null;
+  const lim=Math.max(nb+40,(innerHeight+nb)/2);
+  document.querySelectorAll('section.card').forEach(s=>{if(s.offsetParent&&s.getBoundingClientRect().top<=lim)cur=s.id});return cur}
+function goSec(sec){const s=$(sec);if(!s||!s.offsetParent){scrollTo(0,0);return}
+  const nb=document.querySelector('nav.chips').offsetHeight;scrollTo(0,s.getBoundingClientRect().top+scrollY-nb-6)}
+function pnGo(d){if(!PN)return;const id=PN.ids[PN.i+d];if(!id)return;KEEP=curSec();location.hash=id}
+// 中間「n/N ▴」→ 底部清單，點任一檔直接跳過去（同樣停在目前的圖表區塊）
+let SHEET_SEC=null;
+function pnOpen(){if(!PN)return;SHEET_SEC=curSec();const t=PN.t;
+  $('pnBack').href='#t/'+t.id;$('pnBack').textContent='← 回 '+t.name;
+  $('pnList').innerHTML=PN.ids.map((id,k)=>{const ch=sv(id,'chg'),pe=sv(id,'pe');
+    return `<li class="${k===PN.i?'cur':''}"><button type="button" data-id="${id}"><span class="i">${k+1}</span><span class="n">${esc(nameOf(id))}<small>${id}</small></span><span class="c ${sign(ch)}">${ch==null?'—':pct(ch,2)}</span><span class="p">${pe==null?'PE —':'PE '+fmt(pe,1)}</span></button></li>`}).join('');
+  const sh=$('pnSheet');sh.hidden=false;document.body.classList.add('sheet');requestAnimationFrame(()=>{sh.classList.add('on');const c=sh.querySelector('li.cur');if(c)c.scrollIntoView({block:'nearest'})})}
+function pnShut(){const sh=$('pnSheet');if(sh.hidden)return;sh.classList.remove('on');document.body.classList.remove('sheet');setTimeout(()=>sh.hidden=true,180)}
+$('pnMid').addEventListener('click',pnOpen);$('pnClose').addEventListener('click',pnShut);
+$('pnSheet').addEventListener('click',e=>{if(e.target===$('pnSheet')){pnShut();return}
+  const b=e.target.closest('button[data-id]');if(b){const id=b.dataset.id;pnShut();if(id!==(PN&&PN.ids[PN.i])){KEEP=SHEET_SEC;location.hash=id}return}
+  if(e.target.closest('#pnBack'))pnShut()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')pnShut()});
+{let y0=null;const g=$('pnSheet').querySelector('.sh');
+ g.addEventListener('touchstart',e=>{const ol=$('pnList');y0=ol.scrollTop<=0||!ol.contains(e.target)?e.touches[0].clientY:null},{passive:true});
+ g.addEventListener('touchmove',e=>{if(y0==null)return;const dy=e.touches[0].clientY-y0;if(dy>0)g.style.transform=`translateY(${dy}px)`},{passive:true});
+ g.addEventListener('touchend',e=>{if(y0==null)return;const dy=e.changedTouches[0].clientY-y0;g.style.transform='';y0=null;if(dy>70)pnShut()})}
+$('pnPrev').addEventListener('click',()=>pnGo(-1));$('pnNext').addEventListener('click',()=>pnGo(1));
 // ---------- 搜尋 ----------
 function row(s){return `<button type="button" data-id="${s[0]}"><span class="rid">${s[0]}</span><span>${s[1]}</span><span class="rmeta">${s[2]||''}${s[3]?'・'+s[3]:''}</span></button>`}
 function showRes(q,box){
@@ -769,13 +841,14 @@ function stockExtras(id){
   const mine=THEMES.filter(t=>t.stocks.some(x=>x[0]===id));
   const bt=mine.find(t=>t.id===last)||mine[0];
   $('back').href=bt?'#t/'+bt.id:'#';$('back').textContent=bt?'← '+bt.name:'← 全部主題';
+  pnPaint(id,bt);
   $('peers').innerHTML=mine.map(t=>`<span>${t.name.split(' ')[0]}</span>`+t.stocks.map(([s])=>`<a href="#${s}" class="${s===id?'cur':''}">${nameOf(s)}</a>`).join('')).join('<br style="flex-basis:100%">');
 }
 $('fav').addEventListener('click',()=>{const id=D&&D.id;if(!id)return;let f=store.get('fav')||[];if(f.includes(id))f=f.filter(x=>x!==id);else if(f.length>=30){$('fav').textContent='自選已滿 30 檔';setTimeout(()=>stockExtras(id),2500);return}else f=[...f,id];store.set('fav',f);stockExtras(id)});
 function route(){
   const h=decodeURIComponent(location.hash.slice(1));
-  const show=v=>{document.body.dataset.view=v;['home','theme','tlist','tedit','flist'].forEach(k=>$(k).hidden=v!==k)};
-  if(/^\d{4,6}[A-Z]?$/.test(h)){show('stock');stockExtras(h);if(!D||D.id!==h)load(h);else setTimeout(()=>Object.values(charts).forEach(c=>c.resize()),0);scrollTo(0,0)}
+  const show=v=>{pnShut();if(v!=='stock'){$('pnav').hidden=true;document.body.classList.remove('pn')}document.body.dataset.view=v;['home','theme','tlist','tedit','flist'].forEach(k=>$(k).hidden=v!==k)};
+  if(/^\d{4,6}[A-Z]?$/.test(h)){show('stock');stockExtras(h);const k=KEEP;KEEP=null;if(!D||D.id!==h){if(!k)scrollTo(0,0);load(h).then(()=>{if(k)requestAnimationFrame(()=>goSec(k))})}else{setTimeout(()=>Object.values(charts).forEach(c=>c.resize()),0);k?goSec(k):scrollTo(0,0)}}
   else if(h==='f'){show('flist');document.title='編輯自選';renderFav();scrollTo(0,0)}
   else if(h==='e'){show('tlist');document.title='編輯主題';renderOrder();scrollTo(0,0)}
   else if(h.startsWith('e/')){show('tedit');openEditor(h.slice(2));scrollTo(0,0)}
