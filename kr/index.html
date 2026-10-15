@@ -132,10 +132,10 @@ html{scroll-behavior:smooth}
     <p class="take" id="tExp"></p>
     <p class="sub">每個工作天出口多少（億美元）</p>
     <div class="chart" id="cExpL" role="img" aria-label="韓國半導體日均出口長條圖"></div>
-    <p class="foot">深色＝整月確定值；淺色＝當月速報（1～10 日或 1～20 日）。以工作天數換算成日均，不同長度、不同假期的期間才能直接比較</p>
+    <p class="foot" id="fExpL"></p>
     <p class="sub">日均出口年增率（%）</p>
     <div class="chart short" id="cExpY" role="img" aria-label="韓國半導體日均出口年增率折線圖"></div>
-    <p class="foot">線：整月；點：月中速報（1～20 日，當月只有 1～10 日時用 1～10 日）</p>
+    <p class="foot" id="fExpY"></p>
     <div class="tbl"><table id="tbExp"></table></div>
     <p class="foot" id="fExp"></p>
   </section>
@@ -418,13 +418,19 @@ function expModel(){
   EXP.p.forEach(x=>{(PB[x[0]]=PB[x[0]]||{})[x[1]]=x});
   const pd=(v,w)=>v!=null&&w?v/w/100:null;   // 百萬美元 → 億美元／工作天
   const pYoY=x=>{if(!x||x[4]==null||!x[7]||!x[8])return null;const v0=x[3]/(1+x[4]/100);return +(((x[3]/x[7])/(v0/x[8])-1)*100).toFixed(1)};
-  const mYoY=ym=>{const a=M[ym],w=MP[ym];if(!a||!w||!w[2]||!w[3])return null;const v0=a[3]||a[2]/(1+a[4]/100);return +(((a[2]/w[2])/(v0/w[3])-1)*100).toFixed(1)};
+  // 整月工作天數：優先用整月速報；沒有速報的月份（如 2026/7）用「1～20 日工作天數＋21 日到月底推估」
+  // 推估規則同關稅廳：平日 1、週六 0.5、週日 0（12/25 視為假日）；2021～2026 已知月份驗證 122 筆中 107 筆完全相符，不符的都在農曆連假月份
+  const rem=(y,m)=>{const last=new Date(y,m,0).getDate();let t=0;for(let d=21;d<=last;d++){if(m===12&&d===25)continue;const w=new Date(y,m-1,d).getDay();t+=w===0?0:w===6?.5:1}return t};
+  const mDays=ym=>{const w=MP[ym];if(w&&w[2]&&w[3])return {wd:w[2],wd0:w[3],est:false};
+    const p=(PB[ym]||{})[20];if(!p||!p[7]||!p[8])return null;const [y,m]=ym.split('-').map(Number);
+    return {wd:p[7]+rem(y,m),wd0:p[8]+rem(y-1,m),est:true}};
+  const mYoY=ym=>{const a=M[ym],w=mDays(ym);if(!a||!w)return null;const v0=a[3]||a[2]/(1+a[4]/100);return +(((a[2]/w.wd)/(v0/w.wd0)-1)*100).toFixed(1)};
   const lastPrint=ym=>{const b=PB[ym];return b?(b[20]||b[10]):null};
   // 月份軸：最近 24 個月
   const yms=[...new Set([...EXP.p.map(x=>x[0]),...EXP.m.map(x=>x[0])])].sort(),end=yms[yms.length-1];
   const months=[];{let [y,m]=end.split('-').map(Number);for(let i=0;i<24;i++){months.unshift(`${y}-${String(m).padStart(2,'0')}`);if(--m<1){m=12;y--}}}
-  const level=ym=>{const a=M[ym],w=MP[ym];if(a&&w&&w[2])return {v:pd(a[2],w[2]),k:'m',x:a,w};const p=lastPrint(ym);return p&&p[7]?{v:pd(p[3],p[7]),k:'p',x:p}:null};
-  return {M,MP,PB,pd,pYoY,mYoY,lastPrint,months,level};
+  const level=ym=>{const a=M[ym],w=mDays(ym);if(a&&w)return {v:pd(a[2],w.wd),k:'m',x:a,w};const p=lastPrint(ym);return p&&p[7]?{v:pd(p[3],p[7]),k:'p',x:p}:null};
+  return {M,MP,PB,pd,pYoY,mYoY,lastPrint,months,level,mDays};
 }
 function expRender(){
   const E=expModel();$('exp').hidden=!E;if(!E)return;
@@ -432,32 +438,40 @@ function expRender(){
   const lab=ym=>`${ym.slice(2,4)}/${ym.slice(5)}`,mo=ym=>+ym.slice(5);
   // 重點句：最新一期速報
   const P=EXP.p,lp=P[P.length-1],[ym,d,rel,v,y,tot,ty,wd,wd0]=lp,pdy=E.pYoY(lp),lv=E.pd(v,wd);
-  const idx=E.months.indexOf(ym),prevYm=E.months[idx-1],pl=prevYm?E.level(prevYm):null;
+  // 動能只跟「上個月同一區間」比：韓國出口集中在月底，1～10 日的日均天生比整月低，跟整月比會誤判成放緩
+  const idx=E.months.indexOf(ym),prevYm=E.months[idx-1],pp=prevYm?(E.PB[prevYm]||{})[d]:null,plv=pp&&pp[7]?E.pd(pp[3],pp[7]):null;
   let cmp='',pill='';
-  if(pl&&pl.v){const c=(lv/pl.v-1)*100;cmp=`；比 ${mo(prevYm)} 月${pl.k==='m'?'整月':` 1～${pl.x[1]} 日`}的日均 ${pl.v.toFixed(1)} 億 <strong>${c>=0?'+':''}${c.toFixed(1)}%</strong>`;
+  if(plv&&lv){const c=(lv/plv-1)*100;cmp=`；比 ${mo(prevYm)} 月同期（1～${d} 日）的日均 ${plv.toFixed(1)} 億 <strong>${c>=0?'+':''}${c.toFixed(1)}%</strong>`;
     pill=c>5?'<span class="pill up">日均加速</span>':c<-5?'<span class="pill dn">日均放緩</span>':'<span class="pill">日均持平</span>'}
   $('tExp').innerHTML=`${pill} ${mo(ym)}/1～${d} 半導體出口 <strong>${(v/100).toFixed(1)} 億美元</strong>，年增 <strong>${y>0?'+':''}${y}%</strong>`+
     (pdy!=null?`；工作天 ${wd0}→${wd} 天，<strong>日均年增 ${pdy>0?'+':''}${pdy}%</strong>`:'')+
     (lv?`。日均 <strong>${lv.toFixed(1)} 億美元</strong>${cmp}`:'')+(tot?`。占總出口 ${(v/tot*100).toFixed(1)}%`:'')+`（${rel.slice(5).replace('-','/')} 公布）`+
+    (()=>{const lm=EXP.m[EXP.m.length-1];if(!lm)return '';const w=E.mDays(lm[0]),my=E.mYoY(lm[0]);
+      return `<br>${mo(lm[0])} 月整月確定值 <strong>${(lm[2]/100).toFixed(1)} 億美元</strong>，年增 ${lm[4]>0?'+':''}${lm[4]}%`+(w?`，日均 ${E.pd(lm[2],w.wd).toFixed(1)} 億（日均年增 ${my>0?'+':''}${my}%）`:'')+`（${lm[1].slice(5).replace('-','/')} 公布）`})()+
     (wd&&wd0&&Math.abs(wd-wd0)>=1.5?`<br>⚠️ 今年與去年同期工作天數差 ${Math.abs(wd-wd0)} 天（連假落點不同），連假期間仍有通關出口，日均年增可能被扭曲；等 1～20 日或整月數字再確認趨勢`:'');
-  // 圖 1：日均出口
-  {const c=mk('cExpL'),o=base(),L=E.months.map(E.level);o.xAxis.data=E.months.map(lab);o.yAxis.scale=false;o.legend.show=false;o.grid.top=22;
-   o.series=[{type:'bar',barCategoryGap:'30%',data:L.map(z=>z?{value:+z.v.toFixed(2),itemStyle:{color:z.k==='m'?x1:x1p,borderRadius:[4,4,0,0]}}:null),
-     label:{show:true,position:'top',fontFamily:'IBM Plex Mono',fontSize:10,color:mut,formatter:p=>{const z=L[p.dataIndex];if(!z||p.dataIndex!==L.length-1)return '';return z.k==='p'?`${z.v.toFixed(1)}\n速報`:z.v.toFixed(1)}}}];
-   o.grid.right=14;
-   o.tooltip={...o.tooltip,trigger:'item',formatter:p=>{const z=L[p.dataIndex];if(!z)return '';const ymx=E.months[p.dataIndex];
-     return z.k==='m'?`<b>${ymx} 整月（確定值）</b><br>半導體 ${(z.x[2]/100).toFixed(1)} 億美元・工作天 ${z.w[2]} 天<br>日均 ${z.v.toFixed(2)} 億美元／天<br>年增 ${z.x[4]}%，日均年增 ${E.mYoY(ymx)??'—'}%`
-       :`<b>${ymx} 1～${z.x[1]} 日（速報）</b><br>半導體 ${(z.x[3]/100).toFixed(1)} 億美元・工作天 ${z.x[7]} 天<br>日均 ${z.v.toFixed(2)} 億美元／天<br>年增 ${z.x[4]}%，日均年增 ${E.pYoY(z.x)??'—'}%`}};
+  // 圖 1：日均出口——柱＝整月確定值；點＝每月「1～d 日」速報（d＝最新一期的區間），點對點才是同期比較
+  const win=E.months.map(m=>(E.PB[m]||{})[d]||null);
+  {const c=mk('cExpL'),o=base(),bars=E.months.map(m=>{const a=E.M[m],w=E.mDays(m);return a&&w?{v:E.pd(a[2],w.wd),a,w}:null}),
+     dots=win.map(p=>p&&p[7]?E.pd(p[3],p[7]):null),li=arr=>arr.reduce((k,v,i)=>v!=null?i:k,-1),lb=li(bars),ld=li(dots);
+   o.xAxis.data=E.months.map(lab);o.yAxis.scale=false;o.grid.top=30;o.grid.right=34;
+   const lbl=(idx,pos)=>({show:true,position:pos,fontFamily:'IBM Plex Mono',fontSize:10,color:mut,formatter:p=>p.dataIndex===idx&&p.value!=null?(+p.value).toFixed(1):''});
+   o.series=[{name:'整月（確定值）',type:'bar',barCategoryGap:'30%',data:bars.map(b=>b?+b.v.toFixed(2):null),itemStyle:{color:x1,borderRadius:[4,4,0,0]},label:lbl(lb,'top')},
+     {name:`1～${d} 日速報`,type:'scatter',data:dots.map(v=>v==null?null:+v.toFixed(2)),symbolSize:8,itemStyle:{color:x2,borderColor:css('--card'),borderWidth:2},z:3,label:lbl(ld,'right')}];
+   o.tooltip.formatter=ps=>{const i=ps[0].dataIndex,m=E.months[i],b=bars[i],p=win[i];let h=`<b>${m}</b>`;
+     if(b)h+=`<br>整月 ${(b.a[2]/100).toFixed(1)} 億・工作天 ${b.w.wd}${b.w.est?'（推估）':''} → 日均 <b>${b.v.toFixed(2)}</b> 億`;
+     if(p&&p[7])h+=`<br>1～${d} 日 ${(p[3]/100).toFixed(1)} 億・工作天 ${p[7]} → 日均 <b>${E.pd(p[3],p[7]).toFixed(2)}</b> 億`;return h};
    c.setOption(o,true)}
+  $('fExpL').textContent=`柱：整月確定值；點：每月 1～${d} 日速報。韓國出口集中在月底，月初的日均天生比整月低，所以本月的點要跟前幾個月的點比（同期比較），不要跟柱比。日均 = 金額 ÷ 工作天數`;
   // 圖 2：日均年增率（單一 Y 軸）
-  {const c=mk('cExpY'),o=base(),A=E.months.map(E.mYoY),B=E.months.map(m=>E.pYoY(E.lastPrint(m)));
+  {const c=mk('cExpY'),o=base(),A=E.months.map(E.mYoY),B=win.map(p=>E.pYoY(p));
    o.xAxis.data=E.months.map(lab);o.yAxis.axisLabel.formatter='{value}%';o.grid.right=40;
-   o.tooltip.formatter=ps=>{const i=ps[0].dataIndex,m=E.months[i],p=E.lastPrint(m);return `<b>${m}</b><br>整月日均年增 ${A[i]??'—'}%<br>速報${p?`（1～${p[1]} 日）`:''}日均年增 ${B[i]??'—'}%`};
+   o.tooltip.formatter=ps=>{const i=ps[0].dataIndex,m=E.months[i];return `<b>${m}</b><br>整月日均年增 ${A[i]??'—'}%<br>1～${d} 日日均年增 ${B[i]??'—'}%`};
    const end=(arr,col)=>({show:true,formatter:p=>p.dataIndex===arr.length-1||arr.slice(p.dataIndex+1).every(v=>v==null)?`${p.value}%`:'',color:mut,fontFamily:'IBM Plex Mono',fontSize:10,position:'right'});
    o.series=[{name:'整月',type:'line',data:A,symbol:'none',lineStyle:{width:2,color:x1},itemStyle:{color:x1},connectNulls:false,label:end(A,x1),
        markLine:{silent:true,symbol:'none',label:{show:false},lineStyle:{color:mut,type:'dashed',width:1,opacity:.6},data:[{yAxis:0}]}},
-     {name:'月中速報',type:'scatter',data:B,symbol:'circle',symbolSize:8,itemStyle:{color:x2,borderColor:css('--card'),borderWidth:2},label:end(B,x2),z:3}];
+     {name:`1～${d} 日`,type:'scatter',data:B,symbol:'circle',symbolSize:8,itemStyle:{color:x2,borderColor:css('--card'),borderWidth:2},label:end(B,x2),z:3}];
    c.setOption(o,true)}
+  $('fExpY').textContent=`線：整月；點：每月 1～${d} 日。都以工作天數換算日均後再算年增，排除連假落點不同的影響`;
   // 表：最近 8 次公布
   const rows=[...P.map(x=>({rel:x[2],lab:`${mo(x[0])}月 1～${x[1]} 日`,v:x[3],y:x[4],pdy:E.pYoY(x),sh:x[5]?x[3]/x[5]*100:null})),
     ...EXP.m.map(x=>({rel:x[1],lab:`${mo(x[0])}月 整月（確定）`,v:x[2],y:x[4],pdy:E.mYoY(x[0]),sh:x[5]?x[2]/x[5]*100:null}))].sort((a,b)=>a.rel<b.rel?1:-1).slice(0,8);
