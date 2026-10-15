@@ -1,0 +1,43 @@
+name: 韓股除錯（暫時）
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: push-data
+  cancel-in-progress: false
+jobs:
+  dbg:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: 列出 7 月底～8 月初的新聞稿標題
+        run: |
+          python - <<'PY' > kr/data/debug_titles.txt 2>&1
+          import sys, re, urllib.request
+          sys.path.insert(0, "kr")
+          import fetch_exports as fx
+          for pg in range(1, 12):
+              html = fx.dec(fx.get(f"{fx.LIST}&listCo=50&currPage={pg}"))
+              rs = fx.rows(html)
+              for r in rs:
+                  if "2026-07-20" <= r["posted"] <= "2026-08-10":
+                      print(r["posted"], r["id"], r["title"], "→", fx.kind(r["title"]))
+              if rs and rs[-1]["posted"] < "2026-07-20":
+                  break
+          PY
+          cat kr/data/debug_titles.txt
+      - name: 提交
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add kr/data/debug_titles.txt
+          git diff --cached --quiet && exit 0
+          git commit -m "kr debug titles"
+          git pull --rebase origin main
+          git push
