@@ -19,6 +19,10 @@ jobs:
         env:
           FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
         run: python fetch_summary.py
+      - name: 員工薪資中位數（每年 6 月底換新年度，內容沒變不寫檔）
+        continue-on-error: true
+        timeout-minutes: 5
+        run: python fetch_salary.py
       - name: 股價動能＋法人（動能模式用）
         continue-on-error: true
         timeout-minutes: 20
