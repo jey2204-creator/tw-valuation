@@ -1,0 +1,237 @@
+{
+ "tries": [
+  {
+   "url": "https://mopsov.twse.com.tw/mops/web/ajax_t100sb15",
+   "kind": "form",
+   "status": 200,
+   "len": 2067739,
+   "sec": 3.6,
+   "snippet": " <html> <head> <title>公開資訊觀測站</title> <link href=\"css/css2.css\" rel=\"stylesheet\" type=\"text/css\" Media=\"Screen\"/> <script type=\"text/javascript\" src=\"js/mops2.js\"></script> </head> <body> <div id=\"div01\" > <form action='/mops/web/ajax_t100sb14' method='post' onsubmit='return false;' name='fm'><input type='hidden' name='firstin' value='true'><input type='hidden' name='step' value='10'><input type='hidden' name='filename' value='t100sb15_20261017_20502162.csv'><button style='background-color:transparent;border:0;cursor:pointer;text-decoration:underline;' onclick=\"action='/server-java/t105sb02';s",
+   "rows": 978,
+   "sample": [
+    "水泥工業",
+    "1101",
+    "台泥",
+    "1,205,896",
+    "1,212",
+    "995",
+    "1,003",
+    "-0.80%",
+    "895",
+    "877",
+    "2.05%",
+    "-1.60",
+    "990",
+    "不適用",
+    "-",
+    "1,008"
+   ]
+  },
+  {
+   "url": "https://mopsov.twse.com.tw/mops/web/ajax_t100sb14",
+   "kind": "form",
+   "status": 200,
+   "len": 988694,
+   "sec": 3.4,
+   "snippet": " <html> <head> <title>公開資訊觀測站</title> <link href=\"css/css2.css\" rel=\"stylesheet\" type=\"text/css\" Media=\"Screen\"/> <script type=\"text/javascript\" src=\"js/mops2.js\"></script> </head> <body> <div id=\"div01\" > <form action='/mops/web/ajax_t100sb14' method='post' onsubmit='return false;' name='fm'><input type='hidden' name='firstin' value='true'><input type='hidden' name='step' value='10'><input type='hidden' name='filename' value='t100sb14_20261017_205028438.csv'><button style='background-color:transparent;border:0;cursor:pointer;text-decoration:underline;' onclick=\"action='/server-java/t105sb02';",
+   "rows": 988,
+   "sample": [
+    "水泥工業",
+    "1101",
+    "台泥",
+    "一般",
+    "1,406,220",
+    "1,262,033",
+    "1,244",
+    "1,130",
+    "1,014",
+    "1,045",
+    "-3.0 %",
+    "-1.60",
+    "1,067",
+    "940",
+    "0.13"
+   ]
+  },
+  {
+   "url": "https://mopsov.twse.com.tw/mops/web/ajax_t100sb15",
+   "kind": "form",
+   "status": 200,
+   "len": 1789331,
+   "sec": 3.5,
+   "snippet": " <html> <head> <title>公開資訊觀測站</title> <link href=\"css/css2.css\" rel=\"stylesheet\" type=\"text/css\" Media=\"Screen\"/> <script type=\"text/javascript\" src=\"js/mops2.js\"></script> </head> <body> <div id=\"div01\" > <form action='/mops/web/ajax_t100sb14' method='post' onsubmit='return false;' name='fm'><input type='hidden' name='firstin' value='true'><input type='hidden' name='step' value='10'><input type='hidden' name='filename' value='t100sb15_20261017_205035161.csv'><button style='background-color:transparent;border:0;cursor:pointer;text-decoration:underline;' onclick=\"action='/server-java/t105sb02';",
+   "rows": 848,
+   "sample": [
+    "農業科技",
+    "1240",
+    "茂生農經",
+    "65,827",
+    "85",
+    "774",
+    "740",
+    "4.59%",
+    "675",
+    "649",
+    "4.01%",
+    "4.86",
+    "不適用",
+    "不適用",
+    "-",
+    "不適用"
+   ]
+  },
+  {
+   "url": "https://mopsov.twse.com.tw/mops/web/ajax_t100sb14",
+   "kind": "form",
+   "status": 200,
+   "len": 855779,
+   "sec": 3.0,
+   "snippet": " <html> <head> <title>公開資訊觀測站</title> <link href=\"css/css2.css\" rel=\"stylesheet\" type=\"text/css\" Media=\"Screen\"/> <script type=\"text/javascript\" src=\"js/mops2.js\"></script> </head> <body> <div id=\"div01\" > <form action='/mops/web/ajax_t100sb14' method='post' onsubmit='return false;' name='fm'><input type='hidden' name='firstin' value='true'><input type='hidden' name='step' value='10'><input type='hidden' name='filename' value='t100sb14_20261017_205042104.csv'><button style='background-color:transparent;border:0;cursor:pointer;text-decoration:underline;' onclick=\"action='/server-java/t105sb02';",
+   "rows": 857,
+   "sample": [
+    "農業科技",
+    "1240",
+    "茂生農經",
+    "一般",
+    "93,256",
+    "79,066",
+    "95",
+    "982",
+    "832",
+    "841",
+    "-1.1 %",
+    "4.86",
+    "913",
+    "761",
+    "0.22"
+   ]
+  }
+ ],
+ "cols": {
+  "sb15": {
+   "len": 31,
+   "ref_idx": 8,
+   "idx": [
+    3,
+    4,
+    5
+   ],
+   "votes": [
+    [
+     [
+      3,
+      4,
+      5
+     ],
+     715
+    ],
+    [
+     [
+      3,
+      5,
+      4
+     ],
+     128
+    ],
+    [
+     [
+      24,
+      25,
+      9
+     ],
+     2
+    ]
+   ],
+   "head": [
+    "農業科技",
+    "1240",
+    "茂生農經",
+    "65,827",
+    "85",
+    "774",
+    "740",
+    "4.59%",
+    "675",
+    "649",
+    "4.01%",
+    "4.86",
+    "不適用",
+    "不適用",
+    "-",
+    "不適用",
+    "不適用",
+    "-",
+    "不適用",
+    "不適用",
+    "-",
+    "不適用",
+    "不適用",
+    "-",
+    "634",
+    "0.22",
+    "N",
+    "N",
+    "N",
+    "",
+    ""
+   ]
+  },
+  "sb14": {
+   "len": 15,
+   "ref_idx": 8,
+   "idx": [
+    5,
+    6,
+    8
+   ],
+   "votes": [
+    [
+     [
+      5,
+      6,
+      8
+     ],
+     856
+    ],
+    [
+     [
+      4,
+      9,
+      8
+     ],
+     1
+    ]
+   ],
+   "head": [
+    "農業科技",
+    "1240",
+    "茂生農經",
+    "一般",
+    "93,256",
+    "79,066",
+    "95",
+    "982",
+    "832",
+    "841",
+    "-1.1 %",
+    "4.86",
+    "913",
+    "761",
+    "0.22"
+   ]
+  }
+ },
+ "sources": {
+  "上市 非主管": "mopsov.twse.com.tw/mops/web/ajax_t100sb15 978 列→978 檔",
+  "上市 全體": "mopsov.twse.com.tw/mops/web/ajax_t100sb14 988 列→988 檔",
+  "上櫃 非主管": "mopsov.twse.com.tw/mops/web/ajax_t100sb15 848 列→848 檔",
+  "上櫃 全體": "mopsov.twse.com.tw/mops/web/ajax_t100sb14 857 列→857 檔"
+ },
+ "bad": {
+  "上市 非主管": 0,
+  "上市 全體": 0,
+  "上櫃 非主管": 0,
+  "上櫃 全體": 0
+ },
+ "errors": []
+}
