@@ -4,6 +4,11 @@ on:
     - cron: "40 10 * * 1-5"   # 台北時間 平日 18:40（收盤後第一次）
     - cron: "30 14 * * 1-5"   # 台北時間 平日 22:30（補抓 FinMind 晚間才進來的資料）
   workflow_dispatch:           # 可在 Actions 頁面手動執行
+    inputs:
+      force_headcount:
+        description: "填 1 強制重抓 MOPS 員工人數"
+        required: false
+        default: ""
 permissions:
   contents: write
 jobs:
@@ -23,6 +28,12 @@ jobs:
         continue-on-error: true
         timeout-minutes: 5
         run: python fetch_salary.py
+      - name: 員工人數（MOPS 一年一次；手動執行可填 force_headcount=1 強制）
+        continue-on-error: true
+        timeout-minutes: 6
+        env:
+          FORCE: ${{ github.event.inputs.force_headcount || '' }}
+        run: python fetch_headcount.py
       - name: 股價動能＋法人（動能模式用）
         continue-on-error: true
         timeout-minutes: 20
