@@ -83,7 +83,10 @@ tr.e td{color:var(--accent)}
 .results .rmeta{margin-left:auto;font-size:12px;color:var(--muted);white-space:nowrap}
 .results .rhead{font-size:11px;color:var(--muted);padding:8px 12px 4px;letter-spacing:.05em}
 .meta{font-size:12px;color:var(--muted)}
-.meta.sal{margin-top:4px}.lst .cap.sal{font-size:10.5px}.meta.sal b{color:var(--fg);font-family:var(--f-num);font-size:13px}
+.meta.sal{margin-top:4px}
+.srlink{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:8px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;color:var(--fg);text-decoration:none}.srlink b{font-size:14px}.srlink span{font-size:12px;color:var(--muted);text-align:right}
+.scard{margin-top:10px;padding:10px 12px;font-size:13px;line-height:1.55}.scard .hd{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}.scard .hd b{font-size:16px}.scard .hd .cd{font-family:var(--f-num);color:var(--muted)}.scard .big{font-family:var(--f-num);font-size:20px;font-weight:700}.scard .row{display:flex;flex-wrap:wrap;gap:4px 14px;color:var(--muted)}.scard .row strong{color:var(--fg)}.scard .acts{display:flex;gap:8px;margin-top:8px}.scard .acts a{font-size:12.5px;color:var(--accent);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:3px 10px}
+#srank .mrow{flex-wrap:wrap;margin-top:10px}#srank .lst td:first-child{font-family:var(--f-num);color:var(--muted);font-size:12px;white-space:nowrap}#srank .lst td.co{font-family:var(--f-body);color:var(--fg);white-space:normal}#srank .lst td.co .nm{font-size:13.5px}#srank .lst th:nth-child(2),#srank .lst td:nth-child(2){text-align:left}#srank .lst .ind{font-size:11px;color:var(--muted);display:block}#sMore{width:100%;margin:6px 0 2px}.sback{font-size:12.5px;color:var(--accent);text-decoration:none;margin-left:8px}.lst .cap.sal{font-size:10.5px}.meta.sal b{color:var(--fg);font-family:var(--f-num);font-size:13px}
 .live{font-size:11px;border:1px solid var(--line);border-radius:999px;padding:0 7px;color:var(--muted)}
 .dim .chart{opacity:.35;transition:opacity .2s}
 .err{color:var(--up);font-size:13px}
@@ -243,6 +246,7 @@ details.ind.hot summary b{color:var(--up)}
   <div id="favBox"></div>
   <h2 class="sec"><span>產業主題 <small><span id="sumAsof"></span>・中位數</small></span><a class="act" href="#e">✏️ 編輯</a></h2>
   <div class="tgrid" id="tgrid"></div>
+  <a class="srlink" id="srLink" href="#s" hidden><b>💰 員工薪資中位數排行</b><span id="srSub"></span></a>
   <details class="ind hot" id="hotBox" style="margin-top:14px"><summary><b>🔥 主力訊號</b><span id="hotN">主題＋自選</span></summary><div style="padding:0 10px 8px"><div class="tbl"><table class="lst" id="hotTbl"></table></div><p class="foot" id="hotFoot"></p></div></details>
   <details class="ind" id="indAll" style="margin-top:22px"><summary><b>🏭 官方產業別</b><span>點開瀏覽全部上市櫃</span></summary><div id="indBox" style="padding:0 8px 8px"></div></details>
   <p class="note">點「✏️ 編輯」可新增主題、增減成份股、調整順序（存在這支手機上）。數字為證交所／櫃買每日資料，本益比空白＝虧損或不適用。</p>
@@ -277,6 +281,21 @@ details.ind.hot summary b{color:var(--up)}
   <p class="take">按住右邊 ⠿ 拖曳調整順序；按 ✕ 移除。新加入的自選會排在最後面。</p>
   <div class="panel" style="margin-top:12px" id="fRows"></div>
   <p class="foot" id="fMsg" role="status"></p>
+</section>
+<section id="srank" hidden>
+  <div class="ehead"><a href="#">← 首頁</a><span class="meta" id="sYr"></span></div>
+  <h1 style="font-size:22px;margin:6px 0 0">💰 員工薪資中位數排行</h1>
+  <p class="take" id="sTake"></p>
+  <div class="search" role="search">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <input id="sQ" type="search" inputmode="search" autocomplete="off" placeholder="查一家：輸入代號或名稱" aria-label="查詢薪資">
+    <div class="results" id="sRes" hidden></div>
+  </div>
+  <div class="panel scard" id="sCard" hidden></div>
+  <div class="mrow"><span class="segm" id="sTabs"></span><span class="segm" id="sMkt"></span></div>
+  <p class="take" id="sHead"></p>
+  <div class="panel" style="margin-top:8px"><div class="tbl"><table class="lst" id="sTbl"></table></div><button type="button" class="ib" id="sMore" hidden>顯示更多</button></div>
+  <p class="foot" id="sFoot"></p>
 </section>
 <section id="tedit" hidden>
   <div class="ehead"><a href="#e" id="eBack">← 取消</a><span class="meta" id="eKind"></span></div>
@@ -905,6 +924,79 @@ function salLine(id){
   el.innerHTML=`<span class="dtip" data-tip="${tip}">💰 ${y} 年員工薪資中位數</span> <b>${salTxt(m)}</b>${ch!=null?` <span class="${sign(ch)}">${pct(ch)}</span>`:''}${rk}`;
   el.hidden=false;
 }
+// ---------- 薪資排行頁（#s）：全市場 salary.json ＋ list.json（產業）＋ summary.json（本益比、市值）----------
+const SR={tab:'top',mkt:'',ind:'',n:100};let SRALL=null;
+const indOf=s=>{let k=(s[3]||'其他').replace(/類$/,'');if(k==='其他電子')k='其他電子業';return k};
+function srAll(){if(SRALL)return SRALL;if(!SA||!SA.d||!LIST.length)return [];
+  return SRALL=LIST.filter(s=>av(s[0],'med')!=null).map(s=>({id:s[0],nm:s[1].replace(/\*$/,''),mk:s[2],ind:indOf(s),med:av(s[0],'med'),chg:av(s[0],'medChg'),avg:av(s[0],'avg')}))}
+const srPool=()=>srAll().filter(r=>!SR.mkt||r.mk===SR.mkt);
+const srMed=a=>median(a.map(r=>r.med));
+const srPct=(rows,x)=>rows.length?Math.round(rows.filter(r=>r.med<x).length/rows.length*1000)/10:null;
+function srHome(){const a=srAll(),el=$('srLink');if(!a.length){el.hidden=true;return}
+  const top=a.reduce((p,r)=>r.med>p.med?r:p,a[0]);$('srSub').innerHTML=`${SA.yrAD} 年・${fmt(a.length)} 家<br>中位數 ${salTxt(srMed(a))}・最高 ${top.nm} ${fmt(top.med,0)} 萬 →`;el.hidden=false}
+const SR_TABS=[['top','排行'],['ind','產業'],['up','調薪'],['low','墊底']],SR_MKT=[['','全部'],['上市','上市'],['上櫃','上櫃']];
+function renderSal(){
+  const a=srAll();$('sYr').textContent=SA?`${SA.yrAD} 年（${SA.yr} 年度）`:'';
+  if(!a.length){$('sTake').textContent='薪資資料尚未產生（等 Actions 第一次執行）';return}
+  const pool=srPool(),m=srMed(pool),s=pool.map(r=>r.med).sort((x,y)=>x-y),q=p=>s[Math.floor(s.length*p)];
+  $('sTake').innerHTML=`${SR.mkt||'上市櫃'} <strong>${fmt(pool.length)}</strong> 家：中位數 <strong>${salTxt(m)}</strong>（P25 ${fmt(q(.25),1)}、P75 ${fmt(q(.75),1)} 萬）・≥100 萬 <strong>${pool.filter(r=>r.med>=100).length}</strong> 家、≥200 萬 <strong>${pool.filter(r=>r.med>=200).length}</strong> 家`;
+  $('sTabs').innerHTML=SR_TABS.map(([k,l])=>`<button type="button" data-tab="${k}" aria-pressed="${SR.tab===k}">${l}</button>`).join('');
+  $('sMkt').innerHTML=SR_MKT.map(([k,l])=>`<button type="button" data-mkt="${k}" aria-pressed="${SR.mkt===k}">${l}</button>`).join('');
+  srTable();
+  $('sFoot').innerHTML=`中位數＝${SA.yrAD} 年「非擔任主管職務之全時員工薪資」中位數（證交所／櫃買每年 6 月底公布前一年度）：含本薪、獎金、加班費與員工酬勞，排除經理人與部分工時，只算該公司本身員工（不含子公司）。年變化＝對前一年度。KY 公司（外國企業）不在揭露範圍。餐飲、百貨、營造等兼職與產線人力多的產業，中位數天生偏低，跨產業比較要小心；分紅多的 IC 設計與景氣好的年度會特別高。點一列看個股；「產業」分頁點一列看該產業完整排行。本益比、市值為最新收盤。`;
+}
+function srTable(){
+  const el=$('sTbl'),pool=srPool(),cap0=id=>cap(id);let rows,html,head='';
+  const coCell=r=>`<td class="co"><span class="nm">${r.nm}</span><span class="cd">${r.id}</span><span class="ind">${r.ind}${SR.mkt?'':'・'+r.mk}</span></td>`;
+  const peCell=r=>{const pe=sv(r.id,'pe'),c=cap0(r.id);return `<td>${pe==null?'—':fmt(pe,1)}<span class="sub">${c==null?'':capTxt(c)}</span></td>`};
+  const medCell=r=>`<td><b>${fmt(r.med,1)}</b><span class="sub">平均 ${r.avg==null?'—':fmt(r.avg,0)}</span></td>`;
+  const chgCell=r=>`<td class="${sign(r.chg)}">${r.chg==null?'—':pct(r.chg)}${r.chg!=null?`<span class="sub">去年 ${fmt(r.med/(1+r.chg/100),0)}</span>`:''}</td>`;
+  if(SR.tab==='ind'){
+    const g={};pool.forEach(r=>(g[r.ind]=g[r.ind]||[]).push(r));
+    rows=Object.entries(g).map(([k,v])=>({ind:k,n:v.length,med:srMed(v),top:v.reduce((p,r)=>r.med>p.med?r:p,v[0])})).sort((a,b)=>b.med-a.med);
+    head=`${rows.length} 個產業（證交所／櫃買分類），依中位數排序`;
+    html=`<thead><tr><th>#</th><th>產業</th><th>中位數</th><th>最高</th></tr></thead><tbody>`+rows.map((r,i)=>`<tr data-ind="${r.ind}"><td>${i+1}</td><td class="co"><span class="nm">${r.ind}</span><span class="ind">${r.n} 家 ›</span></td><td><b>${fmt(r.med,1)}</b></td><td class="co"><span class="nm" style="font-size:12.5px">${r.top.nm}</span><span class="ind">${fmt(r.top.med,0)} 萬</span></td></tr>`).join('')+'</tbody>';
+    $('sMore').hidden=true;
+  }else{
+    let all=SR.ind?pool.filter(r=>r.ind===SR.ind):pool;
+    if(SR.tab==='up'){all=all.filter(r=>r.chg!=null&&r.med>=60).sort((a,b)=>b.chg-a.chg)}
+    else if(SR.tab==='low')all=all.slice().sort((a,b)=>a.med-b.med);
+    else all=all.slice().sort((a,b)=>b.med-a.med);
+    rows=all.slice(0,SR.n);
+    const scope=SR.ind?`<strong>${SR.ind}</strong> ${all.length} 家<a class="sback" href="#s" data-clear="1">✕ 全部產業</a>`:`${SR.mkt||'上市櫃'} ${fmt(all.length)} 家`;
+    head={top:`${scope}，中位數由高到低`,up:`${scope}，年變化由高到低（排除中位數 &lt;60 萬的低基期）`,low:`${scope}，中位數由低到高`}[SR.tab];
+    const th=SR.tab==='up'?'<th>#</th><th>公司</th><th>中位數</th><th>年變化</th><th>本益比</th>':'<th>#</th><th>公司</th><th>中位數</th><th>年變化</th><th>本益比</th>';
+    html=`<thead><tr>${th}</tr></thead><tbody>`+rows.map((r,i)=>`<tr data-id="${r.id}"><td>${i+1}</td>${coCell(r)}${medCell(r)}${chgCell(r)}${peCell(r)}</tr>`).join('')+'</tbody>';
+    $('sMore').hidden=all.length<=SR.n;$('sMore').textContent=`顯示更多（還有 ${fmt(all.length-rows.length)} 家）`;
+  }
+  $('sHead').innerHTML=head;el.innerHTML=html;
+}
+$('sTabs').addEventListener('click',e=>{const b=e.target.closest('button[data-tab]');if(!b)return;SR.tab=b.dataset.tab;SR.n=100;if(SR.tab==='ind')SR.ind='';renderSal()});
+$('sMkt').addEventListener('click',e=>{const b=e.target.closest('button[data-mkt]');if(!b)return;SR.mkt=b.dataset.mkt;SR.n=100;renderSal()});
+$('sMore').addEventListener('click',()=>{SR.n+=100;srTable()});
+$('sHead').addEventListener('click',e=>{if(e.target.closest('[data-clear]')){e.preventDefault();SR.ind='';SR.n=100;renderSal()}});
+$('sTbl').addEventListener('click',e=>{const i=e.target.closest('tr[data-ind]');if(i){SR.ind=i.dataset.ind;SR.tab='top';SR.n=100;renderSal();return}const r=e.target.closest('tr[data-id]');if(r)location.hash=r.dataset.id});
+// 查一家：全市場百分位＋同產業名次
+function salCard(id){
+  const el=$('sCard'),it=LIST.find(x=>x[0]===id),a=srAll(),r=a.find(x=>x.id===id);
+  if(!it){el.hidden=true;return}
+  if(!r){el.innerHTML=`<div class="hd"><b>${it[1]}</b><span class="cd">${id}</span><span class="cd">${it[2]}・${indOf(it)}</span></div><div>沒有薪資資料（KY 公司不在揭露範圍，或該年度未申報）</div>`;el.hidden=false;return}
+  const all=a.slice().sort((x,y)=>y.med-x.med),ri=all.findIndex(x=>x.id===id)+1;
+  const ind=a.filter(x=>x.ind===r.ind).sort((x,y)=>y.med-x.med),ii=ind.findIndex(x=>x.id===id)+1;
+  const w=av(id,'welf');
+  el.innerHTML=`<div class="hd"><b>${r.nm}</b><span class="cd">${id}</span><span class="cd">${r.mk}・${r.ind}</span></div>
+    <div><span class="big">${fmt(r.med,1)} 萬</span>${r.chg!=null?` <span class="${sign(r.chg)}">${pct(r.chg)}</span>`:''} <span class="cd" style="color:var(--muted)">中位數（${salYr(id)} 年）</span></div>
+    <div class="row"><span>非主管平均 <strong>${salTxt(r.avg)}</strong></span>${w!=null?`<span>全體員工福利平均 <strong>${salTxt(w)}</strong></span>`:''}</div>
+    <div class="row"><span>全市場 第 <strong>${fmt(ri)}</strong>／${fmt(all.length)}，贏過 <strong>${srPct(all,r.med)}%</strong>（中位數 ${salTxt(srMed(all))}）</span></div>
+    <div class="row"><span>${r.ind} 第 <strong>${ii}</strong>／${ind.length}（產業中位數 ${salTxt(srMed(ind))}）</span></div>
+    <div class="acts"><a href="#${id}">看個股 →</a><a href="#s" data-ind="${r.ind}">看${r.ind}排行 →</a></div>`;
+  el.hidden=false;
+}
+$('sCard').addEventListener('click',e=>{const a=e.target.closest('a[data-ind]');if(a){e.preventDefault();SR.ind=a.dataset.ind;SR.tab='top';SR.n=100;renderSal();$('sHead').scrollIntoView({block:'start'})}});
+{const q=$('sQ'),box=$('sRes'),pick=id=>{box.hidden=true;q.value='';q.blur();salCard(id)};
+  q.addEventListener('focus',()=>showRes(q,box));q.addEventListener('input',()=>showRes(q,box));
+  q.addEventListener('keydown',e=>{if(e.key==='Enter'){const b=box.querySelector('button');if(b)pick(b.dataset.id)}if(e.key==='Escape'){box.hidden=true;q.blur()}});
+  box.addEventListener('mousedown',e=>e.preventDefault());box.addEventListener('click',e=>{const b=e.target.closest('button');if(b)pick(b.dataset.id)})}
 // 籌碼標籤（4 週）：集中＝大戶↑人數↓；散戶追＝大戶↑人數↑>3%；分散＝大戶↓人數↑；變化太小（大戶±0.3、人數±1%）不標
 function chip(id){const b=tv(id,'b4m'),p=tv(id,'pplm');if(b==null||p==null)return null;
   if(b>0.3&&p<-1)return 'c';if(b>0.3&&p>3)return 'r';if(b<-0.3&&p>1)return 'd';return null}
@@ -1007,7 +1099,7 @@ function table(el,items,sortKey,mode){
     const r=e.target.closest('tr[data-id]');if(r)location.hash=r.dataset.id};
 }
 function renderHome(){
-  RANK=null;
+  RANK=null;srHome();
   modeQ();$('sumAsof').textContent=S?`收盤 ${S.pxAsof?S.pxAsof.slice(4,6)+'/'+S.pxAsof.slice(6):S.updated.slice(5,10).replace('-','/')}・營收 ${S.revYM?+S.revYM.slice(5)+'月':'—'}${QN?'・EPS '+QN:''}`:'數字待 Actions 產生';
   const fav=store.get('fav')||[];$('favEdit').hidden=!fav.length;
   $('favBox').innerHTML=fav.length?'<div class="panel"><div class="tbl"><table class="lst" id="favTbl"></table></div></div>':'<p class="dtip">在個股頁點「☆ 加入自選」，就會出現在這裡。</p>';
@@ -1064,9 +1156,10 @@ function stockExtras(id){
 $('fav').addEventListener('click',()=>{const id=D&&D.id;if(!id)return;let f=store.get('fav')||[];if(f.includes(id))f=f.filter(x=>x!==id);else if(f.length>=30){$('fav').textContent='自選已滿 30 檔';setTimeout(()=>stockExtras(id),2500);return}else f=[...f,id];store.set('fav',f);stockExtras(id)});
 function route(){
   const h=decodeURIComponent(location.hash.slice(1));
-  const show=v=>{pnShut();if(v!=='stock'){$('pnav').hidden=true;document.body.classList.remove('pn')}document.body.dataset.view=v;['home','theme','tlist','tedit','flist'].forEach(k=>$(k).hidden=v!==k)};
+  const show=v=>{pnShut();if(v!=='stock'){$('pnav').hidden=true;document.body.classList.remove('pn')}document.body.dataset.view=v;['home','theme','tlist','tedit','flist','srank'].forEach(k=>$(k).hidden=v!==k)};
   if(/^\d{4,6}[A-Z]?$/.test(h)){show('stock');stockExtras(h);const k=KEEP;KEEP=null;if(!D||D.id!==h){if(!k)scrollTo(0,0);load(h).then(()=>{if(k)requestAnimationFrame(()=>goSec(k))})}else{setTimeout(()=>Object.values(charts).forEach(c=>c.resize()),0);k?goSec(k):scrollTo(0,0)}}
   else if(h==='f'){show('flist');document.title='編輯自選';renderFav();scrollTo(0,0)}
+  else if(h==='s'){show('srank');document.title='薪資排行';renderSal();scrollTo(0,0)}
   else if(h==='e'){show('tlist');document.title='編輯主題';renderOrder();scrollTo(0,0)}
   else if(h.startsWith('e/')){show('tedit');openEditor(h.slice(2));scrollTo(0,0)}
   else if(h.startsWith('t/')){show('theme');showTheme(h.slice(2));scrollTo(0,0)}
@@ -1189,7 +1282,7 @@ addEventListener('hashchange',route);
   try{const r=await fetch('data/momentum.json?t='+Date.now());if(r.ok)MO=await r.json()}catch(e){}
   try{const r=await fetch('data/tdcc.json?t='+Date.now());if(r.ok)TD=await r.json()}catch(e){}
   try{const r=await fetch('data/guide.json?t='+Date.now());if(r.ok)GD=await r.json()}catch(e){}
-  try{const r=await fetch('data/salary.json?t='+Date.now());if(r.ok)SA=await r.json()}catch(e){}
+  try{const r=await fetch('data/salary.json?t='+Date.now());if(r.ok){SA=await r.json();SRALL=null}}catch(e){}
   route();
 })();
 // 手動改假設 → 財測情境按鈕取消選取（明年年增不影響財測情境）
