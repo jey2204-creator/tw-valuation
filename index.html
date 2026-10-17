@@ -910,6 +910,14 @@ let TD=null;const TF={b4:0,b4w:1,b4m:2,b10:3,b10w:4,ppl:5,pplw:6,pplm:7};
 // 證交所／櫃買「非擔任主管職務之全時員工薪資資訊」：含本薪、獎金、加班費、員工酬勞，排除經理人與部分工時，只算該公司本身員工
 let SA=null;const AF={med:0,medChg:1,avg:2,avgChg:3,welf:4,allAvg:5,yr:6};
 const av=(id,k)=>SA&&SA.d&&SA.d[id]?SA.d[id][AF[k]]:null;
+// ---- 員工人數（headcount.json，MOPS 每年）：[非主管全時人數, 非主管薪資總額(億), 全體員工人數, 全體薪資費用(億)]；全體 − 非主管全時 ＝ 經理人＋部分工時 ----
+let HC=null;const HF={nFull:0,payFull:1,nAll:2,payAll:3};
+const hv=(id,k)=>HC&&HC.d&&HC.d[id]?HC.d[id][HF[k]]:null;
+const pplTxt=v=>v==null?'—':fmt(v)+' 人';
+const HC_TIP='人數＝公開資訊觀測站兩張年度彙總表：非主管全時員工人數（年度平均，排除經理人與部分工時）與財報附註的全體員工人數（含經理人、部分工時，個體財報口徑）。差額＝經理人（總經理、副總、協理、財會主管等法規定義的主管）＋部分工時人員；兼職多的餐飲、百貨、營造差額會很大，金控、集團公司的全體人數是合併口徑，都不能當主管人數看；兩表統計時點不同，差額偶爾為負就不顯示。「＝營收 X%」用的是合併營收，鴻海、廣達這種母公司人數只占集團一小部分的公司會嚴重低估，只適合母公司≈集團的公司（台積電、聯發科、中鋼…）。';
+function hcText(id,revY){const n=hv(id,'nFull'),m=hv(id,'nAll'),pay=hv(id,'payFull');if(n==null&&m==null)return '';
+  const diff=n!=null&&m!=null&&m>=n?(m-n)/n>0.3?`（差 ${fmt(m-n)}，全體為合併口徑）`:`（經理人＋部分工時 ≈ ${fmt(m-n)}）`:'';
+  return `👥 非主管全時 <b>${pplTxt(n)}</b>${m!=null?`・全體 <b>${pplTxt(m)}</b>${diff}`:''}${pay!=null?`・非主管薪資總額 <b>${pay>=1000?fmt(pay/1000,2)+' 千億':fmt(pay,pay<10?1:0)+' 億'}</b>${revY?`＝營收 <b>${fmt(pay/revY*100,1)}%</b>`:''}`:''}`}
 const salYr=id=>{const y=av(id,'yr')||(SA&&SA.yr);return y?y+1911:null};
 const salTxt=v=>v==null?'—':fmt(v,1)+' 萬';
 const salCell=id=>{const m=av(id,'med');if(m==null)return '';const ch=av(id,'medChg');   // 名稱欄只有 82px：年變化用小字、超過 ±100% 不放（個股頁還是看得到）
@@ -922,28 +930,30 @@ function salLine(id){
     const ids=t.stocks.map(x=>x[0]).filter(i=>av(i,'med')!=null).sort((p,q)=>av(q,'med')-av(p,'med'));const i=ids.indexOf(id);if(i>=0)rk=`・主題內第 <b>${i+1}</b>／${ids.length}`}
   const tip=`${y} 年非擔任主管職務之全時員工薪資中位數（證交所／櫃買每年 6 月底公布前一年度）：含本薪、獎金、加班費與員工酬勞，排除經理人與部分工時，只算這家公司本身的員工（不含子公司）。非主管平均數 ${salTxt(a)}${w!=null?`、全體員工福利平均 ${salTxt(w)}`:''}；旁邊的 % 是對前一年度的變化。`;
   el.innerHTML=`<span class="dtip" data-tip="${tip}">💰 ${y} 年員工薪資中位數</span> <b>${salTxt(m)}</b>${ch!=null?` <span class="${sign(ch)}">${pct(ch)}</span>`:''}${rk}`;
+  {const ms=V?V.filter(x=>x[0].startsWith(String(y))):[],revY=ms.length===12?sum(ms.map(x=>x[1])):null,t=hcText(id,revY);
+   if(t)el.innerHTML+=`<br><span class="dtip" data-tip="${HC_TIP}">${t}</span>`}
   el.hidden=false;
 }
 // ---------- 薪資排行頁（#s）：全市場 salary.json ＋ list.json（產業）＋ summary.json（本益比、市值）----------
 const SR={tab:'top',mkt:'',ind:'',n:100};let SRALL=null;
 const indOf=s=>{let k=(s[3]||'其他').replace(/類$/,'');if(k==='其他電子')k='其他電子業';return k};
 function srAll(){if(SRALL)return SRALL;if(!SA||!SA.d||!LIST.length)return [];
-  return SRALL=LIST.filter(s=>av(s[0],'med')!=null).map(s=>({id:s[0],nm:s[1].replace(/\*$/,''),mk:s[2],ind:indOf(s),med:av(s[0],'med'),chg:av(s[0],'medChg'),avg:av(s[0],'avg')}))}
+  return SRALL=LIST.filter(s=>av(s[0],'med')!=null).map(s=>({id:s[0],nm:s[1].replace(/\*$/,''),mk:s[2],ind:indOf(s),med:av(s[0],'med'),chg:av(s[0],'medChg'),avg:av(s[0],'avg'),n:hv(s[0],'nFull'),nAll:hv(s[0],'nAll'),pay:hv(s[0],'payFull')}))}
 const srPool=()=>srAll().filter(r=>!SR.mkt||r.mk===SR.mkt);
 const srMed=a=>median(a.map(r=>r.med));
 const srPct=(rows,x)=>rows.length?Math.round(rows.filter(r=>r.med<x).length/rows.length*1000)/10:null;
 function srHome(){const a=srAll(),el=$('srLink');if(!a.length){el.hidden=true;return}
   const top=a.reduce((p,r)=>r.med>p.med?r:p,a[0]);$('srSub').innerHTML=`${SA.yrAD} 年・${fmt(a.length)} 家<br>中位數 ${salTxt(srMed(a))}・最高 ${top.nm} ${fmt(top.med,0)} 萬 →`;el.hidden=false}
-const SR_TABS=[['top','排行'],['ind','產業'],['up','調薪'],['low','墊底']],SR_MKT=[['','全部'],['上市','上市'],['上櫃','上櫃']];
+const SR_TABS=[['top','排行'],['ind','產業'],['up','調薪'],['low','墊底'],['n','人數']],SR_MKT=[['','全部'],['上市','上市'],['上櫃','上櫃']];
 function renderSal(){
   const a=srAll();$('sYr').textContent=SA?`${SA.yrAD} 年（${SA.yr} 年度）`:'';
   if(!a.length){$('sTake').textContent='薪資資料尚未產生（等 Actions 第一次執行）';return}
   const pool=srPool(),m=srMed(pool),s=pool.map(r=>r.med).sort((x,y)=>x-y),q=p=>s[Math.floor(s.length*p)];
   $('sTake').innerHTML=`${SR.mkt||'上市櫃'} <strong>${fmt(pool.length)}</strong> 家：中位數 <strong>${salTxt(m)}</strong>（P25 ${fmt(q(.25),1)}、P75 ${fmt(q(.75),1)} 萬）・≥100 萬 <strong>${pool.filter(r=>r.med>=100).length}</strong> 家、≥200 萬 <strong>${pool.filter(r=>r.med>=200).length}</strong> 家`;
-  $('sTabs').innerHTML=SR_TABS.map(([k,l])=>`<button type="button" data-tab="${k}" aria-pressed="${SR.tab===k}">${l}</button>`).join('');
+  $('sTabs').innerHTML=SR_TABS.filter(([k])=>k!=='n'||(HC&&HC.d)).map(([k,l])=>`<button type="button" data-tab="${k}" aria-pressed="${SR.tab===k}">${l}</button>`).join('');
   $('sMkt').innerHTML=SR_MKT.map(([k,l])=>`<button type="button" data-mkt="${k}" aria-pressed="${SR.mkt===k}">${l}</button>`).join('');
   srTable();
-  $('sFoot').innerHTML=`中位數＝${SA.yrAD} 年「非擔任主管職務之全時員工薪資」中位數（證交所／櫃買每年 6 月底公布前一年度）：含本薪、獎金、加班費與員工酬勞，排除經理人與部分工時，只算該公司本身員工（不含子公司）。年變化＝對前一年度。KY 公司（外國企業）不在揭露範圍。餐飲、百貨、營造等兼職與產線人力多的產業，中位數天生偏低，跨產業比較要小心；分紅多的 IC 設計與景氣好的年度會特別高。點一列看個股；「產業」分頁點一列看該產業完整排行。本益比、市值為最新收盤。`;
+  $('sFoot').innerHTML=`中位數＝${SA.yrAD} 年「非擔任主管職務之全時員工薪資」中位數（證交所／櫃買每年 6 月底公布前一年度）：含本薪、獎金、加班費與員工酬勞，排除經理人與部分工時，只算該公司本身員工（不含子公司）。年變化＝對前一年度。KY 公司（外國企業）不在揭露範圍。「人數」分頁＝非主管全時員工人數（年度平均），「全體」＝財報附註員工人數（含經理人與部分工時，個體財報口徑），「經+兼」＝兩者差額（經理人＋部分工時；金控、集團公司的全體人數是合併口徑，差額很大時標「差」，不是主管數；兩表統計時點不同，差額偶爾為負就不顯示）；薪資總額＝非主管全時員工全年薪資合計。餐飲、百貨、營造等兼職與產線人力多的產業，中位數天生偏低，跨產業比較要小心；分紅多的 IC 設計與景氣好的年度會特別高。點一列看個股；「產業」分頁點一列看該產業完整排行。本益比、市值為最新收盤。`;
 }
 function srTable(){
   const el=$('sTbl'),pool=srPool(),cap0=id=>cap(id);let rows,html,head='';
@@ -961,12 +971,15 @@ function srTable(){
     let all=SR.ind?pool.filter(r=>r.ind===SR.ind):pool;
     if(SR.tab==='up'){all=all.filter(r=>r.chg!=null&&r.med>=60).sort((a,b)=>b.chg-a.chg)}
     else if(SR.tab==='low')all=all.slice().sort((a,b)=>a.med-b.med);
+    else if(SR.tab==='n'){all=all.filter(r=>r.n!=null).sort((a,b)=>b.n-a.n)}
     else all=all.slice().sort((a,b)=>b.med-a.med);
     rows=all.slice(0,SR.n);
     const scope=SR.ind?`<strong>${SR.ind}</strong> ${all.length} 家<a class="sback" href="#s" data-clear="1">✕ 全部產業</a>`:`${SR.mkt||'上市櫃'} ${fmt(all.length)} 家`;
-    head={top:`${scope}，中位數由高到低`,up:`${scope}，年變化由高到低（排除中位數 &lt;60 萬的低基期）`,low:`${scope}，中位數由低到高`}[SR.tab];
-    const th=SR.tab==='up'?'<th>#</th><th>公司</th><th>中位數</th><th>年變化</th><th>本益比</th>':'<th>#</th><th>公司</th><th>中位數</th><th>年變化</th><th>本益比</th>';
-    html=`<thead><tr>${th}</tr></thead><tbody>`+rows.map((r,i)=>`<tr data-id="${r.id}"><td>${i+1}</td>${coCell(r)}${medCell(r)}${chgCell(r)}${peCell(r)}</tr>`).join('')+'</tbody>';
+    head={top:`${scope}，中位數由高到低`,up:`${scope}，年變化由高到低（排除中位數 &lt;60 萬的低基期）`,low:`${scope}，中位數由低到高`,n:`${scope}，非主管全時員工人數由多到少`}[SR.tab];
+    const nCell=r=>`<td><b>${fmt(r.n)}</b><span class="sub">全體 ${r.nAll==null?'—':fmt(r.nAll)}</span></td>`;
+    const payCell=r=>`<td>${r.pay==null?'—':r.pay>=1000?fmt(r.pay/1000,2)+'千億':fmt(r.pay,r.pay<10?1:0)+'億'}<span class="sub">${r.n&&r.nAll&&r.nAll>=r.n?((r.nAll-r.n)/r.n>0.3?'差 ':'經+兼 ')+fmt(r.nAll-r.n):''}</span></td>`;
+    const th=SR.tab==='n'?'<th>#</th><th>公司</th><th>非主管人數</th><th>中位數</th><th>薪資總額</th>':'<th>#</th><th>公司</th><th>中位數</th><th>年變化</th><th>本益比</th>';
+    html=`<thead><tr>${th}</tr></thead><tbody>`+rows.map((r,i)=>`<tr data-id="${r.id}"><td>${i+1}</td>${coCell(r)}${SR.tab==='n'?nCell(r)+medCell(r)+payCell(r):medCell(r)+chgCell(r)+peCell(r)}</tr>`).join('')+'</tbody>';
     $('sMore').hidden=all.length<=SR.n;$('sMore').textContent=`顯示更多（還有 ${fmt(all.length-rows.length)} 家）`;
   }
   $('sHead').innerHTML=head;el.innerHTML=html;
@@ -989,6 +1002,7 @@ function salCard(id){
     <div class="row"><span>非主管平均 <strong>${salTxt(r.avg)}</strong></span>${w!=null?`<span>全體員工福利平均 <strong>${salTxt(w)}</strong></span>`:''}</div>
     <div class="row"><span>全市場 第 <strong>${fmt(ri)}</strong>／${fmt(all.length)}，贏過 <strong>${srPct(all,r.med)}%</strong>（中位數 ${salTxt(srMed(all))}）</span></div>
     <div class="row"><span>${r.ind} 第 <strong>${ii}</strong>／${ind.length}（產業中位數 ${salTxt(srMed(ind))}）</span></div>
+    ${(()=>{const t=hcText(id,null);return t?`<div class="row"><span class="dtip" data-tip="${HC_TIP}">${t.replace(/<b>|<\/b>/g,'')}</span></div>`:''})()}
     <div class="acts"><a href="#${id}">看個股 →</a><a href="#s" data-ind="${r.ind}">看${r.ind}排行 →</a></div>`;
   el.hidden=false;
 }
@@ -1283,6 +1297,7 @@ addEventListener('hashchange',route);
   try{const r=await fetch('data/tdcc.json?t='+Date.now());if(r.ok)TD=await r.json()}catch(e){}
   try{const r=await fetch('data/guide.json?t='+Date.now());if(r.ok)GD=await r.json()}catch(e){}
   try{const r=await fetch('data/salary.json?t='+Date.now());if(r.ok){SA=await r.json();SRALL=null}}catch(e){}
+  try{const r=await fetch('data/headcount.json?t='+Date.now());if(r.ok)HC=await r.json()}catch(e){}
   route();
 })();
 // 手動改假設 → 財測情境按鈕取消選取（明年年增不影響財測情境）
