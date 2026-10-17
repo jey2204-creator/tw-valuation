@@ -284,7 +284,7 @@ details.ind.hot summary b{color:var(--up)}
 </section>
 <section id="srank" hidden>
   <div class="ehead"><a href="#">← 首頁</a><span class="meta" id="sYr"></span></div>
-  <h1 style="font-size:22px;margin:6px 0 0">💰 員工薪資中位數排行</h1>
+  <h1 style="font-size:22px;margin:6px 0 0">💰 員工薪資排行</h1>
   <p class="take" id="sTake"></p>
   <div class="search" role="search">
     <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
@@ -292,7 +292,7 @@ details.ind.hot summary b{color:var(--up)}
     <div class="results" id="sRes" hidden></div>
   </div>
   <div class="panel scard" id="sCard" hidden></div>
-  <div class="mrow"><span class="segm" id="sTabs"></span><span class="segm" id="sMkt"></span></div>
+  <div class="mrow"><span class="segm" id="sTabs"></span><span class="segm" id="sMkt"></span><span class="segm" id="sMet"></span></div>
   <p class="take" id="sHead"></p>
   <div class="panel" style="margin-top:8px"><div class="tbl"><table class="lst" id="sTbl"></table></div><button type="button" class="ib" id="sMore" hidden>顯示更多</button></div>
   <p class="foot" id="sFoot"></p>
@@ -928,64 +928,72 @@ function salLine(id){
   let rk='';const mine=THEMES.filter(t=>t.stocks.some(x=>x[0]===id));
   if(mine.length){let last='';try{last=sessionStorage.getItem('lastTheme')||''}catch(e){}const t=mine.find(x=>x.id===last)||mine[0];
     const ids=t.stocks.map(x=>x[0]).filter(i=>av(i,'med')!=null).sort((p,q)=>av(q,'med')-av(p,'med'));const i=ids.indexOf(id);if(i>=0)rk=`・主題內第 <b>${i+1}</b>／${ids.length}`}
-  const tip=`${y} 年非擔任主管職務之全時員工薪資中位數（證交所／櫃買每年 6 月底公布前一年度）：含本薪、獎金、加班費與員工酬勞，排除經理人與部分工時，只算這家公司本身的員工（不含子公司）。非主管平均數 ${salTxt(a)}${w!=null?`、全體員工福利平均 ${salTxt(w)}`:''}；旁邊的 % 是對前一年度的變化。`;
-  el.innerHTML=`<span class="dtip" data-tip="${tip}">💰 ${y} 年員工薪資中位數</span> <b>${salTxt(m)}</b>${ch!=null?` <span class="${sign(ch)}">${pct(ch)}</span>`:''}${rk}`;
+  const aa=av(id,'allAvg'),g=m&&a&&m>=50?a/m:null;
+  const tip=`${y} 年非擔任主管職務之全時員工薪資（證交所／櫃買每年 6 月底公布前一年度）：含本薪、獎金、加班費與員工酬勞，排除經理人與部分工時，只算這家公司本身的員工（不含子公司）；% 是中位數對前一年度的變化。平均 ${salTxt(a)}${av(id,'avgChg')!=null?`（${pct(av(id,'avgChg'))}）`:''}${g?`，平均÷中位數 ${fmt(g,2)}${g>=1.3?'＝薪資集中在少數人':g<=1.05?'＝薪資平均分配':''}`:''}${aa!=null?`；全體員工薪資平均 ${salTxt(aa)}（財報附註，含經理人與部分工時）`:''}${w!=null?`、全體員工福利平均 ${salTxt(w)}（薪資＋勞健保＋退休金＋其他福利）`:''}。`;
+  el.innerHTML=`<span class="dtip" data-tip="${tip}">💰 ${y} 年員工薪資中位數</span> <b>${salTxt(m)}</b>${ch!=null?` <span class="${sign(ch)}">${pct(ch)}</span>`:''}${a!=null?`・平均 <b>${salTxt(a)}</b>`:''}${rk}`;
   {const ms=V?V.filter(x=>x[0].startsWith(String(y))):[],revY=ms.length===12?sum(ms.map(x=>x[1])):null,t=hcText(id,revY);
    if(t)el.innerHTML+=`<br><span class="dtip" data-tip="${HC_TIP}">${t}</span>`}
   el.hidden=false;
 }
 // ---------- 薪資排行頁（#s）：全市場 salary.json ＋ list.json（產業）＋ summary.json（本益比、市值）----------
-const SR={tab:'top',mkt:'',ind:'',n:100};let SRALL=null;
+const SR={tab:'top',mkt:'',ind:'',n:100,metric:'med'};let SRALL=null;   // metric: med 中位數｜avg 非主管平均數
+const srV=r=>SR.metric==='avg'?r.avg:r.med,srC=r=>SR.metric==='avg'?r.achg:r.chg,ML=()=>SR.metric==='avg'?'平均數':'中位數',MO_=()=>SR.metric==='avg'?'中位':'平均';
+const gapOf=r=>r.med&&r.avg&&r.med>=50?+(r.avg/r.med).toFixed(2):null;   // 平均 ÷ 中位數（中位數 <50 萬的小公司比值失真，不算）
 const indOf=s=>{let k=(s[3]||'其他').replace(/類$/,'');if(k==='其他電子')k='其他電子業';return k};
 function srAll(){if(SRALL)return SRALL;if(!SA||!SA.d||!LIST.length)return [];
-  return SRALL=LIST.filter(s=>av(s[0],'med')!=null).map(s=>({id:s[0],nm:s[1].replace(/\*$/,''),mk:s[2],ind:indOf(s),med:av(s[0],'med'),chg:av(s[0],'medChg'),avg:av(s[0],'avg'),n:hv(s[0],'nFull'),nAll:hv(s[0],'nAll'),pay:hv(s[0],'payFull')}))}
-const srPool=()=>srAll().filter(r=>!SR.mkt||r.mk===SR.mkt);
-const srMed=a=>median(a.map(r=>r.med));
-const srPct=(rows,x)=>rows.length?Math.round(rows.filter(r=>r.med<x).length/rows.length*1000)/10:null;
-function srHome(){const a=srAll(),el=$('srLink');if(!a.length){el.hidden=true;return}
-  const top=a.reduce((p,r)=>r.med>p.med?r:p,a[0]);$('srSub').innerHTML=`${SA.yrAD} 年・${fmt(a.length)} 家<br>中位數 ${salTxt(srMed(a))}・最高 ${top.nm} ${fmt(top.med,0)} 萬 →`;el.hidden=false}
-const SR_TABS=[['top','排行'],['ind','產業'],['up','調薪'],['low','墊底'],['n','人數']],SR_MKT=[['','全部'],['上市','上市'],['上櫃','上櫃']];
+  return SRALL=LIST.filter(s=>av(s[0],'med')!=null||av(s[0],'avg')!=null).map(s=>({id:s[0],nm:s[1].replace(/\*$/,''),mk:s[2],ind:indOf(s),med:av(s[0],'med'),chg:av(s[0],'medChg'),avg:av(s[0],'avg'),achg:av(s[0],'avgChg'),allAvg:av(s[0],'allAvg'),welf:av(s[0],'welf'),n:hv(s[0],'nFull'),nAll:hv(s[0],'nAll'),pay:hv(s[0],'payFull')}))}
+const srPool=()=>srAll().filter(r=>(!SR.mkt||r.mk===SR.mkt)&&srV(r)!=null);
+const srMed=a=>median(a.map(srV));
+const srPct=(rows,x)=>rows.length?Math.round(rows.filter(r=>srV(r)<x).length/rows.length*1000)/10:null;
+function srHome(){const a=srAll().filter(r=>r.med!=null),el=$('srLink');if(!a.length){el.hidden=true;return}
+  const top=a.reduce((p,r)=>r.med>p.med?r:p,a[0]);$('srSub').innerHTML=`${SA.yrAD} 年・${fmt(a.length)} 家<br>中位數 ${salTxt(median(a.map(r=>r.med)))}・最高 ${top.nm} ${fmt(top.med,0)} 萬 →`;el.hidden=false}
+const SR_TABS=[['top','排行'],['ind','產業'],['up','調薪'],['low','墊底'],['gap','差距'],['n','人數']],SR_MKT=[['','全部'],['上市','上市'],['上櫃','上櫃']],SR_MET=[['med','中位數'],['avg','平均數']];
 function renderSal(){
   const a=srAll();$('sYr').textContent=SA?`${SA.yrAD} 年（${SA.yr} 年度）`:'';
   if(!a.length){$('sTake').textContent='薪資資料尚未產生（等 Actions 第一次執行）';return}
-  const pool=srPool(),m=srMed(pool),s=pool.map(r=>r.med).sort((x,y)=>x-y),q=p=>s[Math.floor(s.length*p)];
-  $('sTake').innerHTML=`${SR.mkt||'上市櫃'} <strong>${fmt(pool.length)}</strong> 家：中位數 <strong>${salTxt(m)}</strong>（P25 ${fmt(q(.25),1)}、P75 ${fmt(q(.75),1)} 萬）・≥100 萬 <strong>${pool.filter(r=>r.med>=100).length}</strong> 家、≥200 萬 <strong>${pool.filter(r=>r.med>=200).length}</strong> 家`;
+  const pool=srPool(),m=srMed(pool),s=pool.map(srV).sort((x,y)=>x-y),q=p=>s[Math.floor(s.length*p)],gp=median(pool.map(gapOf));
+  $('sTake').innerHTML=`${SR.mkt||'上市櫃'} <strong>${fmt(pool.length)}</strong> 家：${SR.metric==='avg'?'平均數的中位數':'中位數'} <strong>${salTxt(m)}</strong>（P25 ${fmt(q(.25),1)}、P75 ${fmt(q(.75),1)} 萬）・≥100 萬 <strong>${pool.filter(r=>srV(r)>=100).length}</strong> 家、≥200 萬 <strong>${pool.filter(r=>srV(r)>=200).length}</strong> 家${gp?`・平均÷中位數 <strong>${fmt(gp,2)}</strong>`:''}`;
   $('sTabs').innerHTML=SR_TABS.filter(([k])=>k!=='n'||(HC&&HC.d)).map(([k,l])=>`<button type="button" data-tab="${k}" aria-pressed="${SR.tab===k}">${l}</button>`).join('');
   $('sMkt').innerHTML=SR_MKT.map(([k,l])=>`<button type="button" data-mkt="${k}" aria-pressed="${SR.mkt===k}">${l}</button>`).join('');
+  $('sMet').innerHTML=SR_MET.map(([k,l])=>`<button type="button" data-met="${k}" aria-pressed="${SR.metric===k}">${l}</button>`).join('');
   srTable();
-  $('sFoot').innerHTML=`中位數＝${SA.yrAD} 年「非擔任主管職務之全時員工薪資」中位數（證交所／櫃買每年 6 月底公布前一年度）：含本薪、獎金、加班費與員工酬勞，排除經理人與部分工時，只算該公司本身員工（不含子公司）。年變化＝對前一年度。KY 公司（外國企業）不在揭露範圍。「人數」分頁＝非主管全時員工人數（年度平均），「全體」＝財報附註員工人數（含經理人與部分工時，個體財報口徑），「經+兼」＝兩者差額（經理人＋部分工時；金控、集團公司的全體人數是合併口徑，差額很大時標「差」，不是主管數；兩表統計時點不同，差額偶爾為負就不顯示）；薪資總額＝非主管全時員工全年薪資合計。餐飲、百貨、營造等兼職與產線人力多的產業，中位數天生偏低，跨產業比較要小心；分紅多的 IC 設計與景氣好的年度會特別高。點一列看個股；「產業」分頁點一列看該產業完整排行。本益比、市值為最新收盤。`;
+  $('sFoot').innerHTML=`中位數、平均數＝${SA.yrAD} 年「非擔任主管職務之全時員工薪資」（證交所／櫃買每年 6 月底公布前一年度）：含本薪、獎金、加班費與員工酬勞，排除經理人與部分工時，只算該公司本身員工（不含子公司）；右上可切換用中位數或平均數排行，年變化跟著切。「差距」分頁＝平均數 ÷ 中位數：比值高＝少數人領很多（獎金集中在工程師、業務或高階），接近 1＝薪資平均分配；全市場中位 1.13、超過 1.3 算集中，中位數 &lt;50 萬的小公司不算。想知道「一般員工領多少」看中位數，想知道公司人事成本或高薪機會看平均數與差距。另外兩種平均（卡片才有）：全體員工薪資平均＝財報附註口徑，含經理人與部分工時；全體員工福利平均＝薪資＋勞健保＋退休金＋其他福利；投控、金控的全體口徑特殊，只當參考。年變化＝對前一年度。KY 公司（外國企業）不在揭露範圍。「人數」分頁＝非主管全時員工人數（年度平均），「全體」＝財報附註員工人數（含經理人與部分工時，個體財報口徑），「經+兼」＝兩者差額（經理人＋部分工時；金控、集團公司的全體人數是合併口徑，差額很大時標「差」，不是主管數；兩表統計時點不同，差額偶爾為負就不顯示）；薪資總額＝非主管全時員工全年薪資合計。餐飲、百貨、營造等兼職與產線人力多的產業，中位數天生偏低，跨產業比較要小心；分紅多的 IC 設計與景氣好的年度會特別高。點一列看個股；「產業」分頁點一列看該產業完整排行。本益比、市值為最新收盤。`;
 }
 function srTable(){
   const el=$('sTbl'),pool=srPool(),cap0=id=>cap(id);let rows,html,head='';
   const coCell=r=>`<td class="co"><span class="nm">${r.nm}</span><span class="cd">${r.id}</span><span class="ind">${r.ind}${SR.mkt?'':'・'+r.mk}</span></td>`;
   const peCell=r=>{const pe=sv(r.id,'pe'),c=cap0(r.id);return `<td>${pe==null?'—':fmt(pe,1)}<span class="sub">${c==null?'':capTxt(c)}</span></td>`};
-  const medCell=r=>`<td><b>${fmt(r.med,1)}</b><span class="sub">平均 ${r.avg==null?'—':fmt(r.avg,0)}</span></td>`;
-  const chgCell=r=>`<td class="${sign(r.chg)}">${r.chg==null?'—':pct(r.chg)}${r.chg!=null?`<span class="sub">去年 ${fmt(r.med/(1+r.chg/100),0)}</span>`:''}</td>`;
+  const other=r=>SR.metric==='avg'?r.med:r.avg;
+  const medCell=r=>`<td><b>${fmt(srV(r),1)}</b><span class="sub">${MO_()} ${other(r)==null?'—':fmt(other(r),0)}</span></td>`;
+  const chgCell=r=>{const c=srC(r);return `<td class="${sign(c)}">${c==null?'—':pct(c)}${c!=null?`<span class="sub">去年 ${fmt(srV(r)/(1+c/100),0)}</span>`:''}</td>`};
+  const gapCell=r=>{const g=gapOf(r);return `<td><b>${g==null?'—':fmt(g,2)}</b><span class="sub">${g==null?'':g>=1.3?'集中':g<=1.05?'平均':''}</span></td>`};
   if(SR.tab==='ind'){
     const g={};pool.forEach(r=>(g[r.ind]=g[r.ind]||[]).push(r));
-    rows=Object.entries(g).map(([k,v])=>({ind:k,n:v.length,med:srMed(v),top:v.reduce((p,r)=>r.med>p.med?r:p,v[0])})).sort((a,b)=>b.med-a.med);
-    head=`${rows.length} 個產業（證交所／櫃買分類），依中位數排序`;
-    html=`<thead><tr><th>#</th><th>產業</th><th>中位數</th><th>最高</th></tr></thead><tbody>`+rows.map((r,i)=>`<tr data-ind="${r.ind}"><td>${i+1}</td><td class="co"><span class="nm">${r.ind}</span><span class="ind">${r.n} 家 ›</span></td><td><b>${fmt(r.med,1)}</b></td><td class="co"><span class="nm" style="font-size:12.5px">${r.top.nm}</span><span class="ind">${fmt(r.top.med,0)} 萬</span></td></tr>`).join('')+'</tbody>';
+    rows=Object.entries(g).map(([k,v])=>({ind:k,n:v.length,med:srMed(v),gap:median(v.map(gapOf)),top:v.reduce((p,r)=>srV(r)>srV(p)?r:p,v[0])})).sort((a,b)=>b.med-a.med);
+    head=`${rows.length} 個產業（證交所／櫃買分類），依${ML()}排序`;
+    html=`<thead><tr><th>#</th><th>產業</th><th>${ML()}</th><th>最高</th></tr></thead><tbody>`+rows.map((r,i)=>`<tr data-ind="${r.ind}"><td>${i+1}</td><td class="co"><span class="nm">${r.ind}</span><span class="ind">${r.n} 家 ›</span></td><td><b>${fmt(r.med,1)}</b>${r.gap?`<span class="sub">差距 ${fmt(r.gap,2)}</span>`:''}</td><td class="co"><span class="nm" style="font-size:12.5px">${r.top.nm}</span><span class="ind">${fmt(srV(r.top),0)} 萬</span></td></tr>`).join('')+'</tbody>';
     $('sMore').hidden=true;
   }else{
     let all=SR.ind?pool.filter(r=>r.ind===SR.ind):pool;
-    if(SR.tab==='up'){all=all.filter(r=>r.chg!=null&&r.med>=60).sort((a,b)=>b.chg-a.chg)}
-    else if(SR.tab==='low')all=all.slice().sort((a,b)=>a.med-b.med);
+    if(SR.tab==='up'){all=all.filter(r=>srC(r)!=null&&srV(r)>=60).sort((a,b)=>srC(b)-srC(a))}
+    else if(SR.tab==='low')all=all.slice().sort((a,b)=>srV(a)-srV(b));
     else if(SR.tab==='n'){all=all.filter(r=>r.n!=null).sort((a,b)=>b.n-a.n)}
-    else all=all.slice().sort((a,b)=>b.med-a.med);
+    else if(SR.tab==='gap'){all=all.filter(r=>gapOf(r)!=null).sort((a,b)=>gapOf(b)-gapOf(a))}
+    else all=all.slice().sort((a,b)=>srV(b)-srV(a));
     rows=all.slice(0,SR.n);
     const scope=SR.ind?`<strong>${SR.ind}</strong> ${all.length} 家<a class="sback" href="#s" data-clear="1">✕ 全部產業</a>`:`${SR.mkt||'上市櫃'} ${fmt(all.length)} 家`;
-    head={top:`${scope}，中位數由高到低`,up:`${scope}，年變化由高到低（排除中位數 &lt;60 萬的低基期）`,low:`${scope}，中位數由低到高`,n:`${scope}，非主管全時員工人數由多到少`}[SR.tab];
+    head={top:`${scope}，${ML()}由高到低`,up:`${scope}，${ML()}年變化由高到低（排除 &lt;60 萬的低基期）`,low:`${scope}，${ML()}由低到高`,n:`${scope}，非主管全時員工人數由多到少`,gap:`${scope}，平均數 ÷ 中位數由高到低（比值高＝薪資集中在少數人；中位數 &lt;50 萬不算）`}[SR.tab];
     const nCell=r=>`<td><b>${fmt(r.n)}</b><span class="sub">全體 ${r.nAll==null?'—':fmt(r.nAll)}</span></td>`;
     const payCell=r=>`<td>${r.pay==null?'—':r.pay>=1000?fmt(r.pay/1000,2)+'千億':fmt(r.pay,r.pay<10?1:0)+'億'}<span class="sub">${r.n&&r.nAll&&r.nAll>=r.n?((r.nAll-r.n)/r.n>0.3?'差 ':'經+兼 ')+fmt(r.nAll-r.n):''}</span></td>`;
-    const th=SR.tab==='n'?'<th>#</th><th>公司</th><th>非主管人數</th><th>中位數</th><th>薪資總額</th>':'<th>#</th><th>公司</th><th>中位數</th><th>年變化</th><th>本益比</th>';
-    html=`<thead><tr>${th}</tr></thead><tbody>`+rows.map((r,i)=>`<tr data-id="${r.id}"><td>${i+1}</td>${coCell(r)}${SR.tab==='n'?nCell(r)+medCell(r)+payCell(r):medCell(r)+chgCell(r)+peCell(r)}</tr>`).join('')+'</tbody>';
+    const th=SR.tab==='n'?`<th>#</th><th>公司</th><th>非主管人數</th><th>${ML()}</th><th>薪資總額</th>`:SR.tab==='gap'?`<th>#</th><th>公司</th><th>平均÷中位</th><th>${ML()}</th><th>本益比</th>`:`<th>#</th><th>公司</th><th>${ML()}</th><th>年變化</th><th>本益比</th>`;
+    html=`<thead><tr>${th}</tr></thead><tbody>`+rows.map((r,i)=>`<tr data-id="${r.id}"><td>${i+1}</td>${coCell(r)}${SR.tab==='n'?nCell(r)+medCell(r)+payCell(r):SR.tab==='gap'?gapCell(r)+medCell(r)+peCell(r):medCell(r)+chgCell(r)+peCell(r)}</tr>`).join('')+'</tbody>';
     $('sMore').hidden=all.length<=SR.n;$('sMore').textContent=`顯示更多（還有 ${fmt(all.length-rows.length)} 家）`;
   }
   $('sHead').innerHTML=head;el.innerHTML=html;
 }
 $('sTabs').addEventListener('click',e=>{const b=e.target.closest('button[data-tab]');if(!b)return;SR.tab=b.dataset.tab;SR.n=100;if(SR.tab==='ind')SR.ind='';renderSal()});
 $('sMkt').addEventListener('click',e=>{const b=e.target.closest('button[data-mkt]');if(!b)return;SR.mkt=b.dataset.mkt;SR.n=100;renderSal()});
+$('sMet').addEventListener('click',e=>{const b=e.target.closest('button[data-met]');if(!b)return;SR.metric=b.dataset.met;SR.n=100;renderSal();if(!$('sCard').hidden&&$('sCard').dataset.id)salCard($('sCard').dataset.id)});
 $('sMore').addEventListener('click',()=>{SR.n+=100;srTable()});
 $('sHead').addEventListener('click',e=>{if(e.target.closest('[data-clear]')){e.preventDefault();SR.ind='';SR.n=100;renderSal()}});
 $('sTbl').addEventListener('click',e=>{const i=e.target.closest('tr[data-ind]');if(i){SR.ind=i.dataset.ind;SR.tab='top';SR.n=100;renderSal();return}const r=e.target.closest('tr[data-id]');if(r)location.hash=r.dataset.id});
@@ -994,14 +1002,17 @@ function salCard(id){
   const el=$('sCard'),it=LIST.find(x=>x[0]===id),a=srAll(),r=a.find(x=>x.id===id);
   if(!it){el.hidden=true;return}
   if(!r){el.innerHTML=`<div class="hd"><b>${it[1]}</b><span class="cd">${id}</span><span class="cd">${it[2]}・${indOf(it)}</span></div><div>沒有薪資資料（KY 公司不在揭露範圍，或該年度未申報）</div>`;el.hidden=false;return}
-  const all=a.slice().sort((x,y)=>y.med-x.med),ri=all.findIndex(x=>x.id===id)+1;
-  const ind=a.filter(x=>x.ind===r.ind).sort((x,y)=>y.med-x.med),ii=ind.findIndex(x=>x.id===id)+1;
-  const w=av(id,'welf');
+  el.dataset.id=id;
+  const v=srV(r);if(v==null){el.innerHTML=`<div class="hd"><b>${r.nm}</b><span class="cd">${id}</span></div><div>這家只有${MO_()}數，沒有${ML()}</div>`;el.hidden=false;return}
+  const all=a.filter(x=>srV(x)!=null).sort((x,y)=>srV(y)-srV(x)),ri=all.findIndex(x=>x.id===id)+1;
+  const ind=all.filter(x=>x.ind===r.ind),ii=ind.findIndex(x=>x.id===id)+1;
+  const g=gapOf(r),gAll=median(a.map(gapOf)),c=srC(r);
   el.innerHTML=`<div class="hd"><b>${r.nm}</b><span class="cd">${id}</span><span class="cd">${r.mk}・${r.ind}</span></div>
-    <div><span class="big">${fmt(r.med,1)} 萬</span>${r.chg!=null?` <span class="${sign(r.chg)}">${pct(r.chg)}</span>`:''} <span class="cd" style="color:var(--muted)">中位數（${salYr(id)} 年）</span></div>
-    <div class="row"><span>非主管平均 <strong>${salTxt(r.avg)}</strong></span>${w!=null?`<span>全體員工福利平均 <strong>${salTxt(w)}</strong></span>`:''}</div>
-    <div class="row"><span>全市場 第 <strong>${fmt(ri)}</strong>／${fmt(all.length)}，贏過 <strong>${srPct(all,r.med)}%</strong>（中位數 ${salTxt(srMed(all))}）</span></div>
-    <div class="row"><span>${r.ind} 第 <strong>${ii}</strong>／${ind.length}（產業中位數 ${salTxt(srMed(ind))}）</span></div>
+    <div><span class="big">${fmt(v,1)} 萬</span>${c!=null?` <span class="${sign(c)}">${pct(c)}</span>`:''} <span class="cd" style="color:var(--muted)">非主管${ML()}（${salYr(id)} 年）</span></div>
+    <div class="row"><span>非主管${MO_()}數 <strong>${salTxt(SR.metric==='avg'?r.med:r.avg)}</strong></span>${r.allAvg!=null?`<span>全體員工薪資平均 <strong>${salTxt(r.allAvg)}</strong></span>`:''}${r.welf!=null?`<span>全體員工福利平均 <strong>${salTxt(r.welf)}</strong></span>`:''}</div>
+    ${g!=null?`<div class="row"><span class="dtip" data-tip="平均數 ÷ 中位數：比值高＝少數人領很多（獎金集中在工程師、業務或高階），接近 1＝薪資平均分配；全市場中位 ${fmt(gAll,2)}">平均÷中位數 <strong>${fmt(g,2)}</strong>${g>=1.3?'（集中，少數人領很多）':g<=1.05?'（平均分配）':'（一般）'}</span></div>`:''}
+    <div class="row"><span>全市場 第 <strong>${fmt(ri)}</strong>／${fmt(all.length)}，贏過 <strong>${srPct(all,v)}%</strong>（全市場${SR.metric==='avg'?'平均數的中位數':'中位數'} ${salTxt(srMed(all))}）</span></div>
+    <div class="row"><span>${r.ind} 第 <strong>${ii}</strong>／${ind.length}（產業${SR.metric==='avg'?'平均數的中位數':'中位數'} ${salTxt(srMed(ind))}）</span></div>
     ${(()=>{const t=hcText(id,null);return t?`<div class="row"><span class="dtip" data-tip="${HC_TIP}">${t.replace(/<b>|<\/b>/g,'')}</span></div>`:''})()}
     <div class="acts"><a href="#${id}">看個股 →</a><a href="#s" data-ind="${r.ind}">看${r.ind}排行 →</a></div>`;
   el.hidden=false;
