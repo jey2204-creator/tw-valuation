@@ -260,6 +260,7 @@ details.ind.hot summary b{color:var(--up)}
   <div class="tgrid" id="tgrid"></div>
   <a class="srlink" id="srLink" href="#s" hidden><b>💰 員工薪資中位數排行</b><span id="srSub"></span></a>
   <details class="ind hot" id="hotBox" style="margin-top:14px"><summary><b>🔥 主力訊號</b><span id="hotN">主題＋自選</span></summary><div style="padding:0 10px 8px"><div class="tbl"><table class="lst" id="hotTbl"></table></div><p class="foot" id="hotFoot"></p></div></details>
+  <details class="ind" id="aiBox" style="margin-top:14px" hidden><summary><b>🤖 AI 成分還沒查的</b><span id="aiN"></span></summary><div style="padding:0 12px 10px;font-size:13px"><p class="foot" id="aiList" style="white-space:normal;line-height:1.7"></p><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button type="button" class="star" id="aiCopy">📋 複製清單</button><span class="foot" id="aiMsg"></span></div><p class="foot">把清單貼給 Claude，查完會更新 data/ai.json，重新整理就有標籤。只看自選與自訂主題（內建主題成份股都已查過）。</p></div></details>
   <details class="ind" id="indAll" style="margin-top:22px"><summary><b>🏭 官方產業別</b><span>點開瀏覽全部上市櫃</span></summary><div id="indBox" style="padding:0 8px 8px"></div></details>
   <p class="note">點「✏️ 編輯」可新增主題、增減成份股、調整順序（存在這支手機上）。數字為證交所／櫃買每日資料，本益比空白＝虧損或不適用。</p>
 </section>
@@ -1321,13 +1322,19 @@ function table(el,items,sortKey,mode){
     else el.dataset.sort=cur[0]===nk?(cur[1]==='-1'?nk+':1':''):nk+':-1';table(el,items,undefined,mode);return}
     const r=e.target.closest('tr[data-id]');if(r)location.hash=r.dataset.id};
 }
+function aiPending(fav){const el=$('aiBox');if(!AI){el.hidden=true;return}
+  const cfg=store.get('themeCfg')||{},mine=(cfg.themes||[]).flatMap(t=>(t.stocks||[]).map(x=>x[0]));   // 自訂＋改過的內建主題（存在手機）＋自選
+  const ids=[...new Set([...fav,...mine])].filter(id=>!ai(id)).sort();
+  if(!ids.length){el.hidden=true;return}
+  $('aiN').textContent=`${ids.length} 檔`;$('aiList').textContent=ids.map(id=>`${id} ${nameOf(id)}`).join('、');el.hidden=false;
+  $('aiCopy').onclick=async()=>{const t=ids.map(id=>`${id} ${nameOf(id)}`).join('、');try{await navigator.clipboard.writeText(t);$('aiMsg').textContent='已複製，貼給 Claude 就好'}catch(e){$('aiMsg').textContent='複製失敗，請長按上面文字選取'}}}
 function renderHome(){
   RANK=null;srHome();
   modeQ();$('sumAsof').textContent=S?`收盤 ${S.pxAsof?S.pxAsof.slice(4,6)+'/'+S.pxAsof.slice(6):S.updated.slice(5,10).replace('-','/')}・營收 ${S.revYM?+S.revYM.slice(5)+'月':'—'}${QN?'・EPS '+QN:''}`:'數字待 Actions 產生';
   const fav=store.get('fav')||[];$('favEdit').hidden=!fav.length;
   $('favBox').innerHTML=fav.length?'<div class="panel"><div class="tbl"><table class="lst" id="favTbl"></table></div></div>':'<p class="dtip">在個股頁點「☆ 加入自選」，就會出現在這裡。</p>';
   if(fav.length)table($('favTbl'),fav.map(id=>[id,'']));
-  paintSeg();
+  paintSeg();aiPending(fav);
   {const pool=[...new Set([...THEMES.flatMap(t=>t.stocks.map(x=>x[0])),...fav])],hot=pool.filter(id=>mv(id,'fire'));
    $('hotN').textContent=MO?`主題＋自選 ${pool.length} 檔中 ${hot.length} 檔`:'資料準備中';
    const ht=$('hotTbl');ht.dataset.sort=ht.dataset.sort||'m_m:-1';table(ht,hot.map(id=>[id,(THEMES.find(t=>t.stocks.some(x=>x[0]===id))||{name:'⭐ 自選'}).name]),undefined,'m');
