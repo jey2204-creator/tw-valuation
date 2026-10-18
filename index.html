@@ -155,6 +155,12 @@ details.ind .tbl{padding:0 10px 6px;margin-top:0}
 #pnav button:not(:disabled):active{transform:scale(.97)}
 #pnav .mid{flex:none;text-align:center;font:inherit;font-size:11.5px;color:var(--muted);line-height:1.3;min-width:62px;height:44px;background:none;border:0;padding:0 4px;cursor:pointer;-webkit-tap-highlight-color:transparent}
 #pnav .mid b{display:block;font-family:var(--f-num);font-size:13px;color:var(--fg)}
+#pnav button.bk{flex:none;width:44px;padding:0;justify-content:center;font-size:20px;line-height:1}
+#pnav.solo .pv,#pnav.solo .mid,#pnav.solo .nx{display:none}
+#pnav.solo button.bk{width:auto;flex:none;padding:0 14px;font-size:14px;gap:6px}
+#pnav.solo .in{justify-content:flex-start}
+@keyframes bkFlash{0%,40%{background:color-mix(in srgb,var(--accent) 22%,transparent)}100%{background:transparent}}
+tr.bkflash>td{animation:bkFlash 1.8s ease-out}
 body[data-view=stock].pn .wrap{padding-bottom:calc(84px + env(safe-area-inset-bottom))}
  #pnav .mid b{display:block}
 #pnSheet{position:fixed;inset:0;z-index:30;display:flex;flex-direction:column;justify-content:flex-end;background:rgba(0,0,0,.35);opacity:0;transition:opacity .18s}
@@ -440,7 +446,7 @@ details.ind.hot summary b{color:var(--up)}
 <p class="note" id="note"></p>
 </div>
 <div id="pnSheet" hidden role="dialog" aria-modal="true" aria-label="同主題股票"><div class="sh"><div class="grab"></div><div class="hd"><a id="pnBack" href="#"></a><button type="button" id="pnClose">關閉</button></div><ol id="pnList"></ol></div></div>
-<nav id="pnav" aria-label="同主題切換" hidden><div class="in"><button type="button" class="pv" id="pnPrev"></button><button type="button" class="mid" id="pnMid" aria-haspopup="dialog"></button><button type="button" class="nx" id="pnNext"></button></div></nav>
+<nav id="pnav" aria-label="同主題切換" hidden><div class="in"><button type="button" class="bk" id="pnBk" aria-label="回上一頁"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button><button type="button" class="pv" id="pnPrev"></button><button type="button" class="mid" id="pnMid" aria-haspopup="dialog"></button><button type="button" class="nx" id="pnNext"></button></div></nav>
 
 <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
@@ -981,7 +987,7 @@ let PN=null,KEEP=null;
 function pnPaint(id,t){
   const ids=t?t.stocks.map(x=>x[0]):[],i=ids.indexOf(id);
   PN=t&&i>=0&&ids.length>1?{ids,i}:null;
-  $('pnav').hidden=!PN;document.body.classList.toggle('pn',!!PN);if(!PN)return;
+  $('pnav').hidden=false;document.body.classList.add('pn');$('pnav').classList.toggle('solo',!PN);bkPaint();if(!PN)return;
   const pv=ids[i-1],nx=ids[i+1];
   $('pnPrev').disabled=!pv;$('pnPrev').innerHTML=pv?`‹ <span>${esc(nameOf(pv))}</span>`:'‹ <span>第一檔</span>';
   $('pnNext').disabled=!nx;$('pnNext').innerHTML=nx?`<span>${esc(nameOf(nx))}</span> ›`:'<span>最後一檔</span> ›';
@@ -993,7 +999,7 @@ function curSec(){const nb=document.querySelector('nav.chips').getBoundingClient
   document.querySelectorAll('section.card').forEach(s=>{if(s.offsetParent&&s.getBoundingClientRect().top<=lim)cur=s.id});return cur}
 function goSec(sec){const s=$(sec);if(!s||!s.offsetParent){scrollTo(0,0);return}
   const nb=document.querySelector('nav.chips').offsetHeight;scrollTo(0,s.getBoundingClientRect().top+scrollY-nb-6)}
-function pnGo(d){if(!PN)return;const id=PN.ids[PN.i+d];if(!id)return;KEEP=curSec();location.hash=id}
+function pnGo(d){if(!PN)return;const id=PN.ids[PN.i+d];if(!id)return;KEEP=curSec();swapTo(id)}
 // 中間「n/N ▴」→ 底部清單，點任一檔直接跳過去（同樣停在目前的圖表區塊）
 let SHEET_SEC=null;
 function pnOpen(){if(!PN)return;SHEET_SEC=curSec();const t=PN.t;
@@ -1004,13 +1010,40 @@ function pnOpen(){if(!PN)return;SHEET_SEC=curSec();const t=PN.t;
 function pnShut(){const sh=$('pnSheet');if(sh.hidden)return;sh.classList.remove('on');document.body.classList.remove('sheet');setTimeout(()=>sh.hidden=true,180)}
 $('pnMid').addEventListener('click',pnOpen);$('pnClose').addEventListener('click',pnShut);
 $('pnSheet').addEventListener('click',e=>{if(e.target===$('pnSheet')){pnShut();return}
-  const b=e.target.closest('button[data-id]');if(b){const id=b.dataset.id;pnShut();if(id!==(PN&&PN.ids[PN.i])){KEEP=SHEET_SEC;location.hash=id}return}
+  const b=e.target.closest('button[data-id]');if(b){const id=b.dataset.id;pnShut();if(id!==(PN&&PN.ids[PN.i])){KEEP=SHEET_SEC;swapTo(id)}return}
   if(e.target.closest('#pnBack'))pnShut()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')pnShut()});
 {let y0=null;const g=$('pnSheet').querySelector('.sh');
  g.addEventListener('touchstart',e=>{const ol=$('pnList');y0=ol.scrollTop<=0||!ol.contains(e.target)?e.touches[0].clientY:null},{passive:true});
  g.addEventListener('touchmove',e=>{if(y0==null)return;const dy=e.touches[0].clientY-y0;if(dy>0)g.style.transform=`translateY(${dy}px)`},{passive:true});
  g.addEventListener('touchend',e=>{if(y0==null)return;const dy=e.changedTouches[0].clientY-y0;g.style.transform='';y0=null;if(dy>70)pnShut()})}
+// ---------- ↩ 回到來源頁：進個股前的那一頁（主題／自選／排行／首頁），換過幾檔都回同一頁 ----------
+// 個股之間切換一律 location.replace（不新增瀏覽紀錄），所以「來源頁」永遠就在上一筆紀錄
+let ORIGIN=null,VPREV=null,HPREV=null;const BK_SVG='<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>';
+try{ORIGIN=JSON.parse(sessionStorage.getItem('origin')||'null')}catch(e){}
+const isStk=h=>/^\d{4,6}[A-Z]?$/.test(h);
+function swapTo(id){const u=location.href.split('#')[0]+'#'+id;location.replace(u)}
+function bkLabel(h){if(!h||h==='home')return '首頁';if(h==='f')return '編輯自選';if(h==='s')return '薪資排行';
+  if(h.startsWith('t/')){const t=THEMES.find(x=>x.id===h.slice(2));return t?t.name:'主題'}if(h==='e'||h.startsWith('e/'))return '編輯主題';return '上一頁'}
+function bkFallback(){const id=D&&D.id||decodeURIComponent(location.hash.slice(1));let last='';try{last=sessionStorage.getItem('lastTheme')||''}catch(e){}
+  const mine=THEMES.filter(t=>t.stocks.some(x=>x[0]===id)),t=mine.find(x=>x.id===last)||mine[0];return t?'t/'+t.id:''}
+function bkPaint(){const h=ORIGIN?ORIGIN.h:bkFallback(),lb=bkLabel(h);$('pnBk').setAttribute('aria-label','回到 '+lb);$('pnBk').title='回到 '+lb;
+  $('pnBk').innerHTML=$('pnav').classList.contains('solo')?`${BK_SVG} <span>${esc(lb)}</span>`:BK_SVG}
+$('pnBk').addEventListener('click',()=>{pnShut();if(ORIGIN&&ORIGIN.push){history.back();return}
+  const h=bkFallback();if(ORIGIN)ORIGIN.y=0;location.hash=h||''});
+// 從來源頁點進個股：記住來源頁與捲動位置
+function bkTrack(h){
+  if(isStk(h)&&VPREV&&VPREV!=='stock'&&HPREV!=null&&!isStk(HPREV)){ORIGIN={h:HPREV,y:scrollY,push:1,id:h};try{sessionStorage.setItem('origin',JSON.stringify(ORIGIN))}catch(e){}}
+  else if(isStk(h)&&ORIGIN)ORIGIN.id=h}
+// 回到來源頁：捲回原本位置，並把剛看的那檔反白
+function bkRestore(h){if(VPREV!=='stock'||!ORIGIN||h!==ORIGIN.h)return;const y=ORIGIN.y||0,id=ORIGIN.id;
+  const go=()=>{scrollTo(0,y);if(id)document.querySelectorAll(`tr[data-id="${id}"]`).forEach(r=>{if(!r.offsetParent)return;r.classList.remove('bkflash');void r.offsetWidth;r.classList.add('bkflash')})};
+  requestAnimationFrame(go);setTimeout(()=>{if(Math.abs(scrollY-y)>40&&scrollY<40)scrollTo(0,y)},300)}
+// 個股頁上的其他個股連結（同業、AI 等）也改成取代，不新增紀錄
+document.addEventListener('click',e=>{if(document.body.dataset.view!=='stock')return;const a=e.target.closest('a[href^="#"]');if(!a)return;
+  const h=decodeURIComponent(a.getAttribute('href').slice(1));if(!isStk(h)||e.metaKey||e.ctrlKey)return;e.preventDefault();if(h!==(D&&D.id))swapTo(h)},true);
+// 圖表捷徑（營收、籌碼…）只捲動到該圖，不改網址、不新增瀏覽紀錄，↩ 才會一律回來源頁
+document.querySelector('nav.chips').addEventListener('click',e=>{const a=e.target.closest('a[href^="#"]');if(!a)return;e.preventDefault();goSec(a.getAttribute('href').slice(1))});
 $('pnPrev').addEventListener('click',()=>pnGo(-1));$('pnNext').addEventListener('click',()=>pnGo(1));
 // ---------- 搜尋 ----------
 function row(s){return `<button type="button" data-id="${s[0]}"><span class="rid">${s[0]}</span><span>${s[1]}</span><span class="rmeta">${s[2]||''}${s[3]?'・'+s[3]:''}</span></button>`}
@@ -1027,7 +1060,7 @@ function showRes(q,box){
   }
   box.innerHTML=html;box.hidden=!html;
 }
-function go(id){document.querySelectorAll('.results').forEach(b=>b.hidden=true);document.querySelectorAll('.search input').forEach(i=>{i.value='';i.blur()});if(location.hash.slice(1)!==id)location.hash=id;else route()}
+function go(id){document.querySelectorAll('.results').forEach(b=>b.hidden=true);document.querySelectorAll('.search input').forEach(i=>{i.value='';i.blur()});if(location.hash.slice(1)!==id){if(document.body.dataset.view==='stock'&&isStk(id))swapTo(id);else location.hash=id}else route()}
 function bindSearch(qid,rid){const q=$(qid),box=$(rid);
   q.addEventListener('focus',()=>showRes(q,box));
   q.addEventListener('input',()=>showRes(q,box));
@@ -1321,7 +1354,7 @@ function stockExtras(id){
 }
 $('fav').addEventListener('click',()=>{const id=D&&D.id;if(!id)return;let f=store.get('fav')||[];if(f.includes(id))f=f.filter(x=>x!==id);else if(f.length>=30){$('fav').textContent='自選已滿 30 檔';setTimeout(()=>stockExtras(id),2500);return}else f=[...f,id];store.set('fav',f);stockExtras(id)});
 function route(){
-  const h=decodeURIComponent(location.hash.slice(1));
+  const h=decodeURIComponent(location.hash.slice(1));bkTrack(h);
   const show=v=>{pnShut();if(v!=='stock'){$('pnav').hidden=true;document.body.classList.remove('pn')}document.body.dataset.view=v;['home','theme','tlist','tedit','flist','srank'].forEach(k=>$(k).hidden=v!==k)};
   if(/^\d{4,6}[A-Z]?$/.test(h)){show('stock');stockExtras(h);const k=KEEP;KEEP=null;if(!D||D.id!==h){if(!k)scrollTo(0,0);load(h).then(()=>{if(k)requestAnimationFrame(()=>goSec(k))})}else{setTimeout(()=>Object.values(charts).forEach(c=>c.resize()),0);k?goSec(k):scrollTo(0,0)}}
   else if(h==='f'){show('flist');document.title='編輯自選';renderFav();scrollTo(0,0)}
@@ -1330,6 +1363,7 @@ function route(){
   else if(h.startsWith('e/')){show('tedit');openEditor(h.slice(2));scrollTo(0,0)}
   else if(h.startsWith('t/')){show('theme');showTheme(h.slice(2));scrollTo(0,0)}
   else if(!h||h==='home'){show('home');document.title='台股估值看板';renderHome();scrollTo(0,0)}
+  bkRestore(h);VPREV=document.body.dataset.view;HPREV=h;
 }
 
 // ---------- 自訂主題（存在這支手機的 localStorage） ----------
