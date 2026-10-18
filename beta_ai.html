@@ -1325,8 +1325,9 @@ function table(el,items,sortKey,mode){
 function aiPending(fav){const el=$('aiBox');if(!AI){el.hidden=true;return}
   let mine=[];try{mine=Object.values((store.get('themeCfg')||{}).themes||{}).flatMap(t=>(t.stocks||[]).map(x=>x[0]))}catch(e){}   // themeCfg.themes 是 {id:主題} 物件：自訂＋改過的內建主題（存在手機）＋自選
   const ids=[...new Set([...fav,...mine])].filter(id=>!ai(id)).sort();
-  if(!ids.length){el.hidden=true;return}
-  $('aiN').textContent=`${ids.length} 檔`;$('aiList').textContent=ids.map(id=>`${id} ${nameOf(id)}`).join('、');el.hidden=false;
+  el.hidden=false;$('aiMsg').textContent='';
+  if(!ids.length){$('aiN').textContent='自選＋自訂主題都查過了 ✓';$('aiList').textContent='這支裝置的自選與自訂主題裡沒有還沒查的股票。之後新增股票，沒查過的會列在這裡。';$('aiCopy').hidden=true;return}
+  $('aiCopy').hidden=false;$('aiN').textContent=`${ids.length} 檔`;$('aiList').textContent=ids.map(id=>`${id} ${nameOf(id)}`).join('、');
   $('aiCopy').onclick=async()=>{const t=ids.map(id=>`${id} ${nameOf(id)}`).join('、');try{await navigator.clipboard.writeText(t);$('aiMsg').textContent='已複製，貼給 Claude 就好'}catch(e){$('aiMsg').textContent='複製失敗，請長按上面文字選取'}}}
 function renderHome(){
   RANK=null;srHome();
