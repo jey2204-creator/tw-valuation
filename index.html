@@ -18,7 +18,7 @@
 :root{
   --bg:#f3f4f6; --card:#ffffff; --fg:#151a23; --muted:#5d6675; --line:#e2e5ea; --grid:#eceef2;
   --accent:#1f5fbf; --accent2:#0e8f86; --warm:#c46a12;
-  --up:#d32f2f; --down:#138a4b;
+  --up:#d32f2f; --down:#138a4b; --ai1:#8a6d0b;
   --b1:#dbe9f7; --b2:#c3dcf0; --b3:#e6ecd2; --b4:#f6e1bd; --b5:#f3c7b3;
   --price:#151a23; --est:#9db8e3;
   --f-body:"Noto Sans TC",system-ui,-apple-system,"PingFang TC",sans-serif;
@@ -26,12 +26,12 @@
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --bg:#0e1117; --card:#171b23; --fg:#e8ebf0; --muted:#97a0ae; --line:#272d38; --grid:#232833;
-  --accent:#6aa1ff; --accent2:#3cc7b9; --warm:#f0a04b; --up:#ff5b5b; --down:#35c27a;
+  --accent:#6aa1ff; --accent2:#3cc7b9; --warm:#f0a04b; --up:#ff5b5b; --down:#35c27a; --ai1:#d8b64a;
   --b1:#1b2b40; --b2:#20374f; --b3:#2d3a28; --b4:#463821; --b5:#4d2b24;
   --price:#f4f6fa; --est:#3b5687; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#0e1117; --card:#171b23; --fg:#e8ebf0; --muted:#97a0ae; --line:#272d38; --grid:#232833;
-  --accent:#6aa1ff; --accent2:#3cc7b9; --warm:#f0a04b; --up:#ff5b5b; --down:#35c27a;
+  --accent:#6aa1ff; --accent2:#3cc7b9; --warm:#f0a04b; --up:#ff5b5b; --down:#35c27a; --ai1:#d8b64a;
   --b1:#1b2b40; --b2:#20374f; --b3:#2d3a28; --b4:#463821; --b5:#4d2b24;
   --price:#f4f6fa; --est:#3b5687; color-scheme:dark}
 *{box-sizing:border-box}
@@ -92,7 +92,7 @@ tr.e td{color:var(--accent)}
 #pegNote{margin-top:6px;line-height:1.5}
 .srlink{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:8px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;color:var(--fg);text-decoration:none}.srlink b{font-size:14px}.srlink span{font-size:12px;color:var(--muted);text-align:right}
 .scard{margin-top:10px;padding:10px 12px;font-size:13px;line-height:1.55}.scard .hd{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}.scard .hd b{font-size:16px}.scard .hd .cd{font-family:var(--f-num);color:var(--muted)}.scard .big{font-family:var(--f-num);font-size:20px;font-weight:700}.scard .row{display:flex;flex-wrap:wrap;gap:4px 14px;color:var(--muted)}.scard .row strong{color:var(--fg)}.scard .acts{display:flex;gap:8px;margin-top:8px}.scard .acts a{font-size:12.5px;color:var(--accent);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:3px 10px}
-#srank .mrow{flex-wrap:wrap;margin-top:10px}#srank .lst td:first-child{font-family:var(--f-num);color:var(--muted);font-size:12px;white-space:nowrap}#srank .lst td.co{font-family:var(--f-body);color:var(--fg);white-space:normal}#srank .lst td.co .nm{font-size:13.5px}#srank .lst th:nth-child(2),#srank .lst td:nth-child(2){text-align:left}#srank .lst .ind{font-size:11px;color:var(--muted);display:block}#sMore{width:100%;margin:6px 0 2px}.sback{font-size:12.5px;color:var(--accent);text-decoration:none;margin-left:8px}.lst .cap.sal{font-size:10.5px}.meta.sal b{color:var(--fg);font-family:var(--f-num);font-size:13px}
+#srank .mrow{flex-wrap:wrap;margin-top:10px}#srank .lst td:first-child{font-family:var(--f-num);color:var(--muted);font-size:12px;white-space:nowrap}#srank .lst td.co{font-family:var(--f-body);color:var(--fg);white-space:normal}#srank .lst td.co .nm{font-size:13.5px}#srank .lst th:nth-child(2),#srank .lst td:nth-child(2){text-align:left}#srank .lst .ind{font-size:11px;color:var(--muted);display:block}#sMore{width:100%;margin:6px 0 2px}.sback{font-size:12.5px;color:var(--accent);text-decoration:none;margin-left:8px}.lst .cap.sal{font-size:10.5px}.ail3{color:var(--up)!important;border-color:var(--up)!important}.ail2{color:var(--warm)!important;border-color:var(--warm)!important}.ail1{color:var(--ai1)!important;border-color:var(--ai1)!important}.ail0{color:var(--muted)!important;border-color:var(--muted)!important}.lst .cap.ai{font-size:10.5px;display:flex;align-items:center;gap:1px 3px;margin-top:1px;flex-wrap:wrap}.lst .cap.ai .flag{margin-left:0;font-family:var(--f-body)}.lst .cap.ai .sm{font-family:var(--f-body)}.meta.ai{margin-top:4px}.meta.ai b{color:var(--fg);font-family:var(--f-num);font-size:13px}.meta.ai .flag{font-size:11px;padding:0 5px;vertical-align:0;margin-left:0}.meta.ai a{color:var(--accent);text-decoration:none}.meta.ai .old{color:var(--warm)}.meta.sal b{color:var(--fg);font-family:var(--f-num);font-size:13px}
 .live{font-size:11px;border:1px solid var(--line);border-radius:999px;padding:0 7px;color:var(--muted)}
 .dim .chart{opacity:.35;transition:opacity .2s}
 .err{color:var(--up);font-size:13px}
@@ -260,6 +260,7 @@ details.ind.hot summary b{color:var(--up)}
   <div class="tgrid" id="tgrid"></div>
   <a class="srlink" id="srLink" href="#s" hidden><b>💰 員工薪資中位數排行</b><span id="srSub"></span></a>
   <details class="ind hot" id="hotBox" style="margin-top:14px"><summary><b>🔥 主力訊號</b><span id="hotN">主題＋自選</span></summary><div style="padding:0 10px 8px"><div class="tbl"><table class="lst" id="hotTbl"></table></div><p class="foot" id="hotFoot"></p></div></details>
+  <details class="ind" id="aiBox" style="margin-top:14px" hidden><summary><b>🤖 AI 成分還沒查的</b><span id="aiN"></span></summary><div style="padding:0 12px 10px;font-size:13px"><p class="foot" id="aiList" style="white-space:normal;line-height:1.7"></p><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button type="button" class="star" id="aiCopy">📋 複製清單</button><span class="foot" id="aiMsg"></span></div><p class="foot">把清單貼給 Claude，查完會更新 data/ai.json，重新整理就有標籤。只看自選與自訂主題（內建主題成份股都已查過）。</p></div></details>
   <details class="ind" id="indAll" style="margin-top:22px"><summary><b>🏭 官方產業別</b><span>點開瀏覽全部上市櫃</span></summary><div id="indBox" style="padding:0 8px 8px"></div></details>
   <p class="note">點「✏️ 編輯」可新增主題、增減成份股、調整順序（存在這支手機上）。數字為證交所／櫃買每日資料，本益比空白＝虧損或不適用。</p>
 </section>
@@ -333,6 +334,7 @@ details.ind.hot summary b{color:var(--up)}
   </div>
   <div class="meta" id="meta"></div>
   <div class="meta sal" id="sal" hidden></div>
+  <div class="meta ai" id="aiL" hidden></div>
   <div class="peers" id="peers"></div>
   <div class="qrow" style="justify-content:space-between">
     <span class="foot" id="asof">載入中…</span><span class="chg" id="chg"></span>
@@ -971,7 +973,7 @@ async function load(id){
     const it=LIST.find(s=>s[0]===id);
     $('nm').textContent=D.name||(it&&it[1])||id;
     $('meta').innerHTML=(it?`${it[2]}・${it[3]}`:'')+(D.live?' <span class="live">即時查詢</span>':' <span class="live">追蹤清單</span>');
-    salLine(id);
+    salLine(id);aiLine(id);
     document.title=`${D.id} ${$('nm').textContent} 估值看板`;
     header();render();
     try{const L=Q[Q.length-1],m=L[0].match(/^(\d\d)Q(\d)$/);if(m&&L[5]!=null){const P=Q.find(x=>x[0]===`${String(+m[1]-1).padStart(2,'0')}Q${m[2]}`),pv=P?P[5]:null;
@@ -1103,6 +1105,28 @@ function salLine(id){
   el.innerHTML=`<span class="dtip" data-tip="${tip}">💰 ${y} 年員工薪資中位數</span> <b>${salTxt(m)}</b>${ch!=null?` <span class="${sign(ch)}">${pct(ch)}</span>`:''}${a!=null?`・平均 <b>${salTxt(a)}</b>`:''}${rk}`;
   {const ms=V?V.filter(x=>x[0].startsWith(String(y))):[],revY=ms.length===12?sum(ms.map(x=>x[1])):null,t=hcText(id,revY);
    if(t)el.innerHTML+=`<br><span class="dtip" data-tip="${HC_TIP}">${t}</span>`}
+  el.hidden=false;
+}
+// ---- AI 成分（ai.json，手動維護，每季法說後更新）：d[代號] = {lv 3高/2中/1低/0無, pct [單一] 或 [低,高], base 口徑, kind co/media/est/none, what, src, url, asof 年-月, prev, note} ----
+let AI=null;const AIL=['無','低','中','高'],AIK={co:'公司公布',media:'媒體／法人推估',est:'Claude 依事業結構推估',none:'公司無任何揭露'};
+const ai=id=>AI&&AI.d&&AI.d[id]||null;
+const aiPct=a=>{if(!a||!a.pct)return '';const f=v=>fmt(v,v%1?1:0);return (a.pct.length>1?`${f(a.pct[0])}～${f(a.pct[1])}`:f(a.pct[0]))+'%'};
+const aiMid=a=>a&&a.pct?(a.pct.length>1?(a.pct[0]+a.pct[1])/2:a.pct[0]):null;
+const aiScore=id=>{const a=ai(id);return a?a.lv*1000+(aiMid(a)||0):null};   // 排序：分級優先，再看占比
+const aiOld=a=>{if(!a||!a.asof)return false;const [y,m]=a.asof.split('-').map(Number),d=new Date();return (d.getFullYear()-y)*12+(d.getMonth()+1-m)>12};   // 數字超過 12 個月＝舊
+const aiBadge=a=>`<span class="flag ail${a.lv}">AI ${AIL[a.lv]}</span>`;
+const aiTip=a=>`${a.base}${a.pct?' '+aiPct(a):''}（${AIK[a.kind]||a.kind}，${a.src}）。${a.what}。${a.note}`;
+const aiCell=(id,brief)=>{const a=ai(id);if(!a)return '';const p=aiPct(a);   // 名稱欄小字：分級標籤＋占比；沒數字就標推估／無揭露；動能模式欄位窄，只放標籤
+  return `<span class="cap ai"><span class="flag ail${a.lv}" data-tip="${esc(aiTip(a))}">AI ${AIL[a.lv]}</span>${brief?'':p?`<span>${a.kind==='co'?'':'~'}${p}</span>`:`<span class="sm">${a.kind==='none'?'無揭露':'推估'}</span>`}</span>`};
+function aiLine(id){
+  const el=$('aiL'),a=ai(id);if(!a){el.hidden=true;el.innerHTML='';return}
+  let rk='';const mine=THEMES.filter(t=>t.stocks.some(x=>x[0]===id));
+  if(mine.length){let last='';try{last=sessionStorage.getItem('lastTheme')||''}catch(e){}const t=mine.find(x=>x.id===last)||mine[0];
+    const ids=t.stocks.map(x=>x[0]).filter(i=>aiScore(i)!=null),me=aiScore(id);   // 名次＝比自己高的檔數＋1；同分標「並列」
+    if(ids.length>1&&me!=null){const hi=ids.filter(i=>aiScore(i)>me).length,tie=ids.filter(i=>aiScore(i)===me).length>1;rk=`・主題內${tie?'並列':''}第 <b>${hi+1}</b>／${ids.length}`}}
+  const p=aiPct(a),old=aiOld(a);
+  const tip=`${AIK[a.kind]||a.kind}；來源：${a.src}；數字時間 ${a.asof||'—'}${old?'（超過一年，可能已變）':''}。${a.what}。${a.note}${a.prev?`。一年前約 ${fmt(a.prev[0],a.prev[0]%1?1:0)}%（${a.prev[1]}）`:''}`;
+  el.innerHTML=`<span class="dtip" data-tip="${esc(tip)}">🤖 AI 成分</span> ${aiBadge(a)} <span class="dtip" data-tip="${esc(tip)}">${esc(a.base)}</span>${p?` <b>${p}</b>`:a.kind==='none'?' <b>—</b>':' <b>推估</b>'}${a.prev?`（一年前 ${fmt(a.prev[0],a.prev[0]%1?1:0)}%）`:''}${old?` <span class="old">舊 ${a.asof}</span>`:''}${rk}${a.url?` <a href="${esc(a.url)}" target="_blank" rel="noopener">來源 ↗</a>`:''}`;
   el.hidden=false;
 }
 // ---------- 薪資排行頁（#s）：全市場 salary.json ＋ list.json（產業）＋ summary.json（本益比、市值）----------
@@ -1250,8 +1274,9 @@ function epsCell(id){
   const l2=(g!=null?`<span class="${gc}">PEG ${fmt(g,g<10?2:1)}</span>`:lb)+qs+nb;
   return `<span class="sub ${cl}">${t}</span>`+(l2?`<span class="sub">${l2}</span>`:'');
 }
-const SORTV={pe:id=>sv(id,'pe'),eps:epsY,peg:peg,px:id=>sv(id,'chg'),cap:cap,sal:id=>av(id,'med')};
-const CAP_CYCLE=['cap:-1','sal:-1',''],CAP_LABEL={cap:'市值',sal:'薪資中位數'};   // 估值模式「股票」標題連點：市值 → 薪資中位數 → 預設
+const SORTV={pe:id=>sv(id,'pe'),eps:epsY,peg:peg,px:id=>sv(id,'chg'),cap:cap,sal:id=>av(id,'med'),ai:aiScore};
+const CAP_CYCLE=['cap:-1','sal:-1','ai:-1',''],CAP_LABEL={cap:'市值',sal:'薪資中位數',ai:'AI 成分'};   // 估值模式「股票」標題連點：市值 → 薪資中位數 → AI 成分 → 預設（沒有的資料會跳過）
+const capCycle=()=>CAP_CYCLE.filter(k=>k!=='sal:-1'||SA).filter(k=>k!=='ai:-1'||AI);
 ['w','m','q','vr','t5','f5','tS'].forEach(k=>SORTV['m_'+k]=id=>mv(id,k));
 SORTV.m_b4w=id=>tv(id,'b4w');SORTV.m_b4m=id=>tv(id,'b4m');SORTV.m_pplm=id=>{const v=tv(id,'pplm');return v==null?null:-v};
 const VR_CYCLE=['m_vr:-1','m_t5:-1','m_f5:-1','m_tS:-1','m_b4w:-1','m_b4m:-1','m_pplm:-1',''];
@@ -1271,7 +1296,7 @@ function mCells(id,role){
     else bd=head+'</span>'+`<span class="sub"><span class="sm">週</span><span class="${sign(b4w)}">${b4w==null?'—':pp(b4w,1)}</span> <span class="sm">4週</span><span class="${sign(b4m)}">${b4m==null?'—':pp(b4m,1)}</span></span>`;
     bd+=ppl+(fl?`<span class="sub">${fl}</span>`:'');
   }
-  return `<td><span class="nm">${nameOf(id)}</span>${crown(id)}<span class="cd">${id}</span>${fire?'<span class="fire" title="主力訊號：月漲、量比≥1.5、法人5日買超">🔥</span>':''}${up?'<span class="flag" style="color:var(--up);border-color:var(--up)" data-tip="集中↑：🔥 主力訊號，而且籌碼集中（大戶 4 週增加、股東人數減少）">集中↑</span>':''}${role?`<div class="role">${role}</div>`:''}<span class="sub">${fmt(c,c!=null&&c<100?2:c!=null&&c<1000?1:0)} <span class="${sign(ch)}">${pct(ch,2)}</span></span></td>`
+  return `<td><span class="nm">${nameOf(id)}</span>${crown(id)}<span class="cd">${id}</span>${fire?'<span class="fire" title="主力訊號：月漲、量比≥1.5、法人5日買超">🔥</span>':''}${up?'<span class="flag" style="color:var(--up);border-color:var(--up)" data-tip="集中↑：🔥 主力訊號，而且籌碼集中（大戶 4 週增加、股東人數減少）">集中↑</span>':''}${aiCell(id,1)}${role?`<div class="role">${role}</div>`:''}<span class="sub">${fmt(c,c!=null&&c<100?2:c!=null&&c<1000?1:0)} <span class="${sign(ch)}">${pct(ch,2)}</span></span></td>`
     +p('w')+p('m')+p('q')
     +`<td><span class="${vr!=null&&vr>=1.5?'up':''}">${vr==null?'—':fmt(vr,2)}</span><span class="sub">${tip('投','投信近 5 個交易日買賣超（張）')}<span class="sm">5日</span> <span class="${sign(t5)}">${lots(t5)}</span></span><span class="sub">${tip('外','外資（不含自營）近 5 個交易日買賣超（張）')}<span class="sm">5日</span> <span class="${sign(f5)}">${lots(f5)}</span></span>${bd}${tS>=3?`<span class="sub up">投連${tS}天</span>`:''}</td>`;
 }
@@ -1286,30 +1311,37 @@ function table(el,items,sortKey,mode){
   if(md==='m')el.innerHTML=`<thead><tr>${th('cap','股票')}${th('m_w','週')}${th('m_m','月')}${th('m_q','季')}${th('m_vr','量比')}</tr></thead><tbody>`+rows.map(([id,role])=>`<tr data-id="${id}">${mCells(id,role)}</tr>`).join('')+'</tbody>';
   else el.innerHTML=`<thead><tr>${th('cap','股票')}${th('px','收盤')}${COLS.map(c=>th(...c)).join('')}</tr></thead><tbody>`+rows.map(([id,role])=>{
     const c=sv(id,'close'),ch=sv(id,'chg'),y=sv(id,'yoy'),ym=sv(id,'ym');
-    return `<tr data-id="${id}"><td><span class="nm">${nameOf(id)}</span>${crown(id)}<span class="cd">${id}</span>${capLine(id)}${salCell(id)}${role?`<div class="role">${role}</div>`:''}</td>
+    return `<tr data-id="${id}"><td><span class="nm">${nameOf(id)}</span>${crown(id)}<span class="cd">${id}</span>${capLine(id)}${salCell(id)}${aiCell(id)}${role?`<div class="role">${role}</div>`:''}</td>
       <td>${fmt(c,c!=null&&c<100?2:c!=null&&c<1000?1:0)}<span class="sub ${sign(ch)}">${pct(ch,2)}</span></td>
       <td>${fmt(sv(id,'pe'),1)}${epsCell(id)}</td><td>${fmt(sv(id,'pb'),2)}<span class="sub">殖 ${sv(id,'yld')==null?'—':fmt(sv(id,'yld'),1)+'%'}</span></td>
       <td class="${sign(y)}">${pct(y)}<span class="sub" ${ym&&S.revYM&&ym<S.revYM?'style="color:var(--warm)" title="尚未公布最新月份"':''}>${ym?(+ym.slice(5))+'月':''}</span></td></tr>`}).join('')+'</tbody>';
   el.onclick=e=>{const h=e.target.closest('th[data-k]');if(h){const nk=h.dataset.k,cs=el.dataset.sort||'',cur=cs.split(':');
     if(nk==='pe'){const i=PE_CYCLE.indexOf(cs);el.dataset.sort=PE_CYCLE[i<0?0:(i+1)%PE_CYCLE.length]}
     else if(nk==='m_vr'){const i=VR_CYCLE.indexOf(cs);el.dataset.sort=VR_CYCLE[i<0?0:(i+1)%VR_CYCLE.length]}
-    else if(nk==='cap'&&md==='v'&&SA){const i=CAP_CYCLE.indexOf(cs);el.dataset.sort=CAP_CYCLE[i<0?0:(i+1)%CAP_CYCLE.length]}
+    else if(nk==='cap'&&md==='v'&&(SA||AI)){const cy=capCycle(),i=cy.indexOf(cs);el.dataset.sort=cy[i<0?0:(i+1)%cy.length]}
     else el.dataset.sort=cur[0]===nk?(cur[1]==='-1'?nk+':1':''):nk+':-1';table(el,items,undefined,mode);return}
     const r=e.target.closest('tr[data-id]');if(r)location.hash=r.dataset.id};
 }
+function aiPending(fav){const el=$('aiBox');if(!AI){el.hidden=true;return}
+  let mine=[];try{mine=Object.values((store.get('themeCfg')||{}).themes||{}).flatMap(t=>(t.stocks||[]).map(x=>x[0]))}catch(e){}   // themeCfg.themes 是 {id:主題} 物件：自訂＋改過的內建主題（存在手機）＋自選
+  const ids=[...new Set([...fav,...mine])].filter(id=>!ai(id)).sort();
+  el.hidden=false;$('aiMsg').textContent='';
+  if(!ids.length){$('aiN').textContent='自選＋自訂主題都查過了 ✓';$('aiList').textContent='這支裝置的自選與自訂主題裡沒有還沒查的股票。之後新增股票，沒查過的會列在這裡。';$('aiCopy').hidden=true;return}
+  $('aiCopy').hidden=false;$('aiN').textContent=`${ids.length} 檔`;$('aiList').textContent=ids.map(id=>`${id} ${nameOf(id)}`).join('、');
+  $('aiCopy').onclick=async()=>{const t=ids.map(id=>`${id} ${nameOf(id)}`).join('、');try{await navigator.clipboard.writeText(t);$('aiMsg').textContent='已複製，貼給 Claude 就好'}catch(e){$('aiMsg').textContent='複製失敗，請長按上面文字選取'}}}
 function renderHome(){
   RANK=null;srHome();
   modeQ();$('sumAsof').textContent=S?`收盤 ${S.pxAsof?S.pxAsof.slice(4,6)+'/'+S.pxAsof.slice(6):S.updated.slice(5,10).replace('-','/')}・營收 ${S.revYM?+S.revYM.slice(5)+'月':'—'}${QN?'・EPS '+QN:''}`:'數字待 Actions 產生';
   const fav=store.get('fav')||[];$('favEdit').hidden=!fav.length;
   $('favBox').innerHTML=fav.length?'<div class="panel"><div class="tbl"><table class="lst" id="favTbl"></table></div></div>':'<p class="dtip">在個股頁點「☆ 加入自選」，就會出現在這裡。</p>';
   if(fav.length)table($('favTbl'),fav.map(id=>[id,'']));
-  paintSeg();
+  paintSeg();try{aiPending(fav)}catch(e){}
   {const pool=[...new Set([...THEMES.flatMap(t=>t.stocks.map(x=>x[0])),...fav])],hot=pool.filter(id=>mv(id,'fire'));
    $('hotN').textContent=MO?`主題＋自選 ${pool.length} 檔中 ${hot.length} 檔`:'資料準備中';
    const ht=$('hotTbl');ht.dataset.sort=ht.dataset.sort||'m_m:-1';table(ht,hot.map(id=>[id,(THEMES.find(t=>t.stocks.some(x=>x[0]===id))||{name:'⭐ 自選'}).name]),undefined,'m');
    $('hotFoot').innerHTML=MO?`🔥＝月漲幅 &gt; 0、量比（5 日均量 ÷ 20 日均量）≥ 1.5、且投信或外資 5 日買超 ≥ 5 日成交量的 1%。是「有資金在推」的訊號，不是買進訊號，要搭配估值位階看。資料 ${ymd(MO.asof)}`:'第一次需要回補約 3 個月的歷史資料，Actions 跑完後就會出現。'}
   $('tgrid').innerHTML=THEMES.map(t=>{const ids=t.stocks.map(x=>x[0]),y=median(ids.map(i=>sv(i,'yoy'))),pe=median(ids.map(i=>sv(i,'pe'))),ey=median(ids.map(epsY)),pg=median(ids.map(peg)),mm=median(ids.map(i=>mv(i,'m'))),nf=ids.filter(i=>mv(i,'fire')).length;
-    return `<a class="tcard" href="#t/${t.id}"><b>${t.name}</b><span class="k"><span>營收年增</span><span class="num ${sign(y)}">${y==null?'—':pct(y,0)}</span></span><span class="k"><span>EPS 年增（四季）</span><span class="num ${sign(ey)}">${ey==null?'—':pct(ey,0)}</span></span><span class="k"><span>本益比</span><span class="num">${pe==null?'—':fmt(pe,1)}</span></span><span class="k"><span>PEG</span><span class="num ${pg==null?'':pg<1?'cheap':pg>2?'pricey':''}">${pg==null?'—':fmt(pg,2)}</span></span><span class="k"><span>月漲幅</span><span class="num ${sign(mm)}">${mm==null?'—':pct(mm,1)}${nf?' 🔥'+nf:''}</span></span></a>`}).join('');
+    return `<a class="tcard" href="#t/${t.id}"><b>${t.name}</b><span class="k"><span>營收年增</span><span class="num ${sign(y)}">${y==null?'—':pct(y,0)}</span></span><span class="k"><span>EPS 年增（四季）</span><span class="num ${sign(ey)}">${ey==null?'—':pct(ey,0)}</span></span><span class="k"><span>本益比</span><span class="num">${pe==null?'—':fmt(pe,1)}</span></span><span class="k"><span>PEG</span><span class="num ${pg==null?'':pg<1?'cheap':pg>2?'pricey':''}">${pg==null?'—':fmt(pg,2)}</span></span><span class="k"><span>月漲幅</span><span class="num ${sign(mm)}">${mm==null?'—':pct(mm,1)}${nf?' 🔥'+nf:''}</span></span>${AI?`<span class="k"><span>AI 高／中</span><span class="num"><span class="ail3">${ids.filter(i=>ai(i)&&ai(i).lv===3).length}</span>／<span class="ail2">${ids.filter(i=>ai(i)&&ai(i).lv===2).length}</span> <span style="color:var(--muted)">檔</span></span></span>`:''}</a>`}).join('');
   if(!$('indBox').dataset.done&&LIST.length){
     const g={};LIST.forEach(s=>{let k=(s[3]||'其他').replace(/類$/,'');if(k==='其他電子')k='其他電子業';(g[k]=g[k]||[]).push(s[0])});
     $('indBox').innerHTML=Object.entries(g).sort((a,b)=>b[1].length-a[1].length).map(([k,v],i)=>`<details class="ind" data-i="${i}"><summary>${k}<span>${v.length} 檔</span></summary><div class="tbl"><table class="lst"></table></div></details>`).join('');
@@ -1329,7 +1361,8 @@ function showTheme(tid){
     return c1===r1?`<br>👑 龍頭 <strong>${nameOf(c1)}</strong>（市值 ${capTxt(cap(c1))}，占主題 ${sh}%）・主題總市值 ${capTxt(tc)}`
       :`<br>💰 市值最大 <strong>${nameOf(c1)}</strong>（占 ${sh}%）・🏭 營收最大 <strong>${r1?nameOf(r1):'—'}</strong>・總市值 ${capTxt(tc)}`})();
   const sal=(()=>{const m=median(ids.map(i=>av(i,'med')));return m==null?'':`・薪資中位數 <strong>${salTxt(m)}</strong>`})();
-  $('tSum').innerHTML=S?`${ids.length} 檔中位數：營收年增 <strong class="${sign(y)}">${pct(y)}</strong>・EPS 年增（近四季） <strong class="${sign(ey)}">${pct(ey)}</strong>・本益比 <strong>${fmt(pe,1)}</strong>・PEG <strong>${fmt(pg,2)}</strong>・淨值比 <strong>${fmt(pb,2)}</strong>${sal}${lead}`:'全市場數字尚未產生（等 Actions 第一次執行）';
+  const aiS=(()=>{const n=[3,2,1].map(l=>ids.filter(i=>ai(i)&&ai(i).lv===l).length);return n.some(Boolean)?`・🤖 AI <span class="ail3">高 <strong>${n[0]}</strong></span>／<span class="ail2">中 <strong>${n[1]}</strong></span>／<span class="ail1">低 <strong>${n[2]}</strong></span>`:''})();
+  $('tSum').innerHTML=S?`${ids.length} 檔中位數：營收年增 <strong class="${sign(y)}">${pct(y)}</strong>・EPS 年增（近四季） <strong class="${sign(ey)}">${pct(ey)}</strong>・本益比 <strong>${fmt(pe,1)}</strong>・PEG <strong>${fmt(pg,2)}</strong>・淨值比 <strong>${fmt(pb,2)}</strong>${sal}${aiS}${lead}`:'全市場數字尚未產生（等 Actions 第一次執行）';
   {const jp=t.jp||(BASE.find(x=>x.id===t.id)||{}).jp||[],kr=t.kr||(BASE.find(x=>x.id===t.id)||{}).kr||[];
    $('tUS').innerHTML=(t.us&&t.us.length?'對應美股 '+t.us.map(u=>`<a href="us/#${u}">${u}</a>`).join(''):'')+
     (jp.length?`${t.us&&t.us.length?'<span style="flex-basis:100%;height:0"></span>':''}對應日股 `+jp.map(([c,n])=>`<a href="jp/#${c}">${c} ${esc(n)}</a>`).join(''):'')+
@@ -1340,7 +1373,7 @@ function showTheme(tid){
     $('tSum').innerHTML=MO?`${ids.length} 檔中位數：週 <strong class="${sign(mw)}">${pct(mw)}</strong>・月 <strong class="${sign(mm)}">${pct(mm)}</strong>・季 <strong class="${sign(mq)}">${pct(mq)}</strong>・量比 <strong>${fmt(vr,2)}</strong>${(()=>{const bw=median(ids.map(i=>tv(i,'b4w')));return bw==null?'':`・大戶週變化 <strong class="${sign(bw)}">${pp(bw,2)}</strong>`})()}・🔥 <strong>${nf}</strong> 檔`:'動能資料尚未產生（第一次需回補約 3 個月歷史資料）'}
   $('tTbl').dataset.sort='';table($('tTbl'),t.stocks);
   if(MODE==='m'){$('tFoot').innerHTML=`週／月／季＝收盤對比 5／20／60 個交易日前（未還原除權息，跨除息日會略低）。量比＝5 日均量 ÷ 20 日均量，≥1.5 標紅＝放量。投／外＝投信、外資近 5 日買賣超張數；「投連N天」＝投信連續買超 3 天以上。🔥＝月漲＋量比≥1.5＋法人 5 日買超≥成交量 1%。<br>投／外 5日＝投信、外資近 5 個交易日買賣超（張）。大戶＝集保持股 400 張以上的持股占比（每週六更新），後面數字是占比變化（百分點）；股東＝集保股東人數變化%。<b>虛線底的字、標籤都可以點，會跳出說明。</b>籌碼標籤看 4 週：<span class="flag" style="color:var(--up);border-color:var(--up)">集中</span>＝大戶↑、股東人數↓（散戶賣大戶接）；<span class="flag" style="color:var(--warm);border-color:var(--warm)">散戶追</span>＝大戶↑但人數也增加超過 3%（熱度高、留意追高）；<span class="flag" style="color:var(--down);border-color:var(--down)">分散</span>＝大戶↓、人數↑；變化很小不標。🔥 旁的 <span class="flag" style="color:var(--up);border-color:var(--up)">集中↑</span>＝🔥 且籌碼集中。增資、可轉債轉換會讓大戶比失真，大幅變化請查公告。<br>點欄位標題排序；「量比」連點可切換投信 5 日、外資 5 日、投信連買、大戶週增、大戶 4 週、股東人數 4 週減少排序。`+(TD&&TD.weeks.length<2?'<br>⚠️ 集保資料目前只有 1 週，週變化要等下週六更新後才有。':'')+(MO&&MO.nPx<61?`<br>⚠️ 歷史資料目前 ${MO.nPx} 個交易日，季%需要 61 天，回補完成前顯示「—」。`:'');return}
-  $('tFoot').innerHTML=`「四季」＝近四季 EPS 合計（到${QN?' '+QN:'最新一季'}）對比前四季合計的年增率，比單季年增平滑、較不受低基期影響；資料不足 8 季的股票退回「單季」（最新一季對比去年同季）。橘色季別＝跟其他檔不同季；<span class="flag">業外</span>＝近四季有一季 EPS 可能含一次性收益。<span>低基期</span>＝年增超過 300%，不算 PEG。PEG＝本益比（近四季）÷ 近四季 EPS 年增，<span class="cheap">&lt;1 偏便宜</span>、<span class="pricey">&gt;2 偏貴</span>；記憶體等循環股的 PEG 參考性低。單季、預估 PEG 看個股頁本益比下方。<br>股票名稱下方的「億／兆」＝市值＝收盤 × 已發行普通股數（公司基本資料）；<b>#1～#3</b>＝主題內市值名次。👑＝市值和營收規模（今年累計營收 ÷ 月數）都是主題第 1 名；只有市值第 1 而營收不是，常是估值較高墊高市值，不一定是產業龍頭。龍頭常已反映在估值上，記得搭配本益比位階看。<br>「薪 316萬 +20%」＝非擔任主管職務之全時員工薪資中位數${SA&&SA.yrAD?`（${SA.yrAD} 年，證交所／櫃買每年 6 月底公布前一年度）`:''}與對前一年度的變化：含本薪、獎金、加班費與員工酬勞，排除經理人與部分工時，只算該公司本身員工（不含子公司），所以分紅多的 IC 設計、景氣好的年度會特別高；KY 公司（外國企業）不在揭露範圍，不顯示。點個股頁的薪資列可看平均數與主題內名次。<br>點欄位標題排序；「股票」連點＝依市值、薪資中位數排序，「本益比」連點可切換成 EPS 年增、PEG 排序。點一列看個股圖表。`+(S?` 資料更新 ${S.updated.slice(0,10)}`:'');
+  $('tFoot').innerHTML=`「四季」＝近四季 EPS 合計（到${QN?' '+QN:'最新一季'}）對比前四季合計的年增率，比單季年增平滑、較不受低基期影響；資料不足 8 季的股票退回「單季」（最新一季對比去年同季）。橘色季別＝跟其他檔不同季；<span class="flag">業外</span>＝近四季有一季 EPS 可能含一次性收益。<span>低基期</span>＝年增超過 300%，不算 PEG。PEG＝本益比（近四季）÷ 近四季 EPS 年增，<span class="cheap">&lt;1 偏便宜</span>、<span class="pricey">&gt;2 偏貴</span>；記憶體等循環股的 PEG 參考性低。單季、預估 PEG 看個股頁本益比下方。<br>股票名稱下方的「億／兆」＝市值＝收盤 × 已發行普通股數（公司基本資料）；<b>#1～#3</b>＝主題內市值名次。👑＝市值和營收規模（今年累計營收 ÷ 月數）都是主題第 1 名；只有市值第 1 而營收不是，常是估值較高墊高市值，不一定是產業龍頭。龍頭常已反映在估值上，記得搭配本益比位階看。<br>「薪 316萬 +20%」＝非擔任主管職務之全時員工薪資中位數${SA&&SA.yrAD?`（${SA.yrAD} 年，證交所／櫃買每年 6 月底公布前一年度）`:''}與對前一年度的變化：含本薪、獎金、加班費與員工酬勞，排除經理人與部分工時，只算該公司本身員工（不含子公司），所以分紅多的 IC 設計、景氣好的年度會特別高；KY 公司（外國企業）不在揭露範圍，不顯示。點個股頁的薪資列可看平均數與主題內名次。<br>「<span class="flag ail3">AI 高</span> 61%」＝AI 成分：公司法說／年報講的 AI 或資料中心相關營收占比，<span class="ail3">高</span> ≥50%、<span class="ail2">中</span> 20～50%、<span class="ail1">低</span> &lt;20%、無＝查過但公司沒有任何揭露；<b>沒有標籤＝還沒查</b>（目前只查主題成份股與庫存股，要補查告訴 Claude）；數字前有「~」＝媒體或法人推估，「推估」＝公司不拆分、依事業結構判斷。各公司口徑不同（有的是占伺服器營收、HPC 平台、整條產品線），不能直接比大小，<b>點標籤看口徑與來源</b>，個股頁有一年前比較與來源連結。AI 純度高的通常本益比也高，要跟估值位階一起看。<br>點欄位標題排序；「股票」連點＝依市值、薪資中位數、AI 成分排序，「本益比」連點可切換成 EPS 年增、PEG 排序。點一列看個股圖表。`+(S?` 資料更新 ${S.updated.slice(0,10)}`:'');
 }
 function stockExtras(id){
   const fav=store.get('fav')||[],on=fav.includes(id);
@@ -1484,6 +1517,7 @@ addEventListener('hashchange',route);
   try{const r=await fetch('data/guide.json?t='+Date.now());if(r.ok)GD=await r.json()}catch(e){}
   try{const r=await fetch('data/salary.json?t='+Date.now());if(r.ok){SA=await r.json();SRALL=null}}catch(e){}
   try{const r=await fetch('data/headcount.json?t='+Date.now());if(r.ok)HC=await r.json()}catch(e){}
+  try{const r=await fetch('data/ai.json?t='+Date.now());if(r.ok)AI=await r.json()}catch(e){}
   route();
 })();
 // 手動改假設 → 財測情境按鈕取消選取（明年年增不影響財測情境）
