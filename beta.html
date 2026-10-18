@@ -446,7 +446,7 @@ details.ind.hot summary b{color:var(--up)}
 <p class="note" id="note"></p>
 </div>
 <div id="pnSheet" hidden role="dialog" aria-modal="true" aria-label="同主題股票"><div class="sh"><div class="grab"></div><div class="hd"><a id="pnBack" href="#"></a><button type="button" id="pnClose">關閉</button></div><ol id="pnList"></ol></div></div>
-<nav id="pnav" aria-label="同主題切換" hidden><div class="in"><button type="button" class="bk" id="pnBk" aria-label="回上一頁">↩</button><button type="button" class="pv" id="pnPrev"></button><button type="button" class="mid" id="pnMid" aria-haspopup="dialog"></button><button type="button" class="nx" id="pnNext"></button></div></nav>
+<nav id="pnav" aria-label="同主題切換" hidden><div class="in"><button type="button" class="bk" id="pnBk" aria-label="回上一頁"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button><button type="button" class="pv" id="pnPrev"></button><button type="button" class="mid" id="pnMid" aria-haspopup="dialog"></button><button type="button" class="nx" id="pnNext"></button></div></nav>
 
 <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
@@ -1019,7 +1019,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')pnShut()});
  g.addEventListener('touchend',e=>{if(y0==null)return;const dy=e.changedTouches[0].clientY-y0;g.style.transform='';y0=null;if(dy>70)pnShut()})}
 // ---------- ↩ 回到來源頁：進個股前的那一頁（主題／自選／排行／首頁），換過幾檔都回同一頁 ----------
 // 個股之間切換一律 location.replace（不新增瀏覽紀錄），所以「來源頁」永遠就在上一筆紀錄
-let ORIGIN=null,VPREV=null,HPREV=null;
+let ORIGIN=null,VPREV=null,HPREV=null;const BK_SVG='<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>';
 try{ORIGIN=JSON.parse(sessionStorage.getItem('origin')||'null')}catch(e){}
 const isStk=h=>/^\d{4,6}[A-Z]?$/.test(h);
 function swapTo(id){const u=location.href.split('#')[0]+'#'+id;location.replace(u)}
@@ -1028,7 +1028,7 @@ function bkLabel(h){if(!h||h==='home')return '首頁';if(h==='f')return '編輯�
 function bkFallback(){const id=D&&D.id||decodeURIComponent(location.hash.slice(1));let last='';try{last=sessionStorage.getItem('lastTheme')||''}catch(e){}
   const mine=THEMES.filter(t=>t.stocks.some(x=>x[0]===id)),t=mine.find(x=>x.id===last)||mine[0];return t?'t/'+t.id:''}
 function bkPaint(){const h=ORIGIN?ORIGIN.h:bkFallback(),lb=bkLabel(h);$('pnBk').setAttribute('aria-label','回到 '+lb);$('pnBk').title='回到 '+lb;
-  $('pnBk').innerHTML=$('pnav').classList.contains('solo')?`↩ <span>${esc(lb)}</span>`:'↩'}
+  $('pnBk').innerHTML=$('pnav').classList.contains('solo')?`${BK_SVG} <span>${esc(lb)}</span>`:BK_SVG}
 $('pnBk').addEventListener('click',()=>{pnShut();if(ORIGIN&&ORIGIN.push){history.back();return}
   const h=bkFallback();if(ORIGIN)ORIGIN.y=0;location.hash=h||''});
 // 從來源頁點進個股：記住來源頁與捲動位置
@@ -1042,6 +1042,8 @@ function bkRestore(h){if(VPREV!=='stock'||!ORIGIN||h!==ORIGIN.h)return;const y=O
 // 個股頁上的其他個股連結（同業、AI 等）也改成取代，不新增紀錄
 document.addEventListener('click',e=>{if(document.body.dataset.view!=='stock')return;const a=e.target.closest('a[href^="#"]');if(!a)return;
   const h=decodeURIComponent(a.getAttribute('href').slice(1));if(!isStk(h)||e.metaKey||e.ctrlKey)return;e.preventDefault();if(h!==(D&&D.id))swapTo(h)},true);
+// 圖表捷徑（營收、籌碼…）只捲動到該圖，不改網址、不新增瀏覽紀錄，↩ 才會一律回來源頁
+document.querySelector('nav.chips').addEventListener('click',e=>{const a=e.target.closest('a[href^="#"]');if(!a)return;e.preventDefault();goSec(a.getAttribute('href').slice(1))});
 $('pnPrev').addEventListener('click',()=>pnGo(-1));$('pnNext').addEventListener('click',()=>pnGo(1));
 // ---------- 搜尋 ----------
 function row(s){return `<button type="button" data-id="${s[0]}"><span class="rid">${s[0]}</span><span>${s[1]}</span><span class="rmeta">${s[2]||''}${s[3]?'・'+s[3]:''}</span></button>`}
