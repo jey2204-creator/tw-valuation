@@ -88,6 +88,54 @@ def build_capex(cf, q):
     return out
 
 
+def _ser(rows, types):
+    """{日期: 值}，依序找第一個有資料的科目（保留正負號）"""
+    for t in types:
+        d = {r["date"]: r["value"] for r in rows if r.get("type") == t and r.get("value") is not None}
+        if d:
+            return d
+    return {}
+
+
+def to_quarter_signed(d):
+    """同 to_quarter，但保留正負號（營業現金流可能為負）；用絕對值判斷是否為年初累計"""
+    ys = {}
+    for k, v in d.items():
+        if k[5:] in ("03-31", "06-30", "09-30", "12-31"):
+            ys.setdefault(int(k[:4]), {})[int(k[5:7]) // 3] = v
+    ratio = sorted(abs(y[4]) / abs(y[1]) for y in ys.values() if 1 in y and 4 in y and y[1])
+    cum = bool(ratio) and ratio[len(ratio) // 2] > 2.5
+    out = {}
+    for y, qs in ys.items():
+        for n, v in qs.items():
+            if not cum or n == 1:
+                out[(y, n)] = v
+            elif n - 1 in qs:
+                out[(y, n)] = v - qs[n - 1]
+    return out
+
+
+def build_inv(bs, fs, cf, q):
+    """存貨健康度：[季別, 存貨, 營業成本, 應收帳款(含關係人), 合約負債或None, 稅後淨利(合併), 單季營業現金流或None]（億）"""
+    inv = _ser(bs, ("Inventories",))
+    cogs = _ser(fs, ("CostOfGoodsSold",))
+    ar, arr = _ser(bs, ("AccountsReceivableNet",)), _ser(bs, ("AccountsReceivableDuefromRelatedPartiesNet",))
+    cl = _ser(bs, ("CurrentContractLiabilities",))
+    ni = _ser(fs, ("IncomeAfterTaxes", "NetIncome"))
+    ocf = to_quarter_signed(_ser(cf, ("CashFlowsFromOperatingActivities", "NetCashInflowFromOperatingActivities")))
+    b = lambda v: None if v is None else round(v / 1e8, 2)
+    out = []
+    for lbl, *_ in q:
+        y, n = 2000 + int(lbl[:2]), int(lbl[3])
+        d = f"{y}-{('03-31', '06-30', '09-30', '12-31')[n - 1]}"
+        if inv.get(d) is None or not cogs.get(d) or cogs[d] <= 0:
+            continue
+        a = ar.get(d)
+        out.append([lbl, b(inv[d]), b(cogs[d]), b(None if a is None else a + (arr.get(d) or 0)),
+                    b(cl.get(d)), b(ni.get(d)), b(ocf.get((y, n)))])
+    return out
+
+
 def build(sid, today=None, fetch=get):
     today = today or dt.date.today()
     start = f"{today.year - YEARS}-01-01"
@@ -95,7 +143,7 @@ def build(sid, today=None, fetch=get):
     per = fetch("TaiwanStockPER", sid, start)
     fs = fetch("TaiwanStockFinancialStatements", sid, f"{today.year - YEARS - 1}-01-01")
     rv = fetch("TaiwanStockMonthRevenue", sid, f"{today.year - YEARS - 1}-01-01")
-    bs = fetch("TaiwanStockBalanceSheet", sid, f"{today.year - 2}-01-01")
+    bs = fetch("TaiwanStockBalanceSheet", sid, f"{today.year - YEARS - 1}-01-01")   # 存貨健康度要 20 季以上
     info = fetch("TaiwanStockInfo", sid, "") if fetch is get else []
     try:
         cf = fetch("TaiwanStockCashFlowsStatement", sid, f"{today.year - YEARS - 1}-01-01")
@@ -154,7 +202,7 @@ def build(sid, today=None, fetch=get):
     name = info[0].get("stock_name", "") if info else ""
     return dict(id=sid, name=name, cyclical=sid in CYCLICAL, updated=dt.datetime.utcnow().strftime("%Y-%m-%dT%H:%MZ"),
                 shares=round(shares, 4) if shares else None, last=last, rev=rev, q=q, riv=riv,
-                capex=build_capex(cf, q))
+                capex=build_capex(cf, q), inv=build_inv(bs, fs, cf, q))
 
 
 def build_list():
