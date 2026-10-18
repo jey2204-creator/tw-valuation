@@ -350,7 +350,7 @@ details.ind.hot summary b{color:var(--up)}
   </div>
 </header>
   <nav class="chips" aria-label="圖表">
-    <a href="#rev">營收</a><a href="#chip">籌碼</a><a href="#margin">三率</a><a href="#eps">EPS</a><a href="#capex" id="chipCx">資本支出</a><a href="#guide" id="chipGd" hidden>財測</a><a href="#fwd">預估EPS</a><a href="#pe">本益比河流</a><a href="#pb">淨值比河流</a>
+    <a href="#rev">營收</a><a href="#chip">籌碼</a><a href="#margin">三率</a><a href="#eps">EPS</a><a href="#capex" id="chipCx">資本支出</a><a href="#guide" id="chipGd" hidden>財測</a><a href="#fwd">預估EPS</a><a href="#pe">本益比河流</a><a href="#pegh" id="chipPG">PEG位階</a><a href="#pb">淨值比河流</a>
   </nav>
 <p class="err" id="err" hidden></p>
 
@@ -424,6 +424,12 @@ details.ind.hot summary b{color:var(--up)}
   <p class="take" id="tPE"></p>
   <div class="chart tall" id="cPE"></div>
   <p class="foot" id="fPE"></p>
+</section>
+<section class="card" id="pegh">
+  <h2>PEG 歷史位階 <small>月｜近四季</small></h2>
+  <p class="take" id="tPG"></p>
+  <div class="chart" id="cPG"></div>
+  <p class="foot" id="fPG"></p>
 </section>
 <section class="card" id="pb">
   <h2>股價淨值比河流圖 <small>月</small></h2>
@@ -523,7 +529,7 @@ function render(){
      {name:'近四季',type:'line',yAxisIndex:1,data:ttm,symbol:'none',lineStyle:{width:2,color:warm},itemStyle:{color:warm}}];
    c.setOption(o,true)}
   renderCx();renderChip();renderGuide();
-  renderFwd();river('cPE',PEM,2,'倍 PE');river('cPB',PBM,3,'倍 PB');
+  renderFwd();river('cPE',PEM,2,'倍 PE');renderPegH();river('cPB',PBM,3,'倍 PB');
 }
 function renderCx(){
   const X=(D.capex||[]).slice(-20),has=X.length>=2;
@@ -709,6 +715,42 @@ function pegRead(s,f,e){
   else t='三個成長率接近：穩定成長，PEG 比較可信';
   el.innerHTML='📐 '+t;el.hidden=false;
 }
+// ---------- PEG 歷史位階：每月 月底本益比（證交所近四季）÷ 當時已公布的近四季 EPS 年增 ----------
+// 當月看得到哪一季財報：Q1 5 月、Q2 8 月、Q3 11 月、Q4 次年 3 月起（法定公告期限）
+const pgKnownQ=m=>{let y=+m.slice(0,4),mo=+m.slice(5,7),q;if(mo>=11)q=3;else if(mo>=8)q=2;else if(mo>=5)q=1;else if(mo>=3){q=4;y--}else{q=3;y--}return String(y%100).padStart(2,'0')+'Q'+q};
+function pegHist(){
+  const yq={};for(let i=7;i<Q.length;i++){if(Q[i][0]===D.inj)continue;const a=sum(Q.slice(i-3,i+1).map(x=>x[5])),b=sum(Q.slice(i-7,i-3).map(x=>x[5]));yq[Q[i][0]]=b>0?(a/b-1)*100:null}
+  const rows=R.map(r=>{const q=pgKnownQ(r[0]),g=q in yq?yq[q]:undefined,ok=g!=null&&g>0&&g<=300&&r[4]>0;return {m:r[0],q,pe:r[4],g,c:r[1],v:ok?+(r[4]/g).toFixed(2):null}}).filter(x=>x.g!==undefined);
+  // 最後一點＝上方「PEG 近四季」格（含財報速報時季別較新）
+  const P=pegViews(),l=rows[rows.length-1];
+  if(l&&R.length&&l.m===R[R.length-1][0]){l.pe=P.b.pe;l.g=P.f.y;l.v=P.f.g??null;l.q='目前';l.cur=1;l.c=L.close}
+  return rows;
+}
+function renderPegH(){
+  const rows=pegHist(),vals=rows.filter(x=>x.v!=null&&!x.cur).map(x=>x.v),sec=$('pegh');
+  const show=vals.length>=12;sec.hidden=!show;$('chipPG').hidden=!show;if(!show)return;
+  const s=[...vals].sort((a,b)=>a-b),qt=p=>s[Math.min(s.length-1,Math.round(p*(s.length-1)))];
+  const cap=4,cur=rows[rows.length-1],cv=cur.cur?cur.v:null;
+  const acc2=css('--accent2'),warm=css('--warm'),o=base(),c=mk('cPG');
+  o.xAxis.data=rows.map(x=>x.m.slice(2).replace('-','/'));o.xAxis.boundaryGap=false;
+  o.yAxis.scale=false;o.yAxis.min=0;o.yAxis.max=cap;o.yAxis=[o.yAxis,{...o.yAxis,min:null,max:null,scale:true,splitLine:{show:false},axisLabel:{...o.yAxis.axisLabel,formatter:v=>v>=1000?fmt(v/1000,1)+'k':fmt(v)}}];o.grid.right=8;o.grid.top=30;
+  const acc=css('--accent');o.legend.data=['PEG','股價（右軸）'];
+  o.series=[{name:'股價（右軸）',type:'line',yAxisIndex:1,data:rows.map(x=>x.c),symbol:'none',lineStyle:{width:1.5,color:acc,opacity:.75},itemStyle:{color:acc},z:3},{name:'PEG',type:'line',data:rows.map(x=>x.v==null?null:Math.min(x.v,cap)),symbol:'none',connectNulls:false,lineStyle:{width:2,color:css('--price')},itemStyle:{color:css('--price')},z:5,
+    endLabel:{show:cv!=null,formatter:()=>fmt(cv,2),fontFamily:'IBM Plex Mono',fontSize:10,color:css('--fg')},
+    markArea:{silent:true,data:[[{yAxis:0,itemStyle:{color:rgba(acc2,.10)}},{yAxis:1}],[{yAxis:2,itemStyle:{color:rgba(warm,.10)}},{yAxis:cap}]]},
+    markLine:{silent:true,symbol:'none',lineStyle:{color:css('--muted'),type:'dashed',width:1},data:[{yAxis:1,label:{show:true,position:'insideStartBottom',fontSize:10,color:css('--muted'),formatter:'<1 偏便宜'}},{yAxis:2,label:{show:true,position:'insideStartTop',fontSize:10,color:css('--muted'),formatter:'>2 偏貴'}}]}}];
+  o.tooltip.formatter=ps=>{const x=rows[ps[0].dataIndex];if(!x)return '';return `<b>${x.m}</b>${x.cur?'（目前）':''}<br>股價 ${fmt(x.c,x.c<100?2:0)}<br>本益比 ${x.pe!=null?fmt(x.pe,1):'—'}<br>近四季 EPS 年增 ${x.g==null?'—（前四季 ≤0）':pgP(x.g,1)}${x.cur?'':'（'+x.q+'）'}<br><b>PEG ${x.v==null?(x.g!=null&&x.g>300?'不算（低基期）':'不算'):fmt(x.v,2)}</b>${x.v!=null&&x.v>cap?'（超出圖上緣）':''}`};
+  c.setOption(o,true);c.resize();
+  const yrs=(rows.length/12).toFixed(1),med=qt(.5),nGap=rows.filter(x=>x.v==null).length;
+  const below=cv!=null?Math.round(vals.filter(v=>v<cv).length/vals.length*100):null;
+  $('tPG').innerHTML=(cv!=null?`目前近四季 PEG <strong>${fmt(cv,2)}</strong>，低於近 ${yrs} 年 <strong>${100-below}%</strong> 的月份（高於 ${below}%）`:`目前近四季 PEG <strong>${P0txt()}</strong>，不在歷史線上`)+
+    `<br>歷史中位數 <strong>${fmt(med,2)}</strong>（P20 ${fmt(qt(.2),2)}～P80 ${fmt(qt(.8),2)}）`+(cv!=null?(cv<qt(.2)?'，<strong class="cheap">位在歷史低檔</strong>':cv>qt(.8)?'，<strong class="pricey">位在歷史高檔</strong>':'，位在歷史中段'):'')+
+    (cv!=null&&!D.cyclical?(()=>{const P=pegViews(),k=P.b.E4*P.f.y,px=v=>fmt(v*k,v*k<100?1:0),cl=v=>v*k>L.close?'up':'dn';
+      return `<br>📐 PEG 對應股價（近四季 EPS ${fmt(P.b.E4,2)} × 成長 ${fmt(P.f.y,1)}）：P20 ${fmt(qt(.2),2)} → <strong>${px(qt(.2))}</strong>・中位數 ${fmt(med,2)} → <strong>${px(med)}</strong>・P80 ${fmt(qt(.8),2)} → <strong>${px(qt(.8))}</strong>（現價 ${fmt(L.close)}）<br><span class="meta">⚠️ 假設成長率維持；成長放緩時這些價位會一起往下掉，只當位階參考，不是目標價</span>`})():'')+
+    (D.cyclical?'<br><span class="pill">循環股</span> 景氣高峰時 PEG 會掉到歷史低檔，低位階不一定是買點，請搭配淨值比河流圖':'');
+  $('fPG').textContent=`每月 PEG＝月底本益比（證交所，近四季）÷ 當時已公布的近四季 EPS 年增（Q1 財報 5 月、Q2 8 月、Q3 11 月、Q4 次年 3 月起算）。近四季 EPS 年增 ≤0、>300%（低基期）或前四季虧損的月份不算，線會中斷（共 ${nGap} 個月）；PEG 超過 4（多半是成長率只剩個位數）貼在上緣，實際數字看 tooltip。淡綠＝PEG<1、淡橘＝PEG>2；藍線＝月底收盤（右軸）；最後一點＝上方「PEG 近四季」與最新收盤。PEG 對應股價＝PEG × 近四季 EPS × 近四季 EPS 年增（%）。`;
+}
+const P0txt=()=>{const f=pegViews().f;return f.g!=null?fmt(f.g,2):(f.t||'—')};
 // ---------- 公司財測（data/guide.json，Claude 每季法說後手動更新）----------
 // hist 每列＝某一季的財測 {q, on＝給財測的法說日, rev:[低,高], fx, gm:[低,高], om:[低,高], act:{實際}}；沒有 act＝還沒公布
 let GD=null,GS='mid';
