@@ -84,6 +84,12 @@ tr.e td{color:var(--accent)}
 .results .rhead{font-size:11px;color:var(--muted);padding:8px 12px 4px;letter-spacing:.05em}
 .meta{font-size:12px;color:var(--muted)}
 .meta.sal{margin-top:4px}
+/* PEG 三視角：本益比數字卡下方第二排（3 格） */
+.stats.peg{grid-template-columns:repeat(3,1fr);margin-top:6px}
+.stat i{display:block;font-style:normal;font-size:10.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.stat i .flag{font-size:9px;padding:0 2px;margin-left:3px;vertical-align:0}
+.stat b.cyc{color:var(--muted)}.stat b.txt{font-family:var(--f-body);font-size:12.5px}
+#pegNote{margin-top:6px;line-height:1.5}
 .srlink{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:8px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;color:var(--fg);text-decoration:none}.srlink b{font-size:14px}.srlink span{font-size:12px;color:var(--muted);text-align:right}
 .scard{margin-top:10px;padding:10px 12px;font-size:13px;line-height:1.55}.scard .hd{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}.scard .hd b{font-size:16px}.scard .hd .cd{font-family:var(--f-num);color:var(--muted)}.scard .big{font-family:var(--f-num);font-size:20px;font-weight:700}.scard .row{display:flex;flex-wrap:wrap;gap:4px 14px;color:var(--muted)}.scard .row strong{color:var(--fg)}.scard .acts{display:flex;gap:8px;margin-top:8px}.scard .acts a{font-size:12.5px;color:var(--accent);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:3px 10px}
 #srank .mrow{flex-wrap:wrap;margin-top:10px}#srank .lst td:first-child{font-family:var(--f-num);color:var(--muted);font-size:12px;white-space:nowrap}#srank .lst td.co{font-family:var(--f-body);color:var(--fg);white-space:normal}#srank .lst td.co .nm{font-size:13.5px}#srank .lst th:nth-child(2),#srank .lst td:nth-child(2){text-align:left}#srank .lst .ind{font-size:11px;color:var(--muted);display:block}#sMore{width:100%;margin:6px 0 2px}.sback{font-size:12.5px;color:var(--accent);text-decoration:none;margin-left:8px}.lst .cap.sal{font-size:10.5px}.meta.sal b{color:var(--fg);font-family:var(--f-num);font-size:13px}
@@ -331,6 +337,12 @@ details.ind.hot summary b{color:var(--up)}
     <div class="stat"><span>近四季EPS</span><b id="sEPS">—</b></div>
     <div class="stat"><span>每股淨值</span><b id="sBV">—</b></div>
   </div>
+  <div class="stats peg" id="pegRow">
+    <div class="stat"><span class="dtip" id="pgL1">PEG 近四季</span><b id="pg1">—</b><i id="pgS1"></i></div>
+    <div class="stat"><span class="dtip" id="pgL2">PEG 單季</span><b id="pg2">—</b><i id="pgS2"></i></div>
+    <div class="stat"><span class="dtip" id="pgL3">PEG 預估</span><b id="pg3">—</b><i id="pgS3"></i></div>
+  </div>
+  <div class="meta" id="pegNote" hidden></div>
   <div class="search" role="search">
     <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
     <input id="q" type="search" inputmode="search" autocomplete="off" placeholder="輸入代號或名稱，例如 2454、聯發科" aria-label="搜尋股票">
@@ -490,6 +502,9 @@ function header(){
   $('fPE').textContent=`色帶 = 近四季 EPS × ${PEM.join('／')} 倍（歷史 2／20／40／60／80／98% 分位數）；粗線為月底收盤價`;
   $('fPB').textContent=`色帶 = 每股淨值 × ${PBM.join('／')} 倍（歷史 2／20／40／60／80／98% 分位數）`;
   $('note').textContent=`資料來源：FinMind（證交所月營收、財報、本益比／淨值比），更新時間 ${D.updated.replace('T',' ').replace('Z',' UTC')}。每個交易日傍晚自動更新。本頁不構成投資建議。`;
+  renderPeg();
+  {const {b,s,f}=pegViews(),G=r=>r.g!=null?`<strong class="${D.cyclical?'':r.cl}">${pgNum(r)}</strong>`:`<strong>${r.t||'—'}</strong>`,Y=r=>r.y!=null?`<strong class="${sign(r.y)}">${pgP(r.y,1)}</strong>`:`<strong>${r.t}</strong>`;
+   $('tEps').innerHTML+=`<br>年增：單季 ${Y(s)}（${s.yq} ${s.prev==null?'—':fmt(s.prev,2)}）・近四季 ${Y(f)}（前四季 ${f.P4==null?'—':fmt(f.P4,2)}）→ PEG <span class="dtip" data-tip="${$('pgL2').dataset.tip}">單季</span> ${G(s)}／<span class="dtip" data-tip="${$('pgL1').dataset.tip}">近四季</span> ${G(f)}`+(b.pe!=null?`（本益比 ${fmt(b.pe,2)}${b.inj?'，含速報':''} ÷ 年增 %）`:'')}
 }
 function render(){
   const acc=css('--accent'),acc2=css('--accent2'),warm=css('--warm'),pr=css('--price');
@@ -597,6 +612,11 @@ function renderFwd(){
   $('tbFwd').innerHTML='<tr><th>期間</th><th>營收(億)</th><th>EPS</th><th>本益比@'+fmt(L.close)+'</th></tr>'+
     rows.map(r=>`<tr class="e"><td>${r[0]}</td><td>${fmt(r[1])}</td><td>${r[2].toFixed(2)}</td><td>${r[3]==null?'—':r[3].toFixed(1)}</td></tr>`).join('');
   $('tFwd').innerHTML=`依目前假設，${m.y}E EPS <strong>${m.eY.toFixed(1)}</strong>、${m.y+1}E <strong>${m.eN.toFixed(1)}</strong>；以現價換算預估本益比 <strong>${(L.close/m.eY).toFixed(1)}</strong>／<strong>${(L.close/m.eN).toFixed(1)}</strong> 倍`;
+  {const b=pegBase(),pf=pegFwd(m,b),P=pegViews();   // 預估 PEG：未來四季預估 EPS 對近四季實際
+   $('pgL3').dataset.tip=`預估 PEG：未來四季（${pf?pf.lbl:'—'}）預估 EPS 合計 ${pf?fmt(pf.F4,2):'—'} 對近四季實際 ${fmt(b.E4,2)} 成長 ${pf?pgP(pf.y,1):'—'}；本益比 ${b.pe!=null?fmt(b.pe,2)+'（'+b.src+'）':b.src}。這才是彼得林區原版「用未來的成長買現在的本益比」；數字跟著下方「預估 EPS」的 4 個假設與「公司財測」情境連動，假設錯 PEG 就錯；明年各季以明年全年 ÷ 4 計。${PG_RULE}${D.cyclical?PG_CYC:''}`;
+   pegTile(3,pf,'成長 ',pf&&b.inj?pgFlag('速報',`近四季含 ${D.inj} 財報速報`):'');
+   if(pf)$('tFwd').innerHTML+=`<br>未來四季（${pf.lbl}）預估 EPS 合計 <strong>${fmt(pf.F4,2)}</strong>，對近四季 ${fmt(b.E4,2)} ${pf.y!=null?`<strong class="${sign(pf.y)}">${pgP(pf.y,1)}</strong>`:`<strong>${pf.t}</strong>`} → <span class="dtip" data-tip="${$('pgL3').dataset.tip}">預估 PEG</span> <strong class="${D.cyclical?'':pf.cl||''}">${pgNum(pf)}</strong>`+(pf.n?`（明年各季以 ${m.y+1}E ÷ 4 計）`:'');
+   pegRead(P.s,P.f,pf)}
   const miss=m.ms.filter((k,i)=>m.known[i]==null).map(k=>+k.slice(5)+'月');
   $('lMon').textContent=miss.length?`${miss.join('、')}營收估（億／月）`:'本季營收已全數公布';
   $('iMon').disabled=!miss.length;$('lYg').textContent=`${m.y+1} 營收年增（%）`;
@@ -615,6 +635,79 @@ function river(id,ms,col,unit){
   o.series=s;o.legend.show=false;o.grid.right=34;o.grid.top=12;
   o.tooltip.formatter=ps=>{const r=rr[ps[0].dataIndex];let h=`<b>${r[0]}</b>　股價 ${fmt(r[1])}<br>`;for(let k=ms.length-1;k>=0;k--)h+=`${ms[k]}${unit}：${fmt(r[col]*ms[k])}<br>`;return h};
   c.setOption(o,true);
+}
+// ---------- PEG 三視角：同一個本益比 ÷ 三種 EPS 年增（近四季／單季／預估）----------
+// 分子：證交所近四季本益比（L.pe）；有財報速報（D.inj）時改用 收盤 ÷ 含速報的近四季 EPS，季別才跟分母一致
+const pgP=(v,d=0)=>v==null?'—':(v>0?'+':'')+fmt(v,d)+'%';
+function pegBase(){
+  const E4=Q.length>=4?+sum(Q.slice(-4).map(x=>x[5])).toFixed(2):null;
+  if(E4==null||!(E4>0))return {E4,pe:null,src:E4==null?'季資料不足':'近四季虧損'};
+  if(D.inj)return {E4,pe:+(L.close/E4).toFixed(2),src:`收盤 ${fmt(L.close)} ÷ 近四季 EPS ${fmt(E4,2)}，含 ${D.inj} 財報速報`,inj:true};
+  return L.pe?{E4,pe:L.pe,src:'證交所近四季本益比'}:{E4,pe:+(L.close/E4).toFixed(2),src:`收盤 ${fmt(L.close)} ÷ 近四季 EPS ${fmt(E4,2)}`};
+}
+// 年增 → PEG，規則與主題頁 epsCell 相同：去年 ≤0「轉盈／虧損」、今年 ≤0「轉虧」、>300% 低基期不算、≤0 衰退不算；<1 偏便宜、>2 偏貴
+function pegCalc(pe,cur,prev){
+  if(cur==null||prev==null)return {t:'資料不足'};
+  if(prev<=0)return {t:cur>0?'轉盈':'虧損',cl:cur>0?'up':'dn'};
+  if(cur<=0)return {t:'轉虧',cl:'dn'};
+  const y=+((cur/prev-1)*100).toFixed(1);
+  if(y>300)return {y,t:'低基期'};
+  if(y<=0)return {y,t:'衰退',cl:'dn'};
+  if(pe==null)return {y,t:'—'};
+  const g=+(pe/y).toFixed(2);return {y,g,cl:g<1?'cheap':g>2?'pricey':''};
+}
+const pgAbn=x=>x[3]!=null&&x[4]!=null&&x[4]>x[3]+5;   // 淨利率比營益率高 5 個百分點以上＝可能含一次性業外（與主題頁、預估 EPS 同一判斷）
+function pegViews(){
+  const b=pegBase(),ql=Q[Q.length-1],yq=String(+ql[0].slice(0,2)-1).padStart(2,'0')+ql[0].slice(2),qy=Q.find(x=>x[0]===yq);
+  const s=Object.assign(pegCalc(b.pe,ql[5],qy?qy[5]:null),{q:ql[0],yq,cur:ql[5],prev:qy?qy[5]:null,abn:pgAbn(ql)});
+  const P4=Q.length>=8?+sum(Q.slice(-8,-4).map(x=>x[5])).toFixed(2):null;
+  const f=Object.assign(pegCalc(b.pe,b.E4,P4),{E4:b.E4,P4,abn:Q.slice(-4).some(pgAbn)});
+  return {b,s,f,fin:ql[2]==null};
+}
+// 預估：未來四季（今年剩下的季度＋明年前幾季，明年各季以明年全年 ÷ 4 計）預估 EPS 合計 vs 近四季實際；m＝model()
+function pegFwd(m,b){
+  if(!D.shares||b.E4==null)return null;
+  const k=m.est.length,n=4-k,F4=sum(m.est.map(x=>x.e))+m.eN*n/4;
+  if(!isFinite(F4))return null;
+  const y0=String(m.y).slice(2),y1=String(m.y+1).slice(2);
+  const lbl=(k>1?`${y0}Q${5-k}–Q4E`:`${y0}Q4E`)+(n?`＋${y1}Q1${n>1?'–Q'+n:''}E`:'');
+  return Object.assign(pegCalc(b.pe,+F4.toFixed(2),b.E4),{F4,lbl,n});
+}
+const pgFlag=(t,tip)=>`<span class="flag" data-tip="${tip}">${t}</span>`;
+const pgNum=r=>r&&r.g!=null?fmt(r.g,r.g<10?2:1):(r&&r.t)||'—';
+function pegTile(i,r,sub,flags,alt){
+  const b=$('pg'+i),s=$('pgS'+i);
+  if(!r){b.className='';b.textContent='—';s.innerHTML=sub||'';return}
+  const num=r.g!=null;
+  b.className=num?(D.cyclical?'cyc':r.cl||''):'txt '+(r.cl||'');
+  b.textContent=pgNum(r);
+  s.innerHTML=(r.y!=null?`${sub}<span class="${sign(r.y)}">${pgP(r.y)}</span>`:(alt||''))+(flags||'');
+}
+const PG_RULE='PEG＝本益比 ÷ EPS 年增率（%）。<1 偏便宜、>2 偏貴（彼得林區的經驗法則：本益比等於成長率算合理）；成長 ≤0、轉盈／轉虧、年增 >300%（低基期）都不算。';
+const PG_ABN='淨利率比營益率高 5 個百分點以上的季度可能含一次性業外，成長率會灌水。';
+const PG_CYC='循環股：景氣高峰時 EPS 年增最高、本益比最低，PEG 最漂亮的時候常是高點，參考性低。';
+function renderPeg(){
+  const P=pegViews(),{b,s,f}=P,cyc=!!D.cyclical;
+  const base=`本益比 ${b.pe!=null?fmt(b.pe,2)+'（'+b.src+'）':b.src}。`,fin=P.fin?'金融股財報沒有 EPS，這裡的 EPS 是母公司淨利 ÷ 股數推算。':'';
+  $('pgL1').dataset.tip=`近四季 PEG：近四季 EPS 合計 ${fmt(f.E4,2)} 對前四季 ${f.P4==null?'—':fmt(f.P4,2)} 年增 ${pgP(f.y,1)}；${base}把單季波動拉平、較不受低基期影響，三個裡面最適合拿來判斷貴不貴，但反映轉折慢 2～3 季。${PG_RULE}${f.abn?PG_ABN:''}${fin}${cyc?PG_CYC:''}`;
+  $('pgL2').dataset.tip=`單季 PEG：最新一季 ${s.q} EPS ${fmt(s.cur,2)} 對去年同季 ${s.yq} ${s.prev==null?'—':fmt(s.prev,2)} 年增 ${pgP(s.y,1)}；${base}最早反映轉折，但一季的低基期或業外就會失真；跟主題頁表格的 PEG 是同一種算法。${PG_RULE}${s.abn?PG_ABN:''}${fin}${cyc?PG_CYC:''}`;
+  const fl=r=>(b.inj?pgFlag('速報',`含 ${D.inj} 財報速報：公司法說已公布、財報資料庫還沒進來，先帶入；本益比也改用收盤 ÷ 含速報的近四季 EPS`):'')+(r.abn?pgFlag('業外',PG_ABN):'')+(P.fin?pgFlag('推算',fin):'');
+  const alt=(lbl,v)=>v==null?'':`${lbl} ${fmt(v,2)}`;   // 轉盈／虧損時改顯示去年的 EPS，說明為什麼不算
+  pegTile(1,f,'年增 ',fl(f),alt('前四季',f.P4));pegTile(2,s,'年增 ',fl(s),alt(s.yq,s.prev));
+  $('pegRow').classList.toggle('cyc',cyc);
+}
+// 解讀列：三個成長率的排列本身就是訊號（都有數字且 >0 才判斷）；循環股改顯示警語
+function pegRead(s,f,e){
+  const el=$('pegNote');
+  if(D.cyclical){el.innerHTML='<span class="pill">循環股</span> PEG 在景氣高峰最漂亮（EPS 年增最高、本益比最低），參考性低，請以淨值比河流圖與資本支出 ÷ 折舊為主';el.hidden=false;return}
+  if(![s,f,e].every(r=>r&&r.y!=null&&r.y>0)){el.hidden=true;el.innerHTML='';return}
+  let t;
+  if(s.y>f.y*1.15&&f.y>e.y*1.15)t='單季 ＞ 近四季 ＞ 預估：成長正在加速、但模型預估未來四季趨緩——單季 PEG 最漂亮時別只看它，再確認月營收年增有沒有繼續加速';
+  else if(s.y<f.y*0.85)t='單季成長已低於近四季：減速中，就算近四季 PEG 很低，也先看月營收年增的方向';
+  else if(e.y>f.y*1.15)t='預估成長高於近四季：預估 PEG 靠模型假設撐著，先檢查下方「預估 EPS」的假設是不是太樂觀';
+  else if(e.y<f.y*0.7)t='預估成長明顯低於近四季：高成長難以延續（或「明年營收年增」假設偏保守），拿預估 PEG 當基準比較穩';
+  else t='三個成長率接近：穩定成長，PEG 比較可信';
+  el.innerHTML='📐 '+t;el.hidden=false;
 }
 // ---------- 公司財測（data/guide.json，Claude 每季法說後手動更新）----------
 // hist 每列＝某一季的財測 {q, on＝給財測的法說日, rev:[低,高], fx, gm:[低,高], om:[低,高], act:{實際}}；沒有 act＝還沒公布
@@ -1327,7 +1420,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>D&&rend
 <script>
 (function(){const t=document.getElementById('tipBox');let tm;
  document.addEventListener('click',e=>{const x=e.target.closest('[data-tip]');if(!x){t.style.display='none';return}
-  e.preventDefault();e.stopPropagation();t.textContent=x.dataset.tip;t.style.display='block';clearTimeout(tm);tm=setTimeout(()=>t.style.display='none',5000)},true);
+  e.preventDefault();e.stopPropagation();t.textContent=x.dataset.tip;t.style.display='block';clearTimeout(tm);tm=setTimeout(()=>t.style.display='none',Math.max(5000,Math.min(12000,x.dataset.tip.length*45)))},true);
 })();
 </script>
 </body>
