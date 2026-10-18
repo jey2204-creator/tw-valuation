@@ -1323,7 +1323,7 @@ function table(el,items,sortKey,mode){
     const r=e.target.closest('tr[data-id]');if(r)location.hash=r.dataset.id};
 }
 function aiPending(fav){const el=$('aiBox');if(!AI){el.hidden=true;return}
-  const cfg=store.get('themeCfg')||{},mine=(cfg.themes||[]).flatMap(t=>(t.stocks||[]).map(x=>x[0]));   // 自訂＋改過的內建主題（存在手機）＋自選
+  let mine=[];try{mine=Object.values((store.get('themeCfg')||{}).themes||{}).flatMap(t=>(t.stocks||[]).map(x=>x[0]))}catch(e){}   // themeCfg.themes 是 {id:主題} 物件：自訂＋改過的內建主題（存在手機）＋自選
   const ids=[...new Set([...fav,...mine])].filter(id=>!ai(id)).sort();
   if(!ids.length){el.hidden=true;return}
   $('aiN').textContent=`${ids.length} 檔`;$('aiList').textContent=ids.map(id=>`${id} ${nameOf(id)}`).join('、');el.hidden=false;
@@ -1334,7 +1334,7 @@ function renderHome(){
   const fav=store.get('fav')||[];$('favEdit').hidden=!fav.length;
   $('favBox').innerHTML=fav.length?'<div class="panel"><div class="tbl"><table class="lst" id="favTbl"></table></div></div>':'<p class="dtip">在個股頁點「☆ 加入自選」，就會出現在這裡。</p>';
   if(fav.length)table($('favTbl'),fav.map(id=>[id,'']));
-  paintSeg();aiPending(fav);
+  paintSeg();try{aiPending(fav)}catch(e){}
   {const pool=[...new Set([...THEMES.flatMap(t=>t.stocks.map(x=>x[0])),...fav])],hot=pool.filter(id=>mv(id,'fire'));
    $('hotN').textContent=MO?`主題＋自選 ${pool.length} 檔中 ${hot.length} 檔`:'資料準備中';
    const ht=$('hotTbl');ht.dataset.sort=ht.dataset.sort||'m_m:-1';table(ht,hot.map(id=>[id,(THEMES.find(t=>t.stocks.some(x=>x[0]===id))||{name:'⭐ 自選'}).name]),undefined,'m');
