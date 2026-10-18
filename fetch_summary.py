@@ -86,7 +86,7 @@ def theme_ids():
 
 
 def eps_of(rows):
-    """FinMind 單季財報 → [季別, 本季EPS, 去年同季EPS, 年增%, 業外旗標]
+    """FinMind 單季財報 → [季別, 本季EPS, 去年同季EPS, 年增%, 業外旗標, 近四季EPS, 前四季EPS, 近四季年增%, 近四季業外旗標]
     年增% 只有去年同季 EPS > 0 才算；業外旗標 = 本季淨利率比營益率高 5 個百分點以上"""
     q = {}
     for r in rows:
@@ -103,11 +103,26 @@ def eps_of(rows):
     rv, oi, ni = o.get("Revenue"), o.get("OperatingIncome"), o.get("EquityAttributableToOwnersOfParent")
     nonop = 1 if rv and oi is not None and ni is not None and (ni - oi) / rv * 100 > 5 else 0
     label = f"{last[2:4]}Q{(int(last[5:7]) + 2) // 3}"
-    return [label, round(cur, 2), round(prev, 2) if prev is not None else None, yoy, nonop]
+    # 近四季：最新 4 季 EPS 合計 vs 前 4 季合計（8 季要連續，差一季就不算）；業外旗標＝4 季任一季中
+    e4 = p4 = yoy4 = None
+    nonop4 = 0
+    if len(ds) >= 8:
+        ks = ds[-8:]
+        qn = [int(d[:4]) * 4 + (int(d[5:7]) + 2) // 3 for d in ks]
+        if all(b - a == 1 for a, b in zip(qn, qn[1:])):
+            e4 = round(sum(q[d]["EPS"] for d in ks[4:]), 2)
+            p4 = round(sum(q[d]["EPS"] for d in ks[:4]), 2)
+            yoy4 = round((e4 / p4 - 1) * 100, 1) if p4 > 0 else None
+            for d in ks[4:]:
+                x = q[d]
+                r_, o_, n_ = x.get("Revenue"), x.get("OperatingIncome"), x.get("EquityAttributableToOwnersOfParent")
+                if r_ and o_ is not None and n_ is not None and (n_ - o_) / r_ * 100 > 5:
+                    nonop4 = 1
+    return [label, round(cur, 2), round(prev, 2) if prev is not None else None, yoy, nonop, e4, p4, yoy4, nonop4]
 
 
 def fetch_eps(ids):
-    start = f"{dt.date.today().year - 2}-01-01"
+    start = f"{dt.date.today().year - 3}-01-01"   # 近四季年增要 8 季：往前抓 3 年
     out, fail = {}, 0
     for c in ids:
         try:
@@ -317,7 +332,7 @@ def main():
             eps = {}
     out = dict(updated=dt.datetime.utcnow().strftime("%Y-%m-%dT%H:%MZ"), fields=FIELDS,
                revYM=yms[-1] if yms else None, sources=src, errors=errs, d=d,
-               epsFields=["q", "eps", "epsPrev", "yoy", "nonop"], eps=eps, sh=sh, diag=diag)
+               epsFields=["q", "eps", "epsPrev", "yoy", "nonop", "e4", "p4", "yoy4", "nonop4"], eps=eps, sh=sh, diag=diag)
     (OUT / "summary.json").write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")), "utf-8")
     print(f"summary.json: {len(d)} 檔，最新營收月份 {out['revYM']}，失敗 {len(errs)} 個來源")
 
