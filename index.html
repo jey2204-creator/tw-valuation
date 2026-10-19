@@ -108,6 +108,8 @@ body:not([data-view=stock]) :is(header.quote,nav.chips,section.card,#note){displ
 .ghost{flex:none;font-size:13px;color:var(--accent);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:3px 11px;background:var(--card)}
 h2.sec{font-size:13px;color:var(--muted);font-weight:700;letter-spacing:.06em;margin:22px 0 8px;display:flex;justify-content:space-between;align-items:baseline}
 h2.sec small{font-weight:500;letter-spacing:0}
+.asof.stale{color:var(--warm);font-weight:700}
+.asofN{font-size:11.5px;color:var(--muted);margin:-4px 0 8px;line-height:1.5}.asofN.stale{color:var(--warm)}
 .tgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .tcard{display:flex;flex-direction:column;gap:2px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;color:var(--fg);text-decoration:none;min-width:0}
 .tcard b{font-size:15px;line-height:1.35}
@@ -263,7 +265,7 @@ details.ind.hot summary b{color:var(--up)}
     <input id="q2" type="search" inputmode="search" autocomplete="off" placeholder="輸入代號或名稱，例如 2454、聯發科" aria-label="搜尋股票">
     <div class="results" id="res2" hidden></div>
   </div>
-  <h2 class="sec"><span>⭐ 自選<a class="act" href="#f" id="favEdit" hidden>✏️ 排序</a></span><span class="segm" data-seg></span></h2>
+  <h2 class="sec"><span>⭐ 自選 <small class="asof" id="favAsof"></small><a class="act" href="#f" id="favEdit" hidden>✏️ 排序</a></span><span class="segm" data-seg></span></h2><p class="asofN" id="asofNote" hidden></p>
   <div id="favBox"></div>
   <h2 class="sec"><span>產業主題 <small><span id="sumAsof"></span>・中位數</small></span><a class="act" href="#e">✏️ 編輯</a></h2>
   <div class="tgrid" id="tgrid"></div>
@@ -1425,10 +1427,36 @@ function aiPending(fav){const el=$('aiBox');if(!AI){el.hidden=true;return}
   if(!ids.length){$('aiN').textContent='自選＋自訂主題都查過了 ✓';$('aiList').textContent='這支裝置的自選與自訂主題裡沒有還沒查的股票。之後新增股票，沒查過的會列在這裡。';$('aiCopy').hidden=true;return}
   $('aiCopy').hidden=false;$('aiN').textContent=`${ids.length} 檔`;$('aiList').textContent=ids.map(id=>`${id} ${nameOf(id)}`).join('、');
   $('aiCopy').onclick=async()=>{const t=ids.map(id=>`${id} ${nameOf(id)}`).join('、');try{await navigator.clipboard.writeText(t);$('aiMsg').textContent='已複製，貼給 Claude 就好'}catch(e){$('aiMsg').textContent='複製失敗，請長按上面文字選取'}}}
+// ---------- 資料日期＋過期提醒：平日 19:30 後應該要有當天收盤；休市日看 data/hist/YYYYMMDD.json 的 closed ----------
+let ASOF=null;   // {st:'ok'|'wait'|'late'|'miss', exp:'YYYYMMDD'}
+function tpeNow(){const d=new Date(Date.now()+8*3600e3);return{ymd:d.toISOString().slice(0,10).replace(/-/g,''),dow:d.getUTCDay(),min:d.getUTCHours()*60+d.getUTCMinutes()}}
+function prevWd(ymd){const d=new Date(Date.UTC(+ymd.slice(0,4),+ymd.slice(4,6)-1,+ymd.slice(6)));do d.setUTCDate(d.getUTCDate()-1);while(d.getUTCDay()===0||d.getUTCDay()===6);return d.toISOString().slice(0,10).replace(/-/g,'')}
+async function asofCheck(){
+  if(!S||!S.pxAsof){ASOF=null;return}
+  const n=tpeNow(),wd=n.dow>0&&n.dow<6,px=S.pxAsof;
+  let exp=(wd&&n.min>=19*60+30)?n.ymd:(wd?prevWd(n.ymd):prevWd(n.ymd));
+  if(wd&&n.min<19*60+30&&px>=prevWd(n.ymd)){ASOF={st:'wait',exp:n.ymd};return}
+  for(let k=0;k<6&&px<exp;k++){            // 期望的日子若是休市日，往前找
+    let closed=false;try{const r=await fetch('data/hist/'+exp+'.json?t='+Date.now());if(r.ok){const j=await r.json();closed=!!j.closed}}catch(e){}
+    if(!closed)break;exp=prevWd(exp)}
+  if(px>=exp){ASOF={st:'ok',exp};return}
+  ASOF={st:(exp===n.ymd&&n.min<23*60+30)?'late':'miss',exp};
+}
+function asofPaint(){
+  const md=s=>s.slice(4,6)+'/'+s.slice(6),fa=$('favAsof'),no=$('asofNote'),sp=$('sumPx');
+  if(!S||!S.pxAsof){fa.textContent='';no.hidden=true;return}
+  const bad=ASOF&&(ASOF.st==='late'||ASOF.st==='miss');
+  fa.textContent='收盤 '+md(S.pxAsof);fa.classList.toggle('stale',!!bad);if(sp)sp.classList.toggle('stale',!!bad);
+  let t='';
+  if(ASOF&&ASOF.st==='wait')t='⏳ 今日收盤約 19:00 後更新（排程 18:40 開始跑）';
+  else if(ASOF&&ASOF.st==='late')t='⏳ 今日 '+md(ASOF.exp)+' 收盤還沒進來：排程可能延遲，22:30 會再跑一次';
+  else if(ASOF&&ASOF.st==='miss')t='⚠️ 應該要有 '+md(ASOF.exp)+' 收盤，資料還停在 '+md(S.pxAsof)+'：排程可能漏跑，可請 Claude 手動更新';
+  no.textContent=t;no.hidden=!t;no.classList.toggle('stale',!!bad);
+}
 function renderHome(){
   RANK=null;srHome();
-  modeQ();$('sumAsof').textContent=S?`收盤 ${S.pxAsof?S.pxAsof.slice(4,6)+'/'+S.pxAsof.slice(6):S.updated.slice(5,10).replace('-','/')}・營收 ${S.revYM?+S.revYM.slice(5)+'月':'—'}${QN?'・EPS '+QN:''}`:'數字待 Actions 產生';
-  const fav=store.get('fav')||[];$('favEdit').hidden=!fav.length;
+  modeQ();$('sumAsof').innerHTML=S?`<span class="asof" id="sumPx">收盤 ${S.pxAsof?S.pxAsof.slice(4,6)+'/'+S.pxAsof.slice(6):S.updated.slice(5,10).replace('-','/')}</span>・營收 ${S.revYM?+S.revYM.slice(5)+'月':'—'}${QN?'・EPS '+QN:''}`:'數字待 Actions 產生';
+  const fav=store.get('fav')||[];$('favEdit').hidden=!fav.length;try{asofPaint()}catch(e){}
   $('favBox').innerHTML=fav.length?'<div class="panel"><div class="tbl"><table class="lst" id="favTbl"></table></div></div>':'<p class="dtip">在個股頁點「☆ 加入自選」，就會出現在這裡。</p>';
   if(fav.length)table($('favTbl'),fav.map(id=>[id,'']));
   paintSeg();try{aiPending(fav)}catch(e){}
@@ -1615,6 +1643,8 @@ addEventListener('hashchange',route);
   try{const r=await fetch('data/headcount.json?t='+Date.now());if(r.ok)HC=await r.json()}catch(e){}
   try{const r=await fetch('data/ai.json?t='+Date.now());if(r.ok)AI=await r.json()}catch(e){}
   route();
+  asofCheck().then(()=>{try{asofPaint()}catch(e){}});
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')asofCheck().then(()=>{try{asofPaint()}catch(e){}})});
 })();
 // 手動改假設 → 財測情境按鈕取消選取（明年年增不影響財測情境）
 ['iMon','iNm','iQg','iYg'].forEach(id=>$(id).addEventListener('input',()=>{if(!D)return;if(id!=='iYg'&&window.__gd&&GS){GS='';const g=gOf(D.id);if(g&&!$('gdScen').hidden)paintScen(g)}renderFwd()}));
