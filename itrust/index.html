@@ -260,28 +260,39 @@ body.finopen{overflow:hidden}
 .cumseg[hidden]{display:none}
 .apx{font-size:11px;color:var(--muted);margin-right:1px}
 .disc{font-size:12px;line-height:1.6;color:var(--warn);background:var(--warn-soft);border-radius:8px;padding:8px 12px;max-width:78ch}
+/* 表頭精簡（2026-10-19）：標題＋日期一行；分頁＋買賣一列，捲動時吸頂；完整免責聲明移到頁尾 */
+header.hd{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:2px 10px}
+header.hd h1{font-size:clamp(18px,2.6vw,26px);line-height:1.3}
+header.hd .disc1{flex-basis:100%;font-size:12px;line-height:1.5;color:var(--warn);text-decoration:none}
+.upd{display:inline-flex;align-items:center;gap:4px;font:500 12px var(--font-num);color:var(--muted);min-width:0}
+.upd.stale{background:var(--warn-soft);color:var(--warn);border-radius:6px;padding:2px 8px;font-weight:600}
+.ctlbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;display:flex;align-items:center;gap:8px;margin:-12px -16px 0;padding:6px 16px;background:var(--bg);border-bottom:1px solid transparent}
+.ctlbar.stuck{border-bottom-color:var(--line)}
+.ctlbar .vtabs{display:flex;flex:1 1 auto;min-width:0;max-width:520px;border-radius:10px}
+.ctlbar .vtabs button{flex:1 1 auto;min-height:34px;padding:0 8px;font-size:14px;white-space:nowrap}
+.ctlbar .dseg{flex:none}
+.ctlbar .dseg button{min-height:34px;padding:0 12px;font-size:14px;white-space:nowrap}
+@media (max-width:640px){.wrap{padding-top:10px}}
 </style>
 
 <div class="wrap">
-  <header>
-    <div class="eyebrow">台股 · 上市＋上櫃 · 每日盤後更新 · 分享版</div>
+  <header class="hd">
     <h1>法人買賣超<em>佔股本</em>排行</h1>
-    <div class="sub" id="updated">正在讀取資料…</div>
-    <div class="disc">⚠️ 僅整理公開的法人買賣超資料供研究參考，不構成任何投資建議或買賣邀約；資料可能有誤，請以證交所、櫃買中心公告為準，投資盈虧請自行負責。</div>
+    <span class="upd" id="updated">讀取中…</span>
+    <a class="disc1" href="#disc">⚠️ 僅供研究參考，不構成投資建議（完整說明見頁尾）</a>
   </header>
 
-  <div class="vtabs" role="group" aria-label="法人切換">
-    <button id="vIt" data-v="it" aria-pressed="true">投信</button>
-    <button id="vFi" data-v="fi" aria-pressed="false">外資</button>
-    <button id="vBoth" data-v="both" aria-pressed="false">土洋同買</button>
-    <button id="vInd" data-v="ind" aria-pressed="false">產業</button>
-  </div>
-  <div class="ctl">
+  <div class="ctlbar" id="ctlbar">
+    <div class="vtabs" role="group" aria-label="法人切換">
+      <button id="vIt" data-v="it" aria-pressed="true">投信</button>
+      <button id="vFi" data-v="fi" aria-pressed="false">外資</button>
+      <button id="vBoth" data-v="both" aria-pressed="false">土洋同買</button>
+      <button id="vInd" data-v="ind" aria-pressed="false">產業</button>
+    </div>
     <div class="dseg" role="group" aria-label="買賣方向">
       <button data-d="buy" aria-pressed="true">買超</button>
       <button data-d="sell" aria-pressed="false">賣超</button>
     </div>
-    <span class="sub2" id="dirHint">切換買超／賣超，排行與產業統計都會跟著變</span>
   </div>
 
 
@@ -321,6 +332,11 @@ body.finopen{overflow:hidden}
   </div>
 
   <section class="notes">
+    <div class="disc" id="disc">⚠️ 僅整理公開的法人買賣超資料供研究參考，不構成任何投資建議或買賣邀約；資料可能有誤，請以證交所、櫃買中心公告為準，投資盈虧請自行負責。</div>
+    <h2>資料說明</h2>
+    <div>分享版 · 台股上市＋上櫃，每個交易日盤後整理；時間一律為台灣時間。收錄最近 <span id="loadN">20</span> 個交易日，分享版更新於 <span id="builtAt">—</span>。</div>
+    <div>標題右側＝目前顯示的交易日與資料寫入時間；投信、外資寫入時間不同時會分開列，看的不是最新一天時前面標「歷史」。最新資料若不是前一個交易日（平日 21:00 後則應為當天），會變成橘色「⚠️ 資料停在…」；前一天剛好休市時也會出現，可忽略。</div>
+    <div>買超／賣超切換時，排行與產業統計都會跟著變；賣超時佔股本數字顯示為綠色。</div>
     <h2>計算方式</h2>
     <div>佔股本 ＝ 法人買超股數 ÷ 交易所／櫃買當日掛牌股數。掛牌股數會隨可轉債轉換、增資新股上市即時更新，比觀測站登記股數更貼近當天可交易的股本。</div>
     <div id="basis">對照欄是公開資訊觀測站的已發行普通股數（含私募股、庫藏股）。</div>
@@ -368,6 +384,21 @@ const lotsOf=r=>r.lots??Math.round(r.v/1000);
 const W=()=>dir==='buy'?'買超':'賣超';
 const S=()=>dir==='buy'?1:-1;
 const tpe=d=>{const iso=d.updatedAtIso;if(!iso)return d.updatedAt||'';try{const f=new Intl.DateTimeFormat('zh-TW',{timeZone:'Asia/Taipei',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date(iso));const g=t=>f.find(x=>x.type===t).value;return `${g('year')}/${g('month')}/${g('day')} ${g('hour')}:${g('minute')}（台灣時間）`}catch(e){return d.updatedAt||''}};
+const tpeP=d=>{const iso=d&&d.updatedAtIso;if(!iso)return null;try{const f=new Intl.DateTimeFormat('zh-TW',{timeZone:'Asia/Taipei',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date(iso));const g=t=>f.find(x=>x.type===t).value;return{ymd:g('year')+g('month')+g('day'),hm:g('hour')+':'+g('minute')}}catch(e){return null}};
+const UPD_CUT=21*60;
+function expLatest(){try{const f=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Taipei',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date());const g=t=>+f.find(x=>x.type===t).value;const d=new Date(Date.UTC(g('year'),g('month')-1,g('day')));if(g('hour')*60+g('minute')<UPD_CUT)d.setUTCDate(d.getUTCDate()-1);while(d.getUTCDay()===0||d.getUTCDay()===6)d.setUTCDate(d.getUTCDate()-1);return d.toISOString().slice(0,10).replace(/-/g,'')}catch(e){return null}}
+function updInfo(cur,doc,fdoc,latest){
+  const md=x=>fd(x).slice(5),sh=p=>p?(p.ymd===cur?p.hm:md(p.ymd)+' '+p.hm):'';
+  const ti=sh(tpeP(doc)),tf=fdoc?sh(tpeP(fdoc)):null;
+  let t=md(cur);
+  if(tf===null)t+=(ti?' · '+ti:'')+' · 無外資';
+  else if(ti===tf)t+=ti?' · '+ti:'';
+  else t+=' · 投'+(ti||'—')+' 外'+(tf||'—');
+  const full='交易日 '+fd(cur)+'；投信寫入 '+(doc?tpe(doc):'—')+(fdoc?'；外資寫入 '+tpe(fdoc):'；這天沒有外資資料');
+  const exp=expLatest(),hist=!!(latest&&cur!==latest);
+  if(exp&&latest&&latest<exp)return{stale:true,text:'⚠️ 資料停在 '+md(latest)+(hist?' · 看 '+md(cur):''),title:'最新資料停在 '+fd(latest)+'，應有 '+fd(exp)+'（前一天休市可忽略）。'+full};
+  return{stale:false,text:(hist?'歷史 ':'✓ ')+t,title:full};
+}
 const yahooUrl=r=>'https://tw.stock.yahoo.com/quote/'+encodeURIComponent(r.c)+(r.m==='上櫃'?'.TWO':'.TW')+'/technical-analysis';
 const tvUrl=r=>'https://www.tradingview.com/chart/?symbol='+(r.m==='上櫃'?'TPEX':'TWSE')+'%3A'+encodeURIComponent(r.c);
 const linkHtml=r=>`<a href="${yahooUrl(r)}" target="_blank" rel="noopener noreferrer">Yahoo K線<small>↗</small></a><a href="${tvUrl(r)}" target="_blank" rel="noopener noreferrer">TradingView<small>↗</small></a>`;
@@ -591,7 +622,9 @@ function render(){
   if(!cur)return;
   setupHead();
   const doc=days[cur],fdoc=fdays[cur];
-  $('updated').textContent='交易日 '+fd(cur)+' · 投信更新 '+tpe(doc)+(fdoc?' · 外資更新 '+tpe(fdoc):' · 這天沒有外資資料')+' · 收錄最近 '+ids.length+' 個交易日 · 分享版更新 '+(window.SHARE_DATA?.builtAt||'');
+  {const u=updInfo(cur,doc,fdoc,ids[0]),el=$('updated');el.className='upd'+(u.stale?' stale':'');el.textContent=u.text;el.title=u.title}
+  if($('loadN'))$('loadN').textContent=ids.length;
+  if($('builtAt'))$('builtAt').textContent=window.SHARE_DATA?.builtAt||'—';
   if(doc.sharesBasis)$('basis').textContent='股數基準：'+doc.sharesBasis;
   if(fdoc?.def)$('fbasis').textContent=fdoc.def;
   const s=S();
@@ -647,6 +680,7 @@ document.querySelectorAll('.seg button').forEach(b=>b.onclick=()=>{filter=b.data
 document.querySelectorAll('#cumSeg button').forEach(b=>b.onclick=()=>{cumN=+b.dataset.n;if(sortK==='cumX'&&cumN===5)sortK='cum5';try{localStorage.setItem('itrust.cumN',String(cumN))}catch(e){}render()});
 $('msort').onchange=()=>{sortK=$('msort').value;sortDir=-S();render()};
 let XD={},XF={};
+try{const cb=$('ctlbar'),hd=document.querySelector('header.hd');if(cb&&hd&&'IntersectionObserver' in window)new IntersectionObserver(([e])=>cb.classList.toggle('stuck',!e.isIntersecting)).observe(hd)}catch(e){}
 (function(){
   const D=window.SHARE_DATA;
   if(!D||!D.days){$('updated').textContent='資料載入失敗，請重新整理頁面。';return}
