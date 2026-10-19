@@ -1,0 +1,44 @@
+name: itrust 日K（投本比前20名）
+run-name: itrust kline ${{ inputs.date }}
+on:
+  workflow_dispatch:           # 由 claude.ai 雲端排程觸發，帶入交易日與代號清單
+    inputs:
+      date:
+        description: "交易日 YYYYMMDD"
+        required: true
+      codes:
+        description: "代號:市場，以逗號分隔（L＝上市、O＝上櫃），例如 2330:L,6510:O"
+        required: true
+permissions:
+  contents: write
+concurrency:
+  group: itrust-kline
+  cancel-in-progress: false
+jobs:
+  kline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: 抓日K與除權息
+        env:
+          D: ${{ inputs.date }}
+          CODES: ${{ inputs.codes }}
+        run: python itrust/kline_fetch.py "$D" "$CODES"
+      - name: 只提交 itrust/kline/
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A itrust/kline/
+          git diff --cached --quiet && exit 0
+          git commit -m "itrust kline: ${D}"
+          for i in 1 2 3; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 10
+          done
+          exit 1
+        env:
+          D: ${{ inputs.date }}
