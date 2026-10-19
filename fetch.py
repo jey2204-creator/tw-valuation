@@ -136,6 +136,20 @@ def build_inv(bs, fs, cf, q):
     return out
 
 
+def build_cf(fs, cf, q):
+    """現金流卡：[季別, 單季營業現金流, 稅後淨利(合併)]（億）；資本支出另取 capex"""
+    ni = _ser(fs, ("IncomeAfterTaxes", "NetIncome"))
+    ocf = to_quarter_signed(_ser(cf, ("CashFlowsFromOperatingActivities", "NetCashInflowFromOperatingActivities")))
+    out = []
+    for lbl, *_ in q:
+        y, n = 2000 + int(lbl[:2]), int(lbl[3])
+        d = f"{y}-{('03-31', '06-30', '09-30', '12-31')[n - 1]}"
+        if ni.get(d) is None or ocf.get((y, n)) is None:
+            continue
+        out.append([lbl, round(ocf[(y, n)] / 1e8, 2), round(ni[d] / 1e8, 2)])
+    return out
+
+
 def build(sid, today=None, fetch=get):
     today = today or dt.date.today()
     start = f"{today.year - YEARS}-01-01"
@@ -202,7 +216,7 @@ def build(sid, today=None, fetch=get):
     name = info[0].get("stock_name", "") if info else ""
     return dict(id=sid, name=name, cyclical=sid in CYCLICAL, updated=dt.datetime.utcnow().strftime("%Y-%m-%dT%H:%MZ"),
                 shares=round(shares, 4) if shares else None, last=last, rev=rev, q=q, riv=riv,
-                capex=build_capex(cf, q), inv=build_inv(bs, fs, cf, q))
+                capex=build_capex(cf, q), inv=build_inv(bs, fs, cf, q), cf=build_cf(fs, cf, q))
 
 
 def build_list():
