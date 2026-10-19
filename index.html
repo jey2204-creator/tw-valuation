@@ -109,7 +109,10 @@ body:not([data-view=stock]) :is(header.quote,nav.chips,section.card,#note){displ
 h2.sec{font-size:13px;color:var(--muted);font-weight:700;letter-spacing:.06em;margin:22px 0 8px;display:flex;justify-content:space-between;align-items:baseline}
 h2.sec small{font-weight:500;letter-spacing:0}
 .asof.stale{color:var(--warm);font-weight:700}
-.asofN{font-size:11.5px;color:var(--muted);margin:-4px 0 8px;line-height:1.5}.asofN.stale{color:var(--warm)}
+.asofN{font-size:11.5px;color:var(--muted);margin:-4px 0 8px;line-height:1.5}.asofN .stale{color:var(--warm)}
+span.asof{white-space:nowrap}
+.foot.asof.stale{color:var(--warm);font-weight:700}
+#tAsofN{margin:4px 0 6px}#chipAsof{margin:0 0 6px}
 .tgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .tcard{display:flex;flex-direction:column;gap:2px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;color:var(--fg);text-decoration:none;min-width:0}
 .tcard b{font-size:15px;line-height:1.35}
@@ -280,7 +283,7 @@ details.ind.hot summary b{color:var(--up)}
   <h1 id="tName" style="margin-top:6px"></h1>
   <p class="take" id="tSum"></p>
   <div class="uslink" id="tUS"></div>
-  <div class="mrow"><span class="segm" data-seg></span><span class="meta" id="tAsof"></span></div>
+  <div class="mrow"><span class="segm" data-seg></span><span class="meta" id="tAsof"></span></div><p class="asofN" id="tAsofN" hidden></p>
   <div class="panel" style="margin-top:8px"><div class="tbl"><table class="lst" id="tTbl"></table></div></div>
   <p class="foot" id="tFoot" style="margin-top:8px"></p>
 </section>
@@ -515,7 +518,7 @@ function header(){
   const ch=L.close-L.prev,chp=ch/L.prev*100,col=ch>0?'var(--up)':ch<0?'var(--down)':'var(--muted)';
   $('chg').textContent=(ch>0?'▲ ':ch<0?'▼ ':'')+fmt(Math.abs(ch),L.close<100?2:0)+'（'+(ch>=0?'+':'')+chp.toFixed(2)+'%）';
   $('px').style.color=col;$('chg').style.color=col;
-  $('asof').textContent='收盤 '+L.date.replaceAll('-','/');
+  $('asof').textContent='收盤 '+L.date.replaceAll('-','/');$('asof').dataset.d=L.date.replaceAll('-','');$('asof').classList.add('asof');try{stkAsofPaint()}catch(e){}
   $('sPE').textContent=L.pe?L.pe.toFixed(2):'—';$('sPB').textContent=L.pb?L.pb.toFixed(2):'—';
   $('sEPS').textContent=lastR[2]!=null?lastR[2].toFixed(2):'—';$('sBV').textContent=lastR[3]!=null?lastR[3].toFixed(1):'—';
   const lv=V[V.length-1],yr=lv[0].slice(0,4),mo=+lv[0].slice(5);
@@ -655,6 +658,8 @@ async function renderChip(){
   if(!rows){$('tChip').innerHTML=CH?'這檔還沒有逐日籌碼資料。<br>試做階段只涵蓋 <strong>主題成份股＋志聖 2467</strong>。':'籌碼資料載入失敗';$('cChip').hidden=true;$('tbChip').innerHTML='';$('fChip').textContent='';return}
   $('cChip').hidden=false;
   const days=CH.days.map(x=>x.slice(4,6)+'/'+x.slice(6)),n=rows.length;
+  const lastOf=k=>{for(let i=n-1;i>=0;i--)if(rows[i][k]!=null)return CH.days[CH.days.length-n+i];return null};
+  const dI=lastOf(2),dM=lastOf(5);
   const tot=r=>r[2]==null?null:r[2]+r[3]+r[4];
   const S=(i,k,f)=>{const a=rows.slice(-k).map(f).filter(x=>x!=null);return a.length?sum(a):null};
   const sg=v=>v==null?'—':(v>0?'+':'')+fmt(v);
@@ -688,6 +693,16 @@ async function renderChip(){
     $('fChip').textContent='柱：融資、融券餘額的每日增減（張）　線：收盤（右軸）。融資多半是散戶，融資大增而股價不漲常是警訊。';
   }
   $('tbChip').innerHTML=tb;c.setOption(o,true);c.resize();
+  chipAsof(dI,dM);
+}
+async function chipAsof(dI,dM){
+  let el=$('chipAsof');if(!el){el=document.createElement('p');el.id='chipAsof';el.className='asofN';$('tChip').before(el)}
+  const fi=await daySt(dI,PX_CUT,PX_END),fm=await daySt(dM,MG_CUT,MG_END);
+  const L=[];
+  if(fi&&fi.st==='wait')L.push('法人約 19:00 後更新');else if(isBad(fi))L.push(`法人應有 ${md(fi.exp)}${fi.st==='miss'?'，排程可能漏跑':'，22:30 會再跑一次'}`);
+  if(fm&&fm.st==='wait')L.push('融資券約 22:30 後更新');else if(isBad(fm))L.push(`融資券應有 ${md(fm.exp)}${fm.st==='miss'?'，排程可能漏跑':'，今晚排程可能延遲'}`);
+  el.innerHTML='📅 '+tag('法人',fi,dI)+'・'+tag('融資券',fm,dM)+(L.length?`<br><span class="${isBad(fi)||isBad(fm)?'stale':''}">${L.join('；')}</span>`:'');
+  el.hidden=false;
 }
 document.addEventListener('click',e=>{const b=e.target.closest('#chipSeg button');if(!b)return;chipMode=b.dataset.m;
   document.querySelectorAll('#chipSeg button').forEach(x=>x.setAttribute('aria-pressed',x===b));renderChip()});
@@ -1056,7 +1071,7 @@ async function getData(id){
   const d=await live(id);store.set(k,{t:Date.now(),d});return d;
 }
 async function load(id){
-  document.body.classList.add('dim');$('asof').textContent=`載入 ${id} 中…`;$('err').hidden=true;
+  document.body.classList.add('dim');$('asof').textContent=`載入 ${id} 中…`;$('asof').dataset.d='';$('asof').classList.remove('stale');$('err').hidden=true;
   try{
     const d=await getData(id);
     if(!d.riv.length||d.q.length<2||!d.rev.length)throw new Error(`${id} 的歷史資料不足（新上市、或財報格式不支援），無法繪圖`);
@@ -1431,27 +1446,77 @@ function aiPending(fav){const el=$('aiBox');if(!AI){el.hidden=true;return}
 let ASOF=null;   // {st:'ok'|'wait'|'late'|'miss', exp:'YYYYMMDD'}
 function tpeNow(){const d=new Date(Date.now()+8*3600e3);return{ymd:d.toISOString().slice(0,10).replace(/-/g,''),dow:d.getUTCDay(),min:d.getUTCHours()*60+d.getUTCMinutes()}}
 function prevWd(ymd){const d=new Date(Date.UTC(+ymd.slice(0,4),+ymd.slice(4,6)-1,+ymd.slice(6)));do d.setUTCDate(d.getUTCDate()-1);while(d.getUTCDay()===0||d.getUTCDay()===6);return d.toISOString().slice(0,10).replace(/-/g,'')}
+// 各資料的狀態：st = wait（還沒到更新時間）／ok／late（今天的還沒進來，排程可能延遲）／miss（可能漏跑）
+const md=s=>s?s.slice(4,6)+'/'+s.slice(6):'—';
+const ymdOf=d=>d.toISOString().slice(0,10).replace(/-/g,'');
+const HCL={};
+async function hClosed(d){if(d in HCL)return HCL[d];let c=false;try{const r=await fetch('data/hist/'+d+'.json?t='+Date.now());if(r.ok)c=!!(await r.json()).closed}catch(e){}return HCL[d]=c}
+// 逐日資料：cut＝今天的資料應該出現的時間（分鐘），lateEnd＝超過就從「延遲」改「漏跑」
+async function daySt(d,cut,lateEnd){
+  if(!d)return null;
+  const n=tpeNow(),wd=n.dow>0&&n.dow<6;
+  if(wd&&n.min<cut&&d>=prevWd(n.ymd))return{st:'wait',exp:n.ymd,d};
+  let exp=(wd&&n.min>=cut)?n.ymd:prevWd(n.ymd);
+  for(let k=0;k<6&&d<exp&&await hClosed(exp);k++)exp=prevWd(exp);   // 期望的日子是休市日就往前找
+  if(d>=exp)return{st:'ok',exp,d};
+  return{st:(exp===n.ymd&&n.min<lateEnd)?'late':'miss',exp,d};
+}
+// 集保：每週五的資料（假日改週四），週六公布、週一晚上排程抓進來
+function tdSt(d){
+  if(!d)return null;
+  const n=tpeNow(),t=new Date(Date.UTC(+n.ymd.slice(0,4),+n.ymd.slice(4,6)-1,+n.ymd.slice(6)));
+  while(t.getUTCDay()!==5)t.setUTCDate(t.getUTCDate()-1);
+  const mon=new Date(t);mon.setUTCDate(t.getUTCDate()+3);const mY=ymdOf(mon);
+  if(n.ymd<mY||(n.ymd===mY&&n.min<19*60+30))t.setUTCDate(t.getUTCDate()-7);
+  const exp=ymdOf(t),lo=new Date(t);lo.setUTCDate(t.getUTCDate()-2);
+  return d>=ymdOf(lo)?{st:'ok',exp,d}:{st:'miss',exp,d};
+}
+const PX_CUT=19*60+30,PX_END=23*60+30,MG_CUT=23*60,MG_END=24*60;
+let FR={};
 async function asofCheck(){
-  if(!S||!S.pxAsof){ASOF=null;return}
-  const n=tpeNow(),wd=n.dow>0&&n.dow<6,px=S.pxAsof;
-  let exp=(wd&&n.min>=19*60+30)?n.ymd:(wd?prevWd(n.ymd):prevWd(n.ymd));
-  if(wd&&n.min<19*60+30&&px>=prevWd(n.ymd)){ASOF={st:'wait',exp:n.ymd};return}
-  for(let k=0;k<6&&px<exp;k++){            // 期望的日子若是休市日，往前找
-    let closed=false;try{const r=await fetch('data/hist/'+exp+'.json?t='+Date.now());if(r.ok){const j=await r.json();closed=!!j.closed}}catch(e){}
-    if(!closed)break;exp=prevWd(exp)}
-  if(px>=exp){ASOF={st:'ok',exp};return}
-  ASOF={st:(exp===n.ymd&&n.min<23*60+30)?'late':'miss',exp};
+  FR={px:S&&S.pxAsof?await daySt(S.pxAsof,PX_CUT,PX_END):null,
+      mo:MO&&MO.asof?await daySt(MO.asof,PX_CUT,PX_END):null,
+      inst:MO&&MO.instAsof?await daySt(MO.instAsof,PX_CUT,PX_END):null,
+      td:TD&&TD.asof?tdSt(TD.asof):null};
+  ASOF=FR.px;
+}
+const isBad=f=>!!f&&(f.st==='late'||f.st==='miss');
+const tag=(lab,f,d)=>`<span class="asof${isBad(f)?' stale':''}">${lab}${lab?' ':''}${md(d)}</span>`;
+// 目前畫面看得到的資料：估值模式只有收盤；動能模式＝價、法人、集保
+function frTags(){
+  if(MODE==='m'&&MO)return tag('價',FR.mo,MO.asof)+'・'+tag('法人',FR.inst,MO.instAsof)+(TD?'・'+tag('集保',FR.td,TD.asof):'');
+  return S&&S.pxAsof?tag('收盤',FR.px,S.pxAsof):'';
+}
+function frNote(){
+  const L=[],p=MODE==='m'&&MO?FR.mo:FR.px,nm=MODE==='m'&&MO?'動能（價量）':'收盤';
+  if(p&&p.st==='wait')L.push(['','⏳ 今日收盤約 19:00 後更新（排程 18:40 開始跑）']);
+  else if(p&&p.st==='late')L.push(['s',`⏳ 今日 ${md(p.exp)} ${nm}還沒進來：排程可能延遲，22:30 會再跑一次`]);
+  else if(p&&p.st==='miss')L.push(['s',`⚠️ 應該要有 ${md(p.exp)} ${nm}，資料還停在 ${md(p.d)}：排程可能漏跑，可請 Claude 手動更新`]);
+  if(MODE==='m'&&MO){
+    const f=FR.inst;
+    if(isBad(f)&&!isBad(p))L.push(['s',`⏳ 法人還停在 ${md(f.d)}（應有 ${md(f.exp)}；證交所／櫃買偶爾晚公布，下次排程會補）`]);
+    if(FR.td&&FR.td.st==='miss')L.push(['s',`⚠️ 集保應有 ${md(FR.td.exp)} 那週，資料還停在 ${md(FR.td.d)} 週（集保週六公布，週一晚上排程抓）`]);
+  }
+  return L;
+}
+function notePaint(el){
+  const L=frNote();el.innerHTML=L.map(x=>`<span${x[0]?' class="stale"':''}>${x[1]}</span>`).join('<br>');
+  el.hidden=!L.length;el.classList.toggle('stale',L.some(x=>x[0]));
 }
 function asofPaint(){
-  const md=s=>s.slice(4,6)+'/'+s.slice(6),fa=$('favAsof'),no=$('asofNote'),sp=$('sumPx');
-  if(!S||!S.pxAsof){fa.textContent='';no.hidden=true;return}
-  const bad=ASOF&&(ASOF.st==='late'||ASOF.st==='miss');
-  fa.textContent='收盤 '+md(S.pxAsof);fa.classList.toggle('stale',!!bad);if(sp)sp.classList.toggle('stale',!!bad);
-  let t='';
-  if(ASOF&&ASOF.st==='wait')t='⏳ 今日收盤約 19:00 後更新（排程 18:40 開始跑）';
-  else if(ASOF&&ASOF.st==='late')t='⏳ 今日 '+md(ASOF.exp)+' 收盤還沒進來：排程可能延遲，22:30 會再跑一次';
-  else if(ASOF&&ASOF.st==='miss')t='⚠️ 應該要有 '+md(ASOF.exp)+' 收盤，資料還停在 '+md(S.pxAsof)+'：排程可能漏跑，可請 Claude 手動更新';
-  no.textContent=t;no.hidden=!t;no.classList.toggle('stale',!!bad);
+  const fa=$('favAsof'),no=$('asofNote'),sp=$('sumPx');
+  fa.innerHTML=frTags();
+  if(sp)sp.classList.toggle('stale',isBad(FR.px));
+  notePaint(no);
+  if(document.body.dataset.view==='theme')tAsofPaint();
+  if(document.body.dataset.view==='stock')stkAsofPaint();
+}
+function tAsofPaint(){const a=$('tAsof'),n=$('tAsofN');if(!a)return;a.innerHTML=frTags();if(n)notePaint(n)}
+// 個股頁標頭「收盤 YYYY/MM/DD」：比應有的交易日舊就變橘色
+function stkAsofPaint(){
+  const a=$('asof'),d=a&&a.dataset.d;if(!d||!FR.px)return;
+  const want=FR.px.st==='wait'?prevWd(FR.px.exp):FR.px.exp,bad=d<want&&FR.px.st!=='wait'||d<prevWd(FR.px.exp)&&FR.px.st==='wait';
+  a.classList.toggle('stale',bad);a.title=bad?`應有 ${md(want)} 收盤`:'';
 }
 function renderHome(){
   RANK=null;srHome();
@@ -1492,7 +1557,7 @@ function showTheme(tid){
     (jp.length?`${t.us&&t.us.length?'<span style="flex-basis:100%;height:0"></span>':''}對應日股 `+jp.map(([c,n])=>`<a href="jp/#${c}">${c} ${esc(n)}</a>`).join(''):'')+
     (kr.length?`${(t.us&&t.us.length)||jp.length?'<span style="flex-basis:100%;height:0"></span>':''}對應韓股 `+kr.map(([c,n])=>`<a href="kr/#${c}">${c} ${esc(n)}</a>`).join(''):'')}
   paintSeg();
-  $('tAsof').textContent=MODE==='m'&&MO?`${ymd(MO.asof)}${MO.instAsof!==MO.asof?'・法人 '+ymd(MO.instAsof):''}${TD?'・集保 '+ymd(TD.asof):''}`:'';
+  try{tAsofPaint()}catch(e){}
   if(MODE==='m'){const mw=median(ids.map(i=>mv(i,'w'))),mm=median(ids.map(i=>mv(i,'m'))),mq=median(ids.map(i=>mv(i,'q'))),vr=median(ids.map(i=>mv(i,'vr'))),nf=ids.filter(i=>mv(i,'fire')).length;
     $('tSum').innerHTML=MO?`${ids.length} 檔中位數：週 <strong class="${sign(mw)}">${pct(mw)}</strong>・月 <strong class="${sign(mm)}">${pct(mm)}</strong>・季 <strong class="${sign(mq)}">${pct(mq)}</strong>・量比 <strong>${fmt(vr,2)}</strong>${(()=>{const bw=median(ids.map(i=>tv(i,'b4w')));return bw==null?'':`・大戶週變化 <strong class="${sign(bw)}">${pp(bw,2)}</strong>`})()}・🔥 <strong>${nf}</strong> 檔`:'動能資料尚未產生（第一次需回補約 3 個月歷史資料）'}
   $('tTbl').dataset.sort='';table($('tTbl'),t.stocks);
