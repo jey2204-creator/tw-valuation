@@ -1,4 +1,4 @@
-name: itrust 日K（投本比前20名）
+name: itrust 日K（投信＋外資＋土洋前20名聯集）
 run-name: itrust kline ${{ inputs.date }}
 on:
   workflow_dispatch:           # 由 claude.ai 雲端排程觸發，帶入交易日與代號清單
@@ -17,7 +17,7 @@ concurrency:
 jobs:
   kline:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

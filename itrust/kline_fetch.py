@@ -1,4 +1,4 @@
-"""投本比前20名 日K資料（給 itrust 自用版頁面的 db kline 用）
+"""投信／外資／土洋同買前20名（聯集）日K資料（給 itrust 自用版頁面的 db kline 用）
 
 由 .github/workflows/itrust_kline.yml 手動觸發（雲端排程用 workflow_dispatch 帶入參數）。
 用法：python itrust/kline_fetch.py 20261019 "8021:L,3264:O,..."
@@ -137,7 +137,7 @@ def main():
         m = re.fullmatch(r"\s*(\d{4,6}[A-Z]?):([LO])\s*", p)
         assert m, f"bad code spec: {p}"
         codes.append((m.group(1), m.group(2)))
-    assert 0 < len(codes) <= 40, "1–40 codes"
+    assert 0 < len(codes) <= 70, "1–70 codes"
     t0 = time.time()
     bars = {}
     for code, mk in codes:
