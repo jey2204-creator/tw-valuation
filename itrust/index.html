@@ -104,13 +104,53 @@ tr.row:hover td{background:var(--chip)}
 .chev{color:var(--muted);font-size:11px;width:12px;display:inline-block}
 .fire{margin-left:4px}
 .hint{font-size:11px;color:var(--muted);font-weight:400;margin-left:4px}
-tr.detail td{background:var(--bg);text-align:left;white-space:normal;padding:12px 14px 14px 52px;font-family:var(--font-body)}
+tr.detail td{background:var(--bg);text-align:left;white-space:normal;padding:8px 14px 10px 52px;font-family:var(--font-body)}
 tr.detail.hot td{background:var(--hot)}
-.dgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px 18px}
-.dgrid div{display:flex;justify-content:space-between;gap:8px;font-size:13px;border-bottom:1px dashed var(--line);padding-bottom:4px}
+/* 個股明細精簡（2026-10-19）：合併均線、布林值改徽章、按鈕一列、列距壓縮 */
+.dgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:3px 8px}
+.dgrid div{display:flex;justify-content:space-between;align-items:baseline;gap:6px;font-size:13px;line-height:1.35;padding:3px 6px;border-radius:4px;min-width:0}
+.dgrid div{background:var(--surface)}
+.dgrid div.wide{grid-column:1/-1}
+.dk{white-space:nowrap}
+.dbadges{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px}
+.dbadge{font:600 11px var(--font-body);padding:1px 7px;border-radius:999px;background:var(--chip);color:var(--muted)}
+.dbadge.ok{background:var(--buy-soft);color:var(--buy)}
+.dbadge.mkt{background:var(--buy-soft);color:var(--buy);border-radius:4px}
+.dbadge.mkt.otc{background:var(--otc-soft);color:var(--otc)}
+.dact{margin-top:8px;max-width:320px;display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.dact a{display:flex;align-items:center;justify-content:center;gap:3px;min-height:38px;border-radius:9px;border:1px solid var(--line);background:var(--surface);color:var(--fg);font:700 13px var(--font-body);text-decoration:none;white-space:nowrap}
+.dact small{font:500 11px var(--font-body);color:var(--muted)}
+.dact a:focus-visible{outline:2px solid var(--buy);outline-offset:2px}
+.dchk{margin-top:6px;font-size:12.5px}
+.dnotes p.p5{display:flex;align-items:flex-end;gap:8px}
+.dnotes p.p5>b{align-self:center;white-space:nowrap}
+.b5{display:flex;align-items:flex-end;gap:8px;flex-wrap:wrap;min-width:0}
+.b5g{display:inline-grid;grid-template-columns:repeat(5,minmax(34px,auto));gap:4px;align-items:end}
+.b5c{display:grid;justify-items:center;gap:1px}
+.dnotes p.p5>b small{font:500 10.5px var(--font-body);color:var(--muted);margin-left:2px}
+.b5c i{display:block;width:14px;border-radius:2px 2px 0 0;background:var(--buy)}
+.b5c i.dn{background:var(--dn)}
+.b5c i.na{height:2px!important;background:var(--line)}
+.b5n{font:600 10.5px var(--font-num);line-height:1.1;white-space:nowrap}
+.b5n.up{color:var(--buy)}.b5n.dn{color:var(--dn)}.b5n.na{color:var(--muted);font-family:var(--font-body)}
+.b5d{font:400 9.5px var(--font-num);color:var(--muted);line-height:1.1;border-top:1px solid var(--line);padding-top:1px;width:100%;text-align:center}
+.b5t{font:700 11px var(--font-body);padding:2px 8px;border-radius:999px;align-self:center;white-space:nowrap}
+.b5t.sp{background:var(--warn-soft);color:var(--warn)}
+.b5t.ct{background:var(--buy-soft);color:var(--buy)}
+.b5t.rv{background:var(--chip);color:var(--dn)}
+.b5u{font-size:10.5px;color:var(--muted);align-self:center}
+.dchk summary{cursor:pointer;color:var(--otc);font-weight:700;list-style:none;padding:2px 0;width:fit-content}
+.dchk summary::-webkit-details-marker{display:none}
+.dchk summary::before{content:'▸ ';color:var(--muted)}
+.dchk[open] summary::before{content:'▾ '}
+.dchk summary small{font-weight:500;color:var(--muted);margin-left:4px}
+.dchk summary small.w{color:var(--warn);font-weight:700}
+.dchk .dgrid{margin-top:4px}
+.dchk p{margin:4px 0 0;color:var(--muted);line-height:1.5}
 .dk{color:var(--muted)}
+.dv{text-align:right;min-width:0}
 .dv{font-family:var(--font-num);font-variant-numeric:tabular-nums}
-.dnotes{display:grid;gap:4px;margin-top:10px;font-size:13px;line-height:1.6}
+.dnotes{display:grid;gap:2px;margin-top:6px;font-size:12.5px;line-height:1.5}
 .dnotes p{margin:0}
 @media (max-width:640px){
   table{min-width:0}
@@ -130,8 +170,9 @@ tr.detail.hot td{background:var(--hot)}
   .pbar{display:none}
   .pct b{min-width:0}
   .hint{display:none}
-  tr.detail td{padding:12px}
-  .dgrid{grid-template-columns:1fr 1fr}
+  tr.detail td{padding:8px 10px}
+  .dgrid{grid-template-columns:1fr 1fr;gap:3px 6px}
+  .dgrid div{font-size:12.5px;padding:3px 4px}
   .bar{gap:10px}
   .msort{display:flex}
   th[data-k="amt"],td.amtc{display:none}
@@ -461,6 +502,7 @@ function updInfo(cur,doc,fdoc,latest){
 }
 const yahooUrl=r=>'https://tw.stock.yahoo.com/quote/'+encodeURIComponent(r.c)+(r.m==='上櫃'?'.TWO':'.TW')+'/technical-analysis';
 const tvUrl=r=>'https://www.tradingview.com/chart/?symbol='+(r.m==='上櫃'?'TPEX':'TWSE')+'%3A'+encodeURIComponent(r.c);
+const esc5=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const linkHtml=r=>`<a href="${yahooUrl(r)}" target="_blank" rel="noopener noreferrer">Yahoo K線<small>↗</small></a><a href="${tvUrl(r)}" target="_blank" rel="noopener noreferrer">TradingView<small>↗</small></a>`;
 let cumN=5;try{const v=+localStorage.getItem('itrust.cumN');if([5,10,20].includes(v))cumN=v}catch(e){}
 
@@ -610,7 +652,23 @@ const VIEWS={
 };
 
 
-function techItems(t){const a=[];if(t&&!t.na)a.push(['5MA',fmt(t.ma5,2)],['10MA',fmt(t.ma10,2)],['20MA',fmt(t.ma20,2)+(t.up?' ↑':' ↓')],['多頭排列',t.bull?'是':'否'],['底底高',t.hl?'是':'否'],['20MA乖離',(t.bias>0?'+':'')+t.bias.toFixed(2)+'%']);else if(t&&t.na)a.push(['技術欄位',t.na]);return a}
+function techItems(t){const a=[];if(t&&!t.na){a.push(['20MA乖離',(t.bias>0?'+':'')+t.bias.toFixed(2)+'%']);a.push(['5／10／20MA',fmt(t.ma5,1)+' / '+fmt(t.ma10,1)+' / '+fmt(t.ma20,1)+(t.up?'↑':'↓'),'wide'])}else if(t&&t.na)a.push(['技術欄位',t.na]);return a}
+function techBadges(t,m){const mk=m?`<span class="dbadge mkt${m==='上櫃'?' otc':''}">${m}</span>`:'';if(!t||t.na)return mk?`<div class="dbadges">${mk}</div>`:'';return `<div class="dbadges">${mk}<span class="dbadge ${t.bull?'ok':''}">${t.bull?'✅':'✗'} 多頭排列</span><span class="dbadge ${t.hl?'ok':''}">${t.hl?'✅':'✗'} 底底高</span></div>`}
+const chkOpen=new Set();
+// 近5日明細：迷你長條＋型態標籤（2026-10-19）。標籤只是提醒，不是買賣訊號；門檻未回測。
+function pattern5(v,dir){if(dir==='sell')return null;const x=v.map(a=>a==null?0:a/1000);const t=x[4],prev=x.slice(0,4);
+  if(x[3]<0&&x[4]<0)return{c:'rv',t:'↩️ 轉賣'};
+  const avg=prev.reduce((a,b)=>a+b,0)/4;
+  if(t>0&&avg<=0&&prev.filter(a=>a>0).length<=1)return{c:'sp',t:'⚡ 單日爆量'};
+  if(t>0&&avg>0&&t>=avg*5)return{c:'sp',t:'⚡ 單日爆量 ×'+(t/avg).toFixed(1)};
+  const pos=x.filter(a=>a>0),ps=pos.reduce((a,b)=>a+b,0);
+  if(pos.length>=4&&ps>0&&Math.max(...pos)<=ps*.6)return{c:'ct',t:'🔁 連續加碼'};
+  return null}
+function bars5(ids,vals,dir){const n=v=>v==null?null:v/1000;const xs=vals.map(n);const mx=Math.max(...xs.map(a=>Math.abs(a||0)),1);
+  const pt=pattern5(vals,dir);
+  const col=(id,a)=>{const lab=a==null?'缺':(a>0?'':'')+fmt(a,Math.abs(a)%1?1:0);const h=a==null?0:Math.max(2,Math.round(Math.abs(a)/mx*26));
+    return `<span class="b5c" title="${fd(id)} ${a==null?'缺資料':lotStr(a*1000)}"><span class="b5n ${a==null?'na':a<0?'dn':'up'}">${lab}</span><i class="${a==null?'na':a<0?'dn':'up'}" style="height:${h}px"></i><span class="b5d">${fd(id).slice(5)}</span></span>`};
+  return `<span class="b5"><span class="b5g">${ids.map((id,k)=>col(id,xs[k])).join('')}</span>${pt?`<span class="b5t ${pt.c}">${pt.t}</span>`:''}</span>`}
 const lotStr=v=>(v>0?'+':'')+fmt(v/1000,v%1000?3:0)+' 張';
 function detail(r,ctx){
   const items=[],notes=[];
@@ -626,21 +684,21 @@ function detail(r,ctx){
   if(view==='it'){
     const sd=(r.sdiff??0)>5;
     const why=r.why==='priv'?'差額是私募股，私募股還沒掛牌交易':r.s>r.sm?'掛牌較多：可能是可轉債轉換或增資新股已經掛牌，觀測站還沒變更登記':'掛牌較少：可能是減資、庫藏股註銷，或私募股還沒掛牌';
-    items.push(['市場',r.m],['收盤價',fmt(r.cl,2)+' 元'],['漲跌幅',chgTxt(r)+(r.chg!=null?'（'+(r.chg>0?'+':'')+fmt(r.chg,2)+' 元）':'')],['投信'+W(),fmt(lotsOf(r))+' 張'],[W()+'金額',fmt(r.amt,2)+' 億'],['掛牌股數',fmt(r.s/1000)+' 張'],['觀測站股數',r.sm?fmt(r.sm/1000)+' 張':'—'],['股數差異',r.sm?(r.sdiff??0).toFixed(2)+'%':'—'],['近5日上榜',r.in5+' / '+ctx.avail5+' 天'],['近5日累計',sg(r.cum5)],['產業',indName(indOf(r.c))],...techItems(r.t));
+    items.push(['收盤價',fmt(r.cl,2)+' 元'],['漲跌',chgTxt(r)+(r.chg!=null?'（'+(r.chg>0?'+':'')+fmt(r.chg,2)+'）':'')],['投信'+W(),fmt(lotsOf(r))+' 張'],[W()+'金額',fmt(r.amt,2)+' 億'],['掛牌股數',fmt(r.s/1000)+' 張','chk'],['觀測站股數',r.sm?fmt(r.sm/1000)+' 張':'—','chk'],['股數差異',r.sm?(r.sdiff??0).toFixed(2)+'%':'—','chk'],['近5日上榜',r.in5+' / '+ctx.avail5+' 天'],['近5日累計',sg(r.cum5)],['產業',indName(indOf(r.c))],...techItems(r.t));
     if(sd)notes.push(['≠觀測站','差異 '+r.sdiff.toFixed(2)+'%，'+why+'。佔股本以掛牌股數計算。']);
     if(r.cb)notes.push(['可轉債','公司目前有流通中的公司債，未來轉換可能讓掛牌股數增加。']);
-    notes.push(['近5日明細',r.last5.map((id,k)=>fd(id).slice(5)+' '+(r.per[k]===null?'缺資料':lotStr(r.per[k]))).join('、')+'；合計 '+(r.cum5v>0?'+':'')+fmt(r.cum5v)+' 股 ÷ 掛牌 '+fmt(r.s)+' 股']);
+    notes.push(['近5日',bars5(r.last5,r.per,dir),'html']);notes.push(['計算式','近5日合計 '+(r.cum5v>0?'+':'')+fmt(r.cum5v)+' 股 ÷ 掛牌 '+fmt(r.s)+' 股 ＝ '+sg(r.cum5),'chk']);
     const fv=fvOf(cur,r.c);if(fv!=null)notes.push(['外資當天',fv>0?'淨買超 '+lotStr(fv):fv<0?'淨賣超 '+lotStr(fv):'沒有買賣']);
     if(r.streak>=3)notes.push(['🔥','連續 '+(r.open?'≥':'')+r.streak+' 個交易日都在投信'+W()+'前 20 名。']);
   }else if(view==='fi'){
-    items.push(['市場',r.m],['收盤價',fmt(r.cl,2)+' 元'],['漲跌幅',chgTxt(r)+(r.chg!=null?'（'+(r.chg>0?'+':'')+fmt(r.chg,2)+' 元）':'')],['外資'+W(),fmt(r.lots)+' 張'],[W()+'金額',fmt(r.amt,2)+' 億'],['掛牌股數',fmt(r.s/1000)+' 張'],['外本比',r.p.toFixed(4)+'%'],['外資持股',pctOr(r.hp)],['尚可投資',pctOr(r.rm)],['近5日上榜',r.in5+' / '+ctx.avail5+' 天'],['近5日累計',sg(r.cum5)],['產業',indName(indOf(r.c))],...techItems(r.t));
+    items.push(['收盤價',fmt(r.cl,2)+' 元'],['漲跌',chgTxt(r)+(r.chg!=null?'（'+(r.chg>0?'+':'')+fmt(r.chg,2)+'）':'')],['外資'+W(),fmt(r.lots)+' 張'],[W()+'金額',fmt(r.amt,2)+' 億'],['掛牌股數',fmt(r.s/1000)+' 張','chk'],['外本比',r.p.toFixed(4)+'%'],['外資持股',pctOr(r.hp)],['尚可投資',pctOr(r.rm)],['近5日上榜',r.in5+' / '+ctx.avail5+' 天'],['近5日累計',sg(r.cum5)],['產業',indName(indOf(r.c))],...techItems(r.t));
     if(dir==='buy'&&!r.t)notes.push(['技術欄位','外資技術欄位從 10/06 起由每日盤後排程計算。']);
     if(dir==='buy'&&r.rm!=null&&r.rm<10)notes.push(['持股上限','外資尚可投資比率只剩 '+r.rm.toFixed(2)+'%，接近法令上限，後續買盤空間有限。']);
-    notes.push(['近5日明細',r.last5.map((id,k)=>fd(id).slice(5)+' '+lotStr(r.per[k]??0)).join('、')+'；合計 '+(r.cum5v>0?'+':'')+fmt(r.cum5v)+' 股 ÷ 掛牌 '+fmt(r.s)+' 股']);
+    notes.push(['近5日',bars5(r.last5,r.last5.map((_,k)=>r.per[k]??0),dir),'html']);notes.push(['計算式','近5日合計 '+(r.cum5v>0?'+':'')+fmt(r.cum5v)+' 股 ÷ 掛牌 '+fmt(r.s)+' 股 ＝ '+sg(r.cum5),'chk']);
     if(r.trow)notes.push(['投信當天',r.trow.v>0?'淨買超 '+lotStr(r.trow.v)+'（投本比 '+r.trow.p.toFixed(3)+'%）':'淨賣超 '+lotStr(r.trow.v)+'（投本比 '+r.trow.p.toFixed(3)+'%）']);
     if(r.streak>=3)notes.push(['🔥','連續 '+(r.open?'≥':'')+r.streak+' 個交易日都在外資'+W()+'前 20 名。']);
   }else{
-    items.push(['市場',r.m],['收盤價',fmt(r.cl,2)+' 元'],['漲跌幅',chgTxt(r)+(r.chg!=null?'（'+(r.chg>0?'+':'')+fmt(r.chg,2)+' 元）':'')],['投信'+W(),fmt(lotsOf(r))+' 張'],['投信金額',fmt(r.amt,2)+' 億'],['外資'+W(),fmt(r.flots)+' 張'],['外資金額',fmt(r.famt,2)+' 億'],['投本比',r.p.toFixed(4)+'%'],['外本比',r.fp.toFixed(4)+'%'],['合計',r.sum.toFixed(4)+'%'],['外資持股',pctOr(r.frow?.hp)],['產業',indName(indOf(r.c))],...techItems(r.t||r.frow?.t));
+    items.push(['收盤價',fmt(r.cl,2)+' 元'],['漲跌',chgTxt(r)+(r.chg!=null?'（'+(r.chg>0?'+':'')+fmt(r.chg,2)+'）':'')],['投信'+W(),fmt(lotsOf(r))+' 張'],['投信金額',fmt(r.amt,2)+' 億'],['外資'+W(),fmt(r.flots)+' 張'],['外資金額',fmt(r.famt,2)+' 億'],['投本比',r.p.toFixed(4)+'%'],['外本比',r.fp.toFixed(4)+'%'],['合計',r.sum.toFixed(4)+'%'],['外資持股',pctOr(r.frow?.hp)],['產業',indName(indOf(r.c))],...techItems(r.t||r.frow?.t));
     notes.push([dir==='buy'?'雙買連續':'雙賣連續','投信、外資兩邊都'+(dir==='buy'?'淨買超 ':'淨賣超 ')+(r.dopen?'≥':'')+r.dstreak+' 個交易日（外資資料從 9/24 起）。']);
     if(!r.frow)notes.push(['外資金額','外資'+W()+'未達 0.5 億，金額以外資張數 × 收盤價估算。']);
   }
@@ -733,9 +791,16 @@ function render(){
     tb.appendChild(tr);
     if(open){const {items,notes}=detail(r,ctx);
       const dt=document.createElement('tr');dt.className='detail'+(hot?' hot':'');
-      dt.innerHTML='<td colspan="14"><div class="dgrid"></div><div class="dnotes"></div><div class="dlinks">'+linkHtml(r)+'</div></td>';
-      const g=dt.querySelector('.dgrid');items.forEach(([k,v])=>{const d=document.createElement('div');d.innerHTML='<span class="dk"></span><span class="dv"></span>';d.children[0].textContent=k;d.children[1].textContent=v;g.appendChild(d)});
-      const nEl=dt.querySelector('.dnotes');notes.forEach(([k,v])=>{const d=document.createElement('p');d.innerHTML='<b></b> <span></span>';d.children[0].textContent=k;d.children[1].textContent=v;nEl.appendChild(d)});
+      dt.innerHTML='<td colspan="14">'+techBadges(r.t||r.frow?.t,r.m)+'<div class="dgrid"></div><div class="dnotes"></div><div class="dact">'+linkHtml(r)+'</div></td>';
+      const g=dt.querySelector('.dgrid');const ck=items.filter(x=>x[2]==='chk'),cn=notes.filter(x=>x[2]==='chk');
+      items.filter(x=>x[2]!=='chk').forEach(([k,v,w])=>{const d=document.createElement('div');if(w)d.className=w;d.innerHTML='<span class="dk"></span><span class="dv"></span>';d.children[0].textContent=k;d.children[1].textContent=v;g.appendChild(d)});
+      const nEl=dt.querySelector('.dnotes');notes.filter(x=>x[2]!=='chk').forEach(([k,v,w])=>{const d=document.createElement('p');d.innerHTML='<b></b> <span></span>';if(w==='html'){d.className='p5';d.children[0].innerHTML=esc5(k)+'<small>張</small>';d.children[1].outerHTML=v}else d.children[0].textContent=k;if(w==='html'){}else d.children[1].textContent=v;nEl.appendChild(d)});
+      if(ck.length||cn.length){const sw=(r.sdiff??0)>5;const det=document.createElement('details');det.className='dchk';const ckK='chk'+view+dir+r.c;if(sw||chkOpen.has(ckK))det.open=true;
+        det.innerHTML='<summary>資料校驗<small class="'+(sw?'w':'')+'">'+(r.sm&&view==='it'?'股數差異 '+(r.sdiff??0).toFixed(2)+'%'+(sw?' ⚠':''):'掛牌股數・計算式')+'</small></summary><div class="dgrid"></div>';
+        det.addEventListener('toggle',()=>{det.open?chkOpen.add(ckK):chkOpen.delete(ckK)});
+        const g2=det.querySelector('.dgrid');ck.forEach(([k,v])=>{const d=document.createElement('div');d.innerHTML='<span class="dk"></span><span class="dv"></span>';d.children[0].textContent=k;d.children[1].textContent=v;g2.appendChild(d)});
+        cn.forEach(([k,v])=>{const d=document.createElement('p');d.innerHTML='<b></b> <span></span>';d.children[0].textContent=k;d.children[1].textContent=v;det.appendChild(d)});
+        nEl.after(det)}
       tb.appendChild(dt)}
   });
 }
