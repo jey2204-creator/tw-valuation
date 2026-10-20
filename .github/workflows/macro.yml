@@ -1,0 +1,39 @@
+name: 台股總經對照資料
+on:
+  schedule:
+    - cron: "20 15 * * 1-5"   # 台北時間 平日 23:20（收盤後；指數月底＋GDP）
+  workflow_dispatch:
+    inputs:
+      idxmax:
+        description: "加權指數這次最多補幾個月（補歷史填 400；平常 60）"
+        required: false
+        default: "60"
+permissions:
+  contents: write
+concurrency:
+  group: macro
+  cancel-in-progress: false
+jobs:
+  macro:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: 加權指數月底＋GDP
+        env:
+          IDXMAX: ${{ github.event.inputs.idxmax || '60' }}
+          FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
+        run: python fetch_macro.py
+      - name: 有變動才提交
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/macro.json
+          git diff --cached --quiet && exit 0
+          git commit -m "macro: $(TZ=Asia/Taipei date '+%F %H:%M')"
+          git pull --rebase -X theirs origin main || (git rebase --abort; git pull --no-rebase -X ours origin main)
+          git push
