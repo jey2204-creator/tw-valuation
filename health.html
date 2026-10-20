@@ -193,14 +193,18 @@ function qRec(r){
     growS:r.cmpS?r.growS/r.cmpS*100:null,growO:r.cmpO?r.growO/r.cmpO*100:null,src:'MOPS'}
 }
 function earnings(){
-  const q=((H&&H.q)||[]).filter(r=>r.n>1200);
-  const ann=q.filter(r=>r.p.endsWith('Q4')&&+r.p.slice(0,4)>=2019).map(qRec);
-  const last=q.length?qRec(q[q.length-1]):null;
-  if(ann.length>=3)return {src:'MOPS',ann,last};
+  // 年度：MOPS 有的年份用 MOPS（同一批公司年增），還沒回補到的年份用 health_seed.json（媒體彙整）
+  const q=((H&&H.q)||[]).filter(r=>r.n>1200),mq={};q.forEach(r=>mq[r.p]=qRec(r));
   const R=SEED.years.rows;
-  const a=R.map((r,i)=>{const p=R[i-1];return {p:r[0]+'Q4',y:r[0],q:4,ni:r[2],ts:r[4],allY:p?(r[2]/p[2]-1)*100:null,
-    exY:p?((r[2]-r[4])/(p[2]-p[4])-1)*100:null,grow:null,src:'seed'}});
-  return {src:'seed',ann:a,last:last&&last.q!==4?last:a[a.length-1]}
+  const ann=R.map((r,i)=>{const p=R[i-1],m=mq[r[0]+'Q4'];
+    const sA=p?(r[2]/p[2]-1)*100:null,sE=p?((r[2]-r[4])/(p[2]-p[4])-1)*100:null;
+    if(m)return {...m,allY:fin(m.allY)?m.allY:sA,exY:fin(m.exY)?m.exY:sE};
+    return {p:r[0]+'Q4',y:r[0],q:4,ni:r[2],ts:r[4],allY:sA,exY:sE,grow:null,src:'seed'}});
+  Object.values(mq).filter(m=>m.q===4&&m.y>=2019&&!R.some(r=>r[0]===m.y)).forEach(m=>ann.push(m));
+  ann.sort((x,y)=>x.y-y.y);
+  const lq=q.length?mq[q[q.length-1].p]:null;
+  const src=ann.every(a=>a.src==='MOPS')?'MOPS':ann.some(a=>a.src==='MOPS')?'mix':'seed';
+  return {src,ann,last:lq&&lq.q!==4?lq:ann[ann.length-1],seedYears:ann.filter(a=>a.src==='seed').map(a=>a.y)}
 }
 function divs(){return SEED.years.rows.map(r=>({y:r[0],div:r[3],ni:r[2],pay:r[3]/r[2]*100}))}
 
@@ -260,14 +264,16 @@ function drawEarn(E){
   c.setOption(o);
   const L=E.last,fy=A[A.length-1];
   let t=`<strong>${fy.y} 年</strong>全體 ${fmt(fy.ni,2)} 兆（${sg(fy.allY)}），台積電占 <strong>${fmt(fy.ts/fy.ni*100,0)}%</strong>；扣掉台積電 <strong>${sg(fy.exY)}</strong>。`;
-  if(L&&L.q!==4&&L.src==='MOPS')t+=` ${L.y} ${QN[L.q]}：全體 ${sg(L.allY)}、扣台積電 <strong>${sg(L.exY)}</strong>、獲利成長家數 ${fmt(L.grow,0)}%。`;
+  if(L&&L.q!==4)t+=` ${L.y} ${QN[L.q]}：全體 ${sg(L.allY)}、扣台積電 <strong>${sg(L.exY)}</strong>、獲利成長家數 ${fmt(L.grow,0)}%。`;
   $('earnTake').innerHTML=t;
-  const rows=[...A];if(L&&L.q!==4&&L.src==='MOPS')rows.push({...L,ytd:true});
+  const rows=[...A];if(L&&L.q!==4)rows.push({...L,ytd:true});
   const hasG=rows.some(r=>fin(r.grow));
   $('tEarn').innerHTML=`<tr><th>期間</th><th>全體</th><th>台積電</th><th>占比</th><th>扣台積電</th>${hasG?'<th>成長家數</th>':''}</tr>`+
     rows.map(r=>`<tr class="${r.ytd?'ytd':''}"><td>${r.ytd?`${String(r.y).slice(2)} ${QN[r.q]}`:r.y}</td><td>${fmt(r.ni,2)}</td><td>${fmt(r.ts,2)}</td><td>${fmt(r.ts/r.ni*100,0)}%</td><td>${sg(r.exY)}</td>${hasG?`<td>${fin(r.grow)?fmt(r.grow,0)+'%':'—'}</td>`:''}</tr>`).join('');
-  $('earnFoot').textContent=E.src==='MOPS'?'來源：公開資訊觀測站綜合損益表彙總（逐家加總，歸屬母公司淨利）。年增率＝同一批公司比去年同期；淡色列為今年累計。'
-    :'季財報彙總建置中，暫以媒體彙整的上市櫃稅後淨利顯示（2023 年為回推值）；年增率為不同年度總數直接相比。';
+  const ys=E.seedYears;
+  $('earnFoot').textContent=(E.src==='seed'?'季財報彙總建置中，暫以媒體彙整的上市櫃稅後淨利顯示（2023 年為回推值）。'
+    :'來源：公開資訊觀測站綜合損益表彙總（逐家加總歸屬母公司淨利；年增率＝同一批公司比去年同期）。'+(ys.length?`${ys[0]}${ys.length>1?'–'+ys[ys.length-1]:''} 年暫用媒體彙整值，回補中。`:''))
+    +'淡色列為今年累計。';
 }
 
 function drawRev(M){
