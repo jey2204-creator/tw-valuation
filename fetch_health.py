@@ -29,6 +29,8 @@ TSMC = "2330"
 START_Q = (2018, 1)          # 2019 起才有「與去年同期比」
 START_M = (2019, 1)
 MAXREQ = int(os.environ.get("MAXREQ") or 24)
+MMAX = int(os.environ.get("MMAX") or 40)       # 月營收靜態頁每次最多幾頁（4 頁＝1 個月）
+AJAX_GAP = float(os.environ.get("AJAX_GAP") or 25)
 BUDGET = float(os.environ.get("BUDGET_MIN") or 30) * 60      # 秒；超過就停止打 MOPS，先存檔提交
 T0 = time.time()
 TODAY = dt.datetime.now(dt.timezone(dt.timedelta(hours=8))).date()
@@ -216,7 +218,7 @@ def fetch_month(y, m):
             for h in HOSTS:
                 if h.split("/")[2] in BLOCKED:
                     continue
-                st, txt = req(f"{h}/nas/t21/{mk}/t21sc03_{roc}_{m}_{kind}.html", gap=1.5)
+                st, txt = req(f"{h}/nas/t21/{mk}/t21sc03_{roc}_{m}_{kind}.html", gap=3.0)
                 if st is None:
                     return None, src
                 p = parse_t21(txt) if st == 200 else {}
@@ -266,7 +268,12 @@ def update_months(old):
         y, m = (y + 1, 1) if m == 12 else (y, m + 1)
     todo.sort(reverse=True)                  # 新的先抓
     done = 0
+    REQ["fail"] = 0
+    n0 = REQ["n"]
     for y, m in todo:
+        if REQ["n"] - n0 >= MMAX:
+            DIAG["notes"].append(f"月營收本次上限 {MMAX} 頁，其餘下次補")
+            break
         rows, src = fetch_month(y, m)
         if rows is None:
             if REQ["stop"]:
@@ -351,7 +358,7 @@ def fetch_quarter(y, n):
                 continue
             form = {"encodeURIComponent": 1, "step": 1, "firstin": 1, "off": 1, "isQuery": "Y",
                     "TYPEK": mk, "year": str(roc), "season": f"{n:02d}"}
-            st, txt = req(f"{h}/mops/web/ajax_t163sb04", data=form, referer=f"{h}/mops/web/t163sb04", gap=4.0)
+            st, txt = req(f"{h}/mops/web/ajax_t163sb04", data=form, referer=f"{h}/mops/web/t163sb04", gap=AJAX_GAP)
             if st is None:
                 return None, info
             rows, used = parse_t163(txt) if st == 200 else ({}, [])
@@ -373,9 +380,17 @@ def fetch_quarter(y, n):
 
 def update_quarters():
     QDIR.mkdir(parents=True, exist_ok=True)
-    todo = []
+    due = []
     y, n = START_Q
     while TODAY > q_deadline(y, n):
+        due.append((y, n))
+        y, n = (y + 1, 1) if n == 4 else (y, n + 1)
+    # 只抓「各年 Q4（全年）」＋「最新一期與去年同期」：頁面只用年度與今年累計，其他季別不需要（MOPS 每期約 1.5MB，省流量）
+    want = {t for t in due if t[1] == 4}
+    if due:
+        want |= {due[-1], (due[-1][0] - 1, due[-1][1])}
+    todo = []
+    for y, n in sorted(want):
         f = QDIR / f"{q_label(y, n)}.json"
         j = load(f, None)
         if j is None:
@@ -384,7 +399,6 @@ def update_quarters():
             fetched = dt.date.fromisoformat(j.get("fetched", "2000-01-01"))
             if TODAY <= q_deadline(y, n) + dt.timedelta(days=40) and (TODAY - fetched).days >= 3:
                 todo.append((y, n))
-        y, n = (y + 1, 1) if n == 4 else (y, n + 1)
     todo.sort(reverse=True)
     if todo:
         y0, n0 = todo[0]
@@ -400,8 +414,8 @@ def update_quarters():
         if rows is None:
             if REQ["stop"]:
                 break
-            if REQ["fail"] >= 4:
-                REQ["stop"] = "季財報連續失敗"
+            if REQ["fail"] >= 2:
+                DIAG["notes"].append("季財報連續失敗（MOPS 可能暫時拒絕連線），其餘下次補")
                 break
             continue
         REQ["fail"] = 0
