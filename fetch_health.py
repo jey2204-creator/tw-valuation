@@ -214,11 +214,13 @@ def fetch_month(y, m):
     rows, src = {}, []
     for mk in ("sii", "otc"):
         for kind in ("0", "1"):
-            got = None
+            got, hard = None, False
             for h in HOSTS:
                 if h.split("/")[2] in BLOCKED:
                     continue
                 st, txt = req(f"{h}/nas/t21/{mk}/t21sc03_{roc}_{m}_{kind}.html", gap=3.0)
+                if not isinstance(st, int) or st >= 500:
+                    hard = True              # 伺服器錯誤／連不上：不能當成「沒有 KY 頁」
                 if st is None:
                     return None, src
                 p = parse_t21(txt) if st == 200 else {}
@@ -229,7 +231,7 @@ def fetch_month(y, m):
                     got = p
                     src.append(f"{mk}{kind}@{h.split('//')[1].split('.')[0]}:{len(p)}")
                     break
-            if got is None and kind == "1" and not REQ["stop"]:
+            if got is None and kind == "1" and not REQ["stop"] and not hard:
                 got = {}                       # 國外（KY）頁不存在或沒有資料：國內頁有抓到就算完成
                 src.append(f"{mk}{kind}:無")
             if got is None:
