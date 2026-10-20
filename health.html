@@ -291,7 +291,7 @@ function drawRev(M){
     o.series=[{name:'成長家數占比',type:'line',data:M.map(r=>+(r.up/r.n*100).toFixed(1)),lineStyle:{width:2,color:css('--s1')},itemStyle:{color:css('--s1'),...ring()},
       symbol:'circle',symbolSize:(v,p)=>p.dataIndex===last?8:0,showSymbol:true,
       label:{show:true,position:'top',color:css('--fg'),fontSize:10,formatter:p=>p.dataIndex===last?fmt(p.value,0)+'%':''},
-      markLine:{silent:true,symbol:'none',lineStyle:{color:css('--muted'),type:'solid',width:1},label:{formatter:'50%',color:css('--muted'),fontSize:10},data:[{yAxis:50}]}}];
+      markLine:{silent:true,symbol:'none',lineStyle:{color:css('--muted'),type:'solid',width:1},label:{position:'insideStartTop',formatter:'50%',color:css('--muted'),fontSize:10},data:[{yAxis:50}]}}];
     c.setOption(o)}
   {const o=base(),c=mk('cRevYoY');o.xAxis.data=x;o.yAxis.axisLabel.formatter='{value}%';
     o.tooltip.valueFormatter=v=>sg(v);
@@ -302,7 +302,7 @@ function drawRev(M){
       {name:'扣掉台積電',type:'line',data:sE,lineStyle:{width:2,color:css('--s2')},itemStyle:{color:css('--s2'),...ring()},symbol:'circle',symbolSize:(v,p)=>p.dataIndex===last?8:0,label:{...end(),position:'bottom'},
         markLine:{silent:true,symbol:'none',lineStyle:{color:css('--muted'),type:'solid',width:1},label:{show:false},data:[{yAxis:0}]}}];
     c.setOption(o)}
-  $('revFoot').textContent=`來源：公開資訊觀測站每月營收彙總（${M[0].ym} 起）；最新月份含證交所／櫃買每日更新。`;
+  $('revFoot').textContent=`來源：公開資訊觀測站每月營收彙總（${M[0].ym} 起，上市櫃含 KY）；最新月份含證交所／櫃買每日更新。1–2 月受農曆年落點影響會跳動，看趨勢要連看 3 個月。營收面台積電只占全體約 8%，所以兩條線很接近；獲利面台積電占三成以上，集中度要看上面的獲利卡。`;
 }
 
 function drawVal(V){
