@@ -4,6 +4,7 @@
 // 回傳：{ok, t, q:[{k,c,n,d,t,ms,z,pz,o,h,l,y,v,u,w,a1,b1}], err}
 //   d＝資料日期 YYYYMMDD、t＝資料時間；z＝最新成交價（沒有就 null，頁面會改用買賣價），v＝累計成交量（張）
 // 只轉接公開行情，不需要任何金鑰。部署：Cloudflare 後台 → Workers & Pages → 建立 → Hello World → 編輯程式碼 → 貼上本檔 → Deploy。
+// 目前部署在 https://twse-live.jey2204.workers.dev（2026/10/21；後台貼的是本檔去掉註解的單行版本，功能相同）。
 
 const ALLOW_ORIGINS = ["https://jey2204-creator.github.io"];   // 只讓自己的 GitHub Pages 頁面在瀏覽器裡呼叫
 const MAX_SYMBOLS = 120;
