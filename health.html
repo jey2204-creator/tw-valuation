@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>台股體檢</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="台股體檢">
+<meta name="theme-color" content="#f3f4f6" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0e1117" media="(prefers-color-scheme: dark)">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* 與 index.html 同一套色票；圖表系列色經 dataviz 驗證（藍／橘，淺深色各自一組） */
+:root{
+  --bg:#f3f4f6; --card:#ffffff; --fg:#151a23; --muted:#5d6675; --line:#e2e5ea; --grid:#eceef2;
+  --accent:#1f5fbf; --warm:#c46a12;
+  --s1:#2a78d6; --s2:#eb6834; --band:rgba(93,102,117,.10);
+  --ok:#0ca30c; --mid:#fab219; --bad:#d03b3b;
+  --f-body:"Noto Sans TC",system-ui,-apple-system,"PingFang TC",sans-serif;
+  --f-num:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0e1117; --card:#171b23; --fg:#e8ebf0; --muted:#97a0ae; --line:#272d38; --grid:#232833;
+  --accent:#6aa1ff; --warm:#f0a04b; --s1:#3987e5; --s2:#d95926; --band:rgba(151,160,174,.12); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e1117; --card:#171b23; --fg:#e8ebf0; --muted:#97a0ae; --line:#272d38; --grid:#232833;
+  --accent:#6aa1ff; --warm:#f0a04b; --s1:#3987e5; --s2:#d95926; --band:rgba(151,160,174,.12); color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.55;-webkit-text-size-adjust:100%}
+.wrap{max-width:560px;margin:0 auto;padding-inline:16px;padding-block:0 40px}
+.hhead{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-top:14px}
+.hhead h1{font-size:22px;font-weight:900;margin:0}
+.ghost{flex:none;font-size:13px;color:var(--accent);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:3px 11px;background:var(--card)}
+.asofN{font-size:11.5px;color:var(--muted);margin:6px 0 0;line-height:1.5}
+nav.chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:10px 8px;border-bottom:1px solid var(--line);margin-top:8px}
+nav.chips::-webkit-scrollbar{display:none}
+nav.chips a{flex:none;font-size:13px;color:var(--fg);text-decoration:none;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:4px 11px}
+a:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+section.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 14px 8px;margin-top:14px;scroll-margin-top:64px}
+.card h2{font-size:17px;font-weight:700;margin:0;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.card h2 small{font-size:11px;font-weight:500;color:var(--muted);letter-spacing:.05em}
+.take{margin:4px 0 0;font-size:13.5px;color:var(--muted)}
+.take strong{color:var(--fg);font-weight:700}
+.chart{width:100%;height:240px;margin-top:8px}
+.ctitle{font-size:12px;color:var(--muted);margin:12px 0 -4px}
+.foot{font-size:11.5px;color:var(--muted);margin:4px 0 6px;line-height:1.5}
+.ph{font-size:12.5px;color:var(--muted);border:1px dashed var(--line);border-radius:8px;padding:12px;margin-top:10px;text-align:center}
+.num{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+/* 燈號 */
+.verdict{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.verdict span{font-size:12.5px;border:1px solid var(--line);border-radius:999px;padding:2px 9px;background:var(--bg)}
+.lights{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.lt{--c:var(--line);background:var(--bg);border:1px solid var(--line);border-left:4px solid var(--c);border-radius:10px;padding:8px 10px;min-width:0}
+.lt.ok{--c:var(--ok)}.lt.mid{--c:var(--mid)}.lt.bad{--c:var(--bad)}
+.lt .lh{display:flex;justify-content:space-between;gap:4px;font-size:12px;color:var(--muted);align-items:baseline}
+.lt .st{flex:none;font-size:11px;color:var(--fg)}
+.lt b{display:block;font-family:var(--f-body);font-size:22px;font-weight:700;line-height:1.25;margin-top:2px}
+.lt i{display:block;font-style:normal;font-size:11px;color:var(--muted);line-height:1.4;margin-top:2px}
+/* 表格 */
+.tbl{overflow-x:auto;margin-top:8px}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th,td{padding:5px 4px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th{font-weight:500;color:var(--muted);font-size:11.5px}
+td{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+tr.ytd td{color:var(--muted)}
+.note{font-size:12.5px;line-height:1.65}
+.note h3{font-size:13.5px;margin:12px 0 4px}
+.note ul{margin:4px 0;padding-left:18px}
+.note a{color:var(--accent);text-decoration:none;word-break:break-all}
+.thr td,.thr th{text-align:center;font-family:var(--f-body);white-space:normal}
+.thr td:first-child,.thr th:first-child{text-align:left}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+html{scroll-behavior:smooth}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hhead"><h1>🩺 台股體檢</h1><a class="ghost" href="./">← 首頁</a></div>
+  <p class="asofN" id="asof">載入中…</p>
+  <nav class="chips" aria-label="段落">
+    <a href="#sLights">燈號</a><a href="#sEarn">獲利</a><a href="#sRev">營收</a><a href="#sVal">估值</a><a href="#sDiv">股利</a><a href="#sNote">說明</a>
+  </nav>
+
+  <section class="card" id="sLights">
+    <h2>燈號總覽 <small>上市＋上櫃</small></h2>
+    <div class="verdict" id="verdict"></div>
+    <div class="lights" id="lights"></div>
+    <p class="foot">門檻是經驗值，不是標準答案；定義與門檻見最下方「說明」。</p>
+  </section>
+
+  <section class="card" id="sEarn">
+    <h2>獲利：台積電 vs 其他 <small>稅後歸母淨利，兆元</small></h2>
+    <p class="take" id="earnTake"></p>
+    <div class="chart" id="cEarn" role="img" aria-label="歷年上市櫃稅後淨利，台積電與其他公司堆疊長條圖"></div>
+    <div class="tbl"><table id="tEarn"></table></div>
+    <p class="foot" id="earnFoot"></p>
+  </section>
+
+  <section class="card" id="sRev">
+    <h2>營收廣度 <small>每月，與去年同月比</small></h2>
+    <p class="take" id="revTake"></p>
+    <p class="ctitle">營收年增 &gt; 0 的公司占比（%）</p>
+    <div class="chart" id="cBreadth" role="img" aria-label="每月營收年增大於零的公司占比折線圖"></div>
+    <p class="ctitle">營收年增率（%）：全體 vs 扣掉台積電</p>
+    <div class="chart" id="cRevYoY" role="img" aria-label="每月全體與扣除台積電的營收年增率折線圖"></div>
+    <p class="foot" id="revFoot"></p>
+  </section>
+
+  <section class="card" id="sVal">
+    <h2>估值位階 <small>灰色帶＝2010–2023 常態</small></h2>
+    <p class="take" id="valTake"></p>
+    <p class="ctitle">本益比（倍）</p>
+    <div class="chart" id="cPE" role="img" aria-label="大盤本益比走勢與常態區間"></div>
+    <p class="ctitle">現金殖利率（%）</p>
+    <div class="chart" id="cYld" role="img" aria-label="大盤現金殖利率走勢與常態區間"></div>
+    <p class="foot" id="valFoot"></p>
+  </section>
+
+  <section class="card" id="sDiv">
+    <h2>股利與配發率 <small>依盈餘年度，兆元</small></h2>
+    <p class="take" id="divTake"></p>
+    <div class="chart" id="cDiv" role="img" aria-label="歷年上市櫃現金股利長條圖"></div>
+    <div class="tbl"><table id="tDiv"></table></div>
+  </section>
+
+  <section class="card note" id="sNote">
+    <h2>說明與檢查點</h2>
+    <h3>燈號門檻</h3>
+    <div class="tbl"><table class="thr" id="tThr"></table></div>
+    <h3>怎麼算</h3>
+    <ul>
+      <li><b>獲利</b>：公開資訊觀測站「綜合損益表彙總」逐家加總（上市＋上櫃，含 KY、金融），用「歸屬母公司淨利」。季資料是當年累計（Q2＝上半年）。</li>
+      <li><b>成長家數、扣台積電年增</b>：只拿今年和去年同期都有財報的「同一批公司」比，避免新上市把總數灌大。</li>
+      <li><b>營收廣度</b>：每月營收彙總，去年同月營收 &gt; 0 的公司才算；最新一個月用證交所／櫃買每日資料即時更新。</li>
+      <li><b>本益比、殖利率（本站）</b>：每檔收盤 × 股數＝市值，市值加權；本益比排除虧損股。金管會公布值的口徑不同，兩者並列參考。</li>
+      <li><b>股利、配發率</b>：媒體彙整的上市櫃現金股利總額 ÷ 稅後淨利（依盈餘年度）。</li>
+    </ul>
+    <h3>下一個檢查點</h3>
+    <p id="checkpoint"></p>
+    <h3>資料來源</h3>
+    <ul id="srcList"></ul>
+  </section>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const fin=v=>v!=null&&isFinite(v);
+const fmt=(v,d=0)=>fin(v)?v.toLocaleString('zh-TW',{minimumFractionDigits:d,maximumFractionDigits:d}):'—';
+const sg=(v,d=1)=>fin(v)?(v>0?'+':v<0?'−':'')+Math.abs(v).toFixed(d)+'%':'—';
+const med=a=>{const s=a.filter(fin).sort((x,y)=>x-y);if(!s.length)return null;const m=s.length>>1;return s.length%2?s[m]:(s[m-1]+s[m])/2};
+const TS='2330';
+let H=null,SEED=null,S=null;const charts={};
+
+async function getJ(u){try{const r=await fetch(u+'?t='+Date.now());if(r.ok)return await r.json()}catch(e){}return null}
+
+// ---------- 即時：由 summary.json 算市值加權估值、最新月份營收廣度 ----------
+function liveVal(){
+  if(!S||!S.sh)return null;let tot=0,capPE=0,earn=0,yw=0;const caps=[];
+  for(const [c,v] of Object.entries(S.d)){const sh=S.sh[c];if(!v[0]||!sh)continue;const cap=v[0]*sh;tot+=cap;caps.push(cap);
+    if(v[2]>0){capPE+=cap;earn+=cap/v[2]}yw+=cap*(v[4]||0)}
+  const t=S.d[TS];if(!tot||!t)return null;const tc=t[0]*S.sh[TS],te=t[2]>0?tc/t[2]:0;
+  caps.sort((a,b)=>b-a);const top10=caps.slice(0,10).reduce((a,b)=>a+b,0);
+  return {date:S.pxAsof,cap:tot/1e12,pe:capPE/earn,yld:yw/tot,tsCap:tc/tot*100,earn:earn/1e12,tsEarn:te/earn*100,top10:top10/tot*100}
+}
+function liveRev(){
+  if(!S)return null;const ym=S.revYM;let n=0,up=0,cur=0,prev=0,curEx=0,prevEx=0;const g=[];
+  for(const [c,v] of Object.entries(S.d)){if(v[7]!==ym||!fin(v[5])||!(v[6]>0)||v[5]<=-100)continue;
+    const p=v[6]/(1+v[5]/100);n++;if(v[5]>0)up++;cur+=v[6];prev+=p;if(c!==TS){curEx+=v[6];prevEx+=p}g.push(v[5])}
+  return n?{ym,n,up,cur,prev,curEx,prevEx,med:med(g),live:true}:null
+}
+
+// ---------- 資料整理 ----------
+function months(){
+  const out=((H&&H.m)||[]).map(r=>({ym:r[0],n:r[2],up:r[3],cur:r[4],prev:r[5],curEx:r[6],prevEx:r[7],med:r[8]}));
+  const lv=liveRev();if(lv&&!out.some(r=>r.ym===lv.ym))out.push(lv);
+  return out.filter(r=>r.n>0).sort((a,b)=>a.ym<b.ym?-1:1)
+}
+function vals(){
+  const out=((H&&H.v)||[]).map(r=>({date:r[0],cap:r[1],pe:r[2],yld:r[3],tsCap:r[4],earn:r[5],tsEarn:r[6],top10:r[7]}));
+  const lv=liveVal();if(lv&&!out.some(r=>r.date===lv.date))out.push(lv);
+  return out.sort((a,b)=>a.date<b.date?-1:1)
+}
+const QN={1:'第一季',2:'上半年',3:'前三季',4:'全年'};
+function qRec(r){
+  return {p:r.p,y:+r.p.slice(0,4),q:+r.p.slice(5),ni:r.ni/1e4,ts:(r.ts||0)/1e4,n:r.n,prof:r.n?r.prof/r.n*100:null,
+    allY:r.niP>0?(r.niC/r.niP-1)*100:null,exY:r.exP>0?(r.exC/r.exP-1)*100:null,grow:r.cmp?r.grow/r.cmp*100:null,
+    growS:r.cmpS?r.growS/r.cmpS*100:null,growO:r.cmpO?r.growO/r.cmpO*100:null,src:'MOPS'}
+}
+function earnings(){
+  const q=((H&&H.q)||[]).filter(r=>r.n>1200);
+  const ann=q.filter(r=>r.p.endsWith('Q4')&&+r.p.slice(0,4)>=2019).map(qRec);
+  const last=q.length?qRec(q[q.length-1]):null;
+  if(ann.length>=3)return {src:'MOPS',ann,last};
+  const R=SEED.years.rows;
+  const a=R.map((r,i)=>{const p=R[i-1];return {p:r[0]+'Q4',y:r[0],q:4,ni:r[2],ts:r[4],allY:p?(r[2]/p[2]-1)*100:null,
+    exY:p?((r[2]-r[4])/(p[2]-p[4])-1)*100:null,grow:null,src:'seed'}});
+  return {src:'seed',ann:a,last:last&&last.q!==4?last:a[a.length-1]}
+}
+function divs(){return SEED.years.rows.map(r=>({y:r[0],div:r[3],ni:r[2],pay:r[3]/r[2]*100}))}
+
+// ---------- 燈號 ----------
+const LAB={ok:'🟢 健康',mid:'🟡 注意',bad:'🔴 警示',na:'⚪ 無資料'};
+const hi=(v,g,m)=>!fin(v)?'na':v>=g?'ok':v>=m?'mid':'bad';
+const lo=(v,g,m)=>!fin(v)?'na':v<=g?'ok':v<=m?'mid':'bad';
+const THR=[
+  ['台積電占獲利','≤30%','30–40%','>40%'],['扣台積電獲利年增','≥+5%','0～+5%','<0%'],['獲利成長家數','≥50%','40–50%','<40%'],
+  ['營收成長家數','≥55%','45–55%','<45%'],['市場本益比','≤16 倍','16–22 倍','>22 倍'],['現金殖利率','≥3.5%','2.5–3.5%','<2.5%'],
+  ['台積電市值占比','≤30%','30–40%','>40%'],['配發率','50–70%','40–50%、70–80%','其他']];
+function lights(){
+  const E=earnings(),L=E.last,M=months(),m=M[M.length-1],V=vals(),v=V[V.length-1],D=divs(),d=D[D.length-1];
+  const lbl=L?(L.q===4?`${L.y} 全年`:`${L.y} ${QN[L.q]}`):'';
+  const ann=E.ann,a0=ann.find(r=>r.y===2019);
+  const tsShare=L&&L.ni?L.ts/L.ni*100:null;
+  const items=[
+    {k:'台積電占獲利',v:tsShare,f:x=>fmt(x,0)+'%',s:lo(tsShare,30,40),sub:`${lbl}${a0&&a0.ni?`｜2019 年 ${fmt(a0.ts/a0.ni*100,0)}%`:''}`,g:'結構'},
+    {k:'扣台積電年增',v:L&&L.exY,f:x=>sg(x),s:hi(L&&L.exY,5,0),sub:`${lbl}｜全體 ${sg(L&&L.allY)}`,g:'動能'},
+    {k:'獲利成長家數',v:L&&L.grow,f:x=>fmt(x,0)+'%',s:hi(L&&L.grow,50,40),sub:L&&fin(L.grow)?`${lbl}｜上市 ${fmt(L.growS,0)}%・上櫃 ${fmt(L.growO,0)}%`:'等季財報資料',g:'動能'},
+    {k:'營收成長家數',v:m&&m.up/m.n*100,f:x=>fmt(x,0)+'%',s:hi(m&&m.up/m.n*100,55,45),sub:m?`${m.ym}｜年增中位數 ${sg(m.med)}`:'',g:'動能'},
+    {k:'市場本益比',v:v&&v.pe,f:x=>fmt(x,1)+' 倍',s:lo(v&&v.pe,16,22),sub:'常態 12–16 倍｜市值加權',g:'估值'},
+    {k:'現金殖利率',v:v&&v.yld,f:x=>fmt(x,2)+'%',s:hi(v&&v.yld,3.5,2.5),sub:'常態 3.5–4.5%｜市值加權',g:'估值'},
+    {k:'台積電市值占比',v:v&&v.tsCap,f:x=>fmt(x,1)+'%',s:lo(v&&v.tsCap,30,40),sub:v?`前 10 大合計 ${fmt(v.top10,0)}%`:'',g:'結構'},
+    {k:'配發率',v:d&&d.pay,f:x=>fmt(x,0)+'%',s:!d?'na':d.pay>=50&&d.pay<=70?'ok':d.pay>=40&&d.pay<=80?'mid':'bad',sub:d?`${d.y} 年度｜股利 ${fmt(d.div,2)} 兆`:'',g:'回饋'}];
+  $('lights').innerHTML=items.map(it=>`<div class="lt ${it.s}"><div class="lh"><span>${it.k}</span><span class="st">${LAB[it.s]}</span></div><b>${fin(it.v)?it.f(it.v):'—'}</b><i>${it.sub}</i></div>`).join('');
+  const sc={ok:2,mid:1,bad:0},G=[['動能','獲利動能'],['結構','結構集中'],['估值','估值位階'],['回饋','股東回饋']];
+  $('verdict').innerHTML=G.map(([g,name])=>{const xs=items.filter(i=>i.g===g&&i.s!=='na').map(i=>sc[i.s]);
+    if(!xs.length)return `<span>${name} ⚪</span>`;const a=xs.reduce((p,q)=>p+q,0)/xs.length;const s=a>=1.5?'ok':a>=.75?'mid':'bad';
+    return `<span>${name} ${LAB[s]}</span>`}).join('');
+  return {E,L,m,v}
+}
+
+// ---------- 圖表 ----------
+function mk(id){if(charts[id])charts[id].dispose();return charts[id]=echarts.init($(id),null,{renderer:'svg'})}
+function base(){
+  const t={color:css('--muted'),fontFamily:'IBM Plex Mono, ui-monospace, monospace',fontSize:10};
+  return {textStyle:{fontFamily:'Noto Sans TC, sans-serif',color:css('--fg')},grid:{left:4,right:12,top:26,bottom:4,containLabel:true},
+    tooltip:{trigger:'axis',confine:true,backgroundColor:css('--card'),borderColor:css('--line'),textStyle:{color:css('--fg'),fontSize:12}},
+    legend:{top:0,left:0,itemWidth:12,itemHeight:8,textStyle:{color:css('--muted'),fontSize:11}},
+    xAxis:{type:'category',axisLine:{lineStyle:{color:css('--line')}},axisTick:{show:false},axisLabel:t},
+    yAxis:{type:'value',splitLine:{lineStyle:{color:css('--grid')}},axisLabel:{...t}},animationDuration:400}
+}
+const ring=()=>({borderColor:css('--card'),borderWidth:2});
+
+function drawEarn(E){
+  const A=E.ann,o=base(),c=mk('cEarn');
+  o.xAxis.data=A.map(r=>String(r.y));o.yAxis.axisLabel.formatter=v=>v+' 兆';
+  const gap={borderColor:css('--card'),borderWidth:1};
+  o.tooltip.axisPointer={type:'shadow',shadowStyle:{color:'rgba(127,127,127,.08)'}};
+  o.tooltip.formatter=ps=>{const r=A[ps[0].dataIndex];return `<b>${r.y}</b><br>全體 ${fmt(r.ni,2)} 兆（${sg(r.allY)}）<br>台積電 ${fmt(r.ts,2)} 兆，占 ${fmt(r.ts/r.ni*100,0)}%<br>其他 ${fmt(r.ni-r.ts,2)} 兆（${sg(r.exY)}）`};
+  o.series=[
+    {name:'台積電',type:'bar',stack:'e',barMaxWidth:24,data:A.map(r=>+r.ts.toFixed(3)),itemStyle:{color:css('--s1'),...gap}},
+    {name:'其他公司',type:'bar',stack:'e',barMaxWidth:24,data:A.map(r=>+(r.ni-r.ts).toFixed(3)),itemStyle:{color:css('--s2'),borderRadius:[4,4,0,0],...gap},
+      label:{show:true,position:'top',color:css('--muted'),fontSize:10,fontFamily:'IBM Plex Mono, monospace',
+        formatter:p=>p.dataIndex===A.length-1||p.dataIndex===0?fmt(A[p.dataIndex].ni,1):''}}];
+  c.setOption(o);
+  const L=E.last,fy=A[A.length-1];
+  let t=`<strong>${fy.y} 年</strong>全體 ${fmt(fy.ni,2)} 兆（${sg(fy.allY)}），台積電占 <strong>${fmt(fy.ts/fy.ni*100,0)}%</strong>；扣掉台積電 <strong>${sg(fy.exY)}</strong>。`;
+  if(L&&L.q!==4&&L.src==='MOPS')t+=` ${L.y} ${QN[L.q]}：全體 ${sg(L.allY)}、扣台積電 <strong>${sg(L.exY)}</strong>、獲利成長家數 ${fmt(L.grow,0)}%。`;
+  $('earnTake').innerHTML=t;
+  const rows=[...A];if(L&&L.q!==4&&L.src==='MOPS')rows.push({...L,ytd:true});
+  const hasG=rows.some(r=>fin(r.grow));
+  $('tEarn').innerHTML=`<tr><th>期間</th><th>全體</th><th>台積電</th><th>占比</th><th>扣台積電</th>${hasG?'<th>成長家數</th>':''}</tr>`+
+    rows.map(r=>`<tr class="${r.ytd?'ytd':''}"><td>${r.ytd?`${String(r.y).slice(2)} ${QN[r.q]}`:r.y}</td><td>${fmt(r.ni,2)}</td><td>${fmt(r.ts,2)}</td><td>${fmt(r.ts/r.ni*100,0)}%</td><td>${sg(r.exY)}</td>${hasG?`<td>${fin(r.grow)?fmt(r.grow,0)+'%':'—'}</td>`:''}</tr>`).join('');
+  $('earnFoot').textContent=E.src==='MOPS'?'來源：公開資訊觀測站綜合損益表彙總（逐家加總，歸屬母公司淨利）。年增率＝同一批公司比去年同期；淡色列為今年累計。'
+    :'季財報彙總建置中，暫以媒體彙整的上市櫃稅後淨利顯示（2023 年為回推值）；年增率為不同年度總數直接相比。';
+}
+
+function drawRev(M){
+  const ok=M.length>=3;
+  ['cBreadth','cRevYoY'].forEach(id=>{$(id).hidden=!ok});
+  document.querySelectorAll('#sRev .ctitle').forEach(e=>e.hidden=!ok);
+  const m=M[M.length-1];
+  if(!m){$('revTake').textContent='資料載入失敗';return}
+  const yAll=(m.cur/m.prev-1)*100,yEx=(m.curEx/m.prevEx-1)*100;
+  $('revTake').innerHTML=`<strong>${m.ym}</strong>：${fmt(m.n)} 家中 <strong>${fmt(m.up/m.n*100,0)}%</strong> 營收比去年同月成長；全體營收 ${sg(yAll)}、扣台積電 <strong>${sg(yEx)}</strong>，年增中位數 ${sg(m.med)}。`;
+  if(!ok){$('revFoot').innerHTML='<span class="ph" style="display:block">歷史月資料建置中（公開資訊觀測站每月營收彙總，回補到 2019 年）</span>';return}
+  const x=M.map(r=>r.ym),last=M.length-1;
+  {const o=base(),c=mk('cBreadth');o.legend.show=false;o.xAxis.data=x;o.yAxis.min=0;o.yAxis.max=100;o.yAxis.axisLabel.formatter='{value}%';
+    o.tooltip.formatter=ps=>{const r=M[ps[0].dataIndex];return `<b>${r.ym}</b><br>成長 ${fmt(r.up)} / ${fmt(r.n)} 家（${fmt(r.up/r.n*100,1)}%）<br>年增中位數 ${sg(r.med)}`};
+    o.series=[{name:'成長家數占比',type:'line',data:M.map(r=>+(r.up/r.n*100).toFixed(1)),lineStyle:{width:2,color:css('--s1')},itemStyle:{color:css('--s1'),...ring()},
+      symbol:'circle',symbolSize:(v,p)=>p.dataIndex===last?8:0,showSymbol:true,
+      label:{show:true,position:'top',color:css('--fg'),fontSize:10,formatter:p=>p.dataIndex===last?fmt(p.value,0)+'%':''},
+      markLine:{silent:true,symbol:'none',lineStyle:{color:css('--muted'),type:'solid',width:1},label:{formatter:'50%',color:css('--muted'),fontSize:10},data:[{yAxis:50}]}}];
+    c.setOption(o)}
+  {const o=base(),c=mk('cRevYoY');o.xAxis.data=x;o.yAxis.axisLabel.formatter='{value}%';
+    o.tooltip.valueFormatter=v=>sg(v);
+    const sA=M.map(r=>+((r.cur/r.prev-1)*100).toFixed(1)),sE=M.map(r=>+((r.curEx/r.prevEx-1)*100).toFixed(1));
+    const end=(col)=>({show:true,position:'right',color:css('--fg'),fontSize:10,formatter:p=>p.dataIndex===last?sg(p.value,0):''});
+    o.grid.right=34;
+    o.series=[{name:'全體',type:'line',data:sA,lineStyle:{width:2,color:css('--s1')},itemStyle:{color:css('--s1'),...ring()},symbol:'circle',symbolSize:(v,p)=>p.dataIndex===last?8:0,label:end()},
+      {name:'扣掉台積電',type:'line',data:sE,lineStyle:{width:2,color:css('--s2')},itemStyle:{color:css('--s2'),...ring()},symbol:'circle',symbolSize:(v,p)=>p.dataIndex===last?8:0,label:{...end(),position:'bottom'},
+        markLine:{silent:true,symbol:'none',lineStyle:{color:css('--muted'),type:'solid',width:1},label:{show:false},data:[{yAxis:0}]}}];
+    c.setOption(o)}
+  $('revFoot').textContent=`來源：公開資訊觀測站每月營收彙總（${M[0].ym} 起）；最新月份含證交所／櫃買每日更新。`;
+}
+
+function drawVal(V){
+  const F=SEED.val.rows.map(r=>{const [y,m]=r[0].split('-').map(Number);return {t:Date.UTC(y,m,0),pe:r[1],yld:r[2]}});
+  const D=V.map(r=>({t:Date.UTC(+r.date.slice(0,4),+r.date.slice(4,6)-1,+r.date.slice(6,8)),pe:r.pe,yld:r.yld}));
+  const v=V[V.length-1],f=F[F.length-1],nm=SEED.norm;
+  $('valTake').innerHTML=v?`本站最新（${v.date.slice(4,6)}/${v.date.slice(6)}）：本益比 <strong>${fmt(v.pe,1)} 倍</strong>、殖利率 <strong>${fmt(v.yld,2)}%</strong>；台積電占總市值 ${fmt(v.tsCap,1)}%、占隱含近四季獲利 ${fmt(v.tsEarn,0)}%。金管會 ${SEED.val.rows.at(-1)[0]} 底：${fmt(f.pe,1)} 倍／${fmt(f.yld,2)}%。`:'';
+  // 月底值有空窗（例如 2023/10 → 2025/6）時斷線，不畫假的連續趨勢
+  const gapped=(A,key)=>A.flatMap((r,i)=>i&&r.t-A[i-1].t>70*864e5?[[(r.t+A[i-1].t)/2,null],[r.t,r[key]]]:[[r.t,r[key]]]);
+  const draw=(id,key,band,unit,dg)=>{
+    const o=base(),c=mk(id);
+    o.xAxis={type:'time',minInterval:3.15e10,axisLine:{lineStyle:{color:css('--line')}},axisTick:{show:false},axisLabel:{color:css('--muted'),fontFamily:'IBM Plex Mono, monospace',fontSize:10,formatter:'{yyyy}',hideOverlap:true},splitLine:{show:false}};
+    o.yAxis.scale=true;o.yAxis.min=v=>Math.floor(v.min*0.92*2)/2;o.yAxis.max=v=>Math.ceil(v.max*1.06*2)/2;o.yAxis.axisLabel.formatter=v=>v+unit;
+    o.xAxis.min=v=>v.min-40*864e5;o.xAxis.max=v=>v.max+40*864e5;
+    o.tooltip.valueFormatter=x=>fmt(x,dg)+unit;
+    const lastD=D.length-1;
+    o.series=[
+      {name:'金管會月底',type:'line',connectNulls:false,data:gapped(F,key),lineStyle:{width:2,color:css('--s2')},itemStyle:{color:css('--s2'),...ring()},symbol:'circle',symbolSize:8,
+        markArea:{silent:true,itemStyle:{color:css('--band')},label:{show:true,position:'insideTopLeft',color:css('--muted'),fontSize:10,formatter:`常態 ${band[0]}–${band[1]}${unit}`},data:[[{yAxis:band[0]},{yAxis:band[1]}]]}},
+      {name:'本站每日',type:'line',data:D.map(r=>[r.t,r[key]]),lineStyle:{width:2,color:css('--s1')},itemStyle:{color:css('--s1'),...ring()},symbol:'circle',symbolSize:(x,p)=>p.dataIndex===lastD||D.length<15?8:0,
+        label:{show:true,position:'top',color:css('--fg'),fontSize:10,formatter:p=>p.dataIndex===lastD?fmt(p.value[1],dg):''}}];
+    c.setOption(o)};
+  draw('cPE','pe',nm.pe,' 倍',1);draw('cYld','yld',nm.yld,'%',2);
+  $('valFoot').textContent=`橘點＝金管會公布的月底值（上市櫃整體）；藍線＝本站每天用收盤 × 股數算的市值加權值（排除虧損股），${D.length} 天，之後每天累積。常態區間：${nm.src}。`;
+}
+
+function drawDiv(){
+  const D=divs(),o=base(),c=mk('cDiv'),last=D.length-1;o.legend.show=false;
+  o.xAxis.data=D.map(r=>String(r.y));o.yAxis.min=0;o.yAxis.axisLabel.formatter=v=>v+' 兆';
+  o.tooltip.axisPointer={type:'shadow',shadowStyle:{color:'rgba(127,127,127,.08)'}};
+  o.tooltip.formatter=ps=>{const r=D[ps[0].dataIndex];return `<b>${r.y} 年度</b><br>現金股利 ${fmt(r.div,2)} 兆<br>稅後淨利 ${fmt(r.ni,2)} 兆<br>配發率 ${fmt(r.pay,0)}%`};
+  o.series=[{name:'現金股利',type:'bar',barMaxWidth:24,data:D.map(r=>r.div),itemStyle:{color:css('--s1'),borderRadius:[4,4,0,0]},
+    label:{show:true,position:'top',color:css('--muted'),fontSize:10,fontFamily:'IBM Plex Mono, monospace',formatter:p=>p.dataIndex===last||p.dataIndex===0?fmt(p.value,2):''}}];
+  c.setOption(o);
+  const d=D[last],p=D.map(r=>r.pay);
+  $('divTake').innerHTML=`<strong>${d.y} 年度</strong>現金股利 ${fmt(d.div,2)} 兆、配發率 <strong>${fmt(d.pay,0)}%</strong>；${D[0].y} 年以來配發率 ${fmt(Math.min(...p),0)}–${fmt(Math.max(...p),0)}%。台積電配發率低，占獲利比重愈高，整體配發率愈被拉低。`;
+  $('tDiv').innerHTML='<tr><th>盈餘年度</th><th>現金股利</th><th>稅後淨利</th><th>配發率</th></tr>'+D.map(r=>`<tr><td>${r.y}</td><td>${fmt(r.div,2)}</td><td>${fmt(r.ni,2)}</td><td>${fmt(r.pay,0)}%</td></tr>`).join('');
+}
+
+function notes(st){
+  $('tThr').innerHTML='<tr><th>指標</th><th>🟢</th><th>🟡</th><th>🔴</th></tr>'+THR.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join('');
+  const L=st.L;
+  $('checkpoint').innerHTML=`下一季財報公布後（Q3 申報截止 11/14，Q4 為隔年 3/31）看兩個數字：<b>獲利成長家數 ≥ 50% 且扣台積電仍正成長</b> → 成長擴散、健康延續；<b>成長家數 &lt; 40% 或扣台積電轉負</b> → 又回到只靠台積電，轉弱訊號。`+
+    (L&&fin(L.grow)?`（目前 ${L.y} ${QN[L.q]}：成長家數 ${fmt(L.grow,0)}%、扣台積電 ${sg(L.exY)}）`:'');
+  const src=[['公開資訊觀測站：綜合損益表彙總、每月營收彙總','https://mopsov.twse.com.tw/mops/web/t163sb04'],['證交所／櫃買中心 OpenAPI：收盤、本益比、殖利率、月營收','https://openapi.twse.com.tw/'],...SEED.sources];
+  $('srcList').innerHTML=src.map(([t,u])=>`<li><a href="${u}" target="_blank" rel="noopener">${t}</a></li>`).join('');
+}
+
+function render(){
+  const st=lights();
+  try{drawEarn(st.E)}catch(e){console.error(e)}
+  try{drawRev(months())}catch(e){console.error(e)}
+  try{drawVal(vals())}catch(e){console.error(e)}
+  try{drawDiv()}catch(e){console.error(e)}
+  notes(st);
+  const parts=[];
+  if(S)parts.push(`收盤 ${S.pxAsof.slice(4,6)}/${S.pxAsof.slice(6)}`,`月營收 ${S.revYM}`);
+  const q=(H&&H.q)||[];if(q.length)parts.push(`季財報 ${q.at(-1).p}`);
+  if(H&&H.updated)parts.push(`體檢資料 ${new Date(H.updated).toLocaleString('zh-TW',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:false})}`);
+  $('asof').textContent=parts.join(' · ')||'資料載入失敗';
+}
+
+(async()=>{
+  [H,SEED,S]=await Promise.all([getJ('data/health.json'),getJ('data/health_seed.json'),getJ('data/summary.json')]);
+  if(!SEED){$('asof').textContent='資料載入失敗，請稍後重新整理';return}
+  render();
+})();
+let rt;addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>Object.values(charts).forEach(c=>c.resize()),150)});
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>SEED&&render());
+</script>
+</body>
+</html>
