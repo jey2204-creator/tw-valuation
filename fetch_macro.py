@@ -431,7 +431,85 @@ def fetch_sdmx(freq):
     return {}
 
 
+NSTAT = ("https://nstatdb.dgbas.gov.tw/dgbasall/webMain.aspx?sys=220&ym={a}&ymt={b}&kind=21&type=1&funid=A018101010"
+         "&cycle={c}&outmode=8&compmode=0&outkind=1&fldspc=0,40,&codspc0=0,10,&rdm=R1")
+
+
+def fetch_nstat(freq):
+    """總體統計資料庫查詢頁 outmode=8（JSON：colh[0]＝項目名、orgdata[i]＝該項目各期值）。
+    cycle：1 月、2 季、3 半年、4 年（2026/10/20 實測 3＝半年、4＝年）。ym＝民國年＋期別 2 碼"""
+    roc = TODAY.year - 1911
+    a, b, c = ("8701", f"{roc}04", 2) if freq == "q" else ("8701", f"{roc}01", 4)
+    url = NSTAT.format(a=a, b=b, c=c)
+    t0 = time.time()
+    st, raw = http(url, timeout=90, headers={"User-Agent": BUA, "Accept": "application/json,*/*"})
+    tr = {"url": url, "status": st, "len": len(raw), "sec": round(time.time() - t0, 1)}
+    DIAG["gdp"]["tries"].append(tr)
+    if st != 200 or not raw:
+        return {}
+    try:
+        js = json.loads(raw.decode("utf-8-sig"))
+    except Exception:
+        tr["head"] = raw[:400].decode("utf-8", "replace")
+        return {}
+    tr["keys"] = list(js.keys())[:30]
+    names = (js.get("colh") or [[]])[0]
+    rows = js.get("orgdata") or []
+    # 期別標籤：找一個字串陣列、長度＝期數、內容像期別
+    n = max((len(r) for r in rows), default=0)
+    labels = None
+    def walk(o):
+        nonlocal labels
+        if labels:
+            return
+        if isinstance(o, list) and len(o) == n and o and all(isinstance(x, str) for x in o) and period_of(o[0], freq):
+            labels = o
+        elif isinstance(o, list):
+            for x in o:
+                walk(x)
+        elif isinstance(o, dict):
+            for k, x in o.items():
+                if k not in ("colh", "orgdata"):
+                    walk(x)
+    walk(js)
+    if labels:
+        pers = [period_of(x, freq) for x in labels]
+        flags = ["f" if re.search(r"f|預測", x) else "p" if re.search(r"p|初步|概估", x) else "" for x in labels]
+    else:   # 沒有標籤：從 ym 起連續編號
+        y0 = 1998
+        pers = [f"{y0 + i // 4}Q{i % 4 + 1}" for i in range(n)] if freq == "q" else [str(y0 + i) for i in range(n)]
+        flags = [""] * n
+    tr["labels"] = (labels or [])[:2] + (labels or [])[-3:]
+    tr["names"] = names[:20]
+    data = {}
+    for name, r in zip(names, rows):
+        kind = "gdp" if name == "國內生產毛額GDP(名目值，百萬元)" else "g" if str(name).startswith("經濟成長") else None
+        if not kind:
+            continue
+        for per, fl, v in zip(pers, flags, r):
+            if per and num(v) is not None:
+                data.setdefault(per, {})[kind] = num(v)
+                if fl:
+                    data[per]["flag"] = fl
+    tr["parsed"] = len(data)
+    tr["last"] = sorted(data.items())[-2:]
+    return data
+
+
 def fetch_gdp(freq):
+    """開放資料 XML（長期歷史；2026/10 實測只更新到 2022）＋ 總體統計資料庫 JSON（最新），後者優先"""
+    old = fetch_gdp_xml(freq)
+    try:
+        new = fetch_nstat(freq)
+    except Exception as e:
+        DIAG["gdp"]["notes"].append(f"總體統計資料庫失敗：{e!r}")
+        new = {}
+    for p, v in new.items():
+        old.setdefault(p, {}).update(v)
+    return old
+
+
+def fetch_gdp_xml(freq):
     """回傳 {period: {...}}；全部失敗回 {}。開放資料 XML（Obs: Item／TIME_PERIOD／TYPE 原始值|年增率／Item_VALUE）"""
     for url in GDP_URLS[freq]:
         t0 = time.time()
