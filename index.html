@@ -104,6 +104,9 @@ html{scroll-behavior:smooth}
 /* ---- 首頁／主題頁 ---- */
 body:not([data-view=stock]) :is(header.quote,nav.chips,section.card,#note){display:none}
 .hhead{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-top:14px}
+/* 首頁標頭：體檢＋美日韓 4 顆按鈕；放不下時整排換到第二行（標題不斷行），不會擠出畫面 */
+#home .hhead{flex-wrap:wrap;row-gap:8px}#home .hhead h1{white-space:nowrap}
+.hnav{display:flex;gap:4px;flex:none;margin-left:auto}.hnav .ghost{padding:3px 8px}
 .hhead h1,#theme h1{font-size:22px;font-weight:900;margin:0}
 .ghost{flex:none;font-size:13px;color:var(--accent);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:3px 11px;background:var(--card)}
 h2.sec{font-size:13px;color:var(--muted);font-weight:700;letter-spacing:.06em;margin:22px 0 8px;display:flex;justify-content:space-between;align-items:baseline}
@@ -262,7 +265,7 @@ details.ind.hot summary b{color:var(--up)}
 <body>
 <div class="wrap">
 <section id="home" hidden>
-  <div class="hhead"><h1>台股估值看板</h1><span style="display:flex;gap:6px;flex:none"><a class="ghost" href="us/">美股</a><a class="ghost" href="jp/">日股</a><a class="ghost" href="kr/">韓股</a></span></div>
+  <div class="hhead"><h1>台股估值看板</h1><span class="hnav"><a class="ghost" href="health.html">體檢</a><a class="ghost" href="us/">美股</a><a class="ghost" href="jp/">日股</a><a class="ghost" href="kr/">韓股</a></span></div>
   <div class="search" role="search">
     <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
     <input id="q2" type="search" inputmode="search" autocomplete="off" placeholder="輸入代號或名稱，例如 2454、聯發科" aria-label="搜尋股票">
