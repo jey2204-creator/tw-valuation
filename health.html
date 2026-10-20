@@ -423,13 +423,13 @@ function drawVal(V){
   if(!P.length)t+=' 歷史月底值回補中，暫時只有金管會公布的點。';
   $('valTake').innerHTML=t;
   const gapped=(A,key)=>A.flatMap((r,i)=>i&&r.t-A[i-1].t>70*864e5?[[(r.t+A[i-1].t)/2,null],[r.t,r[key]]]:[[r.t,r[key]]]);
-  const draw=(id,key,band,unit,dg)=>{
+  const draw=(id,key,band,unit,dg,step)=>{
     const o=base(),c=mk(id),lastD=D.length-1,lastP=P.length-1;
     o.xAxis={type:'time',minInterval:3.15e10,axisLine:{lineStyle:{color:css('--line')}},axisTick:{show:false},axisLabel:{color:css('--muted'),fontFamily:'IBM Plex Mono, monospace',fontSize:10,formatter:'{yyyy}',hideOverlap:true},splitLine:{show:false}};
-    o.yAxis.scale=true;o.yAxis.min=v=>Math.floor(v.min*0.92*2)/2;o.yAxis.max=v=>Math.ceil(v.max*1.06*2)/2;o.yAxis.axisLabel.formatter=v=>v+unit;
+    o.yAxis.scale=true;o.yAxis.min=v=>Math.max(0,Math.floor(v.min*0.92/step)*step);o.yAxis.max=v=>Math.ceil(v.max*1.06/step)*step;o.yAxis.interval=step;o.yAxis.axisLabel.formatter=v=>v+unit;
     o.xAxis.min=v=>v.min-40*864e5;o.xAxis.max=v=>v.max+40*864e5;
     o.tooltip.valueFormatter=x=>fin(x)?fmt(x,dg)+unit:'—';
-    const bandMk={silent:true,itemStyle:{color:css('--band')},label:{show:true,position:'insideTopLeft',color:css('--muted'),fontSize:10,formatter:`常態 ${band[0]}–${band[1]}${unit}`},data:[[{yAxis:band[0]},{yAxis:band[1]}]]};
+    const bandMk={silent:true,itemStyle:{color:css('--band')},label:{show:true,position:'insideTopRight',color:css('--muted'),fontSize:10,formatter:`常態 ${band[0]}–${band[1]}${unit}`},data:[[{yAxis:band[0]},{yAxis:band[1]}]]};
     o.series=[];
     if(P.length)o.series.push({name:'月底（本站算）',type:'line',connectNulls:false,data:gapped(P,key),lineStyle:{width:2,color:css('--s2')},itemStyle:{color:css('--s2'),...ring()},
       symbol:'circle',symbolSize:(x,p)=>p.value&&p.value[0]===P[lastP].t?8:0,showSymbol:true,markArea:bandMk});
@@ -437,9 +437,9 @@ function drawVal(V){
       symbol:'circle',symbolSize:(x,p)=>p.dataIndex===lastD||D.length<15?8:0,showSymbol:true,
       label:{show:true,position:'top',color:css('--fg'),fontSize:10,formatter:p=>p.dataIndex===lastD?fmt(p.value[1],dg):''},...(P.length?{}:{markArea:bandMk})});
     o.series.push({name:'金管會公布',type:P.length?'scatter':'line',data:P.length?F.map(r=>[r.t,r[key]]):gapped(F,key),z:5,
-      symbol:'emptyCircle',symbolSize:9,itemStyle:{color:css('--fg'),borderWidth:1.5},lineStyle:{width:1,color:css('--muted')}});
+      symbol:'circle',symbolSize:9,itemStyle:{color:css('--card'),borderColor:css('--fg'),borderWidth:1.5},lineStyle:{width:1,color:css('--muted')}});
     c.setOption(o)};
-  draw('cPE','pe',nm.pe,' 倍',1);draw('cYld','yld',nm.yld,'%',2);
+  draw('cPE','pe',nm.pe,' 倍',1,5);draw('cYld','yld',nm.yld,'%',2,1);
   $('valFoot').textContent=(P.length?`橘線＝本站按證交所定義算的每月底值（上市總市值 ÷ 近四季歸母淨利，虧損公司也算；資料：證交所每日個股收盤＋公開資訊觀測站財報，${P[0].ym.replace('-','/')} 起）。`:'')+
     `空心點＝金管會新聞稿引用的官方月底值（只在台股大跌時公布，所以不是每月都有）`+(chk.length?`，和本站算的對帳 ${chk.length} 點：平均差 ${fmt(mae,1)}%，最大 ${mx.ym.replace('-','/')} ${sg(mx.e)}`:'')+
     `。藍線＝每日值（晚上更新）。殖利率含股票股利（金管會點用同口徑）；灰色帶為現金殖利率常態，含股票股利約高 0.1 個百分點。常態區間：${nm.src}。`;
