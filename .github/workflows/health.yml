@@ -8,6 +8,10 @@ on:
         description: "這次最多打幾次 MOPS（補歷史填 450；平常 24）"
         required: false
         default: "24"
+      mmax:
+        description: "月營收這次最多幾頁（4 頁＝1 個月；補歷史填 140）"
+        required: false
+        default: "40"
 permissions:
   contents: write
 concurrency:
@@ -24,7 +28,8 @@ jobs:
           python-version: "3.12"
       - name: 估值快照＋月營收廣度＋季獲利（MOPS）
         env:
-          MAXREQ: ${{ github.event.inputs.maxreq || '24' }}
+          MAXREQ: ${{ github.event.inputs.maxreq || '60' }}
+          MMAX: ${{ github.event.inputs.mmax || '40' }}
           BUDGET_MIN: "32"
         run: python fetch_health.py
       - name: 有變動才提交
