@@ -169,7 +169,9 @@ def inst_finmind(code, start, D):
 
 def main():
     D, spec = sys.argv[1], sys.argv[2]
+    tag = sys.argv[3].strip() if len(sys.argv) > 3 else ""   # 一次性回補：輸出 <D>_<tag>.json，不覆蓋每日檔
     assert re.fullmatch(r"20\d{6}", D), "bad date"
+    assert tag == "" or re.fullmatch(r"[A-Za-z0-9]{1,12}", tag), "bad tag"
     codes, seen = [], set()
     for p in spec.split(","):
         m = re.fullmatch(r"\s*(\d{4,6}[A-Z]?):([LO])\s*", p)
@@ -226,10 +228,12 @@ def main():
     OUT.mkdir(exist_ok=True)
     out = {"D": D, "generatedAt": now, "codes": [f"{c}:{m}" for c, m in codes], "bars": bars, "ex": ex, "inst": inst, "diag": diag,
            "src": "證交所 STOCK_DAY／櫃買 tradingStock（GitHub Actions），未還原權息；v 為成交張數；ex 來自除權除息計算結果表"}
-    (OUT / f"{D}.json").write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
-    for old in sorted(OUT.glob("2*.json"))[:-KEEP_FILES]:
+    if tag:
+        out["tag"] = tag
+    (OUT / (f"{D}_{tag}.json" if tag else f"{D}.json")).write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    for old in sorted(OUT.glob("2???????.json"))[:-KEEP_FILES]:   # 只輪替每日檔；回補檔用完手動刪
         old.unlink()
-    print(f"ok D={D} codes={len(codes)} lastIsD={diag['lastIsD']} instLastIsD={diag['instLastIsD']} req={diag['req']} fail={len(diag['fail'])} sec={diag['sec']}")
+    print(f"ok D={D} tag={tag or '-'} codes={len(codes)} lastIsD={diag['lastIsD']} instLastIsD={diag['instLastIsD']} req={diag['req']} fail={len(diag['fail'])} sec={diag['sec']}")
     if not last_ok:
         sys.exit("no code has a bar on D")
 
