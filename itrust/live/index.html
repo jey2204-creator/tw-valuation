@@ -311,8 +311,7 @@ function drawK(cv,S,N,opt){
   gl.forEach(f=>{const p=lo+(hi-lo)*(1-f),y=Y(p);g.beginPath();g.moveTo(padL,y);g.lineTo(W-padR,y);g.stroke();if(!mini){g.fillStyle=mu;g.textAlign='left';g.fillText(pxFmt(p),W-padR+4,y)}});
   // 前20日高（紅色虛線）
   if(S.hi20){const y=Y(S.hi20);g.save();g.strokeStyle=up;g.globalAlpha=.9;g.lineWidth=mini?1:1.2;g.setLineDash(mini?[3,3]:[5,4]);g.beginPath();g.moveTo(padL,y);g.lineTo(W-padR,y);g.stroke();g.restore();
-    if(!mini){g.fillStyle=up;g.fillRect(W-padR+1,y-7,padR-2,14);g.fillStyle='#fff';g.textAlign='left';g.fillText(pxFmt(S.hi20),W-padR+4,y);
-      g.font='600 9.5px '+css('--font-body');g.fillStyle=up;g.textAlign='left';g.textBaseline='bottom';g.fillText('前20日高',padL+2,y-2);g.font='10px '+css('--font-num');g.textBaseline='middle'}}
+  }
   // 成交量
   const vY0=top+priceH+gap+volH;
   const vmax=Math.max(1,...vis.map(x=>x[5]||0),S.live&&S.vProj?S.vProj*S.avg5:0,S.avg5||0);
@@ -346,7 +345,13 @@ function drawK(cv,S,N,opt){
   if(liveJ>=0&&!mini){const x=vis[liveJ],xx=X(liveJ),yy=Y(x[2])-3;g.font='700 10px '+css('--font-body');g.textAlign='right';g.textBaseline='bottom';
     const lab='盤中 '+(S.q&&S.q.t?S.q.t.slice(0,5):''),lx=Math.min(W-padR-2,xx+bw/2+2),ly=Math.max(13,yy),tw=g.measureText(lab).width;
     g.fillStyle=css('--surface');g.globalAlpha=.88;g.fillRect(lx-tw-3,ly-12,tw+6,13);g.globalAlpha=1;g.fillStyle=css('--fg');g.fillText(lab,lx,ly);g.font='10px '+css('--font-num');g.textBaseline='middle'}
-  if(!mini){const last=vis[m-1],c=last[4],col=c>=last[1]?up:dn,y=Y(c);g.fillStyle=col;g.fillRect(W-padR+1,y-7,padR-2,14);g.fillStyle='#fff';g.textAlign='left';g.fillText(pxFmt(c),W-padR+4,y)}
+  if(!mini){const last=vis[m-1],c=last[4],col=c>=last[1]?up:dn;let y=Y(c);
+    if(S.hi20){const yh=Y(S.hi20);
+      g.font='600 9.5px '+css('--font-body');const lab='前20日高',tw=g.measureText(lab).width;g.fillStyle=sf;g.globalAlpha=.85;g.fillRect(padL+1,yh-13,tw+4,11);g.globalAlpha=1;
+      g.fillStyle=up;g.textAlign='left';g.textBaseline='bottom';g.fillText(lab,padL+3,yh-2);g.font='10px '+css('--font-num');g.textBaseline='middle';
+      g.fillStyle=up;g.fillRect(W-padR+1,yh-7,padR-2,14);g.fillStyle='#fff';g.textAlign='left';g.fillText(pxFmt(S.hi20),W-padR+4,yh);
+      if(Math.abs(y-yh)<15)y=c>=S.hi20?yh-15:yh+15}
+    g.fillStyle=col;g.fillRect(W-padR+1,y-7,padR-2,14);g.fillStyle='#fff';g.textAlign='left';g.fillText(pxFmt(c),W-padR+4,y)}
 }
 
 // ---- 畫面 ----
