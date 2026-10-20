@@ -1,5 +1,6 @@
 """投信／外資／土洋同買前20名（聯集）日K資料（給 itrust 自用版頁面的 db kline 用）
 
+代號清單＝當天三份前20名，加上前一個交易日的三份前20名（頁面「上榜隔日」要用名單隔天的開高低收），最多 120 檔。
 由 .github/workflows/itrust_kline.yml 手動觸發（雲端排程用 workflow_dispatch 帶入參數）。
 用法：python itrust/kline_fetch.py 20261019 "8021:L,3264:O,..."
   L＝上市（證交所 STOCK_DAY），O＝上櫃（櫃買 tradingStock）
@@ -169,12 +170,15 @@ def inst_finmind(code, start, D):
 def main():
     D, spec = sys.argv[1], sys.argv[2]
     assert re.fullmatch(r"20\d{6}", D), "bad date"
-    codes = []
+    codes, seen = [], set()
     for p in spec.split(","):
         m = re.fullmatch(r"\s*(\d{4,6}[A-Z]?):([LO])\s*", p)
         assert m, f"bad code spec: {p}"
+        if m.group(1) in seen:   # 重複代號只抓一次
+            continue
+        seen.add(m.group(1))
         codes.append((m.group(1), m.group(2)))
-    assert 0 < len(codes) <= 70, "1–70 codes"
+    assert 0 < len(codes) <= 120, "1–120 codes"
     t0 = time.time()
     bars = {}
     for code, mk in codes:
