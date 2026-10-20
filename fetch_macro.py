@@ -459,6 +459,8 @@ def fetch_nstat(freq):
         tr["head"] = raw[:400].decode("utf-8", "replace")
         return {}
     tr["keys"] = list(js.keys())[:30]
+    tr["meta"] = {k: (js.get(k) if not isinstance(js.get(k), list) else js.get(k)[:3] + ["…"] + js.get(k)[-3:])
+                  for k in ("ymf", "ymt", "ymb", "rowhead", "colhead", "row", "col", "nrow", "ncol", "plusdata", "title", "unit")}
     names = (js.get("colh") or [[]])[0]
     rows = js.get("orgdata") or []
     # 期別標籤：找一個字串陣列、長度＝期數、內容像期別
