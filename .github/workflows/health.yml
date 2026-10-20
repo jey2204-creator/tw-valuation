@@ -12,6 +12,18 @@ on:
         description: "月營收這次最多幾頁（4 頁＝1 個月；補歷史填 140）"
         required: false
         default: "40"
+      qshare:
+        description: "季財報最多用掉時間預算的幾成（補季財報歷史填 0.92）"
+        required: false
+        default: "0.7"
+      budget:
+        description: "時間預算（分鐘，上限 38）"
+        required: false
+        default: "32"
+      pemax:
+        description: "證交所月底資料這次最多補幾個月（補歷史填 100）"
+        required: false
+        default: "40"
 permissions:
   contents: write
 concurrency:
@@ -26,11 +38,13 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: 估值快照＋月營收廣度＋季獲利（MOPS）
+      - name: 估值快照＋月營收廣度＋季獲利（MOPS）＋月底本益比（證交所）
         env:
           MAXREQ: ${{ github.event.inputs.maxreq || '60' }}
           MMAX: ${{ github.event.inputs.mmax || '40' }}
-          BUDGET_MIN: "32"
+          QSHARE: ${{ github.event.inputs.qshare || '0.7' }}
+          BUDGET_MIN: ${{ github.event.inputs.budget || '32' }}
+          PEMAX: ${{ github.event.inputs.pemax || '40' }}
         run: python fetch_health.py
       - name: 有變動才提交
         if: always()

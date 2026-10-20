@@ -12,6 +12,10 @@
       出現「查詢過於頻繁」或連續 4 次失敗就停，下次執行接著補（新的期別優先）
 重抓規則：季資料在申報截止後 40 天內每 3 天重抓一次（補晚交的公司），之後定案；
           月資料在次次月 1 日前每天重抓一次，之後定案
+4. 證交所口徑本益比（月底，2019/4 起）：證交所 BWIBBU_d（某日全部上市股票的收盤、殖利率、本益比）每月底抓一次
+   → data/health/px/{YYYYMM}.json 原始；本益比＝上市總市值 ÷ 上市公司近四季歸母淨利合計（含虧損公司，證交所 Fact Book 定義
+   PER = Market Capitalization / Net Income）；市值＝收盤 × 股數，股數＝該季歸母淨利 ÷ 基本每股盈餘（MOPS），算不出來用目前股數
+   → pe[] 每月一筆；金管會在新聞稿引用的月底本益比就是這個口徑，用來對帳
 任何一塊失敗都不影響其他塊；每次嘗試寫進 health.json 的 diag 方便除錯
 用法：python fetch_health.py          （MAXREQ=400 python fetch_health.py 一次補完歷史）
 """
@@ -23,6 +27,7 @@ import urllib.request, urllib.parse
 ROOT = Path(__file__).resolve().parent
 OUT = ROOT / "data"
 QDIR = OUT / "health" / "q"
+PXDIR = OUT / "health" / "px"
 HOSTS = ["https://mopsov.twse.com.tw", "https://mops.twse.com.tw"]
 UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15"
 TSMC = "2330"
@@ -32,6 +37,9 @@ MAXREQ = int(os.environ.get("MAXREQ") or 24)
 MMAX = int(os.environ.get("MMAX") or 40)       # 月營收靜態頁每次最多幾頁（4 頁＝1 個月）
 AJAX_GAP = float(os.environ.get("AJAX_GAP") or 25)
 BUDGET = float(os.environ.get("BUDGET_MIN") or 30) * 60      # 秒；超過就停止打 MOPS，先存檔提交
+QSHARE = float(os.environ.get("QSHARE") or 0.7)              # 季財報最多用掉時間預算的幾成（其餘留給月營收）
+PEMAX = int(os.environ.get("PEMAX") or 40)                   # 證交所月底資料每次最多補幾個月
+PE_START = (2019, 4)                                         # 2019/3 以前要 2017 年財報才算得出近四季，從 2019/4 開始
 T0 = time.time()
 TODAY = dt.datetime.now(dt.timezone(dt.timedelta(hours=8))).date()
 DIAG = {"tries": [], "notes": []}
@@ -178,11 +186,20 @@ def valuation():
     top10 = sum(sorted(cap.values(), reverse=True)[:10]) / tot
     ts_e = cap[TSMC] / d[TSMC][2] if d[TSMC][2] else 0
     date = s.get("pxAsof") or s.get("updated", "")[:10].replace("-", "")
+    # 證交所口徑（上市；總市值 ÷ 近四季歸母淨利合計，含虧損公司）：和月底序列、金管會公布值同一套算法
+    tw = None
+    try:
+        dd = dt.datetime.strptime(date, "%Y%m%d").date()
+        tw = tw_metrics(qfiles(), dd, {c: [v[0], v[4], v[2]] for c, v in d.items()}, lambda c: sh.get(c))
+    except Exception as e:
+        DIAG["notes"].append(f"每日證交所口徑失敗：{e!r}")
     return [date, round(tot / 1e12, 2), round(pe, 2) if pe else None, round(yld, 2), round(cap[TSMC] / tot * 100, 1),
-            round(earn / 1e12, 3), round(ts_e / earn * 100, 1) if earn else None, round(top10 * 100, 1), len(pe_c), len(cap)]
+            round(earn / 1e12, 3), round(ts_e / earn * 100, 1) if earn else None, round(top10 * 100, 1), len(pe_c), len(cap),
+            tw and tw["pe"], tw and tw["yld"], tw and tw["tsCap"], tw and tw["tsNI"], tw and tw["basis"]]
 
 
-V_FIELDS = ["date", "cap兆", "pe", "yld%", "tsmcCap%", "earn兆", "tsmcEarn%", "top10%", "nPE", "n"]
+V_FIELDS = ["date", "cap兆", "pe", "yld%", "tsmcCap%", "earn兆", "tsmcEarn%", "top10%", "nPE", "n",
+            "peTW", "yldTW", "tsCapTW%", "tsNITW%", "basis"]
 
 
 # ---------------------------------------------------------------- 2. 月營收廣度
@@ -387,10 +404,8 @@ def update_quarters():
     while TODAY > q_deadline(y, n):
         due.append((y, n))
         y, n = (y + 1, 1) if n == 4 else (y, n + 1)
-    # 只抓「各年 Q4（全年）」＋「最新一期與去年同期」：頁面只用年度與今年累計，其他季別不需要（MOPS 每期約 1.5MB，省流量）
-    want = {t for t in due if t[1] == 4}
-    if due:
-        want |= {due[-1], (due[-1][0] - 1, due[-1][1])}
+    # 全部季別都要：月底本益比的「近四季獲利」＝今年累計＋去年全年−去年同期累計（順序：最新期與去年同期 → 各年 Q4 → 其他新到舊）
+    want = set(due)
     todo = []
     for y, n in sorted(want):
         f = QDIR / f"{q_label(y, n)}.json"
@@ -409,8 +424,8 @@ def update_quarters():
         todo = first + q4 + [t for t in todo if t not in first and t not in q4]
     done = 0
     for y, n in todo:
-        if time.time() - T0 > BUDGET * 0.7:          # 留三成時間給月營收
-            DIAG["notes"].append("季財報用完七成時間預算，其餘下次補")
+        if time.time() - T0 > BUDGET * QSHARE:        # 其餘時間留給月營收
+            DIAG["notes"].append(f"季財報用完 {QSHARE:.0%} 時間預算，其餘下次補")
             break
         rows, info = fetch_quarter(y, n)
         if rows is None:
@@ -464,6 +479,233 @@ def q_agg():
     return out
 
 
+
+# ---------------------------------------------------------------- 4. 證交所口徑本益比（月底）
+TW = {"last": 0.0, "n": 0, "fail": 0}
+
+
+def twse_json(url):
+    """證交所 rwd JSON（每次間隔 3.5 秒）；失敗回 None"""
+    w = TW["last"] + 3.5 - time.time()
+    if w > 0:
+        time.sleep(w)
+    TW["n"] += 1
+    r = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (tw-valuation; GitHub Actions)",
+                                             "Accept": "application/json,text/plain,*/*"})
+    for i in range(2):
+        try:
+            with urllib.request.urlopen(r, timeout=60) as resp:
+                TW["last"] = time.time()
+                return json.loads(resp.read().decode("utf-8-sig"))
+        except Exception as e:
+            TW["last"] = time.time()
+            if i == 1:
+                DIAG.setdefault("twse", []).append(f"{url.split('?')[-1][:40]}: {e}")
+                return None
+            time.sleep(5)
+
+
+def json_tables(js):
+    """證交所 JSON 各版本：{fields,data} 或 {tables:[{fields,data}]}"""
+    out = []
+    if isinstance(js, dict):
+        if js.get("data") and isinstance(js["data"], list):
+            out.append((js.get("fields") or [], js["data"]))
+        for t in js.get("tables") or []:
+            if isinstance(t, dict) and t.get("data"):
+                out.append((t.get("fields") or [], t["data"]))
+        for k, v in js.items():
+            if k.startswith("data") and k[4:].isdigit() and v:
+                out.append((js.get("fields" + k[4:]) or [], v))
+    return out
+
+
+def fcol(fields, *must):
+    for i, f in enumerate(fields):
+        if all(m in str(f) for m in must):
+            return i
+    return None
+
+
+def twse_close(d):
+    """MI_INDEX 當日收盤（BWIBBU_d 舊格式沒有收盤價時用）"""
+    js = twse_json(f"https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX?date={d:%Y%m%d}&type=ALLBUT0999&response=json")
+    for f, rows in json_tables(js):
+        ic, ip = fcol(f, "證券代號"), fcol(f, "收盤價")
+        if ic is not None and ip is not None:
+            return {str(r[ic]).strip(): num(r[ip]) for r in rows if num(r[ip])}
+    return {}
+
+
+def bwibbu(d):
+    """某日全部上市股票 {代號: [收盤, 殖利率%, 本益比]}；None＝當天沒資料（休市）"""
+    js = twse_json(f"https://www.twse.com.tw/rwd/zh/afterTrading/BWIBBU_d?date={d:%Y%m%d}&selectType=ALL&response=json")
+    if js is None:
+        TW["fail"] += 1
+        return None
+    for f, rows in json_tables(js):
+        ic, iy, ie, ip = fcol(f, "證券代號"), fcol(f, "殖利率"), fcol(f, "本益比"), fcol(f, "收盤價")
+        if ic is None or iy is None or ie is None:
+            continue
+        cl = twse_close(d) if ip is None else None
+        out = {}
+        for r in rows:
+            c = str(r[ic]).strip()
+            if not re.fullmatch(r"[1-9]\d{3}", c):
+                continue
+            px = num(r[ip]) if ip is not None else (cl or {}).get(c)
+            if px:
+                out[c] = [px, num(r[iy]), num(r[ie])]
+        DIAG.setdefault("px", []).append({"date": f"{d:%Y%m%d}", "n": len(out), "fields": [str(x) for x in f][:10]})
+        return out or None
+    return None
+
+
+def month_end_dates(y, m):
+    nd = dt.date(y + (m == 12), m % 12 + 1, 1) - dt.timedelta(days=1)
+    for k in range(8):
+        d = nd - dt.timedelta(days=k)
+        if d.weekday() < 5:
+            yield d
+
+
+def update_px():
+    """補月底原始資料（新的先補）；data/health/px/{YYYYMM}.json = {date, d:{代號:[收盤,殖利率,本益比]}}"""
+    PXDIR.mkdir(parents=True, exist_ok=True)
+    months, (y, m) = [], PE_START
+    last = (TODAY.year, TODAY.month)
+    while (y, m) < last:                         # 只到上個月（本月還沒結束，看每日值）
+        months.append((y, m))
+        y, m = (y + 1, 1) if m == 12 else (y, m + 1)
+    todo = [t for t in reversed(months) if not (PXDIR / f"{t[0]}{t[1]:02d}.json").exists()]
+    done = 0
+    for y, m in todo[:PEMAX]:
+        if TW["fail"] >= 3:
+            DIAG["notes"].append("證交所月底資料連續失敗，其餘下次補")
+            break
+        got = None
+        for d in month_end_dates(y, m):
+            rows = bwibbu(d)
+            if rows:
+                got = (d, rows)
+                break
+            if TW["fail"] >= 3:
+                break
+        if not got:
+            continue
+        TW["fail"] = 0
+        d, rows = got
+        (PXDIR / f"{y}{m:02d}.json").write_text(json.dumps({"date": f"{d:%Y%m%d}", "d": rows}, ensure_ascii=False,
+                                                           separators=(",", ":")), "utf-8")
+        done += 1
+    DIAG["px_months"] = {"todo": len(todo), "done": done, "twseReq": TW["n"]}
+
+
+def qfiles():
+    return {f.stem: load(f, {}).get("d", {}) for f in QDIR.glob("*.json")}
+
+
+def basis_q(d):
+    """日期 d 當下已公布的最新季別（以一般公司申報期限判斷）"""
+    best = None
+    y, n = START_Q
+    while q_deadline(y, n) <= d:
+        best = (y, n)
+        y, n = (y + 1, 1) if n == 4 else (y, n + 1)
+    return best
+
+
+def ni4_of(Q, y, n):
+    """近四季歸母淨利（千元）{代號: 值}；n==4 直接用全年，否則 今年累計＋去年全年−去年同期累計"""
+    if n == 4:
+        cur = Q.get(f"{y}Q4")
+        return ({c: v[1] for c, v in cur.items()}, {c: v[0] for c, v in cur.items()}) if cur else (None, None)
+    cur, fy, ly = Q.get(f"{y}Q{n}"), Q.get(f"{y - 1}Q4"), Q.get(f"{y - 1}Q{n}")
+    if not (cur and fy and ly):
+        return None, None
+    return ({c: v[1] + fy[c][1] - ly[c][1] for c, v in cur.items() if c in fy and c in ly},
+            {c: v[0] for c, v in cur.items()})
+
+
+def shares_of(Q, d, cur_sh):
+    """每家公司在 d 附近的股數：期末在 d 之前最近一季的 歸母淨利×1000 ÷ 基本EPS（|EPS|≥0.3 才算），往前找 4 季，找不到用目前股數"""
+    pers = []
+    y, n = START_Q
+    while True:
+        pend = dt.date(y, n * 3, 1) + dt.timedelta(days=31)
+        pend = pend.replace(day=1) - dt.timedelta(days=1)
+        if pend > d:
+            break
+        pers.append(f"{y}Q{n}")
+        y, n = (y + 1, 1) if n == 4 else (y, n + 1)
+    def est(c):
+        for p in reversed(pers[-5:]):
+            v = Q.get(p, {}).get(c)
+            if v and v[4] and abs(v[4]) >= 0.3 and v[1] and (v[1] > 0) == (v[4] > 0):
+                return v[1] * 1000 / v[4]
+        return None
+
+    def get(c):
+        e, k = est(c), cur_sh.get(c)
+        if k and (e is None or abs(e / k - 1) <= 0.1):   # 差不到一成（沒有分割、大增資）→ 目前股數較準，也和每日值一致
+            return k
+        return e or k
+    return get
+
+
+def tw_metrics(Q, d, rows, sh):
+    """上市公司在 d 日的證交所口徑估值。rows={代號:[收盤,殖利率,本益比]}，sh(代號)→股數"""
+    b = basis_q(d)
+    if not b:
+        return None
+    ni, mk = ni4_of(Q, *b)
+    if not ni:
+        return None
+    cap = niS = capP = niP = yw = 0.0
+    n, ts_cap, ts_ni = 0, 0.0, 0.0
+    for c, r in rows.items():
+        if mk.get(c) != 0 or c not in ni or not r[0]:     # 只算上市（MOPS 上市彙總裡的公司）
+            continue
+        k = sh(c)
+        if not k:
+            continue
+        cp = r[0] * k
+        v = ni[c] * 1000
+        cap += cp
+        niS += v
+        yw += cp * (r[1] or 0)
+        n += 1
+        if v > 0:
+            capP += cp
+            niP += v
+        if c == TSMC:
+            ts_cap, ts_ni = cp, v
+    if not n or niS <= 0:
+        return None
+    return {"pe": round(cap / niS, 2), "peP": round(capP / niP, 2) if niP else None, "yld": round(yw / cap, 2),
+            "cap": round(cap / 1e12, 2), "ni": round(niS / 1e12, 3), "n": n,
+            "tsCap": round(ts_cap / cap * 100, 1), "tsNI": round(ts_ni / niS * 100, 1), "basis": f"{b[0]}Q{b[1]}"}
+
+
+def pe_agg():
+    """每個月底一筆（上市）：證交所口徑本益比、只算賺錢公司的本益比、市值加權殖利率、台積電占市值／占獲利"""
+    Q = qfiles()
+    cur_sh = (load(OUT / "summary.json", {}) or {}).get("sh", {})
+    out = []
+    for f in sorted(PXDIR.glob("*.json")):
+        j = load(f, None)
+        if not j:
+            continue
+        d = dt.datetime.strptime(j["date"], "%Y%m%d").date()
+        m = tw_metrics(Q, d, j["d"], shares_of(Q, d, cur_sh))
+        if m:
+            out.append([f.stem[:4] + "-" + f.stem[4:], j["date"], m["pe"], m["peP"], m["yld"], m["cap"], m["ni"], m["n"],
+                        m["tsCap"], m["tsNI"], m["basis"]])
+    return out
+
+
+PE_FIELDS = ["ym", "date", "pe證交所口徑", "pe只算賺錢", "yld%含股票股利", "上市市值兆", "近四季淨利兆", "家數", "台積電占市值%", "台積電占獲利%", "財報基準"]
+
 # ---------------------------------------------------------------- main
 def main():
     old = load(OUT / "health.json", {})
@@ -481,6 +723,12 @@ def main():
     except Exception as e:
         DIAG["notes"].append(f"估值快照失敗：{e}")
 
+    # 4a. 證交所月底原始資料（快：每月 1 次請求）
+    try:
+        update_px()
+    except Exception as e:
+        DIAG["notes"].append(f"證交所月底資料失敗：{e!r}")
+
     # 3. 季獲利（先做：資料最重要；新的期別優先）
     try:
         update_quarters()
@@ -495,13 +743,21 @@ def main():
     except Exception as e:
         DIAG["notes"].append(f"月營收失敗：{e!r}")
 
+    # 4b. 月底本益比序列（需要季財報；季財報補齊前，缺的月份先空著）
+    try:
+        res["pe"] = pe_agg()
+        res["peFields"] = PE_FIELDS
+    except Exception as e:
+        DIAG["notes"].append(f"月底本益比失敗：{e!r}")
+
     DIAG["requests"] = REQ["n"]
     DIAG["stop"] = REQ["stop"]
     res["diag"] = {**DIAG, "tries": DIAG["tries"][-60:]}
     (OUT / "health.json").write_text(json.dumps(res, ensure_ascii=False, separators=(",", ":")), "utf-8")
     q = res.get("q", [])
     print(f"估值 {len(res.get('v', []))} 天；月營收 {len(res.get('m', []))} 個月；季獲利 {len(q)} 期"
-          f"（最新 {q[-1]['p'] if q else '—'}）；MOPS 請求 {REQ['n']} 次；停止原因：{REQ['stop']}")
+          f"（最新 {q[-1]['p'] if q else '—'}）；月底本益比 {len(res.get('pe', []))} 個月；MOPS 請求 {REQ['n']} 次、證交所 {TW['n']} 次；"
+          f"停止原因：{REQ['stop']}")
 
 
 if __name__ == "__main__":
