@@ -439,10 +439,16 @@ def fetch_nstat(freq):
     """總體統計資料庫查詢頁 outmode=8（JSON：colh[0]＝項目名、orgdata[i]＝該項目各期值）。
     cycle：1 月、2 季、3 半年、4 年（2026/10/20 實測 3＝半年、4＝年）。ym＝民國年＋期別 2 碼"""
     roc = TODAY.year - 1911
-    a, b, c = ("8701", f"{roc}04", 2) if freq == "q" else ("8701", f"{roc}01", 4)
+    # 一次查太多期會逾時（1998 起查 90 秒沒回應）→ 只查近 5 年，更早的用 XML
+    a, b, c = (f"{roc - 5}01", f"{roc}04", 2) if freq == "q" else (f"{roc - 6}01", f"{roc}01", 4)
+    y0 = roc - 5 + 1911 if freq == "q" else roc - 6 + 1911
     url = NSTAT.format(a=a, b=b, c=c)
     t0 = time.time()
-    st, raw = http(url, timeout=90, headers={"User-Agent": BUA, "Accept": "application/json,*/*"})
+    for i in range(2):
+        st, raw = http(url, timeout=150, headers={"User-Agent": BUA, "Accept": "application/json,*/*"})
+        if st == 200 and raw:
+            break
+        time.sleep(10)
     tr = {"url": url, "status": st, "len": len(raw), "sec": round(time.time() - t0, 1)}
     DIAG["gdp"]["tries"].append(tr)
     if st != 200 or not raw:
@@ -476,7 +482,6 @@ def fetch_nstat(freq):
         pers = [period_of(x, freq) for x in labels]
         flags = ["f" if re.search(r"f|預測", x) else "p" if re.search(r"p|初步|概估", x) else "" for x in labels]
     else:   # 沒有標籤：從 ym 起連續編號
-        y0 = 1998
         pers = [f"{y0 + i // 4}Q{i % 4 + 1}" for i in range(n)] if freq == "q" else [str(y0 + i) for i in range(n)]
         flags = [""] * n
     tr["labels"] = (labels or [])[:2] + (labels or [])[-3:]
