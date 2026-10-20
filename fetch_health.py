@@ -545,6 +545,7 @@ def bwibbu(d):
         return None
     for f, rows in json_tables(js):
         ic, iy, ie, ip = fcol(f, "證券代號"), fcol(f, "殖利率"), fcol(f, "本益比"), fcol(f, "收盤價")
+        iq = fcol(f, "財報")                        # 財報年/季，例 115/2：證交所算這檔本益比用的財報（各公司公布時間不同）
         if ic is None or iy is None or ie is None:
             continue
         cl = twse_close(d) if ip is None else None
@@ -555,7 +556,11 @@ def bwibbu(d):
                 continue
             px = num(r[ip]) if ip is not None else (cl or {}).get(c)
             if px:
-                out[c] = [px, num(r[iy]), num(r[ie])]
+                bq = None
+                m = re.fullmatch(r"(\d{2,3})/([1-4])", str(r[iq]).strip()) if iq is not None else None
+                if m:
+                    bq = f"{int(m.group(1)) + 1911}Q{m.group(2)}"
+                out[c] = [px, num(r[iy]), num(r[ie]), bq]
         DIAG.setdefault("px", []).append({"date": f"{d:%Y%m%d}", "n": len(out), "fields": [str(x) for x in f][:10]})
         return out or None
     return None
@@ -570,14 +575,14 @@ def month_end_dates(y, m):
 
 
 def update_px():
-    """補月底原始資料（新的先補）；data/health/px/{YYYYMM}.json = {date, d:{代號:[收盤,殖利率,本益比]}}"""
+    """補月底原始資料（新的先補）；data/health/px/{YYYYMM}.json = {v:2, date, d:{代號:[收盤,殖利率,本益比,財報基準如 2026Q2]}}"""
     PXDIR.mkdir(parents=True, exist_ok=True)
     months, (y, m) = [], PE_START
     last = (TODAY.year, TODAY.month)
     while (y, m) < last:                         # 只到上個月（本月還沒結束，看每日值）
         months.append((y, m))
         y, m = (y + 1, 1) if m == 12 else (y, m + 1)
-    todo = [t for t in reversed(months) if not (PXDIR / f"{t[0]}{t[1]:02d}.json").exists()]
+    todo = [t for t in reversed(months) if (load(PXDIR / f"{t[0]}{t[1]:02d}.json", {}) or {}).get("v") != 2]
     done = 0
     for y, m in todo[:PEMAX]:
         if TW["fail"] >= 3:
@@ -595,7 +600,7 @@ def update_px():
             continue
         TW["fail"] = 0
         d, rows = got
-        (PXDIR / f"{y}{m:02d}.json").write_text(json.dumps({"date": f"{d:%Y%m%d}", "d": rows}, ensure_ascii=False,
+        (PXDIR / f"{y}{m:02d}.json").write_text(json.dumps({"v": 2, "date": f"{d:%Y%m%d}", "d": rows}, ensure_ascii=False,
                                                            separators=(",", ":")), "utf-8")
         done += 1
     DIAG["px_months"] = {"todo": len(todo), "done": done, "twseReq": TW["n"]}
@@ -654,23 +659,41 @@ def shares_of(Q, d, cur_sh):
 
 
 def tw_metrics(Q, d, rows, sh):
-    """上市公司在 d 日的證交所口徑估值。rows={代號:[收盤,殖利率,本益比]}，sh(代號)→股數"""
+    """上市公司在 d 日的證交所口徑估值。rows={代號:[收盤,殖利率,本益比,財報基準]}，sh(代號)→股數
+    近四季淨利優先用證交所當天標示的「財報年/季」（各公司公布時間不同，例：台積電 2 月就公布年報），沒有才用法定期限推"""
     b = basis_q(d)
     if not b:
         return None
-    ni, mk = ni4_of(Q, *b)
+    cache = {}
+
+    def ni_at(y, n):
+        k = (y, n)
+        if k not in cache:
+            cache[k] = ni4_of(Q, y, n)
+        return cache[k]
+    ni, mk = ni_at(*b)
     if not ni:
         return None
     cap = niS = capP = niP = yw = 0.0
-    n, ts_cap, ts_ni = 0, 0.0, 0.0
+    n, ts_cap, ts_ni, own = 0, 0.0, 0.0, 0
     for c, r in rows.items():
-        if mk.get(c) != 0 or c not in ni or not r[0]:     # 只算上市（MOPS 上市彙總裡的公司）
+        if mk.get(c) != 0 or not r[0]:                 # 只算上市（MOPS 上市彙總裡的公司）
+            continue
+        v = None
+        bq = r[3] if len(r) > 3 else None
+        if bq and bq != f"{b[0]}Q{b[1]}":
+            nb, _ = ni_at(int(bq[:4]), int(bq[5]))
+            if nb and c in nb:
+                v, own = nb[c], own + 1
+        if v is None:
+            v = ni.get(c)
+        if v is None:
             continue
         k = sh(c)
         if not k:
             continue
         cp = r[0] * k
-        v = ni[c] * 1000
+        v *= 1000
         cap += cp
         niS += v
         yw += cp * (r[1] or 0)
@@ -683,7 +706,7 @@ def tw_metrics(Q, d, rows, sh):
     if not n or niS <= 0:
         return None
     return {"pe": round(cap / niS, 2), "peP": round(capP / niP, 2) if niP else None, "yld": round(yw / cap, 2),
-            "cap": round(cap / 1e12, 2), "ni": round(niS / 1e12, 3), "n": n,
+            "cap": round(cap / 1e12, 2), "ni": round(niS / 1e12, 3), "n": n, "own": own,
             "tsCap": round(ts_cap / cap * 100, 1), "tsNI": round(ts_ni / niS * 100, 1), "basis": f"{b[0]}Q{b[1]}"}
 
 
@@ -700,11 +723,12 @@ def pe_agg():
         m = tw_metrics(Q, d, j["d"], shares_of(Q, d, cur_sh))
         if m:
             out.append([f.stem[:4] + "-" + f.stem[4:], j["date"], m["pe"], m["peP"], m["yld"], m["cap"], m["ni"], m["n"],
-                        m["tsCap"], m["tsNI"], m["basis"]])
+                        m["tsCap"], m["tsNI"], m["basis"], m["own"]])
     return out
 
 
-PE_FIELDS = ["ym", "date", "pe證交所口徑", "pe只算賺錢", "yld%含股票股利", "上市市值兆", "近四季淨利兆", "家數", "台積電占市值%", "台積電占獲利%", "財報基準"]
+PE_FIELDS = ["ym", "date", "pe證交所口徑", "pe只算賺錢", "yld%含股票股利", "上市市值兆", "近四季淨利兆", "家數", "台積電占市值%", "台積電占獲利%", "財報基準",
+             "用證交所逐家財報基準的家數"]
 
 # ---------------------------------------------------------------- main
 def main():
