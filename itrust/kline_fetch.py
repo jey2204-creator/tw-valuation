@@ -5,10 +5,11 @@
   L＝上市（證交所 STOCK_DAY），O＝上櫃（櫃買 tradingStock）
 輸出 itrust/kline/<D>.json：
   {"D", "generatedAt", "codes", "bars": {代號: [[YYYYMMDD, o, h, l, c, v(張)], …]},
-   "ex": {代號: [[YYYYMMDD, "息"|"權"|"權息", 權值+息值], …]}, "diag": {…}}
+   "ex": {代號: [[YYYYMMDD, "息"|"權"|"權息", 權值+息值], …]},
+   "inst": {代號: [[YYYYMMDD, 投信張, 外資張], …]}（FinMind，外資＝外陸資不含自營商；需 FINMIND_TOKEN）, "diag": {…}}
 價格不還原權息。只用 Python 標準函式庫。
 """
-import json, re, sys, time, calendar, datetime as dt, urllib.request, urllib.parse
+import json, os, re, sys, time, calendar, datetime as dt, urllib.request, urllib.parse
 from decimal import Decimal, ROUND_HALF_UP
 from pathlib import Path
 
@@ -129,6 +130,42 @@ def ex_tpex(start, end, want):
     return res
 
 
+def inst_finmind(code, start, D):
+    """FinMind TaiwanStockInstitutionalInvestorsBuySell → [[YYYYMMDD, 投信張, 外資張]]（張＝(買−賣)÷1000 四捨五入）"""
+    tok = os.environ.get("FINMIND_TOKEN", "")
+    q = urllib.parse.urlencode(dict(dataset="TaiwanStockInstitutionalInvestorsBuySell", data_id=code,
+                                    start_date=f"{start[:4]}-{start[4:6]}-{start[6:]}"))
+    for i in range(4):
+        wait = 0.4 - (time.time() - _last.get("fm", 0))
+        if wait > 0:
+            time.sleep(wait)
+        _last["fm"] = time.time()
+        diag["req"] += 1
+        try:
+            req = urllib.request.Request("https://api.finmindtrade.com/api/v4/data?" + q,
+                                         headers={"User-Agent": "Mozilla/5.0", **({"Authorization": "Bearer " + tok} if tok else {})})
+            with urllib.request.urlopen(req, timeout=30) as r:
+                js = json.loads(r.read().decode("utf-8"))
+            break
+        except Exception as e:  # noqa: BLE001
+            err = f"{type(e).__name__}: {e}"
+            time.sleep(5 * (i + 1))
+    else:
+        diag["fail"].append(f"FinMind {code} → {err}")
+        return None
+    agg = {}
+    for r in js.get("data") or []:
+        d = str(r.get("date", "")).replace("-", "")
+        if not d or d > D:
+            continue
+        k = {"Investment_Trust": 1, "Foreign_Investor": 2}.get(r.get("name"))
+        if not k:
+            continue
+        net = (num(r.get("buy")) or 0) - (num(r.get("sell")) or 0)
+        agg.setdefault(d, [d, 0, 0])[k] = half_up(abs(net) / 1000) * (1 if net >= 0 else -1)
+    return [agg[k] for k in sorted(agg)]
+
+
 def main():
     D, spec = sys.argv[1], sys.argv[2]
     assert re.fullmatch(r"20\d{6}", D), "bad date"
@@ -159,6 +196,15 @@ def main():
         if d in {b[0] for b in bars[c]}:
             ex[c][d] = [d, t, v]
     ex = {c: [v[k] for k in sorted(v)] for c, v in ex.items()}
+    # 法人買賣超張數（FinMind），範圍與 bars 相同；失敗的代號不放（頁面保留既有 inst）
+    inst = {}
+    for c, _ in codes:
+        if not bars[c]:
+            continue
+        rows = inst_finmind(c, bars[c][0][0], D)
+        if rows is not None:
+            inst[c] = rows
+    diag["instLastIsD"] = f"{sum(1 for v in inst.values() if v and v[-1][0] == D)}/{len(codes)}"
     # 同月份各檔筆數應一致（停牌或新上市除外），不一致記在 diag
     odd = {}
     for key, cnt in diag["month_rows"].items():
@@ -174,12 +220,12 @@ def main():
     diag["lastIsD"] = f"{len(last_ok)}/{len(codes)}"
     now = dt.datetime.now(dt.timezone(dt.timedelta(hours=8))).strftime("%Y/%m/%d %H:%M")
     OUT.mkdir(exist_ok=True)
-    out = {"D": D, "generatedAt": now, "codes": [f"{c}:{m}" for c, m in codes], "bars": bars, "ex": ex, "diag": diag,
+    out = {"D": D, "generatedAt": now, "codes": [f"{c}:{m}" for c, m in codes], "bars": bars, "ex": ex, "inst": inst, "diag": diag,
            "src": "證交所 STOCK_DAY／櫃買 tradingStock（GitHub Actions），未還原權息；v 為成交張數；ex 來自除權除息計算結果表"}
     (OUT / f"{D}.json").write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     for old in sorted(OUT.glob("2*.json"))[:-KEEP_FILES]:
         old.unlink()
-    print(f"ok D={D} codes={len(codes)} lastIsD={diag['lastIsD']} req={diag['req']} fail={len(diag['fail'])} sec={diag['sec']}")
+    print(f"ok D={D} codes={len(codes)} lastIsD={diag['lastIsD']} instLastIsD={diag['instLastIsD']} req={diag['req']} fail={len(diag['fail'])} sec={diag['sec']}")
     if not last_ok:
         sys.exit("no code has a bar on D")
 

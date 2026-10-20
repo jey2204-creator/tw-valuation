@@ -27,6 +27,7 @@ jobs:
         env:
           D: ${{ inputs.date }}
           CODES: ${{ inputs.codes }}
+          FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
         run: python itrust/kline_fetch.py "$D" "$CODES"
       - name: 只提交 itrust/kline/
         run: |
