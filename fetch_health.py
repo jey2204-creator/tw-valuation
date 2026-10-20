@@ -563,7 +563,7 @@ def bwibbu(d):
 
 def month_end_dates(y, m):
     nd = dt.date(y + (m == 12), m % 12 + 1, 1) - dt.timedelta(days=1)
-    for k in range(8):
+    for k in range(16):                          # 農曆年長假可能連休超過一週（例：2025/1/23–1/31）
         d = nd - dt.timedelta(days=k)
         if d.weekday() < 5:
             yield d
