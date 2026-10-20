@@ -372,7 +372,7 @@ details.ind.hot summary b{color:var(--up)}
   </div>
 </header>
   <nav class="chips" aria-label="圖表">
-    <a href="#rev">營收</a><a href="#chip">籌碼</a><a href="#margin">三率</a><a href="#eps">EPS</a><a href="#capex" id="chipCx">資本支出</a><a href="#inv" id="chipInv">存貨</a><a href="#guide" id="chipGd" hidden>財測</a><a href="#fwd">預估EPS</a><a href="#pe">本益比河流</a><a href="#pegh" id="chipPG">PEG位階</a><a href="#pb">淨值比河流</a>
+    <a href="#rev">營收</a><a href="#chip">籌碼</a><a href="#margin">三率</a><a href="#eps">EPS</a><a href="#capex" id="chipCx">資本支出</a><a href="#cf" id="chipCf">現金流</a><a href="#inv" id="chipInv">存貨</a><a href="#guide" id="chipGd" hidden>財測</a><a href="#fwd">預估EPS</a><a href="#pe">本益比河流</a><a href="#pegh" id="chipPG">PEG位階</a><a href="#pb">淨值比河流</a>
   </nav>
 <p class="err" id="err" hidden></p>
 
@@ -406,6 +406,13 @@ details.ind.hot summary b{color:var(--up)}
   <p class="take" id="tCx"></p>
   <div class="chart" id="cCx"></div>
   <p class="foot" id="fCx">柱：單季資本支出（取得不動產、廠房及設備）　線：資本支出 ÷ 營收（右軸 %）</p>
+</section>
+<section class="card" id="cf">
+  <h2>現金流 <small>季｜億元・倍</small></h2>
+  <p class="take" id="tCf"></p>
+  <div class="chart" id="cCf"></div>
+  <div class="ichk" id="cfChk"></div>
+  <p class="foot" id="fCf"></p>
 </section>
 <section class="card" id="inv">
   <h2>存貨健康度 <small>季｜億元・天</small></h2>
@@ -557,7 +564,7 @@ function render(){
    o.series=[{name:'單季EPS',type:'bar',data:Q.map(x=>x[5]),itemStyle:{color:acc2,borderRadius:[2,2,0,0]},label:{show:true,position:'top',fontSize:9,color:css('--muted'),fontFamily:'IBM Plex Mono',formatter:p=>p.dataIndex>=Q.length-4?p.value:''}},
      {name:'近四季',type:'line',yAxisIndex:1,data:ttm,symbol:'none',lineStyle:{width:2,color:warm},itemStyle:{color:warm}}];
    c.setOption(o,true)}
-  renderCx();renderInv();renderChip();renderGuide();
+  renderCx();renderCf();renderInv();renderChip();renderGuide();
   renderFwd();river('cPE',PEM,2,'倍 PE');renderPegH();river('cPB',PBM,3,'倍 PB');
 }
 // ---- 存貨健康度：D.inv 每季 [季別, 存貨, 營業成本, 應收帳款, 合約負債|null, 稅後淨利, 單季營業現金流|null]（億） ----
@@ -622,6 +629,62 @@ function renderInv(){
 }
 function indOfStock(){const it=LIST.find(s=>s[0]===D.id);return it?it[3]||'':''}
 function ppt(v,d=1){return v==null?'—':(v>0?'+':'')+fmt(v,d)+' 點'}
+// ---- 現金流：D.cf 每季 [季別, 單季營業現金流, 稅後淨利(合併)]（億）；舊資料沒有 cf → 從 D.inv 取；資本支出取 D.capex ----
+function cfCalc(){
+  if(!Q.length||Q[Q.length-1][2]==null)return null; // 金融股：營業現金流含放款／存款變動，不適用
+  const src=(D.cf&&D.cf.length?D.cf:(D.inv||[]).map(x=>[x[0],x[6],x[5]])).filter(x=>x[1]!=null&&x[2]!=null);
+  const CX={},QM={};(D.capex||[]).forEach(x=>{if(x[0]!==D.injCx)CX[x[0]]=x[1]});Q.forEach(x=>QM[x[0]]=x);
+  const R=src.filter(x=>CX[x[0]]!=null&&QM[x[0]]).map(x=>({l:x[0],ocf:x[1],ni:x[2],cx:CX[x[0]],rev:QM[x[0]][1],fcf:x[1]-CX[x[0]]}));
+  if(R.length<4)return null;
+  // 近四季（必須是連續四季才算）
+  R.forEach((r,i)=>{if(i<3)return;const w=R.slice(i-3,i+1);if(!w.every((x,j)=>!j||qNext(w[j-1].l)===x.l))return;
+    r.o4=sum(w.map(x=>x.ocf));r.n4=sum(w.map(x=>x.ni));r.c4=sum(w.map(x=>x.cx));r.v4=sum(w.map(x=>x.rev));r.f4=r.o4-r.c4;r.qr=r.n4>0?r.o4/r.n4:null});
+  const L=R.length-1,r=R[L],p=R[L-1];if(r.o4==null)return null;
+  // ① 盈餘品質
+  const q1=r.n4<=0?'loss':r.qr<0.8&&p.qr!=null&&p.qr<0.8?'R':r.qr<1?'A':'G';
+  // ② 自由現金流：連續為負的季數、資本支出有沒有放緩
+  let neg=0;for(let i=L;i>=0&&R[i].fcf<0;i--)neg++;
+  const a4=R[L-4],cxUp=a4&&a4.c4!=null?r.c4>=a4.c4:null;
+  const q2=r.f4>0?'G':neg>=4&&cxUp!==false?'R':'A';
+  // ③ 資本支出強度：近四季 ÷ 營收，對比更早 12 季單季中位數
+  const ci=r.v4?r.c4/r.v4*100:null,hist=R.slice(Math.max(0,L-15),L-3).map(x=>x.rev?x.cx/x.rev*100:null).filter(x=>x!=null).sort((a,b)=>a-b);
+  const cm=hist.length>=4?hist[Math.floor(hist.length/2)]:null,cr=ci!=null&&cm?ci/cm:null;
+  const q3=cr==null?'na':cr>=1.5?'A':'G';
+  const nR=[q1,q2].filter(x=>x==='R').length,nA=[q1,q2,q3].filter(x=>x==='A').length;
+  const v=nR>=2?'bad':nR===1||nA>=2?'mid':'ok';
+  return {R,L,r,p,q1,q2,q3,neg,cxUp,ci,cm,cr,nR,nA,v};
+}
+function renderCf(){
+  const X=cfCalc(),has=!!X;$('cf').hidden=!has;$('chipCf').hidden=!has;if(!has)return;
+  const {R,r,p}=X,S=R.slice(-20),acc=css('--accent'),warm=css('--warm'),up=css('--up'),f=v=>v==null?'—':fmt(v,Math.abs(v)<100?1:0),x2=v=>v==null?'—':fmt(v,2);
+  const o=base(),ch=mk('cCf');o.xAxis.data=S.map(x=>x.l);o.yAxis.scale=false;
+  // 盈餘品質線：淨利接近 0 時比率會暴衝 → 圖上截在 3 倍（提示框顯示實際值）
+  o.yAxis=[o.yAxis,{...o.yAxis,scale:false,max:3,min:v=>Math.min(0,Math.floor(v.min*2)/2),splitLine:{show:false},axisLabel:{...o.yAxis.axisLabel,formatter:'{value}倍'}}];
+  o.series=[{name:'營業現金流',type:'bar',data:S.map(x=>x.ocf),itemStyle:{color:acc,borderRadius:[2,2,0,0]},barGap:'10%',barCategoryGap:'30%'},
+    {name:'自由現金流',type:'bar',data:S.map(x=>({value:+x.fcf.toFixed(1),itemStyle:{color:x.fcf<0?up:css('--accent2')}})),itemStyle:{color:css('--accent2'),borderRadius:[2,2,0,0]}},
+    {name:'盈餘品質(近四季)',type:'line',yAxisIndex:1,data:S.map(x=>x.qr==null?null:+Math.min(x.qr,3).toFixed(2)),symbol:'none',connectNulls:false,lineStyle:{width:2,color:warm},itemStyle:{color:warm},
+      markLine:{silent:true,symbol:'none',label:{show:false},lineStyle:{color:warm,type:'dashed',opacity:.6},data:[{yAxis:1}]}}];
+  o.tooltip.formatter=ps=>{const x=S[ps[0].dataIndex];return `<b>${x.l}</b><br>營業現金流 ${f(x.ocf)} 億<br>− 資本支出 ${f(x.cx)} 億<br>= 自由現金流 <b>${f(x.fcf)}</b> 億<br>稅後淨利 ${f(x.ni)} 億`+
+    (x.qr!=null?`<br>近四季 營業現金流 ÷ 淨利 ${x2(x.qr)} 倍`:x.n4!=null&&x.n4<=0?'<br>近四季淨利虧損，品質比不適用':'')};
+  ch.setOption(o,true);ch.resize();
+  // 結論
+  const V={ok:['ok','🟢 現金流健康'],mid:['mid','🟠 留意'],bad:['bad','🔴 現金流警訊']}[X.v];
+  const expand=X.q2!=='G'&&X.q1==='G'?'本業現金有收回來，自由現金流是被'+(X.q3==='A'?'大幅擴產':'資本支出')+'吃掉的；要看擴產換來的營收能不能跟上':'';
+  const parts=[X.q1==='R'||X.q1==='A'?`EPS 只有約 ${fmt(Math.min(r.qr,1)*100,0)}% 收到現金`:'',X.q2!=='G'?`自由現金流${X.neg>=2?`已連續 ${X.neg} 季`:''}為負${X.cxUp===false?'（資本支出已放緩，留意何時轉正）':''}`:''].filter(Boolean);
+  const why={ok:'EPS 有變成現金，扣掉資本支出後還有剩',mid:expand||(parts.length?parts.join('；')+'，看下一季是否改善':'有項目接近警戒，下季再看一次'),
+    bad:'帳面賺錢但現金收不回來，扣掉資本支出後也是負的 → EPS 的含金量要打折'}[X.v];
+  $('tCf').innerHTML=`<span class="pill ${V[0]}">${V[1]}</span> ${why}<br>近四季 營業現金流 <strong>${f(r.o4)} 億</strong> − 資本支出 <strong>${f(r.c4)} 億</strong> = 自由現金流 <strong>${f(r.f4)} 億</strong>`+
+    (r.v4?`（占營收 ${fmt(r.f4/r.v4*100,1)}%）`:'')+(D.shares?`・每股 <strong>${fmt(r.f4/D.shares,2)} 元</strong>`:'')+
+    (D.cyclical?'<br><span class="pill">循環股</span> 擴產期自由現金流轉負很常見；危險的是「營業現金流也開始下滑」時資本支出還在加碼':'');
+  // 檢查清單
+  const LT={R:'🔴',A:'🟡',G:'🟢',na:'⚪',loss:'⚪'};
+  const row=(lt,t,txt)=>`<div class="ir"><span class="il">${lt}</span><div class="ix"><b>${t}</b><span>${txt}</span></div></div>`;
+  const g1=X.q1==='loss'?`近四季淨利 ${f(r.n4)} 億（虧損），不適用`:`近四季營業現金流 ${f(r.o4)} 億 ÷ 淨利 ${f(r.n4)} 億 = <strong>${x2(r.qr)} 倍</strong>${p.qr!=null?`（上季 ${x2(p.qr)} 倍）`:''}；≥ 1 代表 EPS 都有收到現金，連 2 季 &lt; 0.8 亮紅燈`;
+  const g2=`近四季 <strong>${f(r.f4)} 億</strong>`+(X.neg?`；單季已連續 <strong>${X.neg} 季</strong>為負`:'')+(X.cxUp!=null?`；資本支出近四季${X.cxUp?'<strong>仍在增加</strong>':'已放緩'}`:'')+'；連 4 季為負且資本支出沒放緩亮紅燈';
+  const g3=X.q3==='na'?'歷史資料不足':`近四季占營收 <strong>${fmt(X.ci,1)}%</strong>（更早 12 季中位數 ${fmt(X.cm,1)}%，${X.cr>=1?'高':'低'} ${fmt(Math.abs(X.cr-1)*100,0)}%）；高 50% 以上亮黃燈，代表進入擴產期，詳見上方「資本支出」`;
+  $('cfChk').innerHTML=row(LT[X.q1],'① 盈餘品質：EPS 有沒有變成現金',g1)+row(LT[X.q2],'② 自由現金流',g2)+row(LT[X.q3],'③ 資本支出強度（補充）',g3);
+  $('fCf').textContent='營業現金流取現金流量表「營業活動之淨現金流入」，資本支出取「取得不動產、廠房及設備」（不含預付設備款，會略高估自由現金流）；台灣財報的現金流量表是年初累計數，已自動拆成單季。淨利為合併稅後淨利（含非控制權益），與營業現金流同口徑。存貨卡③是同一個比率，但用 0.7 判斷是否囤貨。紅燈 2 項＝警訊；1 紅或 2 黃＝留意。';
+}
 function renderCx(){
   const X=(D.capex||[]).slice(-20),has=X.length>=2;
   $('capex').hidden=!has;$('chipCx').hidden=!has;if(!has)return;
@@ -1025,7 +1088,7 @@ async function live(id){
   const P=px.slice().sort((a,b)=>a.date<b.date?-1:1),E=per.slice().sort((a,b)=>a.date<b.date?-1:1);
   const it=LIST.find(s=>s[0]===id);
   return {id,name:it?it[1]:id,live:true,updated:new Date().toISOString().slice(0,16)+'Z',shares:shares?+shares.toFixed(4):null,
-    capex:buildCapex(cf,q),inv:buildInv(bs,fs,cf,q),last:{date:P[P.length-1].date,close:P[P.length-1].close,prev:(P[P.length-2]||P[P.length-1]).close,pe:E.length?E[E.length-1].PER:null,pb:E.length?E[E.length-1].PBR:null},rev,q,riv};
+    capex:buildCapex(cf,q),inv:buildInv(bs,fs,cf,q),cf:buildCf(fs,cf,q),last:{date:P[P.length-1].date,close:P[P.length-1].close,prev:(P[P.length-2]||P[P.length-1]).close,pe:E.length?E[E.length-1].PER:null,pb:E.length?E[E.length-1].PBR:null},rev,q,riv};
 }
 // 與 fetch.py 的 build_capex() 相同邏輯
 function cfItem(rows,names,types){
@@ -1064,9 +1127,17 @@ function buildInv(bs,fs,cf,q){
     out.push([x[0],b(inv[d]),b(cg[d]),b(ar[d]==null?null:ar[d]+(arr[d]||0)),b(cl[d]),b(ni[d]),b(ocf[`${y}-${n}`])])});
   return out;
 }
+// 與 fetch.py 的 build_cf() 相同邏輯
+function buildCf(fs,cf,q){
+  const ni=serT(fs,['IncomeAfterTaxes','NetIncome']),ocf=toQuarterS(serT(cf,['CashFlowsFromOperatingActivities','NetCashInflowFromOperatingActivities']));
+  const b=v=>v==null?null:Math.round(v/1e6)/100,out=[];
+  q.forEach(x=>{const y=2000+ +x[0].slice(0,2),n=+x[0][3],d=`${y}-${['03-31','06-30','09-30','12-31'][n-1]}`;
+    if(ni[d]==null||ocf[`${y}-${n}`]==null)return;out.push([x[0],b(ocf[`${y}-${n}`]),b(ni[d])])});
+  return out;
+}
 async function getData(id){
   try{const r=await fetch(`data/${id}.json?t=${Date.now()}`);if(r.ok)return await r.json()}catch(e){}
-  const k='live3_'+id,c=store.get(k);
+  const k='live4_'+id,c=store.get(k);
   if(c&&Date.now()-c.t<6*3600e3)return c.d;
   const d=await live(id);store.set(k,{t:Date.now(),d});return d;
 }
