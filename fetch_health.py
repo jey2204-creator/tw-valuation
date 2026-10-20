@@ -34,6 +34,7 @@ T0 = time.time()
 TODAY = dt.datetime.now(dt.timezone(dt.timedelta(hours=8))).date()
 DIAG = {"tries": [], "notes": []}
 REQ = {"n": 0, "fail": 0, "stop": None}
+BLOCKED = set()      # 回應「FOR SECURITY REASONS」的主機，本次執行不再使用
 
 
 # ---------------------------------------------------------------- 共用
@@ -81,7 +82,7 @@ def req(url, data=None, referer=None, gap=4.0):
     r = urllib.request.Request(url, data=body, headers=hdr, method="POST" if body is not None else "GET")
     t0 = time.time()
     try:
-        with urllib.request.urlopen(r, timeout=60) as resp:
+        with urllib.request.urlopen(r, timeout=180) as resp:
             txt, st = decode(resp.read(), resp.headers.get("Content-Type", "")), resp.status
     except urllib.error.HTTPError as e:
         txt, st = decode(e.read()), e.code
@@ -90,9 +91,20 @@ def req(url, data=None, referer=None, gap=4.0):
     DIAG["tries"].append({"url": url, "post": {k: v for k, v in (data or {}).items() if k in ("TYPEK", "year", "season")},
                           "status": st, "len": len(txt), "sec": round(time.time() - t0, 1),
                           "snippet": re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", txt))[:240]})
-    if "查詢過於頻繁" in txt or "FOR SECURITY REASONS" in txt.upper():
-        REQ["stop"] = "MOPS 回應查詢過於頻繁／安全性阻擋"
+    if "查詢過於頻繁" in txt:
+        REQ["stop"] = "MOPS 回應查詢過於頻繁"
+    elif "FOR SECURITY REASONS" in txt.upper():
+        BLOCKED.add(url.split("/")[2])
+        DIAG["tries"][-1]["blocked"] = True
     return st, txt
+
+
+def raw_sample(txt):
+    """解析失敗時存一段原始 HTML（第一個含「公司」的表格附近）到 diag，方便改解析器"""
+    i = txt.find("<table")
+    j = txt.find("公司", i if i >= 0 else 0)
+    k = txt.rfind("<tr", 0, j) if j > 0 else i
+    DIAG["tries"][-1]["raw"] = txt[max(k, 0):max(k, 0) + 2500]
 
 
 class Tables(HTMLParser):
@@ -202,11 +214,15 @@ def fetch_month(y, m):
         for kind in ("0", "1"):
             got = None
             for h in HOSTS:
+                if h.split("/")[2] in BLOCKED:
+                    continue
                 st, txt = req(f"{h}/nas/t21/{mk}/t21sc03_{roc}_{m}_{kind}.html", gap=1.5)
                 if st is None:
                     return None, src
                 p = parse_t21(txt) if st == 200 else {}
                 DIAG["tries"][-1]["rows"] = len(p)
+                if not p and st == 200 and len(txt) > 3000:
+                    raw_sample(txt)
                 if p:
                     got = p
                     src.append(f"{mk}{kind}@{h.split('//')[1].split('.')[0]}:{len(p)}")
@@ -295,10 +311,11 @@ def parse_t163(txt):
     for t in tables_of(txt):
         hdr = None
         for r in t:
-            if any(c == "公司代號" for c in r):
+            rn = [re.sub(r"\s+", "", c) for c in r]
+            if "公司代號" in rn:
                 if hdr is None:
-                    hdr = r
-                    ci = r.index("公司代號")
+                    hdr = rn
+                    ci = rn.index("公司代號")
                     ni = pick_col(hdr, lambda h: "歸屬於母公司業主" in h and h.startswith("淨利"),
                                   lambda h: "歸屬於母公司業主" in h and "綜合" not in h,
                                   lambda h: h.startswith("本期淨利") or h.startswith("本期稅後淨利"))
@@ -330,6 +347,8 @@ def fetch_quarter(y, n):
     for mi, mk in enumerate(("sii", "otc")):
         got = None
         for h in HOSTS:
+            if h.split("/")[2] in BLOCKED:
+                continue
             form = {"encodeURIComponent": 1, "step": 1, "firstin": 1, "off": 1, "isQuery": "Y",
                     "TYPEK": mk, "year": str(roc), "season": f"{n:02d}"}
             st, txt = req(f"{h}/mops/web/ajax_t163sb04", data=form, referer=f"{h}/mops/web/t163sb04", gap=4.0)
@@ -338,6 +357,8 @@ def fetch_quarter(y, n):
             rows, used = parse_t163(txt) if st == 200 else ({}, [])
             DIAG["tries"][-1]["rows"] = len(rows)
             DIAG["tries"][-1]["cols"] = used[:6]
+            if not rows and st == 200 and len(txt) > 3000:
+                raw_sample(txt)
             if rows:
                 got = rows
                 info[mk] = {"host": h.split("//")[1].split(".")[0], "n": len(rows), "cols": used}
@@ -365,8 +386,16 @@ def update_quarters():
                 todo.append((y, n))
         y, n = (y + 1, 1) if n == 4 else (y, n + 1)
     todo.sort(reverse=True)
+    if todo:
+        y0, n0 = todo[0]
+        first = [t for t in todo if t in ((y0, n0), (y0 - 1, n0))]
+        q4 = [t for t in todo if t[1] == 4 and t not in first]
+        todo = first + q4 + [t for t in todo if t not in first and t not in q4]
     done = 0
     for y, n in todo:
+        if time.time() - T0 > BUDGET * 0.7:          # 留三成時間給月營收
+            DIAG["notes"].append("季財報用完七成時間預算，其餘下次補")
+            break
         rows, info = fetch_quarter(y, n)
         if rows is None:
             if REQ["stop"]:
