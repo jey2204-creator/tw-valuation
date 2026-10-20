@@ -459,8 +459,7 @@ def fetch_nstat(freq):
         tr["head"] = raw[:400].decode("utf-8", "replace")
         return {}
     tr["keys"] = list(js.keys())[:30]
-    tr["meta"] = {k: (js.get(k) if not isinstance(js.get(k), list) else js.get(k)[:3] + ["…"] + js.get(k)[-3:])
-                  for k in ("ymf", "ymt", "ymb", "rowhead", "colhead", "row", "col", "nrow", "ncol", "plusdata", "title", "unit")}
+    tr["ym"] = [js.get("ymf"), js.get("ymt")]
     names = (js.get("colh") or [[]])[0]
     rows = js.get("orgdata") or []
     # 期別標籤：找一個字串陣列、長度＝期數、內容像期別
@@ -479,7 +478,11 @@ def fetch_nstat(freq):
             for k, x in o.items():
                 if k not in ("colh", "orgdata"):
                     walk(x)
-    walk(js)
+    rl = [r[0] if isinstance(r, list) and r else r for r in (js.get("row") or [])]
+    if len(rl) == n and all(period_of(x, freq) for x in rl):
+        labels = rl                      # row＝[["110年第1季",""], …]（2026/10/20 實測）
+    else:
+        walk(js)
     if labels:
         pers = [period_of(x, freq) for x in labels]
         flags = ["f" if re.search(r"f|預測", x) else "p" if re.search(r"p|初步|概估", x) else "" for x in labels]
