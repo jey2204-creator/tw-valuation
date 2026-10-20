@@ -219,10 +219,11 @@ def finmind_index():
 
 # ---------------------------------------------------------------- 2. GDP（主計總處開放資料 XML）
 GDP_URLS = {
-    "q": ["https://www.dgbas.gov.tw/public/data/open/Stat/NA/NA8101A1Q.xml",
-],
-    "y": ["https://www.dgbas.gov.tw/public/data/open/Stat/NA/NA8101A1A.xml",
-],
+    # 2026/10/20 實測：www.dgbas.gov.tw 被 Cloudflare 擋（403 Just a moment），ws.dgbas.gov.tw 可以
+    "q": ["https://ws.dgbas.gov.tw/public/data/open/Stat/NA/NA8101A1Q.xml",
+          "https://www.dgbas.gov.tw/public/data/open/Stat/NA/NA8101A1Q.xml"],
+    "y": ["https://ws.dgbas.gov.tw/public/data/open/Stat/NA/NA8101A1A.xml",
+          "https://www.dgbas.gov.tw/public/data/open/Stat/NA/NA8101A1A.xml"],
 }
 EXCL_NOMINAL = ("連鎖", "實質", "成長", "平均每人", "每人", "美元", "指數", "變動", "平減", "率", "chain", "real", "growth", "capita", "USD", "deflator")
 QPAT = [re.compile(r"(\d{4})\s*[-/.年]?\s*(?:第|Q|q)\s*([1-4])\s*季?"),
@@ -431,13 +432,7 @@ def fetch_sdmx(freq):
 
 
 def fetch_gdp(freq):
-    """回傳 {period: {...}}；全部失敗回 {}。先用總體統計資料庫 API，再試開放資料 XML"""
-    try:
-        d = fetch_sdmx(freq)
-        if d:
-            return d
-    except Exception as e:
-        DIAG["gdp"]["notes"].append(f"API 失敗：{e!r}")
+    """回傳 {period: {...}}；全部失敗回 {}。開放資料 XML（Obs: Item／TIME_PERIOD／TYPE 原始值|年增率／Item_VALUE）"""
     for url in GDP_URLS[freq]:
         t0 = time.time()
         st, raw = http(url, timeout=90, headers={"User-Agent": BUA})
@@ -454,6 +449,26 @@ def fetch_gdp(freq):
             continue
         tr["records"] = len(recs)
         tr["tags"] = tags[:40]
+        if "Item" in tags and "TIME_PERIOD" in tags:
+            data = {}
+            items = set()
+            for d in recs:
+                it, per = d.get("Item", ""), period_of(d.get("TIME_PERIOD"), freq)
+                items.add(it)
+                if not per or d.get("TYPE", "原始值") != "原始值" or num(d.get("Item_VALUE")) is None:
+                    continue
+                v = num(d["Item_VALUE"])
+                if it == "國內生產毛額GDP(名目值，百萬元)":
+                    data.setdefault(per, {})["gdp"] = v
+                elif it.startswith("經濟成長"):
+                    data.setdefault(per, {})["g"] = v
+                fl = re.search(r"[pf]", str(d.get("TIME_PERIOD", ""))[4:] + str(d.get("@OBS_STATUS", "")))
+                if fl and per in data:
+                    data[per]["flag"] = fl.group(0)
+            tr["items"] = sorted(items)[:30]
+            tr["parsed"] = len(data)
+            if any("gdp" in v for v in data.values()):
+                return data
         tr["sample"] = recs[:3] + recs[-2:]
         data = interpret(recs, freq)
         tr["parsed"] = len(data)
