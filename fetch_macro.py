@@ -12,7 +12,7 @@
 
 用法：python fetch_macro.py         （IDXMAX=400 python fetch_macro.py 一次補完指數歷史，約 20 分鐘）
 """
-import json, os, re, sys, time, datetime as dt
+import json, os, re, sys, time, ssl, subprocess, tempfile, datetime as dt
 from pathlib import Path
 import urllib.request, urllib.parse
 import xml.etree.ElementTree as ET
@@ -47,15 +47,62 @@ def load(path, default):
         return default
 
 
-def http(url, timeout=60, headers=None):
-    """GET → (status, bytes)；失敗回 (ERR 字串, b'')"""
+CTX = {}
+
+
+def chain_ctx(host):
+    """伺服器沒送中繼憑證（主計總處 TWCA 憑證在 GitHub runner 上 unable to get local issuer certificate）：
+    用 openssl 讀出伺服器憑證的 AIA「CA Issuers」網址，下載中繼憑證加進信任清單。
+    仍然完整驗證：中繼憑證本身必須鏈到系統內建的根憑證，主機名稱也照常比對（不是關掉驗證）"""
+    if host in CTX:
+        return CTX[host]
+    ctx = None
+    try:
+        leaf = subprocess.run(["openssl", "s_client", "-connect", f"{host}:443", "-servername", host, "-showcerts"],
+                              input=b"", capture_output=True, timeout=30).stdout.decode("latin-1")
+        pems = re.findall(r"-----BEGIN CERTIFICATE-----.+?-----END CERTIFICATE-----", leaf, re.S)
+        extra = []
+        todo = pems[:1]
+        for _ in range(3):                      # 最多往上找 3 層
+            if not todo:
+                break
+            pem = todo.pop()
+            aia = subprocess.run(["openssl", "x509", "-noout", "-ext", "authorityInfoAccess"], input=pem.encode(),
+                                 capture_output=True, timeout=10).stdout.decode()
+            m = re.search(r"CA Issuers - URI:(\S+)", aia)
+            if not m:
+                break
+            st, der = http(m.group(1), timeout=30, ctx=False)
+            if st != 200 or not der:
+                break
+            if b"BEGIN CERTIFICATE" not in der:
+                der = subprocess.run(["openssl", "x509", "-inform", "DER", "-outform", "PEM"], input=der,
+                                     capture_output=True, timeout=10).stdout
+            extra.append(der.decode())
+            todo.append(der.decode())
+        DIAG["gdp"]["notes"].append(f"{host}：伺服器送 {len(pems)} 張憑證，補下載中繼憑證 {len(extra)} 張")
+        if extra:
+            ctx = ssl.create_default_context()
+            ctx.load_verify_locations(cadata="\n".join(extra))
+    except Exception as e:
+        DIAG["gdp"]["notes"].append(f"{host} 補中繼憑證失敗：{e!r}")
+    CTX[host] = ctx
+    return ctx
+
+
+def http(url, timeout=60, headers=None, ctx=None):
+    """GET → (status, bytes)；失敗回 (ERR 字串, b'')。遇到缺中繼憑證自動補（見 chain_ctx）後重試一次"""
     r = urllib.request.Request(url, headers={"User-Agent": UA, "Accept": "*/*", **(headers or {})})
     try:
-        with urllib.request.urlopen(r, timeout=timeout) as resp:
+        with urllib.request.urlopen(r, timeout=timeout, context=ctx or None) as resp:
             return resp.status, resp.read()
     except urllib.error.HTTPError as e:
         return e.code, e.read()
     except Exception as e:
+        if ctx is None and "CERTIFICATE_VERIFY_FAILED" in str(e):
+            c2 = chain_ctx(urllib.parse.urlsplit(url).hostname)
+            if c2:
+                return http(url, timeout, headers, c2)
         return f"ERR {e}", b""
 
 
@@ -173,9 +220,9 @@ def finmind_index():
 # ---------------------------------------------------------------- 2. GDP（主計總處開放資料 XML）
 GDP_URLS = {
     "q": ["https://www.dgbas.gov.tw/public/data/open/Stat/NA/NA8101A1Q.xml",
-          "http://www.dgbas.gov.tw/public/data/open/Stat/NA/NA8101A1Q.xml"],
+],
     "y": ["https://www.dgbas.gov.tw/public/data/open/Stat/NA/NA8101A1A.xml",
-          "http://www.dgbas.gov.tw/public/data/open/Stat/NA/NA8101A1A.xml"],
+],
 }
 EXCL_NOMINAL = ("連鎖", "實質", "成長", "平均每人", "每人", "美元", "指數", "變動", "平減", "率", "chain", "real", "growth", "capita", "USD", "deflator")
 QPAT = [re.compile(r"(\d{4})\s*[-/.年]?\s*(?:第|Q|q)\s*([1-4])\s*季?"),
