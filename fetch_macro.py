@@ -376,7 +376,27 @@ def sdmx_series(js):
 def fetch_sdmx(freq):
     f = "Q" if freq == "q" else "A"
     a, b = ("1998-Q1", f"{TODAY.year + 1}-Q4") if freq == "q" else ("1998", str(TODAY.year + 1))
-    for flt in ("", ".", "..", "1+2+3+4+5+6+7+8+9+10+11+12"):
+    meta = None
+    for mu in ("https://nstatdb.dgbas.gov.tw/dgbasAll/webMain.aspx?sdmx/A018101010/",
+               "https://nstatdb.dgbas.gov.tw/dgbasall/webMain.aspx?sdmx/A018101010/"):
+        st, raw = http(mu, timeout=90, headers={"User-Agent": BUA, "Accept": "application/json,*/*"})
+        tr = {"url": mu, "status": st, "len": len(raw), "head": raw[:200].decode("utf-8", "replace")}
+        DIAG["gdp"]["tries"].append(tr)
+        try:
+            meta = json.loads(raw.decode("utf-8-sig"))
+            sd = ((meta.get("structure") or {}).get("dimensions") or {}).get("series") or []
+            tr["dims"] = [[v.get("id") for v in d.get("values") or []][:60] for d in sd]
+            tr["names"] = [[v.get("name") for v in d.get("values") or []][:60] for d in sd]
+            if sd:
+                break
+        except Exception:
+            meta = None
+    flts = []
+    if meta:
+        sd = ((meta.get("structure") or {}).get("dimensions") or {}).get("series") or []
+        flts.append(".".join("+".join(str(v.get("id")) for v in d.get("values") or []) for d in sd))
+    flts += ["1+2+3+4+5+6+7+8+9+10.1", "1+2+3+4+5+6+7+8+9+10"]
+    for flt in flts:
         url = SDMX.format(flt=flt, f=f, a=a, b=b)
         t0 = time.time()
         st, raw = http(url, timeout=90, headers={"User-Agent": BUA, "Accept": "application/json,*/*"})
