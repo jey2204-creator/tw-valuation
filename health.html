@@ -49,6 +49,10 @@ section.card{background:var(--card);border:1px solid var(--line);border-radius:1
 .foot{font-size:11.5px;color:var(--muted);margin:4px 0 6px;line-height:1.5}
 .ph{font-size:12.5px;color:var(--muted);border:1px dashed var(--line);border-radius:8px;padding:12px;margin-top:10px;text-align:center}
 .num{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+/* 月／年切換 */
+.seg{display:inline-flex;margin-left:auto;border:1px solid var(--line);border-radius:999px;overflow:hidden;flex:none}
+.seg button{font:inherit;font-size:12.5px;line-height:1.6;border:0;background:var(--card);color:var(--muted);padding:2px 14px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--fg);color:var(--card);font-weight:700}
 /* 燈號 */
 .verdict{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .verdict span{font-size:12.5px;border:1px solid var(--line);border-radius:999px;padding:2px 9px;background:var(--bg)}
@@ -82,7 +86,7 @@ html{scroll-behavior:smooth}
   <div class="hhead"><h1>🩺 台股體檢</h1><a class="ghost" href="./">← 首頁</a></div>
   <p class="asofN" id="asof">載入中…</p>
   <nav class="chips" aria-label="段落">
-    <a href="#sLights">燈號</a><a href="#sEarn">獲利</a><a href="#sRev">營收</a><a href="#sVal">估值</a><a href="#sDiv">股利</a><a href="#sNote">說明</a>
+    <a href="#sLights">燈號</a><a href="#sRevAmt">營收</a><a href="#sRev">廣度</a><a href="#sEarn">獲利</a><a href="#sVal">估值</a><a href="#sDiv">股利</a><a href="#sNote">說明</a>
   </nav>
 
   <section class="card" id="sLights">
@@ -92,12 +96,13 @@ html{scroll-behavior:smooth}
     <p class="foot">門檻是經驗值，不是標準答案；定義與門檻見最下方「說明」。</p>
   </section>
 
-  <section class="card" id="sEarn">
-    <h2>獲利：台積電 vs 其他 <small>稅後歸母淨利，兆元</small></h2>
-    <p class="take" id="earnTake"></p>
-    <div class="chart" id="cEarn" role="img" aria-label="歷年上市櫃稅後淨利，台積電與其他公司堆疊長條圖"></div>
-    <div class="tbl"><table id="tEarn"></table></div>
-    <p class="foot" id="earnFoot"></p>
+  <section class="card" id="sRevAmt">
+    <h2>營收：台積電 vs 其他 <small>上市櫃合計，兆元</small>
+      <span class="seg" id="revSeg" role="group" aria-label="切換月／年"><button type="button" data-v="m" aria-pressed="false">月</button><button type="button" data-v="y" aria-pressed="true">年</button></span></h2>
+    <p class="take" id="revAmtTake"></p>
+    <div class="chart" id="cRevAmt" role="img" aria-label="上市櫃營收直方圖，台積電與其他公司堆疊"></div>
+    <div class="tbl"><table id="tRevAmt"></table></div>
+    <p class="foot" id="revAmtFoot"></p>
   </section>
 
   <section class="card" id="sRev">
@@ -108,6 +113,14 @@ html{scroll-behavior:smooth}
     <p class="ctitle">營收年增率（%）：全體 vs 扣掉台積電</p>
     <div class="chart" id="cRevYoY" role="img" aria-label="每月全體與扣除台積電的營收年增率折線圖"></div>
     <p class="foot" id="revFoot"></p>
+  </section>
+
+  <section class="card" id="sEarn">
+    <h2>獲利：台積電 vs 其他 <small>稅後歸母淨利，兆元</small></h2>
+    <p class="take" id="earnTake"></p>
+    <div class="chart" id="cEarn" role="img" aria-label="歷年上市櫃稅後淨利，台積電與其他公司堆疊長條圖"></div>
+    <div class="tbl"><table id="tEarn"></table></div>
+    <p class="foot" id="earnFoot"></p>
   </section>
 
   <section class="card" id="sVal">
@@ -135,7 +148,8 @@ html{scroll-behavior:smooth}
     <ul>
       <li><b>獲利</b>：公開資訊觀測站「綜合損益表彙總」逐家加總（上市＋上櫃，含 KY、金融），用「歸屬母公司淨利」。季資料是當年累計（Q2＝上半年）。</li>
       <li><b>成長家數、扣台積電年增</b>：只拿今年和去年同期都有財報的「同一批公司」比，避免新上市把總數灌大。</li>
-      <li><b>營收廣度</b>：每月營收彙總，去年同月營收 &gt; 0 的公司才算；最新一個月用證交所／櫃買每日資料即時更新。</li>
+      <li><b>營收直方圖</b>：每月營收彙總加總；「年」＝12 個月合計，今年為 1 月起累計（淡色）；「月」＝近 36 個月。台積電以外合計＝其他公司。</li>
+      <li><b>營收廣度</b>：每月營收彙總，去年同月營收 &gt; 0 的公司才算；最新一個月用證交所／櫃買每日資料即時更新（公布家數未達上月 9 成前先不計入）。</li>
       <li><b>本益比、殖利率（本站）</b>：每檔收盤 × 股數＝市值，市值加權；本益比排除虧損股。金管會公布值的口徑不同，兩者並列參考。</li>
       <li><b>股利、配發率</b>：媒體彙整的上市櫃現金股利總額 ÷ 稅後淨利（依盈餘年度）。</li>
     </ul>
@@ -178,8 +192,28 @@ function liveRev(){
 // ---------- 資料整理 ----------
 function months(){
   const out=((H&&H.m)||[]).map(r=>({ym:r[0],n:r[2],up:r[3],cur:r[4],prev:r[5],curEx:r[6],prevEx:r[7],med:r[8]}));
-  const lv=liveRev();if(lv&&!out.some(r=>r.ym===lv.ym))out.push(lv);
+  const lv=liveRev(),last=out[out.length-1];
+  // 新月份每月 1–10 日陸續公布：家數達上個月 9 成才併入，否則金額會像「崩跌」（公布中的月份另外在文字提示）
+  if(lv&&!out.some(r=>r.ym===lv.ym)&&(!last||lv.n>=0.9*last.n))out.push(lv);
   return out.filter(r=>r.n>0).sort((a,b)=>a.ym<b.ym?-1:1)
+}
+function pendingRev(){
+  const lv=liveRev(),m=(H&&H.m)||[],last=m[m.length-1];
+  return lv&&last&&lv.ym>last[0]&&lv.n<0.9*last[2]?lv:null
+}
+// 月資料 → 年度合計（完整 12 個月的年份＋今年 1 月起連續的累計）
+function revYears(M){
+  const by={};
+  M.forEach(r=>{const y=+r.ym.slice(0,4);(by[y]=by[y]||[]).push({...r,mo:+r.ym.slice(5)})});
+  const ys=Object.keys(by).map(Number).sort((a,b)=>a-b),maxY=ys[ys.length-1],out=[];
+  for(const y of ys){
+    const a=by[y].sort((p,q)=>p.mo-q.mo),k=a.length,full=k===12,ytd=!full&&y===maxY&&a.every((r,i)=>r.mo===i+1);
+    if(!full&&!ytd)continue;
+    const s=f=>a.reduce((t,r)=>t+r[f],0),cur=s('cur'),prev=s('prev'),curEx=s('curEx'),prevEx=s('prevEx');
+    out.push({y,k,ytd,lbl:ytd?`${String(y).slice(2)} 1–${k}月`:String(y),cur:cur/1e4,ts:(cur-curEx)/1e4,ex:curEx/1e4,
+      yoy:(cur/prev-1)*100,exYoY:(curEx/prevEx-1)*100})
+  }
+  return out
 }
 function vals(){
   const out=((H&&H.v)||[]).map(r=>({date:r[0],cap:r[1],pe:r[2],yld:r[3],tsCap:r[4],earn:r[5],tsEarn:r[6],top10:r[7]}));
@@ -276,6 +310,54 @@ function drawEarn(E){
     +'淡色列為今年累計。';
 }
 
+// ---------- 營收直方圖（月／年切換，記在手機 localStorage hRevV）----------
+let RV=(()=>{try{return localStorage.getItem('hRevV')||'y'}catch(e){return 'y'}})();
+function setRV(v){RV=v;try{localStorage.setItem('hRevV',v)}catch(e){}
+  document.querySelectorAll('#revSeg button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.v===v)));
+  try{drawRevAmt(months(),earnings())}catch(e){console.error(e)}}
+function drawRevAmt(M,E){
+  document.querySelectorAll('#revSeg button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.v===RV)));
+  if(M.length<3){$('revAmtTake').textContent='月營收資料載入中';return}
+  const Y=revYears(M),mode=RV==='m'||Y.length<2?'m':'y';
+  const o=base(),c=mk('cRevAmt'),gap={borderColor:css('--card'),borderWidth:1};
+  o.yAxis.min=0;o.yAxis.axisLabel.formatter=v=>v+' 兆';
+  o.tooltip.axisPointer={type:'shadow',shadowStyle:{color:'rgba(127,127,127,.08)'}};
+  const lab=(idx,txt)=>({show:true,position:'top',color:css('--muted'),fontSize:10,fontFamily:'IBM Plex Mono, monospace',formatter:p=>idx(p.dataIndex)?txt(p.dataIndex):''});
+  if(mode==='m'){
+    const A=M.slice(-36).map(r=>({...r,t:r.cur/1e4,ts:(r.cur-r.curEx)/1e4,ex:r.curEx/1e4,yoy:(r.cur/r.prev-1)*100,exYoY:(r.curEx/r.prevEx-1)*100})),last=A.length-1;
+    o.xAxis.data=A.map(r=>r.ym);
+    o.xAxis.axisLabel={...o.xAxis.axisLabel,interval:0,formatter:v=>v.endsWith('-01')?v.slice(0,4):''};
+    o.tooltip.formatter=ps=>{const r=A[ps[0].dataIndex];return `<b>${r.ym}</b><br>合計 ${fmt(r.t,2)} 兆（年增 ${sg(r.yoy)}）<br>台積電 ${fmt(r.ts*1e4,0)} 億（占 ${fmt(r.ts/r.t*100,1)}%）<br>其他 ${fmt(r.ex,2)} 兆（${sg(r.exYoY)}）<br>營收成長家數 ${fmt(r.up/r.n*100,0)}%`};
+    o.series=[{name:'台積電',type:'bar',stack:'r',barMaxWidth:24,data:A.map(r=>+r.ts.toFixed(3)),itemStyle:{color:css('--s1'),...gap}},
+      {name:'其他公司',type:'bar',stack:'r',barMaxWidth:24,data:A.map(r=>+r.ex.toFixed(3)),itemStyle:{color:css('--s2'),borderRadius:[2,2,0,0],...gap},
+        label:lab(i=>i===last,i=>fmt(A[i].t,2))}];
+    c.setOption(o);
+    const l=A[last],all=M.map(r=>r.cur),isMax=M[M.length-1].cur>=Math.max(...all);
+    const L12=M.slice(-12),c12=L12.reduce((t,r)=>t+r.cur,0),p12=L12.reduce((t,r)=>t+r.prev,0);
+    $('revAmtTake').innerHTML=`<strong>${l.ym}</strong> 上市櫃營收 <strong>${fmt(l.t,2)} 兆</strong>，年增 ${sg(l.yoy)}（扣台積電 ${sg(l.exYoY)}）${isMax?'，<strong>單月歷史新高</strong>':''}；近 12 個月合計 ${fmt(c12/1e4,1)} 兆，年增 ${sg((c12/p12-1)*100)}。`;
+    $('tRevAmt').innerHTML='';
+  }else{
+    const A=Y,last=A.length-1,lf=[...A].reverse().find(r=>!r.ytd),yt=A[last].ytd?A[last]:null;
+    o.xAxis.data=A.map(r=>r.ytd?`${r.y}\n1–${r.k}月`:String(r.y));
+    o.xAxis.axisLabel={...o.xAxis.axisLabel,interval:0,lineHeight:12};
+    o.tooltip.formatter=ps=>{const r=A[ps[0].dataIndex],w=r.ytd?'比去年同期':'年增';return `<b>${r.ytd?r.y+' 年 1–'+r.k+' 月':r.y+' 全年'}</b><br>合計 ${fmt(r.cur,2)} 兆（${w} ${sg(r.yoy)}）<br>台積電 ${fmt(r.ts,2)} 兆（占 ${fmt(r.ts/r.cur*100,1)}%）<br>其他 ${fmt(r.ex,2)} 兆（${w} ${sg(r.exYoY)}）`};
+    const op=r=>r.ytd?.55:1;
+    o.series=[{name:'台積電',type:'bar',stack:'r',barMaxWidth:24,data:A.map(r=>({value:+r.ts.toFixed(3),itemStyle:{opacity:op(r)}})),itemStyle:{color:css('--s1'),...gap}},
+      {name:'其他公司',type:'bar',stack:'r',barMaxWidth:24,data:A.map(r=>({value:+r.ex.toFixed(3),itemStyle:{opacity:op(r)}})),itemStyle:{color:css('--s2'),borderRadius:[4,4,0,0],...gap},
+        label:lab(i=>i===0||i===last||A[i]===lf,i=>fmt(A[i].cur,1))}];
+    c.setOption(o);
+    const eY=lf&&E&&E.ann.find(r=>r.y===lf.y),pShare=eY&&eY.ni?eY.ts/eY.ni*100:null;
+    let t=lf?`<strong>${lf.y} 全年</strong>營收 ${fmt(lf.cur,2)} 兆（${sg(lf.yoy)}）`:'';
+    if(yt)t+=`；<strong>${yt.y} 前 ${yt.k} 月</strong> ${fmt(yt.cur,2)} 兆，比去年同期 <strong>${sg(yt.yoy)}</strong>${lf&&lf.y===yt.y-1?`，已達去年全年 ${fmt(yt.cur/lf.cur*100,0)}%`:''}`;
+    if(lf)t+=`。台積電占營收 ${fmt(lf.ts/lf.cur*100,1)}%${fin(pShare)?`、卻占獲利 <strong>${fmt(pShare,0)}%</strong>（${lf.y}）——賺錢集中度遠高於營收`:''}。`;
+    $('revAmtTake').innerHTML=t;
+    $('tRevAmt').innerHTML='<tr><th>年度</th><th>營收</th><th>年增</th><th>台積電</th><th>占比</th><th>扣台積電</th></tr>'+
+      A.map(r=>`<tr class="${r.ytd?'ytd':''}"><td>${r.lbl}</td><td>${fmt(r.cur,2)}</td><td>${sg(r.yoy)}</td><td>${fmt(r.ts,2)}</td><td>${fmt(r.ts/r.cur*100,1)}%</td><td>${sg(r.exYoY)}</td></tr>`).join('');
+  }
+  $('revAmtFoot').textContent=`來源：公開資訊觀測站每月營收彙總（上市櫃含 KY、金融業；${M[0].ym} 起）。合計只算去年同月也有營收的公司（約 99.5% 家數），年增率＝同一批公司比去年同期。`+
+    (mode==='y'?'淡色＝今年累計（未滿 12 個月，不能直接和全年比高低）。':'近 36 個月；點長條看當月年增與成長家數。月營收受農曆年、工作天數與匯率影響，看「年增率」比看月增準。');
+}
+
 function drawRev(M){
   const ok=M.length>=3;
   ['cBreadth','cRevYoY'].forEach(id=>{$(id).hidden=!ok});
@@ -283,7 +365,9 @@ function drawRev(M){
   const m=M[M.length-1];
   if(!m){$('revTake').textContent='資料載入失敗';return}
   const yAll=(m.cur/m.prev-1)*100,yEx=(m.curEx/m.prevEx-1)*100;
-  $('revTake').innerHTML=`<strong>${m.ym}</strong>：${fmt(m.n)} 家中 <strong>${fmt(m.up/m.n*100,0)}%</strong> 營收比去年同月成長；全體營收 ${sg(yAll)}、扣台積電 <strong>${sg(yEx)}</strong>，年增中位數 ${sg(m.med)}。`;
+  const pd=pendingRev();
+  $('revTake').innerHTML=`<strong>${m.ym}</strong>：${fmt(m.n)} 家中 <strong>${fmt(m.up/m.n*100,0)}%</strong> 營收比去年同月成長；全體營收 ${sg(yAll)}、扣台積電 <strong>${sg(yEx)}</strong>，年增中位數 ${sg(m.med)}。`+
+    (pd?`（${pd.ym} 營收公布中：已 ${fmt(pd.n)} 家，其中 ${fmt(pd.up/pd.n*100,0)}% 年增；每月 10 日公布完）`:'');
   if(!ok){$('revFoot').innerHTML='<span class="ph" style="display:block">歷史月資料建置中（公開資訊觀測站每月營收彙總，回補到 2019 年）</span>';return}
   const x=M.map(r=>r.ym),last=M.length-1;
   {const o=base(),c=mk('cBreadth');o.legend.show=false;o.xAxis.data=x;o.yAxis.min=0;o.yAxis.max=100;o.yAxis.axisLabel.formatter='{value}%';
@@ -353,8 +437,9 @@ function notes(st){
 
 function render(){
   const st=lights();
-  try{drawEarn(st.E)}catch(e){console.error(e)}
+  try{drawRevAmt(months(),st.E)}catch(e){console.error(e)}
   try{drawRev(months())}catch(e){console.error(e)}
+  try{drawEarn(st.E)}catch(e){console.error(e)}
   try{drawVal(vals())}catch(e){console.error(e)}
   try{drawDiv()}catch(e){console.error(e)}
   notes(st);
@@ -368,6 +453,7 @@ function render(){
 (async()=>{
   [H,SEED,S]=await Promise.all([getJ('data/health.json'),getJ('data/health_seed.json'),getJ('data/summary.json')]);
   if(!SEED){$('asof').textContent='資料載入失敗，請稍後重新整理';return}
+  document.querySelectorAll('#revSeg button').forEach(b=>b.addEventListener('click',()=>setRV(b.dataset.v)));
   render();
 })();
 let rt;addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>Object.values(charts).forEach(c=>c.resize()),150)});
