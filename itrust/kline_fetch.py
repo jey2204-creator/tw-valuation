@@ -8,7 +8,8 @@
 輸出 itrust/kline/<D>.json：
   {"D", "generatedAt", "codes", "bars": {代號: [[YYYYMMDD, o, h, l, c, v(張)], …]},
    "ex": {代號: [[YYYYMMDD, "息"|"權"|"權息", 權值+息值], …]},
-   "inst": {代號: [[YYYYMMDD, 投信張, 外資張], …]}（FinMind，外資＝外陸資不含自營商；需 FINMIND_TOKEN）, "diag": {…}}
+   "inst": {代號: [[YYYYMMDD, 投信張, 外資張], …]}（FinMind，外資＝外陸資不含自營商；需 FINMIND_TOKEN）,
+   "idx": {"TAIEX": [[YYYYMMDD, 加權指數收盤], …]}（證交所 FMTQIK，7 個月；FinMind 交叉核對記在 diag.taiexCheck）, "diag": {…}}
 價格不還原權息。只用 Python 標準函式庫。
 """
 import json, os, re, sys, time, calendar, datetime as dt, urllib.request, urllib.parse
@@ -171,6 +172,45 @@ def inst_finmind(code, start, D):
     return [agg[k] for k in sorted(agg)]
 
 
+def taiex(D):
+    """加權指數收盤：證交所 FMTQIK「發行量加權股價指數」，D 所在月份往前共 MONTHS 個月 → [[YYYYMMDD, 收盤], …]。
+    另抓 FinMind TaiwanStockPrice（data_id=TAIEX）逐日交叉核對收盤，結果記在 diag["taiexCheck"]（FinMind 沒資料就只記原因）。"""
+    res = {}
+    for d in months(D):
+        js = get(f"https://www.twse.com.tw/rwd/zh/afterTrading/FMTQIK?date={d:%Y%m%d}&response=json", "twse")
+        if not js or js.get("stat") != "OK":
+            diag["fail"].append(f"FMTQIK {d:%Y%m}")
+            continue
+        f = js.get("fields") or []
+        if "日期" not in f or "發行量加權股價指數" not in f:
+            diag["fail"].append(f"FMTQIK {d:%Y%m} fields {f}")
+            continue
+        iD, iC = f.index("日期"), f.index("發行量加權股價指數")
+        for r in js.get("data") or []:
+            c, k = num(r[iC]), roc(r[iD])
+            if c and c > 0 and k <= D:
+                res[k] = [k, clean(c)]
+    rows = [res[k] for k in sorted(res)]
+    chk = {"src": "FinMind TaiwanStockPrice TAIEX"}
+    if rows:
+        tok = os.environ.get("FINMIND_TOKEN", "")
+        s = rows[0][0]
+        q = urllib.parse.urlencode(dict(dataset="TaiwanStockPrice", data_id="TAIEX", start_date=f"{s[:4]}-{s[4:6]}-{s[6:]}"))
+        try:
+            diag["req"] += 1
+            req = urllib.request.Request("https://api.finmindtrade.com/api/v4/data?" + q,
+                                         headers={"User-Agent": "Mozilla/5.0", **({"Authorization": "Bearer " + tok} if tok else {})})
+            with urllib.request.urlopen(req, timeout=30) as r:
+                fm = {str(x.get("date", "")).replace("-", ""): num(x.get("close")) for x in (json.loads(r.read().decode("utf-8")).get("data") or [])}
+            both = [(k, c, fm[k]) for k, c in rows if fm.get(k)]
+            chk.update(n=len(both), last=both[-1][0] if both else None,
+                       bad=[[k, c, f] for k, c, f in both if abs(c - f) > 0.005][:10])
+        except Exception as e:  # noqa: BLE001
+            chk["err"] = f"{type(e).__name__}: {e}"
+    diag["taiexCheck"] = chk
+    return rows
+
+
 def main():
     D, spec = sys.argv[1], sys.argv[2]
     tag = sys.argv[3].strip() if len(sys.argv) > 3 else ""   # 一次性回補：輸出 <D>_<tag>.json，不覆蓋每日檔
@@ -218,6 +258,9 @@ def main():
         if rows is not None:
             inst[c] = rows
     diag["instLastIsD"] = f"{sum(1 for v in inst.values() if v and v[-1][0] == D)}/{len(codes)}"
+    # 加權指數收盤（頁面「大盤在 20 日線上」濾網用）
+    idx = {"TAIEX": taiex(D)}
+    diag["taiexLast"] = idx["TAIEX"][-1] if idx["TAIEX"] else None
     # 同月份各檔筆數應一致（停牌或新上市除外），不一致記在 diag
     odd = {}
     for key, cnt in diag["month_rows"].items():
@@ -233,14 +276,14 @@ def main():
     diag["lastIsD"] = f"{len(last_ok)}/{len(codes)}"
     now = dt.datetime.now(dt.timezone(dt.timedelta(hours=8))).strftime("%Y/%m/%d %H:%M")
     OUT.mkdir(exist_ok=True)
-    out = {"D": D, "generatedAt": now, "codes": [f"{c}:{m}" + (f":{since[c]}" if c in since else "") for c, m in codes], "bars": bars, "ex": ex, "inst": inst, "diag": diag,
+    out = {"D": D, "generatedAt": now, "codes": [f"{c}:{m}" + (f":{since[c]}" if c in since else "") for c, m in codes], "bars": bars, "ex": ex, "inst": inst, "idx": idx, "diag": diag,
            "src": "證交所 STOCK_DAY／櫃買 tradingStock（GitHub Actions），未還原權息；v 為成交張數；ex 來自除權除息計算結果表"}
     if tag:
         out["tag"] = tag
     (OUT / (f"{D}_{tag}.json" if tag else f"{D}.json")).write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     for old in sorted(OUT.glob("2???????.json"))[:-KEEP_FILES]:   # 只輪替每日檔；回補檔用完手動刪
         old.unlink()
-    print(f"ok D={D} tag={tag or '-'} codes={len(codes)} lastIsD={diag['lastIsD']} instLastIsD={diag['instLastIsD']} req={diag['req']} fail={len(diag['fail'])} sec={diag['sec']}")
+    print(f"ok D={D} tag={tag or '-'} codes={len(codes)} lastIsD={diag['lastIsD']} instLastIsD={diag['instLastIsD']} taiex={diag['taiexLast']} req={diag['req']} fail={len(diag['fail'])} sec={diag['sec']}")
     if not last_ok:
         sys.exit("no code has a bar on D")
 
