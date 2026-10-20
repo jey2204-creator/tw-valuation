@@ -1,0 +1,191 @@
+[
+ {
+  "url": "https://nstatdb.dgbas.gov.tw/dgbasall/webMain.aspx?sys=220&ym=10501&ymt=11504&kind=21&type=1&funid=A018101010&cycle=4&outmode=0&compmode=0&outkind=1&fldspc=0,40,&codspc0=0,10,&rdm=R1",
+  "status": 200,
+  "len": 43375,
+  "sec": 1.6,
+  "tables": 1,
+  "head": "<!DOCTYPE html>\r\n<html lang=\"zh-Hant\">\r\n<head>\r\n \r\n\r\n<meta http-equiv=\"X-UA-Compatible\" content=\"IE=11\">\r\n<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">\r\n<meta http-equiv=\"X-UA-Compatible\" content=\"chrome=1\">\r\n\r\n<meta name=\"description\" content=\"統計資料查詢功能\">\r\n<meta name=\"keywords\" content=\"統計、動態查詢、金諄\">\r\n<title>國民所得統計常用資料</title>\r\n</head>\r\n<link rel=\"stylesheet\" href=\"kendo/styles/kendo.common",
+  "table": "<table summary='國民所得統計常用資料表格資料'  width=90% align=center border=1>\r\n\t\t\t\t<tr><th>標籤</th>\r\n\t\t\t\t\t<td align=left> \r\n\t\t\t\t\t\t<input type=checkbox id=\"deflegend\" checked><label for=\"deflegend\">顯示圖例 \r\n\t\t\t\t\t\t<input type=checkbox id=\"defcatorg\" checked><label for=\"defcatorg\">顯示類別\t\t\t\t\r\n\t\t\t\t\t</td>\r\n\t\t\t\t</tr>\r\n\t\t\t\t<tr><th>圖表底色</th>\r\n\t\t\t\t\t<td align=left> \r\n\t\t\t\t\t\t<input id=\"defcobase\" class=\"selcolcls\"/>\r\n\t\t\t\t\t</td>\r\n\t\t\t\t</tr>\r\n\t\t\t\t<tr><th>圖表顏色</th>\r\n\t\t\t\t\t<td align=left> \r\n\t\t\t\t\t\t<input id=\"defcol0\" class=\"selcolcls\"/>\r\n\t\t\t\t\t\t<input id=\"defcol1\" class=\"selcolcls\"/>\r\n\t\t\t\t\t\t<input id=\"defcol2\" class=\"selcolcls\"/>\r\n\t\t\t\t\t\t<input id=\"defcol3\" class=\"selcolcls\"/>\r\n\t\t\t\t\t\t<input id=\"defcol4\" class=\"selcolcls\"/>\r\n\t\t\t\t\t\t<input id=\"defcol5\" class=\"selcolcls\"/>\r\n\t\t\t\t\t\t<input id=\"defcol6\" class=\"selcolcls\"/>\r\n\t\t\t\t\t\t<input id=\"defcol7\" class=\"selcolcls\"/>\r\n\t\t\t\t\t\t<input id=\"defcol8\" class=\"selcolcls\"/>\r\n\t\t\t\t\t</td>\r\n\t\t\t\t</tr>\r\n\t\t\t</table>\r\n\t\t</div>\r\n\t</div>\r\n</div>\r\n\r\n<div>\r\n\t<div id=\"pviotdiv\" valign=top  align=left  class=\"charcls\" ><div id=\"pivotgrid\"></div></div> \r\n</div>\r\n\r\n</div>\r\n<div class=msgcls>【附註：-為無數值或數值無統計；...為數值尚未公布；--為數值無意義。】</div>\r\n<span class=\"soucls\" id=\"sourmk\"></span>\r\n</form>\r\n</body>\r\n<script id=\"dataCellTemplate\" type=\"text/x-kendo-template\">\r\n\t# if (dataItem.value === \"\") { #\r\n\t0\r\n    # } else { #\r\n<a href=\"javascript:linkGridData('#: dataItem.value #')\" > #: getPivotCell(dataItem.value)# </a>\r\n    # } #\r\n\t\t \r\n</script>\r\n\r\n<script id=\"gridTmp\" type=\"text/x-kendo-template\">\r\n<tr data-uid=\"#= uid #\">\r\n<gridtmpa>\r\n</tr>\r\n</script>\r\n\r\n<script id=\"gridTmp2\" type=\"text/x-kendo-template\">\r\n<tr data-uid=\"#= uid #\" class=\"altrowcls\">\r\n<gridtmpa>\r\n</tr>\r\n</script>\r\n\r\n<script>\r\nvar lwi;\r\nvar lwj;\r\nvar lobj;\r\nvar lsou;\r\nvar lidx;\r\n \r\n\t$(\".selclass\").hide();\r\n\r\n\tif (getVal(\"\")>0) {$(\"#selym\").show();}\r\n\tif (getVal(\"\")>0) {$(\"#selfld\").show();}\r\n\tif (getVal(\"\")>0) {$(\"#selcode1\").show();}\r\n\tif (getVal(\"\")>0) {$(\"#selcode2\").show();}\r\n\tif (getVal(\"\")>0) {\r\n\t\t$(\"#unit\").hide();\r\n\t\t$(\".soucls\").hide();\r\n\t}\r\n\t\r\n\tlobj=document.getElementById(\"selym\");\r\n\tlobj.options.length=grpHead.length+2;\r\n\tlobj.options[0].value=\"\";\r\n\tlobj.options[0].text=\"\";\r\n\tfor (lwi=0;lwi<grpHead.length;lwi++) {\r\n\t\tlobj.options[lwi+1].value=grpHead[lwi];\r\n\t\tlobj.options[lwi+1].text=grpHead[lwi];\r\n\t}\r\n\tlobj.options[grpHead.length+1].value=99912;\r\n\tlobj.options[grpHead.length+1].text=\"全部\";\r\n\tlobj.selectedIndex=0;\r\n\t\r\n\t\r\n\tlobj=document.getElementById(\"selfld\");\r\n\tlobj.options.length=gFldTTL.length+1;\r\n\tlobj.options[0].value=\"\";\r\n\tlobj.options[0].text=\"\";\r\n\tlidx=0;\r\n\tfor (lwi=0;lwi<gFldTTL.length;lwi++) {\r\n\t\tif (gFldTTL[lwi].indexOf(\"#hide#\")<0) {\r\n\t\t\tlidx+=1;\r\n\t\t\tlobj.options[lidx].value=gFldTTL[lwi];\r\n\t\t\tlobj.options[lidx].text=gFldTTL[lwi];\r\n\t\t}\r\n\t}\r\n\tlobj.options.length=lidx+1;\r\n\tlobj.selectedIndex=0;\r\n\tif (gFldTTL.length<=1) {$(\"#selfld\").hide();}\r\n\r\n\r\n\tlidx=0;\r\nif (typeof(gselcode1) != \"undefined\") {\r\n\tlsou=gselcode1;\r\n\tlobj=document.getElementById(\"selcode1\");\t\r\n\tif (lsou.length>1) {\r\n\t\tlobj.options.length=lsou.length+1;\r\n\t\tlobj.options[0].value=\"\";\r\n\t\tlobj.options[0].text=\"\";\r\n\r\n\t\tfor (lwi=0;lwi<lsou.length-1;lwi++) {\r\n\t\t\tif (lsou[lwi].lvl1<lsou[lwi+1].lvl1) {\r\n\t\t\t\tlidx+=1;\r\n\t\t\t\tlobj.options[lidx].value=lsou[lwi].name ;\r\n\t\t\t\tlobj.options[lidx].text=lsou[lwi].name ;\r\n\t\t\t}\r\n\t\t}\r\n\t\tlobj.selectedIndex=0;\r\n\t\tlobj.options.length=lidx+1;\r\n\t}\r\n}\r\n\tif (lsou.length<=2 || lidx<=1 ) {$(\"#selcode1\").hide();}\r\n\t$(\"#selcode2\").hide();\r\n\t/*\r\n\tlsou=gselcode2;\r\n\tlobj=document.getElementById(\"selcode2\");\r\n\t\r\n\tlobj.options.length=lsou.length+1;\r\n\tlobj.options[0].value=\"\";\r\n\tlobj.options[0].text=\"\";\r\n\tlidx=0;\r\n\tfor (lwi=0;lwi<lsou.length;lwi++) {\r\n\t\tif (lsou[lwi].lvl1<lsou[lwi+1].lvl1) {\r\n\t\t\tlidx+=1;\r\n\t\t\tlobj.options[lidx].value=lsou[lwi].name ;\r\n\t\t\tlobj.options[lidx].text=lsou[lwi].name ;\r\n\t\t}\r\n\t}\r\n\tlobj.selectedIndex=0;\r\n\tlobj.options.length=lidx;\t\r\n\tif (lsou.length<=1) {$(\"#selcode2\").hide();}\r\n*/\r\n\t\r\nfunction linkGridData(lData) {\r\n//連結地圖或詳細資料\r\n\tif (lData.indexOf(\":\")>0) {\r\n\t//\tvar lidx=getVal(",
+  "links": [],
+  "gdpHit": [],
+  "around": ""
+ },
+ {
+  "url": "https://nstatdb.dgbas.gov.tw/dgbasall/webMain.aspx?sys=220&ym=10501&ymt=11504&kind=21&type=1&funid=A018101010&cycle=3&outmode=0&compmode=0&outkind=1&fldspc=0,40,&codspc0=0,10,&rdm=R1",
+  "status": 200,
+  "len": 43375,
+  "sec": 1.5,
+  "tables": 1,
+  "head": "<!DOCTYPE html>\r\n<html lang=\"zh-Hant\">\r\n<head>\r\n \r\n\r\n<meta http-equiv=\"X-UA-Compatible\" content=\"IE=11\">\r\n<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">\r\n<meta http-equiv=\"X-UA-Compatible\" content=\"chrome=1\">\r\n\r\n<meta name=\"description\" content=\"統計資料查詢功能\">\r\n<meta name=\"keywords\" content=\"統計、動態查詢、金諄\">\r\n<title>國民所得統計常用資料</title>\r\n</head>\r\n<link rel=\"stylesheet\" href=\"kendo/styles/kendo.common",
+  "table": "<table summary='國民所得統計常用資料表格資料'  width=90% align=center border=1>\r\n\t\t\t\t<tr><th>標籤</th>\r\n\t\t\t\t\t<td align=left> \r\n\t\t\t\t\t\t<input type=checkbox id=\"deflegend\" checked><label for=\"deflegend\">顯示圖例 \r\n\t\t\t\t\t\t<input type=checkbox id=\"defcatorg\" checked><label for=\"defcatorg\">顯示類別\t\t\t\t\r\n\t\t\t\t\t</td>\r\n\t\t\t\t</tr>\r\n\t\t\t\t<tr><th>圖表底色</th>\r\n\t\t\t\t\t<td align=left> \r\n\t\t\t\t\t\t<input id=\"defcobase\" class=\"selcolcls\"/>\r\n\t\t\t\t\t</td>\r\n\t\t\t\t</tr>\r\n\t\t\t\t<tr><th>圖表顏色</th>\r\n\t\t\t\t\t<td align=left> \r\n\t\t\t\t\t\t<input id=\"defcol0\" class=\"selcolcls\"/>\r\n\t\t\t\t\t\t<input id=\"defcol1\" class=\"selcolcls\"/>\r\n\t\t\t\t\t\t<input id=\"defcol2\" class=\"selcolcls\"/>\r\n\t\t\t\t\t\t<input id=\"defcol3\" class=\"selcolcls\"/>\r\n\t\t\t\t\t\t<input id=\"defcol4\" class=\"selcolcls\"/>\r\n\t\t\t\t\t\t<input id=\"defcol5\" class=\"selcolcls\"/>\r\n\t\t\t\t\t\t<input id=\"defcol6\" class=\"selcolcls\"/>\r\n\t\t\t\t\t\t<input id=\"defcol7\" class=\"selcolcls\"/>\r\n\t\t\t\t\t\t<input id=\"defcol8\" class=\"selcolcls\"/>\r\n\t\t\t\t\t</td>\r\n\t\t\t\t</tr>\r\n\t\t\t</table>\r\n\t\t</div>\r\n\t</div>\r\n</div>\r\n\r\n<div>\r\n\t<div id=\"pviotdiv\" valign=top  align=left  class=\"charcls\" ><div id=\"pivotgrid\"></div></div> \r\n</div>\r\n\r\n</div>\r\n<div class=msgcls>【附註：-為無數值或數值無統計；...為數值尚未公布；--為數值無意義。】</div>\r\n<span class=\"soucls\" id=\"sourmk\"></span>\r\n</form>\r\n</body>\r\n<script id=\"dataCellTemplate\" type=\"text/x-kendo-template\">\r\n\t# if (dataItem.value === \"\") { #\r\n\t0\r\n    # } else { #\r\n<a href=\"javascript:linkGridData('#: dataItem.value #')\" > #: getPivotCell(dataItem.value)# </a>\r\n    # } #\r\n\t\t \r\n</script>\r\n\r\n<script id=\"gridTmp\" type=\"text/x-kendo-template\">\r\n<tr data-uid=\"#= uid #\">\r\n<gridtmpa>\r\n</tr>\r\n</script>\r\n\r\n<script id=\"gridTmp2\" type=\"text/x-kendo-template\">\r\n<tr data-uid=\"#= uid #\" class=\"altrowcls\">\r\n<gridtmpa>\r\n</tr>\r\n</script>\r\n\r\n<script>\r\nvar lwi;\r\nvar lwj;\r\nvar lobj;\r\nvar lsou;\r\nvar lidx;\r\n \r\n\t$(\".selclass\").hide();\r\n\r\n\tif (getVal(\"\")>0) {$(\"#selym\").show();}\r\n\tif (getVal(\"\")>0) {$(\"#selfld\").show();}\r\n\tif (getVal(\"\")>0) {$(\"#selcode1\").show();}\r\n\tif (getVal(\"\")>0) {$(\"#selcode2\").show();}\r\n\tif (getVal(\"\")>0) {\r\n\t\t$(\"#unit\").hide();\r\n\t\t$(\".soucls\").hide();\r\n\t}\r\n\t\r\n\tlobj=document.getElementById(\"selym\");\r\n\tlobj.options.length=grpHead.length+2;\r\n\tlobj.options[0].value=\"\";\r\n\tlobj.options[0].text=\"\";\r\n\tfor (lwi=0;lwi<grpHead.length;lwi++) {\r\n\t\tlobj.options[lwi+1].value=grpHead[lwi];\r\n\t\tlobj.options[lwi+1].text=grpHead[lwi];\r\n\t}\r\n\tlobj.options[grpHead.length+1].value=99912;\r\n\tlobj.options[grpHead.length+1].text=\"全部\";\r\n\tlobj.selectedIndex=0;\r\n\t\r\n\t\r\n\tlobj=document.getElementById(\"selfld\");\r\n\tlobj.options.length=gFldTTL.length+1;\r\n\tlobj.options[0].value=\"\";\r\n\tlobj.options[0].text=\"\";\r\n\tlidx=0;\r\n\tfor (lwi=0;lwi<gFldTTL.length;lwi++) {\r\n\t\tif (gFldTTL[lwi].indexOf(\"#hide#\")<0) {\r\n\t\t\tlidx+=1;\r\n\t\t\tlobj.options[lidx].value=gFldTTL[lwi];\r\n\t\t\tlobj.options[lidx].text=gFldTTL[lwi];\r\n\t\t}\r\n\t}\r\n\tlobj.options.length=lidx+1;\r\n\tlobj.selectedIndex=0;\r\n\tif (gFldTTL.length<=1) {$(\"#selfld\").hide();}\r\n\r\n\r\n\tlidx=0;\r\nif (typeof(gselcode1) != \"undefined\") {\r\n\tlsou=gselcode1;\r\n\tlobj=document.getElementById(\"selcode1\");\t\r\n\tif (lsou.length>1) {\r\n\t\tlobj.options.length=lsou.length+1;\r\n\t\tlobj.options[0].value=\"\";\r\n\t\tlobj.options[0].text=\"\";\r\n\r\n\t\tfor (lwi=0;lwi<lsou.length-1;lwi++) {\r\n\t\t\tif (lsou[lwi].lvl1<lsou[lwi+1].lvl1) {\r\n\t\t\t\tlidx+=1;\r\n\t\t\t\tlobj.options[lidx].value=lsou[lwi].name ;\r\n\t\t\t\tlobj.options[lidx].text=lsou[lwi].name ;\r\n\t\t\t}\r\n\t\t}\r\n\t\tlobj.selectedIndex=0;\r\n\t\tlobj.options.length=lidx+1;\r\n\t}\r\n}\r\n\tif (lsou.length<=2 || lidx<=1 ) {$(\"#selcode1\").hide();}\r\n\t$(\"#selcode2\").hide();\r\n\t/*\r\n\tlsou=gselcode2;\r\n\tlobj=document.getElementById(\"selcode2\");\r\n\t\r\n\tlobj.options.length=lsou.length+1;\r\n\tlobj.options[0].value=\"\";\r\n\tlobj.options[0].text=\"\";\r\n\tlidx=0;\r\n\tfor (lwi=0;lwi<lsou.length;lwi++) {\r\n\t\tif (lsou[lwi].lvl1<lsou[lwi+1].lvl1) {\r\n\t\t\tlidx+=1;\r\n\t\t\tlobj.options[lidx].value=lsou[lwi].name ;\r\n\t\t\tlobj.options[lidx].text=lsou[lwi].name ;\r\n\t\t}\r\n\t}\r\n\tlobj.selectedIndex=0;\r\n\tlobj.options.length=lidx;\t\r\n\tif (lsou.length<=1) {$(\"#selcode2\").hide();}\r\n*/\r\n\t\r\nfunction linkGridData(lData) {\r\n//連結地圖或詳細資料\r\n\tif (lData.indexOf(\":\")>0) {\r\n\t//\tvar lidx=getVal(",
+  "links": [],
+  "gdpHit": [],
+  "around": ""
+ },
+ {
+  "url": "https://nstatdb.dgbas.gov.tw/dgbasall/webMain.aspx?sys=220&ym=10501&ymt=11504&kind=21&type=1&funid=A018101010&cycle=4&outmode=1&compmode=0&outkind=1&fldspc=0,40,&codspc0=0,10,&rdm=R1",
+  "status": 200,
+  "len": 8779,
+  "sec": 0.7,
+  "tables": 0,
+  "head": "(zip/xlsx)",
+  "table": "",
+  "links": [],
+  "gdpHit": [],
+  "around": ""
+ },
+ {
+  "url": "https://nstatdb.dgbas.gov.tw/dgbasall/webMain.aspx?sys=220&ym=10501&ymt=11504&kind=21&type=1&funid=A018101010&cycle=3&outmode=1&compmode=0&outkind=1&fldspc=0,40,&codspc0=0,10,&rdm=R1",
+  "status": 200,
+  "len": 10643,
+  "sec": 1.4,
+  "tables": 0,
+  "head": "(zip/xlsx)",
+  "table": "",
+  "links": [],
+  "gdpHit": [],
+  "around": ""
+ },
+ {
+  "url": "https://nstatdb.dgbas.gov.tw/dgbasall/webMain.aspx?sys=220&ym=10501&ymt=11504&kind=21&type=1&funid=A018101010&cycle=4&outmode=2&compmode=0&outkind=1&fldspc=0,40,&codspc0=0,10,&rdm=R1",
+  "status": 200,
+  "len": 1692,
+  "sec": 0.6,
+  "tables": 0,
+  "head": ",\"����ұo�έp�`�θ��\",\r\n,,,,,,,,,,,,,,,\"\"\r\n\"�έp��\",\"�����H�f(�H)\",\"�����ײv(��/����)\",\"�g�٦����v(%)\",\"�ꤺ�Ͳ����BGDP(�W�حȡA�ʸU��)\",\"�ꤺ�Ͳ����BGDP(�W�حȡA�ʸU����)\",\"�����C�HGDP(�W�حȡA��)\",\"�����C�HGDP(�W�حȡA����)\",\"����ұo���BGNI(�W�حȡA�ʸU��)\",\"����ұo���BGNI(�W�حȡA�ʸU����)\",\"�����C�HGNI(�W�حȡA��)\",\"�����C�HGNI(�W�حȡA����)\",\"����ұo(�W�حȡA�ʸU��)\",\"����ұo(�W�حȡA�ʸU����)\",\"�����C�H�ұo(�W�حȡA��)\",\"�����C�H�ұo(�W",
+  "table": "",
+  "links": [],
+  "gdpHit": [],
+  "around": ""
+ },
+ {
+  "url": "https://nstatdb.dgbas.gov.tw/dgbasall/webMain.aspx?sys=220&ym=10501&ymt=11504&kind=21&type=1&funid=A018101010&cycle=3&outmode=2&compmode=0&outkind=1&fldspc=0,40,&codspc0=0,10,&rdm=R1",
+  "status": 200,
+  "len": 2895,
+  "sec": 1.0,
+  "tables": 0,
+  "head": ",\"����ұo�έp�`�θ��\",\r\n,,,,,,,,,,,,,,,\"\"\r\n\"�έp��\",\"�����H�f(�H)\",\"�����ײv(��/����)\",\"�g�٦����v(%)\",\"�ꤺ�Ͳ����BGDP(�W�حȡA�ʸU��)\",\"�ꤺ�Ͳ����BGDP(�W�حȡA�ʸU����)\",\"�����C�HGDP(�W�حȡA��)\",\"�����C�HGDP(�W�حȡA����)\",\"����ұo���BGNI(�W�حȡA�ʸU��)\",\"����ұo���BGNI(�W�حȡA�ʸU����)\",\"�����C�HGNI(�W�حȡA��)\",\"�����C�HGNI(�W�حȡA����)\",\"����ұo(�W�حȡA�ʸU��)\",\"����ұo(�W�حȡA�ʸU����)\",\"�����C�H�ұo(�W�حȡA��)\",\"�����C�H�ұo(�W",
+  "table": "",
+  "links": [],
+  "gdpHit": [],
+  "around": ""
+ },
+ {
+  "url": "https://nstatdb.dgbas.gov.tw/dgbasall/webMain.aspx?sys=220&ym=10501&ymt=11504&kind=21&type=1&funid=A018101010&cycle=4&outmode=8&compmode=0&outkind=1&fldspc=0,40,&codspc0=0,10,&rdm=R1",
+  "status": 200,
+  "len": 8207,
+  "sec": 1.0,
+  "tables": 0,
+  "head": "{\"funid\":\"A018101010\",\"name\":\"國民所得統計常用資料\",\"links\":\"https://nstatdb.dgbas.gov.tw/dgbasall/webMain.aspx?sys=220&ym=10501&ymt=11504&kind=21&type=1&funid=A018101010&cycle=4&outmode=8&compmode=0&outkind=1&fldspc=0,40,&codspc0=0,10,&rdm=R1\",\"gentime\":\"115年10月20日(23:06)\",\"pname\":\"\",\"defoutmode\":\"\",\"colh\":[[\"期中人口(人)\",\"平均匯率(元/美元)\",\"經濟成長率(%)\",\"國內生產毛額GDP(名目值，百萬元)\",\"國內生產毛額GDP(名目值，百萬美元)\",\"平均每人GDP(名目值，元)\",\"平均每人",
+  "table": "",
+  "links": [],
+  "gdpHit": [
+   336,
+   357,
+   5944,
+   5973,
+   6457
+  ],
+  "around": "常用資料\",\"links\":\"https://nstatdb.dgbas.gov.tw/dgbasall/webMain.aspx?sys=220&ym=10501&ymt=11504&kind=21&type=1&funid=A018101010&cycle=4&outmode=8&compmode=0&outkind=1&fldspc=0,40,&codspc0=0,10,&rdm=R1\",\"gentime\":\"115年10月20日(23:06)\",\"pname\":\"\",\"defoutmode\":\"\",\"colh\":[[\"期中人口(人)\",\"平均匯率(元/美元)\",\"經濟成長率(%)\",\"國內生產毛額GDP(名目值，百萬元)\",\"國內生產毛額GDP(名目值，百萬美元)\",\"平均每人GDP(名目值，元)\",\"平均每人GDP(名目值，美元)\",\"國民所得毛額GNI(名目值，百萬元)\",\"國民所得毛額GNI(名目值，百萬美元)\",\"平均每人GNI(名目值，元)\",\"平均每人GNI(名目值，美元)\",\"國民所得(名目值，百萬元)\",\"國民所得(名目值，百萬美元)\",\"平均每人所得(名目值，元)\",\"平均每人所得(名目值，美元)\"],[],[]],\"orgdata\": [[23515945,23555522,23580080,23596027,23582179,23468275,23319977,23342541,23410331,23349676],[32.33,30.44,30.16,30.93,29.58,28.02,29.81,31.16,32.11,31.19],[2.17,3.66,2.91,3.06,3.42,6.72,2.68,1.08,5.27,8.76],[17555268,18012387,18420039,18974097,20023752,21773291,22820430,23598348,25737088,28715120],[543002,591734,610744,613453,676935,777062,765529,757328,801529,922454],[746526,764678,781169,804123,849105,927776,978579,1010959,1099390,1230035],[23091,25121,25901,25998,28705,33111,32827,32444,34238,39515],[18006409,18459748,18868140,19529545,20682033,22348883,23516012,24385274,26708991,29528798],[556957,606431,625601,631411,699190,797605,788863,782583,831797,948378],[765711,783670,800173,827662,877020,952302,1008406,1044671,1140906,1264890],[23684,25745,26531,26759,29649,33987,33828,33526,35531,40626],[15305453,15732712,15991520,16366644,17337957,18917658,19702249,19998524,22315720,24591975],[473413,516843,530223,529151,586138,675148,660928,641801,694977,790149],[650854,667899,678179,693619,735214,806095,844866,856742,953242,1053420],[20132,21941,22486,22425,24855,28769,28342,27495,29687,33848]],\"outdata\": [[\" 23,515,945\",\" 23,555,522\",\" 23,580,080\",\" 23,596,027\",\" 23,582,179\",\" 23,468,275\",\" 23,319,977\",\" 23,342,541\",\" 23,410,331\",\" 23,349,67"
+ },
+ {
+  "url": "https://nstatdb.dgbas.gov.tw/dgbasall/webMain.aspx?sys=220&ym=10501&ymt=11504&kind=21&type=1&funid=A018101010&cycle=3&outmode=8&compmode=0&outkind=1&fldspc=0,40,&codspc0=0,10,&rdm=R1",
+  "status": 200,
+  "len": 13803,
+  "sec": 1.0,
+  "tables": 0,
+  "head": "{\"funid\":\"A018101010\",\"name\":\"國民所得統計常用資料\",\"links\":\"https://nstatdb.dgbas.gov.tw/dgbasall/webMain.aspx?sys=220&ym=10501&ymt=11504&kind=21&type=1&funid=A018101010&cycle=3&outmode=8&compmode=0&outkind=1&fldspc=0,40,&codspc0=0,10,&rdm=R1\",\"gentime\":\"115年10月20日(23:06)\",\"pname\":\"\",\"defoutmode\":\"\",\"colh\":[[\"期中人口(人)\",\"平均匯率(元/美元)\",\"經濟成長率(%)\",\"國內生產毛額GDP(名目值，百萬元)\",\"國內生產毛額GDP(名目值，百萬美元)\",\"平均每人GDP(名目值，元)\",\"平均每人",
+  "table": "",
+  "links": [],
+  "gdpHit": [
+   336,
+   357,
+   11020,
+   11049,
+   11693
+  ],
+  "around": "常用資料\",\"links\":\"https://nstatdb.dgbas.gov.tw/dgbasall/webMain.aspx?sys=220&ym=10501&ymt=11504&kind=21&type=1&funid=A018101010&cycle=3&outmode=8&compmode=0&outkind=1&fldspc=0,40,&codspc0=0,10,&rdm=R1\",\"gentime\":\"115年10月20日(23:06)\",\"pname\":\"\",\"defoutmode\":\"\",\"colh\":[[\"期中人口(人)\",\"平均匯率(元/美元)\",\"經濟成長率(%)\",\"國內生產毛額GDP(名目值，百萬元)\",\"國內生產毛額GDP(名目值，百萬美元)\",\"平均每人GDP(名目值，元)\",\"平均每人GDP(名目值，美元)\",\"國民所得毛額GNI(名目值，百萬元)\",\"國民所得毛額GNI(名目值，百萬美元)\",\"平均每人GNI(名目值，元)\",\"平均每人GNI(名目值，美元)\",\"國民所得(名目值，百萬元)\",\"國民所得(名目值，百萬美元)\",\"平均每人所得(名目值，元)\",\"平均每人所得(名目值，美元)\"],[],[]],\"orgdata\": [[46997032,47043607,47091823,47119316,47144741,47159091,47179174,47190859,47189965,47140908,47049996,46862360,46549788,46423593,46651891,46801163,46833046,46810698,46748223,46639968],[65.79,63.51,61.37,60.4,59.1,61.54,61.98,61.72,60.08,58.25,56.38,55.71,57.46,61.77,61.11,63.53,63.8,64.64,63.74,61.02],[1.6,6.92,6.51,8.1,6.86,4.85,5.04,7.09,3.76,9.71,17.9,9.42,7.36,3.63,-2.16,6.3,12.49,8.79,13.25,21.37],[8576849,8978419,8722877,9289510,8986371,9433668,9205764,9768333,9507841,10515911,10575923,11197368,11205702,11614728,11196278,12402070,12422849,13314239,13528806,15186314],[260523,282479,284214,307520,304147,306597,296929,316524,316130,360805,375125,401937,389906,375623,366654,390674,389516,412013,425096,497358],[364911,381615,370423,394255,381160,400009,390191,413932,402957,446148,449710,478066,479856,498723,480455,530504,530525,568865,578799,651236],[11085,12006,12071,13050,12901,13000,12586,13412,13398,15307,15950,17161,16697,16130,15733,16711,16634,17604,18187,21328],[8903180,9103229,9008621,9451127,9311153,9556987,9589114,9940431,9868430,10813603,10865786,11483097,11590895,11925117,11712550,12672724,12957826,13751165,13948360,15580438],[270478,286479,293515,312916,315097,310504,309278,322133,328153,371037,385406,412199,403310,385553,3834"
+ },
+ {
+  "url": "https://nstatdb.dgbas.gov.tw/dgbasall/webMain.aspx?sys=210&funid=A018101010",
+  "status": 200,
+  "len": 68381,
+  "sec": 1.5,
+  "tables": 2,
+  "head": "<!DOCTYPE html>\r\n<html lang=\"zh-Hant\">\r\n\r\n<head>\r\n\r\n\r\n    <meta http-equiv=\"X-UA-Compatible\" content=\"IE=11\">\r\n    <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">\r\n    <meta http-equiv=\"X-UA-Compatible\" content=\"chrome=1\">\r\n\r\n    <meta name=\"description\" content=\"統計資料查詢功能\">\r\n    <meta name=\"keywords\" content=\"統計、動態查詢、金諄\">\r\n    <link rel=\"stylesheet\" href=\"css/bootstrap-grid.mintmp2318371.css",
+  "table": "<table summary='國民所得統計常用資料查詢條件設定表格資料' align=\"left\" width=100%>\r\n            <tr>\r\n                <td class=\"fldcls\" width=20%><label for=\"fldchk\">統計項 </label><span class=fldparse></span></td>\r\n\r\n                <script>\r\n                    var ldoc = document;\r\n                    var lcnt = 0;\r\n                    var lcnt2 = 0;\r\n                    var ltree = new Array();\r\n                    var lparidx = new Array();\r\n                    var llevel = new Array();\r\n                    var lattr2 = new Array();\r\n                    var lattr = 0;\r\n                    var lpar = 0;\r\n                    var lkind = 0;\r\n                    var lname = \"\";\r\n                    var lcheckhtml = \"\";\r\n                    var lcodCnt = 0;\r\n                    var lout;\r\n                    var lwl;\r\n                    var lchkval;\r\n                    var lchkclass = \"\";\r\n                    var preParseMk = 1;\r\n                    var preParseHead = \"(全選)\";\r\n                    var treeto = new Array();\r\n                    var lfldmax = 0;\r\n                    var lcodmax = 0;\r\n\r\n\r\n                    //\t\t\t<option value='906'>XMLView</option>\r\n                    //\t\t\t<option value='988'>PXView</option>\r\n                    treeSub=\".gif' class='checkboximg\";\r\n                    \r\n                    if (gdef.codCnt[0] > 0) {\r\n                        ldoc.write('<td class=\"codecls\" name=\"codelabel\" id=\"codelabel\" colspan=2 ><label for=\"codchk0\">複分類</label><span class=codeparse></span></td>');\r\n                    }\r\n\r\n                    ldoc.write('</tr>');\r\n                    ldoc.write('<tr valign=\"top\">');\r\n                    ldoc.write('<td valign=top align=left class=treecls width=20% id=\"fldtree\">');\r\n\r\n                    treeForm = document.form1;\r\n                    checkName = \"fldchk\";\r\n                    checkIdx = 0;\r\n                    preHtmlMk = 1;\r\n                    lparidx[0] = lcnt;\r\n                    ltree[lcnt] = setFolderPlus(\"<br><b>\" + gdef.fldTitle + \"</b>\", \"\", \"\", \"\");\r\n\r\n                    for (lwi = 0; lwi < gdef.fldCnt; lwi++) {\r\n                        if (gdef.fldHide[lwi] == 0) {\r\n                            lcnt++;\r\n                            lattr = gdef.fldTree0[lwi];\r\n                            lpar = lattr % 10;\r\n                            llevel[lcnt] = lattr;\r\n                            lattr2[lcnt] = gdef.fldTree1[lwi];\r\n                            if (lattr2[lcnt] > 0) { lcnt2++; }\r\n                            if (lattr >= 10) { lparidx[lpar + 1] = lcnt; }\r\n                            ltree[lcnt] = insertTree(lattr, ltree[lparidx[lpar]], gdef.fldName[lwi], \"\", \"\", \"<input id=fldchk name=fldchk class='fldchk' type=checkbox value='\" + gdef.fldValue[lwi] + \"' id='\" + gdef.fldValue[lwi] + \"' title='\" + gdef.fldName[lwi] + \"' checked><label for='\" + gdef.fldValue[lwi] + \"'>&nbsp;</label>\");\r\n                            treeto[0] = lcnt;\r\n                            if (lpar > lfldmax) { lfldmax = lpar; }\r\n                        }\r\n                    }\r\n                    initializeDoc(ltree[firstEntries]);\r\n                    firstEntries = nEntries;\r\n\r\n                    ldoc.write(\"</td>\");\r\n\r\n\r\n\r\n                    if (gdef.codCnt[0] > 0) {\r\n                        ldoc.write('<td valign=top align=left width=30% class=treecls>');\r\n                        checkName = \"codchk0\";\r\n\r\n                        checkIdx = 0;\r\n                        preHtmlMk = 1;\r\n                        lcnt++;\r\n\r\n                        lparidx[0] = lcnt;\r\n                        ltree[lcnt] = setFolderPlus(\"<br><b>\" + gdef.codTitle[0] + \"</b>\", \"\", \"\", \"\");\r\n                        llevel[lcnt] = 900;\r\n\r\n                        for (lwi = 0; lwi < gdef.codCnt[0]; lwi++) {\r\n                            if (gdef.codName0[lwi].indexOf(\"#hide#\") < 0) {\r\n                                lcnt++;\r\n                                lattr = gdef.codVal0[lwi].val[5];\r\n                                ",
+  "links": [],
+  "gdpHit": [],
+  "around": ""
+ },
+ {
+  "url": "https://www.stat.gov.tw/cp.aspx?n=2673",
+  "status": 200,
+  "len": 76651,
+  "sec": 5.1,
+  "tables": 0,
+  "head": "﻿\r\n<!DOCTYPE html>\r\n\r\n<html id=\"FormHtml\" xmlns=\"http://www.w3.org/1999/xhtml\" lang=\"zh-Hant-tw\">\r\n<head id=\"Head1\">    <style>\r\n        .for_accessibility a {\r\n            position: absolute;\r\n            top: 10px;\r\n            left: 10px;\r\n            z-index: 99;\r\n            width: 1px;\r\n            height: 1px;\r\n            white-space: nowrap;\r\n            overflow: hidden;\r\n            col",
+  "table": "",
+  "links": [],
+  "gdpHit": [
+   48906,
+   48961
+  ],
+  "around": "ov.tw/001/Upload/463/relfile/10315/574/110%E5%9F%BA%E6%9C%9F_ni%E8%88%8711%E7%89%88%E8%A1%8C%E6%A5%AD%E5%B0%8D%E7%85%A7.pdf\" title=\"3.國民所得行業分類與第11版行業標準分類對照表\">3.國民所得行業分類與第11版行業統計分類對照表</a></li><li><a href=\"https://www.stat.gov.tw/News_NoticeCalendar_Content.aspx?MetaI_D=158&Ln=1\" target=\"_new\" title=\"國內生產毛額、國民所得、經濟成長率及平減指數統計資料背景說明(另開新視窗 Open New Window)\">國內生產毛額、國民所得、經濟成長率及平減指數統計資料背景說明</a></li><li><a href=\"https://ws.dgbas.gov.tw/001/Upload/463/relfile/10315/574/%E7%B0%A1%E4%BB%8B-%E7%B8%BD%E9%AB%94%E7%B6%93%E6%BF%9F%E8%A8%88%E9%87%8F%E6%A8%A1%E5%9E%8B_web1131128.pdf\" title=\"總體經濟計量模型.pdf(另開新視窗 Open New Window)\">總體經濟計量模型</a></li><li><a href=\"https://ws.dgbas.gov.tw/public/attachment/8725164742ecw2cxej.pdf\" target=\"_new\" title=\"我國GDP支出面統計季節調整手冊(另開新視窗 Open New Window)\">我國GDP支出面統計季節調整手冊</a><p><br></p>資料查詢索引<br>1.有關<br>&nbsp; &nbsp;(1)平均每人GDP相關資料<br>&nbsp; &nbsp;(2)各業生產資料(生產總額、中間消費、生產毛額)<br>&nbsp; &nbsp;(3)GDP各處分資料(消費、投資、貿易)<br>請點選國民所得及經濟成長項下&quot;<u>統計表</u>&quot;或&quot;<u>資料庫</u>&quot;查詢<br>2.有關<br>&nbsp; &nbsp;(1)要素所得<br>&nbsp; &nbsp;(2)各業固定資本形成及存貨變動<br>&nbsp; &nbsp;(3)國民儲蓄相關資料(貿易條件變動損益、國外要素所得收入淨額、國外移轉收入淨額)<br>請點選&quot;<u>資料庫</u>&quot;查詢<br>3.其他資料請點選國民所得及經濟成長項下&quot;<u>電子書</u>&quot;或&quot;<u>新聞稿</u>&quot;查詢</li></ul></div></div></div></div> <div class=\"list-text detail\" data-type=\"0\"><div class=\"in\"><div class=\"ct\"><div class=\"in\"></div></div></div></div> <div class=\"group page-footer\" data-type=\"3\"><div class=\"in\"><div class=\"ct\"><div class=\"in\"></div></div></div></div></div></div></div></div></div></div></div></div> <div class=\"group page-footer\" data-index=\"3\" data-type=\"3\" data-child=\"4\"><div class=\"in\"><div class=\"ct\"><div class=\"in\"> <div class=\"area-editor system-info\" data-index=\"1\" data-type=\"0\" data-child=\"1\"><div class=\"in\"><div class=\"ct\"><div class=\"in\"></div></d"
+ },
+ {
+  "url": "https://ws.dgbas.gov.tw/public/data/open/Stat/NA/NA8101A1Q.xml",
+  "status": 200,
+  "len": 1165529,
+  "sec": 4.4,
+  "tables": 0,
+  "head": "﻿<?xml version=\"1.0\" encoding=\"utf-8\"?><DataSet Tab_NAME=\"國民所得統計常用資料-季\" Sender_NAME=\"行政院主計總處\"><Obs><Item>期中人口(人)</Item><TIME_PERIOD>1961Q1</TIME_PERIOD><FREQ>Q</FREQ><TYPE>原始值</TYPE><Item_VALUE>10895610</Item_VALUE></Obs><Obs><Item>期中人口(人)</Item><TIME_PERIOD>1961Q1</TIME_PERIOD><FREQ>Q</FREQ><TYPE>年增率(%)</TYPE><Item_VALUE /></Obs><Obs><Item>平均匯率(元/美元)</Item><TIME_PERIOD>1961Q1</TIME_PERIOD><FREQ>Q",
+  "table": "",
+  "links": [],
+  "gdpHit": [
+   800,
+   935,
+   1057,
+   1191,
+   4443
+  ],
+  "around": "1Q1</TIME_PERIOD><FREQ>Q</FREQ><TYPE>年增率(%)</TYPE><Item_VALUE /></Obs><Obs><Item>經濟成長(%)</Item><TIME_PERIOD>1961Q1</TIME_PERIOD><FREQ>Q</FREQ><TYPE>原始值</TYPE><Item_VALUE /></Obs><Obs><Item>經濟成長(%)</Item><TIME_PERIOD>1961Q1</TIME_PERIOD><FREQ>Q</FREQ><TYPE>年增率(%)</TYPE><Item_VALUE /></Obs><Obs><Item>國內生產毛額GDP(名目值，百萬元)</Item><TIME_PERIOD>1961Q1</TIME_PERIOD><FREQ>Q</FREQ><TYPE>原始值</TYPE><Item_VALUE>17544</Item_VALUE></Obs><Obs><Item>國內生產毛額GDP(名目值，百萬元)</Item><TIME_PERIOD>1961Q1</TIME_PERIOD><FREQ>Q</FREQ><TYPE>年增率(%)</TYPE><Item_VALUE /></Obs><Obs><Item>國內生產毛額GDP(名目值，百萬美元)</Item><TIME_PERIOD>1961Q1</TIME_PERIOD><FREQ>Q</FREQ><TYPE>原始值</TYPE><Item_VALUE>439</Item_VALUE></Obs><Obs><Item>國內生產毛額GDP(名目值，百萬美元)</Item><TIME_PERIOD>1961Q1</TIME_PERIOD><FREQ>Q</FREQ><TYPE>年增率(%)</TYPE><Item_VALUE /></Obs><Obs><Item>平均每人GDP(名目值，元)</Item><TIME_PERIOD>1961Q1</TIME_PERIOD><FREQ>Q</FREQ><TYPE>原始值</TYPE><Item_VALUE>1610</Item_VALUE></Obs><Obs><Item>平均每人GDP(名目值，元)</Item><TIME_PERIOD>1961Q1</TIME_PERIOD><FREQ>Q</FREQ><TYPE>年增率(%)</TYPE><Item_VALUE /></Obs><Obs><Item>平均每人GDP(名目值，美元)</Item><TIME_PERIOD>1961Q1</TIME_PERIOD><FREQ>Q</FREQ><TYPE>原始值</TYPE><Item_VALUE>40</Item_VALUE></Obs><Obs><Item>平均每人GDP(名目值，美元)</Item><TIME_PERIOD>1961Q1</TIME_PERIOD><FREQ>Q</FREQ><TYPE>年增率(%)</TYPE><Item_VALUE /></Obs><Obs><Item>國民所得毛額GNI(名目值，百萬元)</Item><TIME_PERIOD>1961Q1</TIME_PERIOD><FREQ>Q</FREQ><TYPE>原始值</TYPE><Item_VALUE>17523</Item_VALUE></Obs><Obs><Item>國民所得毛額GNI(名目值，百萬元)</Item><TIME_PERIOD>1961Q1</TIME_PERIOD><FREQ>Q</FREQ><TYPE>年增率(%)</TYPE><Item_VALUE /></Obs><Obs><Item>國民所得毛額GNI(名目值，百萬美元)</Item><TIME_PERIOD>1961Q1</TIME_PERIOD><FREQ>Q</FREQ><TYPE>原始值</TYPE><Item_VALUE>438</Item_VALUE></Obs><Obs><Item>國民所得毛額GNI(名目值，百萬美元)</Item><TIME_PERIOD>1961Q1</TIME_PERIOD><FREQ>Q</FREQ><TYPE>年增率(%)</TYPE><Item_V"
+ },
+ {
+  "url": "https://www.stat.gov.tw/public/data/open/Stat/NA/NA8101A1Q.xml",
+  "status": 403,
+  "len": 5871,
+  "sec": 0.0,
+  "tables": 0,
+  "head": "<!DOCTYPE html><html lang=\"en-US\"><head><title>Just a moment...</title><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"><meta http-equiv=\"X-UA-Compatible\" content=\"IE=Edge\"><meta name=\"robots\" content=\"noindex,nofollow\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta http-equiv=\"content-security-policy\" content=\"default-src &#39;none&#39;; script-src &#39",
+  "table": "",
+  "links": [],
+  "gdpHit": [],
+  "around": ""
+ },
+ {
+  "url": "https://data.gov.tw/api/v2/rest/dataset/6799",
+  "status": 200,
+  "len": 2704,
+  "sec": 0.4,
+  "tables": 0,
+  "head": "{\"help\":\"\",\"success\":true,\"result\":{\"categoryService\":\"I00\",\"categoryDataset\":\"A\",\"datasetId\":6799,\"identifier\":\"A57000000A-000018\",\"title\":\"國民所得統計-常用資料-季\",\"description\":\"1.按季公布國民所得之重要經濟指標，包含經濟成長率、GDP、GNP、NI及平均每人統計。\\r\\n2.收集目的：陳示國民所得統計中重要經濟指標\\r\\n3.資料收集方式：主要參考各部會辦理之各項調查、公務統計、各級政府年度預決算及會計月報等資料。\",\"type\":\"rawData\",\"license\":\"1\",\"cost\":\"free\",\"dataProvider\":\"hsinchieh015\",\"publisherOID\":\"2.16.886.101.20",
+  "table": "",
+  "links": [],
+  "gdpHit": [],
+  "around": ""
+ },
+ {
+  "url": "https://data.nat.gov.tw/api/v2/rest/dataset/6799",
+  "status": 502,
+  "len": 136,
+  "sec": 0.3,
+  "tables": 0,
+  "head": "<!doctype html><meta charset=\"utf-8\"><meta name=viewport content=\"width=device-width, initial-scale=1\"><title>502</title>502 Bad Gateway",
+  "table": "",
+  "links": [],
+  "gdpHit": [],
+  "around": ""
+ }
+]
