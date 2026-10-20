@@ -1,9 +1,10 @@
 """投信／外資／土洋同買前20名（聯集）日K資料（給 itrust 自用版頁面的 db kline 用）
 
-代號清單＝當天三份前20名，加上前一個交易日的三份前20名（頁面「上榜隔日」要用名單隔天的開高低收），最多 120 檔。
+代號清單＝近 20 個交易日每天的三份前20名聯集（頁面「上榜隔日」要算名單隔天與之後抱著的報酬），最多 300 檔。
 由 .github/workflows/itrust_kline.yml 手動觸發（雲端排程用 workflow_dispatch 帶入參數）。
-用法：python itrust/kline_fetch.py 20261019 "8021:L,3264:O,..."
+用法：python itrust/kline_fetch.py 20261019 "8021:L,3264:O:202610,..."
   L＝上市（證交所 STOCK_DAY），O＝上櫃（櫃買 tradingStock）
+  第三段 YYYYMM（選填）＝只抓這個月到 D 所在月份（db 已有日K的股票只補最近月份）；沒填就抓 7 個月
 輸出 itrust/kline/<D>.json：
   {"D", "generatedAt", "codes", "bars": {代號: [[YYYYMMDD, o, h, l, c, v(張)], …]},
    "ex": {代號: [[YYYYMMDD, "息"|"權"|"權息", 權值+息值], …]},
@@ -61,10 +62,13 @@ def roc(s):
     return f"{int(y) + 1911}{int(m):02d}{int(d):02d}"
 
 
-def months(D):
+def months(D, since=None):
     d = dt.date(int(D[:4]), int(D[4:6]), int(D[6:]))
+    n = MONTHS
+    if since:   # 只抓 since 月份到 D 所在月份（最少 1 個月、最多 MONTHS 個月）
+        n = max(1, min(MONTHS, (d.year - int(since[:4])) * 12 + d.month - int(since[4:]) + 1))
     res, y, m = [d], d.year, d.month
-    for _ in range(MONTHS - 1):
+    for _ in range(n - 1):
         y, m = (y, m - 1) if m > 1 else (y - 1, 12)
         res.append(dt.date(y, m, calendar.monthrange(y, m)[1]))   # 之前月份用月底，避開月初快取
     return res
@@ -172,20 +176,23 @@ def main():
     tag = sys.argv[3].strip() if len(sys.argv) > 3 else ""   # 一次性回補：輸出 <D>_<tag>.json，不覆蓋每日檔
     assert re.fullmatch(r"20\d{6}", D), "bad date"
     assert tag == "" or re.fullmatch(r"[A-Za-z0-9]{1,12}", tag), "bad tag"
-    codes, seen = [], set()
+    codes, seen, since = [], set(), {}
     for p in spec.split(","):
-        m = re.fullmatch(r"\s*(\d{4,6}[A-Z]?):([LO])\s*", p)
+        m = re.fullmatch(r"\s*(\d{4,6}[A-Z]?):([LO])(?::(20\d{2}(?:0[1-9]|1[0-2])))?\s*", p)
         assert m, f"bad code spec: {p}"
         if m.group(1) in seen:   # 重複代號只抓一次
             continue
         seen.add(m.group(1))
         codes.append((m.group(1), m.group(2)))
-    assert 0 < len(codes) <= 120, "1–120 codes"
+        if m.group(3) and m.group(3) <= D[:6]:
+            since[m.group(1)] = m.group(3)
+    assert 0 < len(codes) <= 300, "1–300 codes"
+    diag["since"] = len(since)
     t0 = time.time()
     bars = {}
     for code, mk in codes:
         merged = {}
-        for d in months(D):
+        for d in months(D, since.get(code)):
             rows = rows_twse(code, d) if mk == "L" else rows_tpex(code, d)
             key = f"{mk}{d:%Y%m}"
             diag["month_rows"].setdefault(key, {})[code] = len(rows)
@@ -226,7 +233,7 @@ def main():
     diag["lastIsD"] = f"{len(last_ok)}/{len(codes)}"
     now = dt.datetime.now(dt.timezone(dt.timedelta(hours=8))).strftime("%Y/%m/%d %H:%M")
     OUT.mkdir(exist_ok=True)
-    out = {"D": D, "generatedAt": now, "codes": [f"{c}:{m}" for c, m in codes], "bars": bars, "ex": ex, "inst": inst, "diag": diag,
+    out = {"D": D, "generatedAt": now, "codes": [f"{c}:{m}" + (f":{since[c]}" if c in since else "") for c, m in codes], "bars": bars, "ex": ex, "inst": inst, "diag": diag,
            "src": "證交所 STOCK_DAY／櫃買 tradingStock（GitHub Actions），未還原權息；v 為成交張數；ex 來自除權除息計算結果表"}
     if tag:
         out["tag"] = tag

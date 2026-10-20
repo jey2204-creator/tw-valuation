@@ -1,4 +1,4 @@
-name: itrust 日K（投信＋外資＋土洋前20名聯集，含前一交易日名單）
+name: itrust 日K（近 20 個交易日的投信＋外資＋土洋前20名聯集）
 run-name: itrust kline ${{ inputs.date }}${{ inputs.tag != '' && format(' {0}', inputs.tag) || '' }}
 on:
   workflow_dispatch:           # 由 claude.ai 雲端排程觸發，帶入交易日與代號清單
