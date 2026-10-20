@@ -1,0 +1,39 @@
+name: 台股體檢資料
+on:
+  schedule:
+    - cron: "50 15 * * 1-5"   # 台北時間 平日 23:50（在每日更新之後；估值快照用當天 summary.json）
+  workflow_dispatch:
+    inputs:
+      maxreq:
+        description: "這次最多打幾次 MOPS（補歷史填 450；平常 24）"
+        required: false
+        default: "24"
+permissions:
+  contents: write
+concurrency:
+  group: health
+  cancel-in-progress: false
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: 估值快照＋月營收廣度＋季獲利（MOPS）
+        env:
+          MAXREQ: ${{ github.event.inputs.maxreq || '24' }}
+          BUDGET_MIN: "32"
+        run: python fetch_health.py
+      - name: 有變動才提交
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A data/health.json data/health 2>/dev/null || git add data/health.json
+          git diff --cached --quiet && exit 0
+          git commit -m "health: $(TZ=Asia/Taipei date '+%F %H:%M')"
+          git pull --rebase -X theirs origin main || (git rebase --abort; git pull --no-rebase -X ours origin main)
+          git push
