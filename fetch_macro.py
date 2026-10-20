@@ -331,14 +331,100 @@ def interpret(recs, freq):
     return out
 
 
-def fetch_gdp(freq):
-    """回傳 {period: {...}}；全部失敗回 {}"""
-    for url in GDP_URLS[freq]:
+SDMX = "https://nstatdb.dgbas.gov.tw/dgbasAll/webMain.aspx?sdmx/A018101010/{flt}.{f}&startTime={a}&endTime={b}"
+BUA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15"
+
+
+def sdmx_series(js):
+    """主計總處 API-JSON（SDMX-JSON 風格）→ [(名稱, {期間id: 值})]"""
+    st = js.get("structure") or (js.get("data") or {}).get("structure") or {}
+    dims = st.get("dimensions") or {}
+    sdims, odims = dims.get("series") or [], dims.get("observation") or []
+    periods = [v.get("id") or v.get("name") for v in (odims[0].get("values") if odims else [])]
+    found = []
+
+    def walk(o):
+        if isinstance(o, dict):
+            if o and all(re.fullmatch(r"\d+(:\d+)*", str(k)) for k in o) and any(isinstance(v, dict) and "observations" in v for v in o.values()):
+                found.append(o)
+                return
+            for v in o.values():
+                walk(v)
+        elif isinstance(o, list):
+            for v in o:
+                walk(v)
+    walk(js.get("data") or js)
+    out = []
+    for ser in found[:1]:
+        for key, v in ser.items():
+            idx = [int(x) for x in str(key).split(":")]
+            names = []
+            for d, i in zip(sdims, idx):
+                vals = d.get("values") or []
+                if i < len(vals):
+                    names.append(str(vals[i].get("name") or vals[i].get("id")))
+            obs = {}
+            for k, val in (v.get("observations") or {}).items():
+                k = int(k)
+                x = val[0] if isinstance(val, list) and val else val
+                if k < len(periods) and num(x) is not None:
+                    obs[periods[k]] = num(x)
+            out.append(("／".join(names), obs))
+    return out
+
+
+def fetch_sdmx(freq):
+    f = "Q" if freq == "q" else "A"
+    a, b = ("1998-Q1", f"{TODAY.year + 1}-Q4") if freq == "q" else ("1998", str(TODAY.year + 1))
+    for flt in ("", ".", "..", "1+2+3+4+5+6+7+8+9+10+11+12"):
+        url = SDMX.format(flt=flt, f=f, a=a, b=b)
         t0 = time.time()
-        st, raw = http(url, timeout=90)
+        st, raw = http(url, timeout=90, headers={"User-Agent": BUA, "Accept": "application/json,*/*"})
         tr = {"url": url, "status": st, "len": len(raw), "sec": round(time.time() - t0, 1)}
         DIAG["gdp"]["tries"].append(tr)
         if st != 200 or not raw:
+            tr["head"] = raw[:300].decode("utf-8", "replace")
+            continue
+        try:
+            js = json.loads(raw.decode("utf-8-sig"))
+        except Exception:
+            tr["head"] = raw[:500].decode("utf-8", "replace")
+            continue
+        ss = sdmx_series(js)
+        tr["series"] = [n for n, _ in ss][:40]
+        if not ss:
+            tr["head"] = raw[:1500].decode("utf-8", "replace")
+            continue
+        data = {}
+        for name, obs in ss:
+            kind = "g" if is_growth(name) else "gdp" if is_nominal(name) else None
+            if not kind:
+                continue
+            for pid, val in obs.items():
+                per = period_of(pid, freq)
+                if per and kind not in data.setdefault(per, {}):
+                    data[per][kind] = val
+        tr["parsed"] = len(data)
+        if any("gdp" in v for v in data.values()):
+            return data
+    return {}
+
+
+def fetch_gdp(freq):
+    """回傳 {period: {...}}；全部失敗回 {}。先用總體統計資料庫 API，再試開放資料 XML"""
+    try:
+        d = fetch_sdmx(freq)
+        if d:
+            return d
+    except Exception as e:
+        DIAG["gdp"]["notes"].append(f"API 失敗：{e!r}")
+    for url in GDP_URLS[freq]:
+        t0 = time.time()
+        st, raw = http(url, timeout=90, headers={"User-Agent": BUA})
+        tr = {"url": url, "status": st, "len": len(raw), "sec": round(time.time() - t0, 1)}
+        DIAG["gdp"]["tries"].append(tr)
+        if st != 200 or not raw:
+            tr["head"] = raw[:300].decode("utf-8", "replace")
             continue
         try:
             recs, tags = xml_records(raw)
@@ -361,6 +447,15 @@ def fetch_gdp(freq):
 def qnext(p):
     y, q = int(p[:4]), int(p[-1])
     return f"{y + 1}Q1" if q == 4 else f"{y}Q{q + 1}"
+
+
+def norm_unit(data):
+    big = [v["gdp"] for p, v in data.items() if v.get("gdp") and p >= "2015"]
+    if big and max(big) < 1e6:
+        for v in data.values():
+            if v.get("gdp"):
+                v["gdp"] *= 100
+    return data
 
 
 def gdp_rows(data):
@@ -408,7 +503,7 @@ def main():
     # 2. GDP
     try:
         q = fetch_gdp("q")
-        res["gdp"] = gdp_rows(q) if q else old.get("gdp", [])
+        res["gdp"] = gdp_rows(norm_unit(q)) if q else old.get("gdp", [])
         if not q:
             DIAG["gdp"]["notes"].append("季 GDP 抓不到或解析失敗，沿用上一版")
     except Exception as e:
@@ -417,11 +512,12 @@ def main():
     res["gdpFields"] = ["yq", "名目GDP億", "經濟成長率%", "名目年增%", "近四季名目GDP億", "註記"]
     try:
         y = fetch_gdp("y")
-        res["gdpY"] = gdpy_rows(y) if y else old.get("gdpY", [])
+        res["gdpY"] = gdpy_rows(norm_unit(y)) if y else old.get("gdpY", [])
     except Exception as e:
         DIAG["gdp"]["notes"].append(f"年 GDP 失敗：{e!r}")
         res["gdpY"] = old.get("gdpY", [])
     res["gdpYFields"] = ["year", "名目GDP億", "經濟成長率%", "註記"]
+    DIAG["gdp"]["tries"] = DIAG["gdp"]["tries"][-12:]
     res["src"] = {"idx": "證交所 發行量加權股價指數歷史資料 MI_5MINS_HIST",
                   "gdp": "主計總處 國民所得統計-常用資料（季 data.gov.tw/dataset/6799、年 44218）"}
     DIAG["idx"]["requests"] = TW["n"]
