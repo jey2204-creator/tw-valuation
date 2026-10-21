@@ -211,6 +211,18 @@ def quarters(rows):
             if 80 <= n1 - n0 <= 100 and e1 not in out:
                 st = (D(e0) + dt.timedelta(days=1)).isoformat()
                 out[e1] = (r1["val"] - r0["val"], r1["first"], st, r1["filed"])
+    # 往回推：新上市公司第一份 10-Q 只有「本季 3 個月」＋「年初至今 6 個月」，沒有單獨的 Q1
+    # → 6 個月累計 − 本季 = 前一季（SpaceX 26Q1 就是這樣漏掉的）
+    for s, lst in cum.items():
+        for e1, n1, r1 in lst:
+            if not (170 <= n1 <= 190) or e1 not in out:
+                continue
+            q = out[e1]
+            if not q[2] or q[2] <= s:
+                continue
+            pe = (D(q[2]) - dt.timedelta(days=1)).isoformat()
+            if pe not in out and 80 <= days(s, pe) <= 100:
+                out[pe] = (r1["val"] - q[0], r1["first"], s, r1["filed"])
     for s, e, r in ann:
         if e in out:
             continue

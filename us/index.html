@@ -281,10 +281,12 @@ function bands(vals){
   return out;
 }
 const money=(m,d)=>U.k===1e3?fmt(m/1e3,d??1):fmt(m,d??0);   // 百萬 → 顯示單位
-function yoyOf(i){const P=D.freq==='Q'?4:1,p=Q[i-P];if(!p||!p[2])return null;
-  // 前一年同季必須真的相隔約一年（中間缺季時不算）
-  if(D.freq==='Q'&&Q[i][0].slice(0,2)-p[0].slice(0,2)!==1)return null;return +((Q[i][2]/p[2]-1)*100).toFixed(1)}
-function ttm(i){const P=D.freq==='Q'?4:1;if(i<P-1)return null;const s=Q.slice(i-P+1,i+1).map(x=>x[6]);return s.some(x=>x==null)?null:+sum(s).toFixed(2)}
+// 前一年同季：用標籤找（25Q2 ↔ 26Q2），不靠陣列位置，中間缺季或新上市只有零星季度也能算
+const prevYearIdx=i=>{if(D.freq!=='Q')return i-1;const l=Q[i][0],want=String(+l.slice(0,2)-1).padStart(2,'0')+l.slice(2);return Q.findIndex(x=>x[0]===want)};
+function yoyOf(i){const p=Q[prevYearIdx(i)];if(!p||!p[2])return null;return +((Q[i][2]/p[2]-1)*100).toFixed(1)}
+// 前一季必須真的是上一季（季末相隔約 3 個月），否則不顯示季增
+const isPrevQ=(a,b)=>!!(a&&b&&a[9]&&b[9]&&(new Date(b[9])-new Date(a[9]))/864e5>=80&&(new Date(b[9])-new Date(a[9]))/864e5<=100);
+function ttm(i){const P=D.freq==='Q'?4:1;if(i<P-1)return null;const w=Q.slice(i-P+1,i+1);if(D.freq==='Q'&&!w.every((x,j)=>!j||isPrevQ(w[j-1],x)))return null;const s=w.map(x=>x[6]);return s.some(x=>x==null)?null:+sum(s).toFixed(2)}
 function mk(id){if(!charts[id])charts[id]=echarts.init($(id));return charts[id]}
 function base(){
   const t={color:css('--muted'),fontFamily:'IBM Plex Mono, ui-monospace, monospace',fontSize:10};
@@ -320,13 +322,13 @@ function header(){
   // 營收
   const yy=yoyOf(qn-1);
   const per=D.freq==='Q'?'季':'年度';
-  $('tRev').innerHTML=`${qlbl(q1)}${D.freq==='Q'&&q1[1]?`（${q1[1]}）`:''} 營收 <strong>${money(q1[2])} ${U.n}</strong>${yy!=null?`，年增 <strong>${yy}%</strong>`:''}${D.freq==='Q'&&q0?`，季增 <strong>${((q1[2]/q0[2]-1)*100).toFixed(1)}%</strong>`:''}`;
+  $('tRev').innerHTML=`${qlbl(q1)}${D.freq==='Q'&&q1[1]?`（${q1[1]}）`:''} 營收 <strong>${money(q1[2])} ${U.n}</strong>${yy!=null?`，年增 <strong>${yy}%</strong>`:''}${D.freq==='Q'&&isPrevQ(q0,q1)?`，季增 <strong>${((q1[2]/q0[2]-1)*100).toFixed(1)}%</strong>`:''}`;
   $('uRev').textContent=`${U.n}｜${D.freq==='Q'?'日曆季':'會計年度'}`;
   $('uMar').textContent=`${per}｜%`;
   const pc=v=>v==null?'—':v+'%';
   $('tMar').innerHTML=q0?`${qlbl(q1)} 毛利率 <strong>${pc(q1[3])}</strong>、營益率 <strong>${pc(q1[4])}</strong>、淨利率 <strong>${pc(q1[5])}</strong>（前期 ${pc(q0[3])}／${pc(q0[4])}／${pc(q0[5])}）`:'';
   const t1=ttm(qn-1);
-  $('tEps').innerHTML=q1[6]==null?'財報沒有 EPS 資料':`${qlbl(q1)} EPS <strong>${q1[6].toFixed(2)}</strong> 美元${q0&&q0[6]>0&&D.freq==='Q'?`，季增 ${((q1[6]/q0[6]-1)*100).toFixed(0)}%`:''}${t1!=null&&D.freq==='Q'?`；近四季 <strong>${t1.toFixed(2)}</strong>`:''}`;
+  $('tEps').innerHTML=q1[6]==null?'財報沒有 EPS 資料':`${qlbl(q1)} EPS <strong>${q1[6].toFixed(2)}</strong> 美元${isPrevQ(q0,q1)&&q0[6]>0?`，季增 ${((q1[6]/q0[6]-1)*100).toFixed(0)}%`:''}${t1!=null&&D.freq==='Q'?`；近四季 <strong>${t1.toFixed(2)}</strong>`:''}`;
   $('fEps').textContent=D.freq==='Q'?'柱：單季稀釋 EPS　線：近四季累計（右軸）。10-K 的第四季 = 全年 − 前三季':'年度稀釋 EPS（只有年報）';
   // 河流
   const pct=(arr,v)=>{const a=arr.filter(x=>x!=null);return Math.round(a.filter(x=>x<=v).length/a.length*100)};
@@ -340,7 +342,7 @@ function header(){
   // CapEx
   $('capex').hidden=!D.demand;
   if(D.demand){const cs=Q.map((x,i)=>[i,x[7]]).filter(x=>x[1]!=null),last=cs[cs.length-1];
-    if(last){const i=last[0],p=Q[i-4],tt=Q.slice(i-3,i+1).map(x=>x[7]);
+    if(last){const i=last[0],p=Q[prevYearIdx(i)],w=Q.slice(i-3,i+1),tt=(D.freq!=='Q'||w.every((x,j)=>!j||isPrevQ(w[j-1],x)))?w.map(x=>x[7]):[null];
       $('tCap').innerHTML=`${Q[i][0]} 資本支出 <strong>${fmt(Q[i][7]/1e3,1)} 十億美元</strong>${p&&p[7]?`，年增 <strong>${((Q[i][7]/p[7]-1)*100).toFixed(0)}%</strong>`:''}；占營收 <strong>${(Q[i][7]/Q[i][2]*100).toFixed(0)}%</strong>${tt.every(x=>x!=null)?`；近四季合計 <strong>${fmt(sum(tt)/1e3,1)}</strong> 十億`:''}`}
     $('uCap').textContent='十億美元｜日曆季'}
   $('chips').innerHTML=(D.demand?'<a href="#capex" data-s>CapEx</a>':'')+'<a href="#rev" data-s>營收</a><a href="#margin" data-s>三率</a><a href="#eps" data-s>EPS</a><a href="#fwd" data-s>預估EPS</a><a href="#pe" data-s>本益比河流</a><a href="#pb" data-s>淨值比河流</a>';
@@ -364,7 +366,7 @@ function render(){
    o.series=s;c.setOption(o,true)}
   if(D.demand){const o=base(),c=mk('cCap');o.xAxis.data=S.map(qlbl);o.yAxis.scale=false;
    o.yAxis=[o.yAxis,{...o.yAxis,scale:true,splitLine:{show:false},axisLabel:{...o.yAxis.axisLabel,formatter:'{value}%'}}];
-   const cy=i=>{const p=Q[i-4];return p&&p[7]&&Q[i][7]!=null?+((Q[i][7]/p[7]-1)*100).toFixed(0):null};
+   const cy=i=>{const p=Q[prevYearIdx(i)];return p&&p[7]&&Q[i][7]!=null?+((Q[i][7]/p[7]-1)*100).toFixed(0):null};
    o.tooltip.formatter=ps=>{const i=st+ps[0].dataIndex;return `<b>${qtip(i)}</b><br>CapEx ${Q[i][7]==null?'—':fmt(Q[i][7]/1e3,2)} 十億<br>年增 ${cy(i)??'—'}%<br>占營收 ${Q[i][7]==null?'—':(Q[i][7]/Q[i][2]*100).toFixed(0)}%`};
    o.series=[{name:'CapEx(十億)',type:'bar',data:S.map(x=>x[7]==null?null:+(x[7]/1e3).toFixed(2)),itemStyle:{color:css('--violet'),borderRadius:[2,2,0,0]},barCategoryGap:'25%'},
      {name:'年增率',type:'line',yAxisIndex:1,data:S.map((x,j)=>cy(st+j)),symbol:'none',lineStyle:{width:2,color:warm},itemStyle:{color:warm}}];
@@ -442,7 +444,7 @@ async function load(id){
     const ql=Q[Q.length-1],last4=Q.slice(-4),nmAbn=ql[4]!=null&&ql[5]!=null&&ql[5]>ql[4]+5;window.__nmAbn=nmAbn;
     const nms=last4.map(x=>x[5]).filter(x=>x!=null);
     $('iNm').value=nmAbn&&nms.length?+(sum(nms)/nms.length).toFixed(1):(ql[5]??0);
-    if(D.freq==='Q'){const g=Q.slice(-5).map((x,i,a)=>i?x[2]/a[i-1][2]-1:null).slice(1);const qg=clamp(sum(g)/g.length*100,-10,15);
+    if(D.freq==='Q'){const g=Q.slice(-5).map((x,i,a)=>i&&isPrevQ(a[i-1],x)?x[2]/a[i-1][2]-1:null).slice(1).filter(v=>v!=null);if(!g.length)g.push(0);const qg=clamp(sum(g)/g.length*100,-10,15);
       const y4=sum(Q.slice(-4).map(x=>x[2])),y0=sum(Q.slice(-8,-4).map(x=>x[2]));const yg=Q.length>=8?clamp((y4/y0-1)*50,-20,30):10;
       $('iQ1').value=Math.round(qg);$('iQg').value=Math.round(qg/2);$('iYg').value=Math.round(yg)}
     else{const yg=Q.length>=2?clamp((ql[2]/Q[Q.length-2][2]-1)*100,-20,60):10;$('iQ1').value=Math.round(yg);$('iYg').value=Math.round(yg)}
