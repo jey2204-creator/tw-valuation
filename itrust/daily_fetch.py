@@ -393,6 +393,7 @@ def main():
 
     # ── 3) 上市近 40 日開高低收（MI_INDEX 逐日）＋除權息
     ohlc = {c: [] for c in codes_tw}
+    px_prev = {}  # 前 2 個交易日全市場收盤（前 2 日核對重算產業彙總用）
     for d in DAYS40:
         if d == D:  # 當日已抓過（px：代號, 收盤, 漲跌, 開, 高, 低）
             for code, cl, _chg, o, h, l in px:
@@ -406,13 +407,16 @@ def main():
             continue
         for r in tbx["data"]:
             code = str(r[0]).strip()
+            c = num(r[jc])
+            if d in P4[-2:] and COMMON.match(code) and c is not None:
+                px_prev.setdefault(d, {})[code] = clean(c)
             if code not in ohlc:
                 continue
-            c = num(r[jc])
             if not c or c <= 0:
                 continue
             ohlc[code].append([d, clean(num(r[jo])), clean(num(r[jh])), clean(num(r[jl])), clean(c)])
     out["twse"]["ohlc"] = ohlc
+    out["twse"]["px_prev"] = px_prev
     jj = twse(f"/rwd/zh/exRight/TWT49U?startDate={DAYS40[0]}&endDate={D}&response=json")
     ex = []
     diag["fields"]["TWT49U"] = (jj or {}).get("fields")
@@ -426,6 +430,7 @@ def main():
     # ── 5) 上櫃近 40 日開高低收（otc 逐日）＋除權息
     if out["tpex"]["daily"]:
         tohlc = {c: [] for c in codes_tp}
+        tpx_prev = {}
         for d in DAYS40:
             if d == D:  # 當日已抓過（tpx：代號, 收盤, 漲跌, 開, 高, 低, 股數）
                 for code, cl, _chg, o, h, l, _s in tpx:
@@ -439,13 +444,16 @@ def main():
                 continue
             for r in tbx["data"]:
                 code = str(r[0]).strip()
+                c = num(r[2])
+                if d in P4[-2:] and COMMON.match(code) and c is not None:
+                    tpx_prev.setdefault(d, {})[code] = clean(c)
                 if code not in tohlc:
                     continue
-                c = num(r[2])
                 if not c or c <= 0:
                     continue
                 tohlc[code].append([d, clean(num(r[4])), clean(num(r[5])), clean(num(r[6])), clean(c)])
         out["tpex"]["ohlc"] = tohlc
+        out["tpex"]["px_prev"] = tpx_prev
         jj = tpex_post("/www/zh-tw/bulletin/exDailyQ", f"startDate={urllib.parse.quote(ymd_to_sl(DAYS40[0]))}&endDate={urllib.parse.quote(SL)}&response=json")
         tb = ((jj or {}).get("tables") or [{}])[0]
         diag["fields"]["exDailyQ"] = tb.get("fields")
