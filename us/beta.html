@@ -127,7 +127,7 @@ html{scroll-behavior:smooth}
   <header class="quote">
     <div class="top"><span class="code">US</span><a class="sp" href="../">← 台股看板</a></div>
     <div class="name">美股估值看板 <small style="font-size:12px;color:var(--warm)">測試版</small></div>
-    <div class="meta">45 檔美股，依台股供應鏈主題分組；點代號看估值，點台股代號開台股看板</div>
+    <div class="meta">45 檔供應鏈美股依主題分組；搜尋框可查全市場（S&amp;P 500＋Nasdaq 100 起步），點台股代號開台股看板</div>
     <div class="search" role="search">
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
       <input id="q" type="search" inputmode="search" autocomplete="off" autocapitalize="characters" placeholder="搜尋代號、公司或台股代號，例如 NVDA、2330" aria-label="搜尋" role="combobox" aria-expanded="false" aria-controls="sug" aria-autocomplete="list">
@@ -230,7 +230,45 @@ const fmt=(v,d=0)=>v==null||isNaN(v)?'—':v.toLocaleString('en-US',{minimumFrac
 const sum=a=>a.reduce((x,y)=>x+y,0);
 const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-let IDX=[],D,L,R,Q,PEM,PBM,U;const charts={};
+let IDX=[],ALL=[],D,L,R,Q,PEM,PBM,U;const charts={};
+// ---------- 全市場（不在 45 檔時）：財報讀 data/all/{T}.json，股價由瀏覽器抓 FinMind，河流圖在前端算 ----------
+const FM='https://api.finmindtrade.com/api/v4/data',YEARS=6;
+const dayDiff=(a,b)=>(new Date(b)-new Date(a))/864e5;
+async function fmPrice(tk){
+  const y=new Date().getFullYear()-YEARS;
+  const r=await fetch(`${FM}?dataset=USStockPrice&data_id=${encodeURIComponent(tk)}&start_date=${y}-01-01`);
+  if(!r.ok)throw new Error('FinMind 股價 HTTP '+r.status);
+  const js=await r.json();const px=(js.data||[]).filter(x=>x.Close>0).sort((a,b)=>a.date<b.date?-1:1);
+  if(!px.length)throw new Error(`FinMind 沒有 ${tk} 的股價（${js.msg||'代號可能不同'}）`);
+  return px;
+}
+function priceSplits(px,splits){const fix=[];for(const [d,n] of splits){const lo=new Date(new Date(d)-200*864e5).toISOString().slice(0,10);
+  const w=px.filter(r=>r.date>=lo&&r.date<=d);for(let i=1;i<w.length;i++){const ra=w[i-1].Close/w[i].Close;if(Math.abs(ra-n)/n<.12){fix.push([w[i].date,n]);break}}}return fix}
+const splitF=(d,sp)=>sp.reduce((f,[dd,n])=>d<dd?f*n:f,1);
+function buildRiver(fin,px){
+  const fix=priceSplits(px,fin.splits||[]);px.forEach(r=>r.c=fix.length?r.Close/splitF(r.date,fix):r.Close);
+  const Qs=fin.q,EQ=fin.eq||[],need=fin.freq==='Q'?4:1;
+  const ttm=day=>{const av=Qs.filter(q=>q[10]<=day&&q[6]!=null);if(av.length<need)return null;const l=av.slice(-need);
+    if(fin.freq==='Q'&&dayDiff(l[0][9],l[l.length-1][9])>300)return null;return +sum(l.map(q=>q[6])).toFixed(4)};
+  const bv=day=>{const av=EQ.filter(e=>e[2]<=day),sh=Qs.filter(q=>q[10]<=day&&q[8]);if(!av.length||!sh.length)return null;return av[av.length-1][1]/sh[sh.length-1][8]};
+  const mon={};px.forEach(r=>mon[r.date.slice(0,7)]=r);
+  const riv=Object.keys(mon).sort().map(k=>{const r=mon[k],c=r.c,t=ttm(r.date),b=bv(r.date);
+    return [k,+c.toFixed(2),t==null?null:+t.toFixed(3),b==null?null:+b.toFixed(2),t&&t>=.01?+(c/t).toFixed(1):null,b&&b>0?+(c/b).toFixed(2):null]});
+  const lr=px[px.length-1],pr=px[px.length-2]||lr,t=ttm(lr.date),b=bv(lr.date);
+  const last={date:lr.date,close:+lr.c.toFixed(2),prev:+pr.c.toFixed(2),ttm:t==null?null:+t.toFixed(3),bvps:b==null?null:+b.toFixed(2),pe:t&&t>=.01?+(lr.c/t).toFixed(1):null,pb:b&&b>0?+(lr.c/b).toFixed(2):null};
+  const note=[...(fin.note||[])];if(fix.length)note.push('股價已依分割調整：'+fix.map(([d,n])=>`${d} 1拆${n}`).join('、'));
+  note.push('全市場查詢：財報每週更新（SEC），股價由瀏覽器即時抓取（FinMind），非 45 檔供應鏈清單');
+  return {id:fin.id,name:fin.name,theme:'全市場',cyclical:false,demand:false,tw:[],freq:fin.freq,fye:fin.fye,cik:fin.cik,updated:fin.updated,last,q:Qs,riv,note};
+}
+async function loadAny(id){
+  const r=await fetch(`data/${id}.json?t=${Date.now()}`);
+  if(r.ok)return r.json();
+  const a=await fetch(`data/all/${id}.json?t=${Date.now()}`);
+  if(!a.ok)throw new Error(`尚未有 ${id} 的財報（不在清單，或 SEC 查無此代號）`);
+  $('asof').textContent=`抓 ${id} 股價中…`;
+  const [fin,px]=await Promise.all([a.json(),fmPrice(id)]);
+  return buildRiver(fin,px);
+}
 // q 欄位：0日曆季 1會計季 2營收(百萬) 3毛利率 4營益率 5淨利率 6EPS 7CapEx(百萬) 8稀釋股數(百萬) 9季末 10公布日
 // riv 欄位：0年月 1收盤 2近四季EPS 3每股淨值 4PE 5PB
 
@@ -395,9 +433,7 @@ async function load(id){
   $('home').hidden=true;$('stock').hidden=false;scrollTo(0,0);
   document.body.classList.add('dim');$('asof').textContent=`載入 ${id} 中…`;$('err').hidden=true;
   try{
-    const r=await fetch(`data/${id}.json?t=${Date.now()}`);
-    if(!r.ok)throw new Error(`尚未有 ${id} 的資料（不在 45 檔清單，或今天的排程還沒跑）`);
-    D=await r.json();L=D.last;R=D.riv;Q=D.q;
+    D=await loadAny(id);L=D.last;R=D.riv;Q=D.q;
     $('code').textContent=D.id;$('nm').textContent=D.name||D.id;
     if(Q.length<2)throw new Error(`${id} 的財報資料不足（新上市或尚未申報），無法繪圖`);
     const big=Math.max(...Q.slice(-4).map(x=>x[2]))>=1000;U=big?{k:1e3,n:'十億美元'}:{k:1,n:'百萬美元'};
@@ -411,7 +447,7 @@ async function load(id){
     else{const yg=Q.length>=2?clamp((ql[2]/Q[Q.length-2][2]-1)*100,-20,60):10;$('iQ1').value=Math.round(yg);$('iYg').value=Math.round(yg)}
     document.title=`${D.id} 美股估值看板`;
     header();render();
-  }catch(e){$('err').innerHTML='資料載入失敗：'+esc(e.message)+(IDX.some(s=>s.id===id)?'':'<br>查證這個代號：'+ext(id));$('err').hidden=false;$('asof').textContent=''}
+  }catch(e){$('err').innerHTML='資料載入失敗：'+esc(e.message)+(IDX.some(s=>s.id===id)||ALL.some(s=>s.id===id)?'':'<br>查證這個代號：'+ext(id));$('err').hidden=false;$('asof').textContent=''}
   document.body.classList.remove('dim');
 }
 // ---------- 首頁 ----------
@@ -432,7 +468,10 @@ function matches(v){
   const sc=s=>{const id=s.id.toLowerCase(),nm=(s.name||'').toLowerCase();
     if(al&&s.id===al)return 0;if(id===vl)return 1;if(id.startsWith(vl))return 2;if(s.tw.some(([c])=>c===vl))return 3;
     if(nm.startsWith(vl))return 4;if(nm.includes(vl)||s.tw.some(([c,n])=>c.startsWith(vl)||n.toLowerCase().includes(vl)))return 5;return 99};
-  return IDX.map(s=>[sc(s),s]).filter(x=>x[0]<99).sort((a,b)=>a[0]-b[0]||rankOf(a[1].theme)-rankOf(b[1].theme)).map(x=>x[1]);
+  const have=new Set(IDX.map(s=>s.id));
+  const ms=IDX.map(s=>[sc(s),s]).filter(x=>x[0]<99).sort((a,b)=>a[0]-b[0]||rankOf(a[1].theme)-rankOf(b[1].theme)).map(x=>x[1]);
+  const extra=ALL.filter(s=>!have.has(s.id)).map(s=>[sc(s),s]).filter(x=>x[0]<99).sort((a,b)=>a[0]-b[0]||(a[1].id<b[1].id?-1:1)).map(x=>x[1]);
+  return [...ms,...extra];
 }
 let SI=-1;
 function sugRender(v,ms){
@@ -445,21 +484,22 @@ function qsRender(v,ms){
   const el=$('qs'),al=aliasOf(v),up=v.toUpperCase();el.className='qs';
   if(!v){el.innerHTML='';return}
   const exact=ms.find(s=>s.id===up)||(al&&ms.find(s=>s.id===al));
-  if(exact){el.classList.add('ok');el.innerHTML=`✓ <code>${exact.id}</code> ${esc(exact.name||'')}｜${esc(exact.theme)}${al&&al===exact.id&&up!==al?`（${esc(up)} 已對應到 ${al}）`:''}`}
+  if(exact){el.classList.add('ok');el.innerHTML=`✓ <code>${exact.id}</code> ${esc(exact.name||'')}｜${esc(exact.theme)}${exact.theme==='全市場'?`（${exact.freq==='A'?'僅年報':exact.n+' 季財報'}，股價即時抓）`:''}${al&&al===exact.id&&up!==al?`（${esc(up)} 已對應到 ${al}）`:''}`}
   else if(ms.length){el.innerHTML=`找到 ${ms.length} 檔，按 Enter 或點選第一個：<code>${ms[0].id}</code>`}
-  else{el.classList.add('no');el.innerHTML=`✗ <code>${esc(up)}</code> 不在本站 45 檔清單（可能打錯，或尚未收錄）${/^[A-Z.\-]{1,6}$/.test(up)?ext(up):''}`}
+  else{el.classList.add('no');el.innerHTML=`✗ <code>${esc(up)}</code> 本站 ${IDX.length+ALL.length} 檔都沒有（可能打錯、剛上市或非美國申報公司）${/^[A-Z.\-]{1,6}$/.test(up)?ext(up):''}`}
 }
 function homeRender(){
   const raw=$('q').value.trim(),v=raw.toLowerCase(),ms=matches(raw);
   const hit=s=>!v||ms.includes(s);
   sugRender(raw,ms);qsRender(raw,ms);
   const groups=[];IDX.forEach(s=>{let g=groups.find(x=>x.t===s.theme);if(!g)groups.push(g={t:s.theme,tw:s.tw,items:[]});if(hit(s))g.items.push(s)});groups.sort((a,b)=>rankOf(a.t)-rankOf(b.t));
+  if(v){const ex=ms.filter(s=>s.theme==='全市場').slice(0,30);if(ex.length)groups.push({t:'🌐 全市場（非供應鏈清單）',tw:[],items:ex,all:true})}
   $('groups').innerHTML=groups.filter(g=>g.items.length).map(g=>`<div class="grp"><h3>${esc(g.t)}</h3>`+
-    (g.tw.length?`<div class="gtw">台股：${g.tw.map(([c,n])=>`<a href="../#${c}">${c} ${esc(n)}</a>`).join('、')}</div>`:'<div class="gtw">台股：全供應鏈（需求層）</div>')+
+    (g.tw.length?`<div class="gtw">台股：${g.tw.map(([c,n])=>`<a href="../#${c}">${c} ${esc(n)}</a>`).join('、')}</div>`:g.all?`<div class="gtw">財報每週更新，點開時即時抓股價；共 ${ALL.length} 檔</div>`:'<div class="gtw">台股：全供應鏈（需求層）</div>')+
     g.items.map(s=>{const col=s.chg>0?'var(--up)':s.chg<0?'var(--down)':'var(--muted)';
       return `<a class="it" href="#${s.id}"><span class="t">${s.id}</span><span class="n">${esc(s.name||'')}${s.cyc?' <span class="pill">循環</span>':''}${s.freq==='A'?' <span class="pill b">僅年報</span>':''}</span>`+
       `<span class="p" style="color:${col}">${fmt(s.close,2)}<br><small>${s.chg==null?'':(s.chg>0?'+':'')+s.chg+'%'}</small></span>`+
-      `<span class="v">PE ${s.pe??'—'}<br>PB ${s.pb??'—'}</span></a>`}).join('')+'</div>').join('')||'<p class="meta" style="margin-top:14px">找不到符合的股票</p>';
+      (g.all?`<span class="p"></span><span class="v">${s.freq==='A'?'僅年報':s.n+' 季'}<br>${s.lq||''}</span>`:`<span class="v">PE ${s.pe??'—'}<br>PB ${s.pb??'—'}</span>`)+`</a>`}).join('')+'</div>').join('')||'<p class="meta" style="margin-top:14px">找不到符合的股票</p>';
 }
 async function capexAll(){
   const ids=IDX.filter(s=>s.dem).map(s=>s.id);if(!ids.length)return;
@@ -497,6 +537,7 @@ $('chips').addEventListener('click',e=>{const a=e.target.closest('a');if(a){e.pr
 addEventListener('hashchange',route);
 (async()=>{
   try{const r=await fetch('data/index.json?t='+Date.now());if(r.ok)IDX=await r.json()}catch(e){}
+  try{const r=await fetch('data/all/index.json?t='+Date.now());if(r.ok)ALL=(await r.json()).map(([id,name,freq,n,lq])=>({id,name,freq,n,lq,theme:'全市場',tw:[]}))}catch(e){}
   await twOrder();
   homeRender();route();capexAll();
 })();
