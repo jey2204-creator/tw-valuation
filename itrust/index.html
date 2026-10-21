@@ -69,6 +69,7 @@ th[aria-sort="descending"] button,th[aria-sort="ascending"] button{color:var(--f
 th .ar{font-size:10px;width:8px}
 td{padding:8px 6px;border-bottom:1px solid var(--line);text-align:right;font-family:var(--font-num);font-size:14px;white-space:nowrap}
 tr:last-child td{border-bottom:0}
+.rkm{display:none} /* 名次內嵌版本，只在手機顯示 */
 td.rk{color:var(--muted);width:32px}
 tr.top3 td.rk{color:var(--buy);font-weight:600}
 tr.hot td{background:var(--hot)}
@@ -178,8 +179,11 @@ tr.detail.hot td{background:var(--hot)}
   th,td{padding:8px 6px}
   td.nmc{white-space:normal;min-width:96px}
   .lg{display:none}
-  th.rkh,td.rk{width:30px;min-width:30px;max-width:30px;padding-left:8px;padding-right:2px}
-  th.nmh,td.nmc{left:30px}
+  /* 手機排名欄（2026-10-21）：隱藏「#」欄，名次改放進個股欄代號前，空出寬度給右側數字欄 */
+  th.rkh,td.rk{display:none}
+  th.nmh,td.nmc{left:0;padding-left:8px}
+  .rkm{display:inline-block;font:600 12px var(--font-num);color:var(--muted);min-width:16px;margin-right:2px}
+  tr.top3 .rkm{color:var(--buy)}
   .exp{flex-wrap:wrap}
   .chev{display:none}
   .streak{padding:1px 6px}
@@ -813,7 +817,7 @@ function render(){
   if(view==='ind'){
     sorted.forEach(r=>{const open=expanded.has('ind'+r.k);const both=r.tn*s>0&&r.fn*s>0;
       const tr=document.createElement('tr');tr.className='row '+(r.rank<=3?'top3 ':'')+(open?'open':'');
-      tr.innerHTML=`<td class="rk">${r.rank}</td><td class="l nmc"><button class="exp" aria-expanded="${open}" aria-label="展開個股"><span class="chev">${open?'▾':'▸'}</span><span class="indn"></span></button>${both?`<span class="tag ${s>0?'both':'sx'}">${s>0?'土洋同買':'土洋同賣'}</span>`:''}</td>`+cols.map(c=>`<td class="${c.x?'x ':''}">${c.cell(r,max,ctx)}</td>`).join('');
+      tr.innerHTML=`<td class="rk">${r.rank}</td><td class="l nmc"><button class="exp" aria-expanded="${open}" aria-label="展開個股"><span class="chev">${open?'▾':'▸'}</span><span class="rkm">${r.rank}</span><span class="indn"></span></button>${both?`<span class="tag ${s>0?'both':'sx'}">${s>0?'土洋同買':'土洋同賣'}</span>`:''}</td>`+cols.map(c=>`<td class="${c.x?'x ':''}">${c.cell(r,max,ctx)}</td>`).join('');
       tr.querySelector('.indn').textContent=r.name;
       tr.onclick=()=>{const k='ind'+r.k;expanded.has(k)?expanded.delete(k):expanded.add(k);render()};tb.appendChild(tr);
       if(open){const {items,notes}=detail(r,ctx);const dt=document.createElement('tr');dt.className='detail';
@@ -828,7 +832,7 @@ function render(){
     const open=expanded.has(view+dir+r.c);const hot=r[hotK]>=3;
     const tr=document.createElement('tr');tr.className='row '+(r.rank<=3?'top3 ':'')+(hot?'hot ':'')+(open?'open':'');
     const extra=(view==='it'&&r.fx?`<span class="tag ${s>0?'fx':'sx'}">外資同${s>0?'買':'賣'}</span>`:view==='fi'&&r.both?`<span class="tag ${s>0?'both':'sx'}">投信同${s>0?'買':'賣'}</span>`:'')+`<span class="tag ind" role="button" aria-pressed="${indFilter===indOf(r.c)}" title="只看同產業"></span><span class="tag sub${subMapped(r.c)?'':' um'}" role="button" aria-pressed="${subFilter===subName(r.c)}" title="${subMapped(r.c)?'只看同細產業':'尚未細分，暫以證交所產業顯示'}"></span>`;
-    tr.innerHTML=`<td class="rk">${r.rank}</td><td class="l nmc"><button class="exp" aria-expanded="${open}" aria-label="展開明細"><span class="chev">${open?'▾':'▸'}</span><span class="cd"></span><span class="nm"></span></button>${hot?'<span class="fire">🔥</span>':''}${tagsHtml(r,extra)}${pxLine(r)}</td><td class="l x"><span class="mk ${r.m==='上櫃'?'otc':''}"></span></td>`+cols.map(c=>`<td class="${c.x?'x ':''}${c.cls||''}">${c.cell(r,max,ctx)}</td>`).join('');
+    tr.innerHTML=`<td class="rk">${r.rank}</td><td class="l nmc"><button class="exp" aria-expanded="${open}" aria-label="展開明細"><span class="chev">${open?'▾':'▸'}</span><span class="rkm">${r.rank}</span><span class="cd"></span><span class="nm"></span></button>${hot?'<span class="fire">🔥</span>':''}${tagsHtml(r,extra)}${pxLine(r)}</td><td class="l x"><span class="mk ${r.m==='上櫃'?'otc':''}"></span></td>`+cols.map(c=>`<td class="${c.x?'x ':''}${c.cls||''}">${c.cell(r,max,ctx)}</td>`).join('');
     tr.querySelector('.cd').textContent=r.c;tr.querySelector('.nm').textContent=r.n;tr.querySelector('.mk').textContent=r.m;
     {const it=tr.querySelector('.tag.ind'),ik=indOf(r.c);it.textContent=indName(ik);it.onclick=e=>{e.stopPropagation();indFilter=indFilter===ik?null:ik;render()}}
     {const st=tr.querySelector('.tag.sub'),sk=subName(r.c);st.textContent=sk;st.onclick=e=>{e.stopPropagation();subFilter=subFilter===sk?null:sk;render()}}
