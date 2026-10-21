@@ -430,7 +430,7 @@ header.hd .disc1{flex-basis:100%;font-size:12px;line-height:1.5;color:var(--warn
       <select id="minAmt"><option value="0">0 億</option><option value="0.3">0.3 億</option><option value="0.5" selected>0.5 億</option><option value="1">1 億</option></select>
     </label>
     <label for="fMinAmt" id="lFMinAmt" hidden>外資最低金額
-      <select id="fMinAmt"><option value="0.5">0.5 億</option><option value="1" selected>1 億</option><option value="3">3 億</option><option value="5">5 億</option></select>
+      <select id="fMinAmt"><option value="0.5" selected>0.5 億</option><option value="1">1 億</option><option value="3">3 億</option><option value="5">5 億</option></select>
     </label>
     <label class="msort" for="msort">排序
       <select id="msort"></select>
@@ -476,7 +476,7 @@ header.hd .disc1{flex-basis:100%;font-size:12px;line-height:1.5;color:var(--warn
     <div>只算交易日，週末和休市日不會讓連續上榜中斷；天數前面有「≥」表示已經數到最早一筆資料，實際可能更長。</div>
     <h2>外資</h2>
     <div id="fbasis">外資＝外陸資買賣超（不含外資自營商）。外資自營商多半是避險或短線部位，雜訊大，所以不計入。</div>
-    <div>外資金額規模比投信大，門檻預設 ≥1 億、可選 0.5／1／3／5 億。資料庫只保存外資買超 ≥0.5 億的個股（另存前 4 個交易日的外資買賣超，用來算近5日累計），所以外資門檻最低是 0.5 億。</div>
+    <div>外資金額規模比投信大，門檻預設 ≥0.5 億、可選 0.5／1／3／5 億。資料庫只保存外資買超 ≥0.5 億的個股（另存前 4 個交易日的外資買賣超，用來算近5日累計），所以外資門檻最低是 0.5 億。</div>
     <div>外資持股%＝全體外資及陸資持股比率；尚可投資%＝離法令持股上限還剩多少比率，數字很小代表外資幾乎買滿。上市取證交所、上櫃取櫃買當日資料。</div>
     <div>外資買超常來自 MSCI 等指數調整、ETF 申贖、套利或借券回補，單日訊號雜訊比投信大，連續性和土洋同買更值得看。外資資料從 9/24 起。</div>
     <h2>土洋同買</h2>
