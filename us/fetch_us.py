@@ -165,8 +165,9 @@ def split_events(cf):
         per_filing.setdefault((d, n), set()).add(k)
     clusters = []
     for (d, n), ks in sorted(per_filing.items()):
-        c = clusters[-1] if clusters else None
-        if c and c["n"] == n and days(c["last"], d) < 400:
+        # 找任何一個同倍數、400 天內的群（不只最後一個）：中間若夾著別的倍數重述，同一次分割才不會被拆成兩次
+        c = next((c for c in reversed(clusters) if c["n"] == n and days(c["last"], d) < 400), None)
+        if c:
             c["last"] = d
             c["multi"] |= len(ks) >= 2
         else:
