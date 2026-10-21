@@ -21,6 +21,7 @@ N = int(os.environ.get("UNIVERSE_N", "600"))
 YEARS = F.YEARS
 
 # 無論市值排名如何都一定收錄的常用代號（供應鏈客戶、巨型股、使用者常查）
+RANK, META = {}, {}
 ALWAYS = """
 AAPL MSFT NVDA AMZN GOOGL GOOG META TSLA AVGO BRK-B LLY JPM V UNH XOM MA COST PG JNJ HD ABBV WMT NFLX BAC CRM ORCL KO
 CVX MRK AMD PEP CSCO ADBE TMO ACN LIN MCD ABT WFC IBM GE CAT TXN QCOM INTU DHR AMGN NOW ISRG PM VZ AXP NEE SPGI PFE
@@ -50,11 +51,25 @@ def universe(cik_map):
                 if N > 0:
                     rows = rows[:N]
                 ids |= {r["stock_id"] for r in rows}
+                RANK.update({r["stock_id"]: i for i, r in enumerate(rows)})
+                META["info_keys"] = keys; META["cap_key"] = capk
         except Exception as e:
             print(f"USStockInfo 失敗（改用固定清單）：{e}", file=sys.stderr)
-    have = [t for t in sorted(ids) if t.replace("-", ".") in cik_map or t in cik_map]
-    print(f"清單 {len(ids)} 檔，SEC 有 CIK 的 {len(have)} 檔")
-    return have
+    # 同一家公司多個代號（GOOG/GOOGL、BRK-A/BRK-B、特別股 AGNCL…）只留一個：優先 45 檔與 ALWAYS，其餘留市值高者（info 已排序）
+    pri = {t: i for i, t in enumerate(list(F.STOCKS) + ALWAYS)}
+    order = sorted(ids, key=lambda t: (pri.get(t, 10**6), RANK.get(t, 10**6), t))
+    have, seen, alias = [], {}, {}
+    for t in order:
+        c = cik_of(t, cik_map)
+        if not c:
+            continue
+        if c in seen:
+            alias[t] = seen[c]
+        else:
+            seen[c] = t; have.append(t)
+    META["universe"] = len(ids); META["with_cik"] = len(have); META["alias"] = alias
+    print(f"清單 {len(ids)} 檔，SEC 有 CIK 且去重後 {len(have)} 檔，同公司別名 {len(alias)} 個")
+    return sorted(have)
 
 
 def cik_of(tk, cik_map):
@@ -141,6 +156,11 @@ def main():
     if not sys.argv[1:]:   # 全量更新時，清單外的舊檔從索引拿掉（檔案保留）
         old = {k: v for k, v in old.items() if k in ok}
     idx.write_text(json.dumps([old[k] for k in sorted(old)], ensure_ascii=False, separators=(",", ":")), "utf-8")
+    if not sys.argv[1:]:
+        (OUT / "aliases.json").write_text(json.dumps(META.get("alias", {}), separators=(",", ":")), "utf-8")
+    META.update(ok=len(ok), failed=bad, secs=round(time.time() - t0), mode=MODE, n=N,
+                updated=dt.datetime.utcnow().strftime("%Y-%m-%dT%H:%MZ"))
+    (OUT / "meta.json").write_text(json.dumps(META, ensure_ascii=False), "utf-8")
     print(f"完成 {len(ok)}／{len(ids)}，{time.time() - t0:.0f}s，失敗 {len(bad)}：{bad[:30]}")
     if not ok:
         sys.exit(1)

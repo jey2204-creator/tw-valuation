@@ -267,6 +267,7 @@ async function loadAny(id){
   if(!a.ok)throw new Error(`尚未有 ${id} 的財報（不在清單，或 SEC 查無此代號）`);
   $('asof').textContent=`抓 ${id} 股價中…`;
   const [fin,px]=await Promise.all([a.json(),fmPrice(id)]);
+  if(!fin.q.length)throw new Error(`${id} 在 SEC 有申報，但抓不到營收等科目（銀行、保險或非美元申報的外國公司），暫時無法繪圖`);
   return buildRiver(fin,px);
 }
 // q 欄位：0日曆季 1會計季 2營收(百萬) 3毛利率 4營益率 5淨利率 6EPS 7CapEx(百萬) 8稀釋股數(百萬) 9季末 10公布日
@@ -460,7 +461,7 @@ async function twOrder(){let base=[];try{const r=await fetch('../data/themes.jso
 const rankOf=t=>{const i=ORD.ids.indexOf(TID[t]||ORD.byName[t]);return i<0?999:i};
 // 同義代號／俗名 → 本站代號（舊代號、另一股別、常見簡稱）
 const ALIAS={FB:'META',GOOG:'GOOGL',SPACEX:'SPCX',NVIDIA:'NVDA',BROADCOM:'AVGO',MICRON:'MU',GOOGLE:'GOOGL',ALPHABET:'GOOGL',AMAZON:'AMZN',MICROSOFT:'MSFT',FACEBOOK:'META',SUPERMICRO:'SMCI',VERTIV:'VRT',ARISTA:'ANET',ASTERA:'ALAB',LUMENTUM:'LITE',COHERENT:'COHR',FABRINET:'FN',CREDO:'CRDO',MARVELL:'MRVL',APPLIED:'AMAT',LAM:'LRCX',AMKOR:'AMKR',SANDISK:'SNDK'};
-const aliasOf=v=>ALIAS[v.toUpperCase().replace(/[^A-Z]/g,'')];
+const aliasOf=v=>{const u=v.toUpperCase();return ALIAS[u]||ALIAS[u.replace(/[^A-Z]/g,'')]};
 const ext=t=>`<a href="https://finance.yahoo.com/lookup/?s=${encodeURIComponent(t)}" target="_blank" rel="noopener">Yahoo 查代號 ↗</a><a href="https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&company=${encodeURIComponent(t)}" target="_blank" rel="noopener">SEC EDGAR ↗</a>`;
 function matches(v){
   if(!v)return[];
@@ -484,7 +485,7 @@ function qsRender(v,ms){
   const el=$('qs'),al=aliasOf(v),up=v.toUpperCase();el.className='qs';
   if(!v){el.innerHTML='';return}
   const exact=ms.find(s=>s.id===up)||(al&&ms.find(s=>s.id===al));
-  if(exact){el.classList.add('ok');el.innerHTML=`✓ <code>${exact.id}</code> ${esc(exact.name||'')}｜${esc(exact.theme)}${exact.theme==='全市場'?`（${exact.freq==='A'?'僅年報':exact.n+' 季財報'}，股價即時抓）`:''}${al&&al===exact.id&&up!==al?`（${esc(up)} 已對應到 ${al}）`:''}`}
+  if(exact){el.classList.add('ok');el.innerHTML=`✓ <code>${exact.id}</code> ${esc(exact.name||'')}｜${esc(exact.theme)}${exact.theme==='全市場'?(exact.n?`（${exact.freq==='A'?'僅年報':exact.n+' 季財報'}，股價即時抓）`:'（SEC 有申報，但抓不到營收科目——銀行、非美元申報等，暫無圖表）'):''}${al&&al===exact.id&&up!==al?`（${esc(up)} 已對應到 ${al}）`:''}`}
   else if(ms.length){el.innerHTML=`找到 ${ms.length} 檔，按 Enter 或點選第一個：<code>${ms[0].id}</code>`}
   else{el.classList.add('no');el.innerHTML=`✗ <code>${esc(up)}</code> 本站 ${IDX.length+ALL.length} 檔都沒有（可能打錯、剛上市或非美國申報公司）${/^[A-Z.\-]{1,6}$/.test(up)?ext(up):''}`}
 }
@@ -538,6 +539,7 @@ addEventListener('hashchange',route);
 (async()=>{
   try{const r=await fetch('data/index.json?t='+Date.now());if(r.ok)IDX=await r.json()}catch(e){}
   try{const r=await fetch('data/all/index.json?t='+Date.now());if(r.ok)ALL=(await r.json()).map(([id,name,freq,n,lq])=>({id,name,freq,n,lq,theme:'全市場',tw:[]}))}catch(e){}
+  try{const r=await fetch('data/all/aliases.json?t='+Date.now());if(r.ok)Object.assign(ALIAS,await r.json())}catch(e){}   // 同公司別名（GOOG→GOOGL、BRK-A→BRK-B…）由抓取程式自動產生
   await twOrder();
   homeRender();route();capexAll();
 })();
