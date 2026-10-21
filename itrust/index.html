@@ -80,6 +80,26 @@ tr.hot td{background:var(--hot)}
 .tag.par{background:var(--chip);color:var(--muted)}
 .tag.sd{background:var(--otc-soft);color:var(--otc);cursor:help}
 .tag.cb{background:var(--chip);color:var(--muted)}
+/* 產業標籤（2026-10-21）：排行列上點一下只看同族群；表格上方的產業列可切換 */
+.tag.ind{background:var(--otc-soft);color:var(--otc);cursor:pointer;font-weight:600}
+.tag.ind[aria-pressed="true"]{background:var(--otc);color:var(--surface)}
+.indbar{display:flex;gap:6px;align-items:center;overflow-x:auto;padding:2px 0 6px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.indbar::-webkit-scrollbar{display:none}
+.indbar .indl{font-size:12px;color:var(--muted);flex:none;margin-right:2px}
+.indbar button{flex:none;font:500 12.5px var(--font-body);border:1px solid var(--line);background:var(--surface);color:var(--fg);padding:5px 11px;border-radius:999px;cursor:pointer;white-space:nowrap;display:inline-flex;gap:4px;align-items:baseline}
+.indbar button b{font:600 12px var(--font-num);color:var(--muted)}
+.indbar button[aria-pressed="true"]{background:var(--otc);color:var(--surface);border-color:var(--otc)}
+.indbar button[aria-pressed="true"] b{color:var(--surface);opacity:.85}
+/* 細產業（2026-10-21）：產業列下方再一列，依公司主要業務人工分類（data.js 的 sub）；每顆按鈕＝檔數＋該族群佔股本合計 */
+.indbar.sub{margin-top:-12px}
+.indbar.sub button i{font:600 11.5px var(--font-num);font-style:normal;color:var(--buy)}
+.indbar.sub button i.dn{color:var(--dn)}
+.indbar.sub button.um{border-style:dashed;color:var(--muted)}
+.indbar.sub button[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.indbar.sub button[aria-pressed="true"] b,.indbar.sub button[aria-pressed="true"] i{color:var(--bg);opacity:.85}
+.tag.sub{background:var(--chip);color:var(--fg);border:1px solid var(--line);cursor:pointer;font-weight:600}
+.tag.sub.um{border-style:dashed;color:var(--muted);font-weight:500}
+.tag.sub[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
 .mk{font:500 11px var(--font-body);padding:1px 7px;border-radius:4px;background:var(--buy-soft);color:var(--buy)}
 .mk.otc{background:var(--otc-soft);color:var(--otc)}
 .pct{display:flex;align-items:center;justify-content:flex-end;gap:8px}
@@ -425,6 +445,9 @@ header.hd .disc1{flex-basis:100%;font-size:12px;line-height:1.5;color:var(--warn
     </div>
   </div>
 
+  <div class="indbar" id="indBar" hidden aria-label="產業篩選"></div>
+  <div class="indbar sub" id="subBar" hidden aria-label="細產業篩選"></div>
+
   <div class="sheet">
     <table>
       <thead><tr id="thead"></tr></thead>
@@ -441,7 +464,8 @@ header.hd .disc1{flex-basis:100%;font-size:12px;line-height:1.5;color:var(--warn
     <h2>計算方式</h2>
     <div>佔股本 ＝ 法人買超股數 ÷ 交易所／櫃買當日掛牌股數。掛牌股數會隨可轉債轉換、增資新股上市即時更新，比觀測站登記股數更貼近當天可交易的股本。</div>
     <div id="basis">對照欄是公開資訊觀測站的已發行普通股數（含私募股、庫藏股）。</div>
-    <div><span class="tag sd">≠觀測站</span> 觀測站股數和掛牌股數相差超過 5%（差異率＝兩者差額 ÷ 掛牌股數）。點一下那一列，可以看差異率和可能原因。<span class="tag cb">可轉債</span> 公司目前有流通中的公司債。</div>
+    <div><span class="tag sd">≠觀測站</span> 觀測站股數和掛牌股數相差超過 5%（差異率＝兩者差額 ÷ 掛牌股數）。點一下那一列，可以看差異率和可能原因。<span class="tag cb">可轉債</span> 公司目前有流通中的公司債。<span class="tag ind">產業</span> 證交所／櫃買公告的產業類別，點一下只看前 20 名裡的同族群（表格上方的產業列也可以切換）。</div>
+    <div><span class="tag sub">細產業</span> 證交所的「半導體」「電子零組件」範圍太大，所以再依公司主要業務分一層（例如探針卡、測試、封測、IC設計、記憶體、ABF載板、散熱、光通訊…）。產業列下方的細產業列會列出目前排行裡每個族群的檔數與佔股本合計，點一下只看該族群；先點產業再看細產業列，就是該產業內的細分。虛線框＝還沒細分，暫以證交所產業顯示。細產業由站長依公司主要業務人工整理，隨每日同步更新，可能有分類誤差。</div>
     <div>買超張數 ＝ 股數 ÷ 1000，四捨五入成整數。買超金額（億）＝ 張數 × 1000 × 收盤價 ÷ 1億，四捨五入到小數第 2 位。</div>
     <div>前 20 名＝先套用門檻與市場篩選，再依佔股本排序。「近5日上榜」與「連續上榜」用同一套門檻重算每一天的前 20 名。</div>
     <div>近5日累計 ＝ 近 5 個交易日的買賣超合計（買超為正、賣超為負，當天沒有買賣算 0）÷ 所選交易日的掛牌股數。紅色代表 5 日淨買、綠色代表淨賣；後面標「N天」表示近 5 個交易日裡只有 N 天有資料。點開明細可以看每天的張數。</div>
@@ -475,7 +499,7 @@ header.hd .disc1{flex-basis:100%;font-size:12px;line-height:1.5;color:var(--warn
 <script>
 const $=id=>document.getElementById(id);
 const expanded=new Set();
-let days={},fdays={},cal=[],IND={map:{},names:{}},cur=null,filter='all',view='it',dir='buy',sortK='p',sortDir=-1;
+let days={},fdays={},cal=[],IND={map:{},names:{}},SUB={map:{}},cur=null,filter='all',view='it',dir='buy',sortK='p',sortDir=-1,indFilter=null,subFilter=null;
 try{const v=localStorage.getItem('itrust.view');if(['it','fi','both','ind'].includes(v))view=v;const d=localStorage.getItem('itrust.dir');if(['buy','sell'].includes(d))dir=d}catch(e){}
 const fmt=(n,d=0)=>Number(n).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
 const fd=d=>d.slice(0,4)+'/'+d.slice(4,6)+'/'+d.slice(6);
@@ -573,6 +597,21 @@ function buildB(s){
 // 產業：每個交易日的投信、外資產業淨額
 const indOf=c=>IND.map[c]||'99';
 const indName=k=>IND.names[k]||(k==='99'?'未分類':'產業'+k);
+function renderIndBar(cnt,total){const el=$('indBar');const ks=Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a]||indName(a).localeCompare(indName(b),'zh-Hant'));
+  if(ks.length<2&&!indFilter){el.hidden=true;return}el.hidden=false;
+  el.innerHTML='<span class="indl">產業</span>'+`<button type="button" data-k="" aria-pressed="${!indFilter}">全部 <b>${total}</b></button>`+ks.map(k=>`<button type="button" data-k="${k}" aria-pressed="${indFilter===k}"><span></span><b>${cnt[k]}</b></button>`).join('');
+  el.querySelectorAll('button[data-k]').forEach(b=>{const sp=b.querySelector('span');if(sp)sp.textContent=indName(b.dataset.k);b.onclick=()=>{indFilter=b.dataset.k||null;render()}});
+  if(indFilter){const a=el.querySelector('button[aria-pressed="true"]');if(a&&a.scrollIntoView)try{a.scrollIntoView({block:'nearest',inline:'nearest'})}catch(e){}}}
+// 細產業（2026-10-21）：data.js 的 sub {map:{代號:細產業}}（同步排程從自用版 db 的 meta/subind 帶出）；沒分到的暫以證交所產業名顯示（虛線）。
+const subOf=c=>(SUB.map&&SUB.map[c])||'';
+const subMapped=c=>!!subOf(c);
+const subName=c=>subOf(c)||indName(indOf(c));
+const pctS=p=>(p<0?'−':'')+Math.abs(p).toFixed(2)+'%';
+function renderSubBar(st,total,tp){const el=$('subBar');const ks=Object.keys(st).sort((a,b)=>Math.abs(st[b].p)-Math.abs(st[a].p)||st[b].n-st[a].n||a.localeCompare(b,'zh-Hant'));
+  if(ks.length<2&&!subFilter){el.hidden=true;return}el.hidden=false;
+  el.innerHTML='<span class="indl">細產業</span>'+`<button type="button" data-k="" aria-pressed="${!subFilter}">全部 <b>${total}</b><i class="${tp<0?'dn':''}">${pctS(tp)}</i></button>`+ks.map(k=>`<button type="button" data-k="${esc5(k)}" class="${st[k].um?'um':''}" aria-pressed="${subFilter===k}" title="${st[k].um?'尚未細分，暫以證交所產業顯示':'佔股本合計'}"><span></span><b>${st[k].n}</b><i class="${st[k].p<0?'dn':''}">${pctS(st[k].p)}</i></button>`).join('');
+  el.querySelectorAll('button[data-k]').forEach(b=>{const sp=b.querySelector('span');if(sp)sp.textContent=b.dataset.k;b.onclick=()=>{subFilter=b.dataset.k||null;render()}});
+  if(subFilter){const a=el.querySelector('button[aria-pressed="true"]');if(a&&a.scrollIntoView)try{a.scrollIntoView({block:'nearest',inline:'nearest'})}catch(e){}}}
 function trustInd(id){return memo('ti'+id,()=>{const o={};(days[id]?.rows||[]).forEach(r=>{const k=indOf(r.c);const a=o[k]=o[k]||{b:0,s:0,nb:0,ns:0};const yi=lotsOf(r)*1000*r.cl/1e8;if(r.v>0){a.b+=yi;a.nb++}else if(r.v<0){a.s+=yi;a.ns++}});return o})}
 function buildI(s){
   const doc=days[cur];if(!doc)return null;
@@ -684,21 +723,21 @@ function detail(r,ctx){
   if(view==='it'){
     const sd=(r.sdiff??0)>5;
     const why=r.why==='priv'?'差額是私募股，私募股還沒掛牌交易':r.s>r.sm?'掛牌較多：可能是可轉債轉換或增資新股已經掛牌，觀測站還沒變更登記':'掛牌較少：可能是減資、庫藏股註銷，或私募股還沒掛牌';
-    items.push(['收盤價',fmt(r.cl,2)+' 元'],['漲跌',chgTxt(r)+(r.chg!=null?'（'+(r.chg>0?'+':'')+fmt(r.chg,2)+'）':'')],['投信'+W(),fmt(lotsOf(r))+' 張'],[W()+'金額',fmt(r.amt,2)+' 億'],['掛牌股數',fmt(r.s/1000)+' 張','chk'],['觀測站股數',r.sm?fmt(r.sm/1000)+' 張':'—','chk'],['股數差異',r.sm?(r.sdiff??0).toFixed(2)+'%':'—','chk'],['近5日上榜',r.in5+' / '+ctx.avail5+' 天'],['近5日累計',sg(r.cum5)],['產業',indName(indOf(r.c))],...techItems(r.t));
+    items.push(['收盤價',fmt(r.cl,2)+' 元'],['漲跌',chgTxt(r)+(r.chg!=null?'（'+(r.chg>0?'+':'')+fmt(r.chg,2)+'）':'')],['投信'+W(),fmt(lotsOf(r))+' 張'],[W()+'金額',fmt(r.amt,2)+' 億'],['掛牌股數',fmt(r.s/1000)+' 張','chk'],['觀測站股數',r.sm?fmt(r.sm/1000)+' 張':'—','chk'],['股數差異',r.sm?(r.sdiff??0).toFixed(2)+'%':'—','chk'],['近5日上榜',r.in5+' / '+ctx.avail5+' 天'],['近5日累計',sg(r.cum5)],['產業',indName(indOf(r.c))],['細產業',subName(r.c)],...techItems(r.t));
     if(sd)notes.push(['≠觀測站','差異 '+r.sdiff.toFixed(2)+'%，'+why+'。佔股本以掛牌股數計算。']);
     if(r.cb)notes.push(['可轉債','公司目前有流通中的公司債，未來轉換可能讓掛牌股數增加。']);
     notes.push(['近5日',bars5(r.last5,r.per,dir),'html']);notes.push(['計算式','近5日合計 '+(r.cum5v>0?'+':'')+fmt(r.cum5v)+' 股 ÷ 掛牌 '+fmt(r.s)+' 股 ＝ '+sg(r.cum5),'chk']);
     const fv=fvOf(cur,r.c);if(fv!=null)notes.push(['外資當天',fv>0?'淨買超 '+lotStr(fv):fv<0?'淨賣超 '+lotStr(fv):'沒有買賣']);
     if(r.streak>=3)notes.push(['🔥','連續 '+(r.open?'≥':'')+r.streak+' 個交易日都在投信'+W()+'前 20 名。']);
   }else if(view==='fi'){
-    items.push(['收盤價',fmt(r.cl,2)+' 元'],['漲跌',chgTxt(r)+(r.chg!=null?'（'+(r.chg>0?'+':'')+fmt(r.chg,2)+'）':'')],['外資'+W(),fmt(r.lots)+' 張'],[W()+'金額',fmt(r.amt,2)+' 億'],['掛牌股數',fmt(r.s/1000)+' 張','chk'],['外本比',r.p.toFixed(4)+'%'],['外資持股',pctOr(r.hp)],['尚可投資',pctOr(r.rm)],['近5日上榜',r.in5+' / '+ctx.avail5+' 天'],['近5日累計',sg(r.cum5)],['產業',indName(indOf(r.c))],...techItems(r.t));
+    items.push(['收盤價',fmt(r.cl,2)+' 元'],['漲跌',chgTxt(r)+(r.chg!=null?'（'+(r.chg>0?'+':'')+fmt(r.chg,2)+'）':'')],['外資'+W(),fmt(r.lots)+' 張'],[W()+'金額',fmt(r.amt,2)+' 億'],['掛牌股數',fmt(r.s/1000)+' 張','chk'],['外本比',r.p.toFixed(4)+'%'],['外資持股',pctOr(r.hp)],['尚可投資',pctOr(r.rm)],['近5日上榜',r.in5+' / '+ctx.avail5+' 天'],['近5日累計',sg(r.cum5)],['產業',indName(indOf(r.c))],['細產業',subName(r.c)],...techItems(r.t));
     if(dir==='buy'&&!r.t)notes.push(['技術欄位','外資技術欄位從 10/06 起由每日盤後排程計算。']);
     if(dir==='buy'&&r.rm!=null&&r.rm<10)notes.push(['持股上限','外資尚可投資比率只剩 '+r.rm.toFixed(2)+'%，接近法令上限，後續買盤空間有限。']);
     notes.push(['近5日',bars5(r.last5,r.last5.map((_,k)=>r.per[k]??0),dir),'html']);notes.push(['計算式','近5日合計 '+(r.cum5v>0?'+':'')+fmt(r.cum5v)+' 股 ÷ 掛牌 '+fmt(r.s)+' 股 ＝ '+sg(r.cum5),'chk']);
     if(r.trow)notes.push(['投信當天',r.trow.v>0?'淨買超 '+lotStr(r.trow.v)+'（投本比 '+r.trow.p.toFixed(3)+'%）':'淨賣超 '+lotStr(r.trow.v)+'（投本比 '+r.trow.p.toFixed(3)+'%）']);
     if(r.streak>=3)notes.push(['🔥','連續 '+(r.open?'≥':'')+r.streak+' 個交易日都在外資'+W()+'前 20 名。']);
   }else{
-    items.push(['收盤價',fmt(r.cl,2)+' 元'],['漲跌',chgTxt(r)+(r.chg!=null?'（'+(r.chg>0?'+':'')+fmt(r.chg,2)+'）':'')],['投信'+W(),fmt(lotsOf(r))+' 張'],['投信金額',fmt(r.amt,2)+' 億'],['外資'+W(),fmt(r.flots)+' 張'],['外資金額',fmt(r.famt,2)+' 億'],['投本比',r.p.toFixed(4)+'%'],['外本比',r.fp.toFixed(4)+'%'],['合計',r.sum.toFixed(4)+'%'],['外資持股',pctOr(r.frow?.hp)],['產業',indName(indOf(r.c))],...techItems(r.t||r.frow?.t));
+    items.push(['收盤價',fmt(r.cl,2)+' 元'],['漲跌',chgTxt(r)+(r.chg!=null?'（'+(r.chg>0?'+':'')+fmt(r.chg,2)+'）':'')],['投信'+W(),fmt(lotsOf(r))+' 張'],['投信金額',fmt(r.amt,2)+' 億'],['外資'+W(),fmt(r.flots)+' 張'],['外資金額',fmt(r.famt,2)+' 億'],['投本比',r.p.toFixed(4)+'%'],['外本比',r.fp.toFixed(4)+'%'],['合計',r.sum.toFixed(4)+'%'],['外資持股',pctOr(r.frow?.hp)],['產業',indName(indOf(r.c))],['細產業',subName(r.c)],...techItems(r.t||r.frow?.t));
     notes.push([dir==='buy'?'雙買連續':'雙賣連續','投信、外資兩邊都'+(dir==='buy'?'淨買超 ':'淨賣超 ')+(r.dopen?'≥':'')+r.dstreak+' 個交易日（外資資料從 9/24 起）。']);
     if(!r.frow)notes.push(['外資金額','外資'+W()+'未達 0.5 億，金額以外資張數 × 收盤價估算。']);
   }
@@ -749,7 +788,7 @@ function render(){
   const ctx=view==='it'?buildT(s):view==='fi'?buildF(s):view==='both'?buildB(s):buildI(s);
   const V=VIEWS[view],cols=V.cols();
   $('hTitle').textContent=ctx?(view==='both'?V.title()+' '+ctx.list.length+' 檔':view==='ind'?V.title():V.title().replace('20',ctx.list.length)):V.title();
-  const tb=$('rows');tb.textContent='';
+  const tb=$('rows');tb.textContent='';$('indBar').hidden=true;$('subBar').hidden=true;
   fltSumSet();
   if(!ctx){$('hMeta').textContent='';$('hMetaS').textContent='';tb.innerHTML=`<tr><td colspan="14" class="empty">這一天沒有${view==='fi'?'外資':'投信'}資料。外資資料從 9/24 起。</td></tr>`;return}
   const lt=minLots()?'≥'+fmt(minLots())+' 張':'張數不限';
@@ -766,7 +805,11 @@ function render(){
   if(!list.length){tb.innerHTML=`<tr><td colspan="14" class="empty">${V.empty}</td></tr>`;return}
   const key=sortK;const mxK=view==='both'?'sum':'p';const max=Math.max(...list.map(r=>Math.abs(r[mxK]||0)),0.0001);
   const val=r=>{const v=key==='chgp'?chgP(r):key==='lots'&&view==='it'?lotsOf(r):key==='hp'&&view==='both'?(r.frow?.hp??-1):r[key];return v??-1};
-  const sorted=[...list].sort((a,b)=>(val(a)-val(b))*sortDir||a.rank-b.rank);
+  let sorted=[...list].sort((a,b)=>(val(a)-val(b))*sortDir||a.rank-b.rank);
+  if(view!=='ind'){const cnt={};sorted.forEach(r=>{const k=indOf(r.c);cnt[k]=(cnt[k]||0)+1});if(indFilter&&!cnt[indFilter])indFilter=null;renderIndBar(cnt,sorted.length);if(indFilter)sorted=sorted.filter(r=>indOf(r.c)===indFilter);
+    // 細產業列：在產業篩選之後統計（檔數＋佔股本合計），再套用細產業篩選
+    const pk=view==='both'?'sum':'p';const st={};let tp=0;sorted.forEach(r=>{const k=subName(r.c);const a=st[k]=st[k]||{n:0,p:0,um:!subMapped(r.c)};a.n++;a.p+=r[pk]||0;tp+=r[pk]||0});
+    if(subFilter&&!st[subFilter])subFilter=null;renderSubBar(st,sorted.length,tp);if(subFilter)sorted=sorted.filter(r=>subName(r.c)===subFilter)}
   if(view==='ind'){
     sorted.forEach(r=>{const open=expanded.has('ind'+r.k);const both=r.tn*s>0&&r.fn*s>0;
       const tr=document.createElement('tr');tr.className='row '+(r.rank<=3?'top3 ':'')+(open?'open':'');
@@ -784,9 +827,11 @@ function render(){
   sorted.forEach(r=>{
     const open=expanded.has(view+dir+r.c);const hot=r[hotK]>=3;
     const tr=document.createElement('tr');tr.className='row '+(r.rank<=3?'top3 ':'')+(hot?'hot ':'')+(open?'open':'');
-    const extra=view==='it'&&r.fx?`<span class="tag ${s>0?'fx':'sx'}">外資同${s>0?'買':'賣'}</span>`:view==='fi'&&r.both?`<span class="tag ${s>0?'both':'sx'}">投信同${s>0?'買':'賣'}</span>`:'';
+    const extra=(view==='it'&&r.fx?`<span class="tag ${s>0?'fx':'sx'}">外資同${s>0?'買':'賣'}</span>`:view==='fi'&&r.both?`<span class="tag ${s>0?'both':'sx'}">投信同${s>0?'買':'賣'}</span>`:'')+`<span class="tag ind" role="button" aria-pressed="${indFilter===indOf(r.c)}" title="只看同產業"></span><span class="tag sub${subMapped(r.c)?'':' um'}" role="button" aria-pressed="${subFilter===subName(r.c)}" title="${subMapped(r.c)?'只看同細產業':'尚未細分，暫以證交所產業顯示'}"></span>`;
     tr.innerHTML=`<td class="rk">${r.rank}</td><td class="l nmc"><button class="exp" aria-expanded="${open}" aria-label="展開明細"><span class="chev">${open?'▾':'▸'}</span><span class="cd"></span><span class="nm"></span></button>${hot?'<span class="fire">🔥</span>':''}${tagsHtml(r,extra)}${pxLine(r)}</td><td class="l x"><span class="mk ${r.m==='上櫃'?'otc':''}"></span></td>`+cols.map(c=>`<td class="${c.x?'x ':''}${c.cls||''}">${c.cell(r,max,ctx)}</td>`).join('');
     tr.querySelector('.cd').textContent=r.c;tr.querySelector('.nm').textContent=r.n;tr.querySelector('.mk').textContent=r.m;
+    {const it=tr.querySelector('.tag.ind'),ik=indOf(r.c);it.textContent=indName(ik);it.onclick=e=>{e.stopPropagation();indFilter=indFilter===ik?null:ik;render()}}
+    {const st=tr.querySelector('.tag.sub'),sk=subName(r.c);st.textContent=sk;st.onclick=e=>{e.stopPropagation();subFilter=subFilter===sk?null:sk;render()}}
     tr.onclick=()=>{const k=view+dir+r.c;expanded.has(k)?expanded.delete(k):expanded.add(k);render()};
     tb.appendChild(tr);
     if(open){const {items,notes}=detail(r,ctx);
@@ -819,7 +864,7 @@ try{const cb=$('ctlbar'),hd=document.querySelector('header.hd');if(cb&&hd&&'Inte
 (function(){
   const D=window.SHARE_DATA;
   if(!D||!D.days){$('updated').textContent='資料載入失敗，請重新整理頁面。';return}
-  days=D.days;fdays=D.fdays||{};cal=D.cal||[];if(D.ind&&D.ind.map)IND=D.ind;
+  days=D.days;fdays=D.fdays||{};cal=D.cal||[];if(D.ind&&D.ind.map)IND=D.ind;if(D.sub&&D.sub.map)SUB=D.sub;
   const ids=Object.keys(days).sort().reverse();cur=ids[0];render();
 })();
 </script>
