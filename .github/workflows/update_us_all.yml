@@ -11,11 +11,11 @@ on:
       universe_n:
         description: "依市值取前 N 檔（0 = 全市場，需搭配 mode=zip）"
         required: false
-        default: "600"
+        default: "0"
       mode:
         description: "api（逐檔）或 zip（下載 companyfacts.zip，全市場用）"
         required: false
-        default: "api"
+        default: "zip"
 permissions:
   contents: write
 concurrency:
@@ -34,8 +34,8 @@ jobs:
         env:
           FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
           SEC_UA: ${{ secrets.SEC_UA }}
-          UNIVERSE_N: ${{ github.event.inputs.universe_n || '600' }}
-          SEC_MODE: ${{ github.event.inputs.mode || 'api' }}
+          UNIVERSE_N: ${{ github.event.inputs.universe_n || '0' }}
+          SEC_MODE: ${{ github.event.inputs.mode || 'zip' }}
         run: python us/fetch_us_all.py ${{ github.event.inputs.tickers }}
       - name: 有變動才提交
         if: always()
