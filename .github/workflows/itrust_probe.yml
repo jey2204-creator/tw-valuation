@@ -1,0 +1,21 @@
+name: itrust 連通性探測（主排程端點）
+run-name: itrust probe ${{ inputs.date }}
+on:
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "交易日 YYYYMMDD"
+        required: true
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: 探測各端點（只讀，不 commit）
+        run: python itrust/probe_endpoints.py "${{ inputs.date }}"
