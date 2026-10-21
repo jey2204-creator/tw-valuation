@@ -12,6 +12,8 @@
 const ALLOW_ORIGINS = ["https://jey2204-creator.github.io"];   // 只讓自己的 GitHub Pages 頁面在瀏覽器裡呼叫
 const MAX_SYMBOLS = 40;
 const MEMO_MS = 4000;          // 同一組代號 4 秒內重複查詢就直接回上一次的結果，減少打證交所
+const MIS_MS = 5000;           // 證交所每次連線最多等 5 秒：盤後它常常掛住 20 秒才回，超時就改用 Yahoo
+const YH_MS = 8000;
 const memo = new Map();
 
 const UA = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1";
@@ -70,14 +72,14 @@ async function mis(part) {
   const u = "https://mis.twse.com.tw/stock/api/getStockInfo.jsp?ex_ch=" + encodeURIComponent(exch) + "&json=1&delay=0&_=" + Date.now();
   let r = null, js = null;
   try {
-    r = await fetch(u, { headers: BASE_HEADERS });
+    r = await fetch(u, { headers: BASE_HEADERS, signal: AbortSignal.timeout(MIS_MS) });
     js = await safeJson(r);
-  } catch (e) { /* 連線被切斷等，下面用 cookie 再試一次 */ }
+  } catch (e) { /* 連線被切斷或超時，下面用 cookie 再試一次 */ }
   if (!js || !Array.isArray(js.msgArray) || js.msgArray.length === 0) {
-    const s = await fetch("https://mis.twse.com.tw/stock/index.jsp?lang=zh_tw", { headers: BASE_HEADERS });
+    const s = await fetch("https://mis.twse.com.tw/stock/index.jsp?lang=zh_tw", { headers: BASE_HEADERS, signal: AbortSignal.timeout(MIS_MS) });
     const all = typeof s.headers.getSetCookie === "function" ? s.headers.getSetCookie() : [s.headers.get("set-cookie") || ""];
     const cookie = all.map((c) => String(c).split(";")[0]).filter(Boolean).join("; ");
-    r = await fetch(u, { headers: cookie ? { ...BASE_HEADERS, Cookie: cookie } : BASE_HEADERS });
+    r = await fetch(u, { headers: cookie ? { ...BASE_HEADERS, Cookie: cookie } : BASE_HEADERS, signal: AbortSignal.timeout(MIS_MS) });
     js = await safeJson(r);
   }
   if (!js || !Array.isArray(js.msgArray)) throw new Error("HTTP " + (r ? r.status : "?"));
@@ -90,7 +92,7 @@ async function yahoo(k) {
   const [ex, c] = k.split("_");
   const ys = c === "t00" ? "^TWII" : c.toUpperCase() + (ex === "otc" ? ".TWO" : ".TW");
   const u = "https://query1.finance.yahoo.com/v8/finance/chart/" + encodeURIComponent(ys) + "?interval=1m&range=1d&includePrePost=false";
-  const r = await fetch(u, { headers: { "User-Agent": UA, "Accept": "application/json" } });
+  const r = await fetch(u, { headers: { "User-Agent": UA, "Accept": "application/json" }, signal: AbortSignal.timeout(YH_MS) });
   const js = await safeJson(r);
   const res = js && js.chart && Array.isArray(js.chart.result) && js.chart.result[0];
   if (!res || !res.meta) {
