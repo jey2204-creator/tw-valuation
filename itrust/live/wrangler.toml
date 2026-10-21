@@ -1,0 +1,7 @@
+# 即時看線的 Cloudflare Worker（itrust/live/worker.js）部署設定
+# 由 .github/workflows/itrust_live_worker.yml 在 worker.js 有改動時自動部署（需要 GitHub Secret CLOUDFLARE_API_TOKEN）
+name = "twse-live"
+main = "worker.js"
+account_id = "3fbf8a26fb4642b0289403c59d7455d3"
+compatibility_date = "2026-10-20"
+workers_dev = true

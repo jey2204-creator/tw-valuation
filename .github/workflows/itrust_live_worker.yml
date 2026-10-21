@@ -1,0 +1,35 @@
+name: itrust 即時看線 Worker 部署（worker.js 有改動就部署到 Cloudflare）
+on:
+  push:
+    branches: [main]
+    paths:
+      - itrust/live/worker.js
+      - itrust/live/wrangler.toml
+      - .github/workflows/itrust_live_worker.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: itrust-live-worker
+  cancel-in-progress: true
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: 檢查 Secret
+        run: |
+          if [ -z "${{ secrets.CLOUDFLARE_API_TOKEN }}" ]; then
+            echo "::error::少了 GitHub Secret CLOUDFLARE_API_TOKEN（Settings → Secrets and variables → Actions）"; exit 1; fi
+      - name: 部署到 Cloudflare Workers
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          workingDirectory: itrust/live
+          command: deploy
+      - name: 煙霧測試（台積電＋加權指數）
+        run: |
+          sleep 5
+          curl -sS --max-time 30 "https://twse-live.jey2204.workers.dev/?s=tse_2330,tse_t00" | tee /tmp/q.json
+          python3 -c "import json;j=json.load(open('/tmp/q.json'));assert j['ok'],j;print('ok n=%s src=%s err=%s'%(j['n'],j.get('src'),j.get('err')))"

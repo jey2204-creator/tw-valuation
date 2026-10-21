@@ -193,7 +193,7 @@ body.shopen{overflow:hidden}
     <p><b>紅色虛線</b>＝前20日高：名單日（含）往前 20 個交易日的最高價。現價或盤中最高碰到它，卡片加紅框並標「突破」；開盤就高於它標「跳空」。價格未還原權息，近 20 日內有除權息時標 ⚠，那條線可能偏高。</p>
     <p>量：<b>0.92×→1.4×</b>＝目前累計量是前 5 日均量的 0.92 倍，依常見盤中量分布推估全天約 1.4 倍（12:00 大約完成全天 65% 的量；09:10 前不估）。量的柱狀圖裡，虛線框是推估的全天量、點線是前 5 日均量。</p>
     <h2>資料與限制</h2>
-    <p>即時行情：證交所基本市況報導（MIS），經自己的 Cloudflare Worker 轉接，通常延遲數秒。盤中每 60 秒自動更新（可關），也可以按「⚡ 更新」。</p>
+    <p>即時行情：證交所基本市況報導（MIS），經自己的 Cloudflare Worker 轉接，通常延遲數秒。證交所在盤中有時會擋掉 Cloudflare 的連線（依機房不同，手機和電腦可能一個通一個不通），這時 Worker 會改抓 Yahoo Finance，狀態列標「改用 Yahoo 備援」，資料約延遲 20 分鐘，請看資料時間。盤中每 60 秒自動更新（可關），也可以按「⚡ 更新」。</p>
     <p>加權指數一列：「若收在此」＝假設今天收在現價時的 20 日均線（月線）與距離。</p>
     <p>這是看盤工具，不是買賣建議；下單前請以券商報價為準。</p>
   </section>
@@ -368,13 +368,16 @@ function setStatus(){
   const tq=[...Q.values()].filter(q=>q.d&&q.t).sort((a,b)=>(a.d+a.t)<(b.d+b.t)?1:-1)[0];
   let h='';
   if(busy)h='更新中…';
-  else if(qErr)h=`<span class="w">⚠️ 即時報價失敗：${esc(qErr)}</span>${tq?'（顯示上一次的資料）':''}`;
+  else if(qErr&&!(qAt&&Date.now()-qAt<5000))h=`<span class="w">⚠️ 即時報價失敗：${esc(qErr)}</span>${tq?'（顯示上一次的資料）':''}`;
   else if(tq){const today=tpe().ymd;
     if(tq.d===today&&tq.t<'09:00:00')h=`<span class="live"><i></i>開盤前試撮</span><span>資料時間 <b>${tq.t}</b></span>`;
     else if(tq.d===today&&tq.t<'13:30:00')h=`<span class="live"><i></i>盤中</span><span>資料時間 <b>${tq.t}</b></span>`;
     else if(tq.d===today)h=`<span>今日收盤 <b>${tq.t.slice(0,5)}</b></span>`;
     else h=`<span>尚未開盤或休市 · 最新為 <b>${md(tq.d)} ${tq.t.slice(0,5)}</b></span>`}
   else h='按「⚡ 更新」抓即時報價';
+  const ny=[...Q.values()].filter(q=>q.src==='yahoo').length;
+  if(ny&&!busy)h+=`<span class="w" title="證交所即時行情在盤中有時會擋掉轉接，這時改用 Yahoo Finance，資料約延遲 20 分鐘，以資料時間為準">⚠️ ${ny===Q.size?'全部':ny+' 檔'}改用 Yahoo 備援（約延遲 20 分）</span>`;
+  if(qErr&&qAt&&Date.now()-qAt<5000)h+=`<span class="w" title="${esc(qErr)}">⚠️ 部分失敗</span>`;
   h+=`<label class="auto"><input type="checkbox" id="autoCk" ${auto?'checked':''}>盤中每 60 秒自動</label>`;
   st.innerHTML=h;
   $('autoCk').onchange=e=>{auto=e.target.checked;store.set(AUTO_KEY,auto?'1':'0');schedule()};
@@ -464,15 +467,21 @@ async function refresh(){
   const api=apiUrl();if(!api||busy){render();return}
   busy=true;$('rf').disabled=true;setStatus();
   const syms=[...new Set([...LISTS.it,...LISTS.fi,...LISTS.both].map(r=>r.k))];syms.push('tse_t00');
-  try{
-    const ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),15000);
-    const res=await fetch(api+'/?s='+syms.join(','),{signal:ctl.signal,cache:'no-store'});clearTimeout(to);
-    let j=null;try{j=await res.json()}catch(e){}
-    if(!j)throw new Error('HTTP '+res.status);
-    if(!j.ok)throw new Error((Array.isArray(j.err)?j.err.join('；'):j.err)||('HTTP '+res.status));
-    j.q.forEach(q=>{if(!q||!q.k)return;Q.set(q.k,q);const p=q.z??q.pz;if(p)lastPx.set(q.k,p)});
-    qAt=Date.now();qErr=null;
-  }catch(e){qErr=e&&e.name==='AbortError'?'逾時（15 秒）':String((e&&e.message)||e)}
+  // 每 20 檔一個請求、同時發：Worker 免費方案每次請求最多 50 個對外連線（證交所被擋時每檔要各查一次 Yahoo）
+  const chunks=[];for(let i=0;i<syms.length;i+=20)chunks.push(syms.slice(i,i+20));
+  const errs=[];let got=0;
+  await Promise.all(chunks.map(async part=>{
+    try{
+      const ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),20000);
+      const res=await fetch(api+'/?s='+part.join(','),{signal:ctl.signal,cache:'no-store'});clearTimeout(to);
+      let j=null;try{j=await res.json()}catch(e){}
+      if(!j)throw new Error('HTTP '+res.status);
+      if(!j.ok)throw new Error((Array.isArray(j.err)?j.err.join('；'):j.err)||('HTTP '+res.status));
+      j.q.forEach(q=>{if(!q||!q.k)return;Q.set(q.k,q);const p=q.z??q.pz;if(p)lastPx.set(q.k,p);got++});
+    }catch(e){errs.push(e&&e.name==='AbortError'?'逾時（20 秒）':String((e&&e.message)||e))}
+  }));
+  if(got)qAt=Date.now();
+  qErr=errs.length?(got?'部分失敗：':'')+[...new Set(errs)].join('；'):null;
   busy=false;$('rf').disabled=false;render();
 }
 function schedule(){clearInterval(timer);timer=null;if(auto&&apiUrl())timer=setInterval(()=>{if(document.visibilityState==='visible'&&marketOpenNow())refresh()},60000)}
