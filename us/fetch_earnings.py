@@ -1,6 +1,6 @@
-"""美股財報公布日：Finnhub 財報日曆 → us/data/earnings.json
+"""美股財報公布日：Finnhub 財報日曆 + Nasdaq 日曆（近 4 週補齊）→ us/data/earnings.json
 用法：python us/fetch_earnings.py
-環境變數：FINNHUB_KEY（必填，GitHub Secrets）
+環境變數：FINNHUB_KEY（GitHub Secrets；缺的話只用 Nasdaq）
 只用 Python 標準函式庫。
 
 輸出格式（只保留本站查得到的代號）：
@@ -38,6 +38,42 @@ def get(frm: str, to: str):
     return []
 
 
+NQ = "https://api.nasdaq.com/api/calendar/earnings"
+NQ_H = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+        "Accept": "application/json, text/plain, */*", "Origin": "https://www.nasdaq.com", "Referer": "https://www.nasdaq.com/"}
+NQ_DAYS = 28   # Nasdaq 補近期（Finnhub 免費方案近兩週常是空的）
+Q_END = {"Jan": 1, "Feb": 1, "Mar": 1, "Apr": 2, "May": 2, "Jun": 2, "Jul": 3, "Aug": 3, "Sep": 3, "Oct": 4, "Nov": 4, "Dec": 4}
+
+
+def num(s):
+    try:
+        return float(str(s).replace("$", "").replace(",", "").strip()) if s not in (None, "", "N/A") else None
+    except ValueError:
+        return None
+
+
+def nasdaq_day(d: str):
+    url = f"{NQ}?date={d}"
+    for i in range(3):
+        try:
+            with urllib.request.urlopen(urllib.request.Request(url, headers=NQ_H), timeout=30) as r:
+                rows = ((json.load(r).get("data") or {}).get("rows")) or []
+                return [{"symbol": x.get("symbol"), "date": d, "hour": {"time-pre-market": "bmo", "time-after-hours": "amc"}.get(x.get("time"), ""),
+                         "epsEstimate": num(x.get("epsForecast")), "fq": x.get("fiscalQuarterEnding") or ""} for x in rows if x.get("symbol")]
+        except Exception as e:  # noqa
+            print(f"[warn] nasdaq {d}: {e}", file=sys.stderr); time.sleep(3)
+    return []
+
+
+def fq_label(fq: str):
+    # "Sep/2026" 或 "Sep 2026" → "26Q3"（以日曆季標示）
+    try:
+        m, y = fq.replace("/", " ").split()[:2]
+        return f"{y[-2:]}Q{Q_END[m[:3]]}"
+    except Exception:
+        return ""
+
+
 def known_tickers():
     ids = set()
     for p in (ROOT / "data" / "index.json", ROOT / "data" / "all" / "index.json"):
@@ -51,13 +87,13 @@ def known_tickers():
 
 def main():
     if not KEY:
-        print("缺 FINNHUB_KEY", file=sys.stderr); sys.exit(1)
+        print("[warn] 缺 FINNHUB_KEY，只用 Nasdaq", file=sys.stderr)
     today = dt.date.today()
     start, end = today - dt.timedelta(days=BACK), today + dt.timedelta(days=AHEAD)
     rows, d = [], start
     while d <= end:
         d2 = min(d + dt.timedelta(days=CHUNK - 1), end)
-        rows += get(d.isoformat(), d2.isoformat()); d = d2 + dt.timedelta(days=1)
+        rows += get(d.isoformat(), d2.isoformat()) if KEY else []; d = d2 + dt.timedelta(days=1)
         time.sleep(1.1)   # 免費方案 60 次/分
     ids = known_tickers()
     by = {}
@@ -68,6 +104,26 @@ def main():
         q = f"{str(r.get('year'))[-2:]}Q{r.get('quarter')}" if r.get("year") and r.get("quarter") else ""
         by.setdefault(s, []).append([r.get("date"), r.get("hour") or "", r.get("epsEstimate"), r.get("epsActual"),
                                       r.get("revenueEstimate"), r.get("revenueActual"), q])
+    # Nasdaq：近期逐日補齊（同一檔同一天以 Nasdaq 的日期／時段為準，Finnhub 的營收預估保留）
+    nq = 0
+    for i in range(-BACK, NQ_DAYS + 1):
+        d = today + dt.timedelta(days=i)
+        if d.weekday() >= 5:
+            continue
+        for r in nasdaq_day(d.isoformat()):
+            s = r["symbol"].upper().replace(".", "-")
+            if ids and s not in ids:
+                continue
+            nq += 1
+            lst = by.setdefault(s, [])
+            near = [x for x in lst if abs((dt.date.fromisoformat(x[0]) - d).days) <= 7]   # Finnhub 同一季的日期可能差幾天
+            old = near[0] if near else [None, "", None, None, None, None, ""]
+            for x in near:
+                lst.remove(x)
+            lst.append([r["date"], r["hour"] or old[1], r["epsEstimate"] if r["epsEstimate"] is not None else old[2],
+                        old[3], old[4], old[5], fq_label(r["fq"]) or old[6]])
+        time.sleep(0.8)
+    print(f"Nasdaq 補 {nq} 筆", file=sys.stderr)
     out = {}
     t = today.isoformat()
     for s, lst in by.items():
