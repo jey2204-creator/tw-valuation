@@ -42,7 +42,6 @@ NQ = "https://api.nasdaq.com/api/calendar/earnings"
 NQ_H = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
         "Accept": "application/json, text/plain, */*", "Origin": "https://www.nasdaq.com", "Referer": "https://www.nasdaq.com/"}
 NQ_DAYS = 28   # Nasdaq 補近期（Finnhub 免費方案近兩週常是空的）
-Q_END = {"Jan": 1, "Feb": 1, "Mar": 1, "Apr": 2, "May": 2, "Jun": 2, "Jul": 3, "Aug": 3, "Sep": 3, "Oct": 4, "Nov": 4, "Dec": 4}
 
 
 def num(s):
@@ -65,11 +64,14 @@ def nasdaq_day(d: str):
     return []
 
 
+MON = {m: i + 1 for i, m in enumerate("Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split())}
+
+
 def fq_label(fq: str):
-    # "Sep/2026" 或 "Sep 2026" → "26Q3"（以日曆季標示）
+    # Nasdaq 只給會計季結束月："Sep/2026" → "季結 26/09"（Finnhub 有 年/季 時以 Finnhub 為準）
     try:
         m, y = fq.replace("/", " ").split()[:2]
-        return f"{y[-2:]}Q{Q_END[m[:3]]}"
+        return f"季結 {y[-2:]}/{MON[m[:3]]:02d}"
     except Exception:
         return ""
 
@@ -121,7 +123,7 @@ def main():
             for x in near:
                 lst.remove(x)
             lst.append([r["date"], r["hour"] or old[1], r["epsEstimate"] if r["epsEstimate"] is not None else old[2],
-                        old[3], old[4], old[5], fq_label(r["fq"]) or old[6]])
+                        old[3], old[4], old[5], old[6] or fq_label(r["fq"])])
         time.sleep(0.8)
     print(f"Nasdaq 補 {nq} 筆", file=sys.stderr)
     out = {}
