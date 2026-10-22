@@ -81,6 +81,9 @@ tr.hot td{background:var(--hot)}
 .tag.par{background:var(--chip);color:var(--muted)}
 .tag.sd{background:var(--otc-soft);color:var(--otc);cursor:help}
 .tag.cb{background:var(--chip);color:var(--muted)}
+/* 市值徽章（2026-10-22）：掛牌股數×收盤價；低於目前市值門檻（門檻設不限時低於 100 億）標黃 */
+.tag.cap{background:var(--chip);color:var(--fg);font-family:var(--font-num);font-weight:600}
+.tag.cap.sm{background:var(--warn-soft);color:var(--warn)}
 /* 產業標籤（2026-10-21）：排行列上點一下只看同族群；表格上方的產業列可切換 */
 .tag.ind{background:var(--otc-soft);color:var(--otc);cursor:pointer;font-weight:600}
 .tag.ind[aria-pressed="true"]{background:var(--otc);color:var(--surface)}
@@ -429,6 +432,9 @@ header.hd .disc1{flex-basis:100%;font-size:12px;line-height:1.5;color:var(--warn
     <label for="minAmt" id="lMinAmt"><span id="lMinAmtT">投信最低金額</span>
       <select id="minAmt"><option value="0">0 億</option><option value="0.3">0.3 億</option><option value="0.5" selected>0.5 億</option><option value="1">1 億</option></select>
     </label>
+    <label for="minCap" id="lMinCap">市值
+      <select id="minCap"><option value="0" selected>不限</option><option value="50">≥50 億</option><option value="100">≥100 億</option><option value="300">≥300 億</option></select>
+    </label>
     <label for="fMinAmt" id="lFMinAmt" hidden>外資最低金額
       <select id="fMinAmt"><option value="0.5" selected>0.5 億</option><option value="1">1 億</option><option value="3">3 億</option><option value="5">5 億</option></select>
     </label>
@@ -471,6 +477,7 @@ header.hd .disc1{flex-basis:100%;font-size:12px;line-height:1.5;color:var(--warn
     <div><span class="tag sd">≠觀測站</span> 觀測站股數和掛牌股數相差超過 5%（差異率＝兩者差額 ÷ 掛牌股數）。點一下那一列，可以看差異率和可能原因。<span class="tag cb">可轉債</span> 公司目前有流通中的公司債。<span class="tag ind">產業</span> 證交所／櫃買公告的產業類別，點一下只看前 20 名裡的同族群（表格上方的產業列也可以切換）。</div>
     <div><span class="tag sub">細產業</span> 證交所的「半導體」「電子零組件」範圍太大，所以再依公司主要業務分一層（例如探針卡、測試、封測、IC設計、記憶體、ABF載板、散熱、光通訊…）。產業列下方的細產業列會列出目前排行裡每個族群的檔數與佔股本合計，點一下只看該族群；先點產業再看細產業列，就是該產業內的細分。虛線框＝還沒細分，暫以證交所產業顯示。細產業由站長依公司主要業務人工整理，隨每日同步更新，可能有分類誤差。</div>
     <div>買超張數 ＝ 股數 ÷ 1000，四捨五入成整數。買超金額（億）＝ 張數 × 1000 × 收盤價 ÷ 1億，四捨五入到小數第 2 位。</div>
+    <div><span class="tag cap">市值</span> 市值（億）＝掛牌股數 × 收盤價 ÷ 1 億。篩選列的「市值」門檻（預設不限，可選 ≥50／100／300 億）和金額門檻一樣在排名前套用，所以前 20 名仍是 20 檔（夠的話）；設成「不限」時，低於 100 億的徽章改標黃色提醒，方便避開小型股容易被少數主力操控的問題。</div>
     <div>前 20 名＝先套用門檻與市場篩選，再依佔股本排序。「近5日上榜」與「連續上榜」用同一套門檻重算每一天的前 20 名。</div>
     <div>近5日累計 ＝ 近 5 個交易日的買賣超合計（買超為正、賣超為負，當天沒有買賣算 0）÷ 所選交易日的掛牌股數。紅色代表 5 日淨買、綠色代表淨賣；後面標「N天」表示近 5 個交易日裡只有 N 天有資料。點開明細可以看每天的張數。</div>
     <div>只算交易日，週末和休市日不會讓連續上榜中斷；天數前面有「≥」表示已經數到最早一筆資料，實際可能更長。</div>
@@ -535,17 +542,24 @@ const linkHtml=r=>`<a href="${yahooUrl(r)}" target="_blank" rel="noopener norefe
 let cumN=5;try{const v=+localStorage.getItem('itrust.cumN');if([5,10,20].includes(v))cumN=v}catch(e){}
 
 const minLots=()=>+$('minLots').value, minAmt=()=>+$('minAmt').value, fMinAmt=()=>+$('fMinAmt').value;
+// 市值（億）＝掛牌股數×收盤價÷1億（2026-10-22）；門檻在排名前套用（與金額門檻相同），不是前 20 名裡再剔除
+const capOf=r=>r.s>0&&r.cl>0?r.s*r.cl/1e8:null;
+const capTxt=r=>{const c=capOf(r);return c==null?'—':c>=1000?fmt(Math.round(c)):c>=100?fmt(c,0):fmt(c,1)};
+try{const v=localStorage.getItem('itrust.minCap');if(v!=null&&['0','50','100','300'].includes(v))$('minCap').value=v}catch(e){}
+const minCap=()=>+$('minCap').value;
+const capOk=r=>!minCap()||(capOf(r)??0)>=minCap();
+const capTag=r=>{const c=capOf(r);if(c==null)return '';const sm=c<(minCap()||100);return `<span class="tag cap${sm?' sm':''}" title="市值 ＝ 掛牌股數 × 收盤價${sm?'；低於 '+(minCap()||100)+' 億':''}">市值 ${capTxt(r)}億</span>`};
 const mkt=r=>filter==='all'||r.m===filter;
-const passTd=(r,s)=>r.v*s>0&&Math.abs(lotsOf(r))>=minLots()&&r.amt*s>=minAmt()&&mkt(r);
-const passFd=(r,s)=>r.fv*s>0&&Math.abs(r.lots)>=minLots()&&r.amt*s>=fMinAmt()&&mkt(r);
+const passTd=(r,s)=>r.v*s>0&&Math.abs(lotsOf(r))>=minLots()&&r.amt*s>=minAmt()&&mkt(r)&&capOk(r);
+const passFd=(r,s)=>r.fv*s>0&&Math.abs(r.lots)>=minLots()&&r.amt*s>=fMinAmt()&&mkt(r)&&capOk(r);
 const passT=r=>passTd(r,1);
 function tradingDays(){return [...new Set([...cal,...Object.keys(days)])].sort()}
 const cache={};const memo=(k,f)=>k in cache?cache[k]:(cache[k]=f());
 const clearCache=()=>{for(const k in cache)delete cache[k]};
 const vmapT=id=>memo('vt'+id,()=>new Map((days[id]?.rows||[]).map(x=>[x.c,x])));
 const vmapF=id=>memo('vf'+id,()=>new Map((fdays[id]?.rows||[]).map(x=>[x.c,x])));
-const setT=(id,s)=>memo('st'+id+s+filter+minLots()+minAmt(),()=>days[id]?new Set((days[id].rows||[]).filter(r=>passTd(r,s)).sort((a,b)=>(b.p-a.p)*s).slice(0,20).map(r=>r.c)):null);
-const setF=(id,s)=>memo('sf'+id+s+filter+minLots()+fMinAmt(),()=>fdays[id]?new Set((fdays[id].rows||[]).filter(r=>passFd(r,s)).sort((a,b)=>(b.p-a.p)*s).slice(0,20).map(r=>r.c)):null);
+const setT=(id,s)=>memo('st'+id+s+filter+minLots()+minAmt()+'c'+minCap(),()=>days[id]?new Set((days[id].rows||[]).filter(r=>passTd(r,s)).sort((a,b)=>(b.p-a.p)*s).slice(0,20).map(r=>r.c)):null);
+const setF=(id,s)=>memo('sf'+id+s+filter+minLots()+fMinAmt()+'c'+minCap(),()=>fdays[id]?new Set((fdays[id].rows||[]).filter(r=>passFd(r,s)).sort((a,b)=>(b.p-a.p)*s).slice(0,20).map(r=>r.c)):null);
 const fvOf=(id,c)=>{const f=fdays[id];if(!f)return null;const x=vmapF(id).get(c);if(x)return x.fv;if(f.tf&&c in f.tf)return f.tf[c];return null};
 
 function streakOf(setFn,c,td,pos,earliest){let s=0,open=false;for(let k=pos;k>=0;k--){const id=td[k];const st=setFn(id);if(!st)break;if(st.has(c)){s++;if(id===earliest)open=true}else break}return [s,open]}
@@ -562,7 +576,7 @@ function buildT(s){
     const got=per.filter(v=>v!==null);const sum=got.reduce((a,b)=>a+b,0);
     const fv=fvOf(cur,r.c);
     const lastN=td.slice(Math.max(0,pos-cumN+1),pos+1);let sx=0,nx=0;lastN.forEach(id=>{if(days[id]){nx++;sx+=vmapT(id).get(r.c)?.v??0}});
-    return {...r,rank:i+1,in5,streak,open,cum5:sum/r.s*100,cum5v:sum,cum5n:got.length,per,last5,fx:fv!=null&&fv*s>0,cumX:sx/r.s*100,cumXv:sx,cumXn:nx,cumXa:false};
+    return {...r,cap:capOf(r),rank:i+1,in5,streak,open,cum5:sum/r.s*100,cum5v:sum,cum5n:got.length,per,last5,fx:fv!=null&&fv*s>0,cumX:sx/r.s*100,cumXv:sx,cumXn:nx,cumXa:false};
   });
   const availN=td.slice(Math.max(0,pos-cumN+1),pos+1).filter(id=>days[id]).length;
   return {list,base:base.length,kept:kept.length,avail5:avail5.length,availN};
@@ -580,7 +594,7 @@ function buildF(s){
     const t=tm.get(r.c);
     const lastN=td.slice(Math.max(0,pos-cumN+1),pos+1),old=lastN.slice(0,Math.max(0,lastN.length-5));let sx=sum,nx=Math.min(5,lastN.length),apx=false;
     old.forEach(id=>{const f=fdays[id];if(!f)return;nx++;const x=vmapF(id).get(r.c);if(x){sx+=x.fv;return}if(f.tf&&r.c in f.tf){sx+=f.tf[r.c];return}apx=true});
-    return {...r,rank:i+1,in5,streak,open,cum5:sum/r.s*100,cum5v:sum,cum5n:5,per,last5,both:!!(t&&t.v*s>0),trow:t,cumX:sx/r.s*100,cumXv:sx,cumXn:nx,cumXa:apx};
+    return {...r,cap:capOf(r),rank:i+1,in5,streak,open,cum5:sum/r.s*100,cum5v:sum,cum5n:5,per,last5,both:!!(t&&t.v*s>0),trow:t,cumX:sx/r.s*100,cumXv:sx,cumXn:nx,cumXa:apx};
   });
   const cnt=doc.counts?(s>0?doc.counts.twse.foreignBuy+doc.counts.tpex.foreignBuy:doc.counts.twse.foreignSell+doc.counts.tpex.foreignSell):null;
   return {list,base:all.length,kept:kept.length,avail5:avail5.length,cnt};
@@ -594,7 +608,7 @@ function buildB(s){
   base.forEach(r=>{const fv=fvOf(cur,r.c);if(fv==null||fv*s<=0)return;const fl=Math.sign(fv)*Math.round(Math.abs(fv)/1000);
     const fr=fm.get(r.c);const famt=fr?fr.amt:Math.sign(fl)*Math.round(Math.abs(fl)*r.cl/1000)/100;const fp=fv/r.s*100;
     let ds=0,open=false;for(let k=pos;k>=0;k--){const id=td[k];if(!days[id]||!fdays[id]){if(ds)open=true;break}const tv=vmapT(id).get(r.c)?.v??0;const f=fvOf(id,r.c)??0;if(tv*s>0&&f*s>0)ds++;else break}
-    kept.push({...r,fv,flots:fl,famt,fp,sum:r.p+fp,dstreak:ds,dopen:open,frow:fr})});
+    kept.push({...r,cap:capOf(r),fv,flots:fl,famt,fp,sum:r.p+fp,dstreak:ds,dopen:open,frow:fr})});
   const list=kept.sort((a,b)=>(b.sum-a.sum)*s).slice(0,20).map((r,i)=>({...r,rank:i+1}));
   return {list,base:base.length,kept:kept.length};
 }
@@ -652,6 +666,7 @@ const VIEWS={
  it:{title:()=>'投信'+W()+'前 20 名',empty:'這一天沒有個股達到目前的門檻，試著調低最低張數或金額。',
   cols:()=>[
    {k:'cl',l:'收盤價',x:1,cell:r=>fmt(r.cl,2)},
+   {k:'cap',l:'市值(億)',x:1,cell:r=>capTxt(r)},
    {k:'chgp',l:'漲跌%',x:1,cell:r=>`<span class="chgc ${chgCls(r)}">${chgTxt(r)}</span>`},
    {k:'lots',l:'投信'+W()+'(張)',x:1,cell:r=>fmt(lotsOf(r))},
    {k:'amt',l:'<span class="lg">'+W()+'</span>金額<span class="lg">(億)</span>',x:1,m:W()+'金額',cell:r=>fmt(r.amt,2)},
@@ -664,6 +679,7 @@ const VIEWS={
  fi:{title:()=>'外資'+W()+'前 20 名',empty:'這一天沒有個股達到目前的外資門檻，試著調低金額門檻。',
   cols:()=>[
    {k:'cl',l:'收盤價',x:1,cell:r=>fmt(r.cl,2)},
+   {k:'cap',l:'市值(億)',x:1,cell:r=>capTxt(r)},
    {k:'chgp',l:'漲跌%',x:1,cell:r=>`<span class="chgc ${chgCls(r)}">${chgTxt(r)}</span>`},
    {k:'lots',l:'外資'+W()+'(張)',x:1,cell:r=>fmt(r.lots)},
    {k:'amt',l:'<span class="lg">'+W()+'</span>金額<span class="lg">(億)</span>',x:1,m:W()+'金額',cell:r=>fmt(r.amt,2)},
@@ -676,6 +692,7 @@ const VIEWS={
  both:{title:()=>dir==='buy'?'土洋同買':'土洋同賣',empty:'這一天沒有投信、外資同方向的個股（投信門檻內）。',
   cols:()=>[
    {k:'cl',l:'收盤價',x:1,cell:r=>fmt(r.cl,2)},
+   {k:'cap',l:'市值(億)',x:1,cell:r=>capTxt(r)},
    {k:'chgp',l:'漲跌%',x:1,cell:r=>`<span class="chgc ${chgCls(r)}">${chgTxt(r)}</span>`},
    {k:'amt',l:'投信金額(億)',x:1,m:'投信金額',cell:r=>fmt(r.amt,2)},
    {k:'famt',l:'外資金額(億)',x:1,m:'外資金額',cell:r=>fmt(r.famt,2)},
@@ -727,21 +744,21 @@ function detail(r,ctx){
   if(view==='it'){
     const sd=(r.sdiff??0)>5;
     const why=r.why==='priv'?'差額是私募股，私募股還沒掛牌交易':r.s>r.sm?'掛牌較多：可能是可轉債轉換或增資新股已經掛牌，觀測站還沒變更登記':'掛牌較少：可能是減資、庫藏股註銷，或私募股還沒掛牌';
-    items.push(['收盤價',fmt(r.cl,2)+' 元'],['漲跌',chgTxt(r)+(r.chg!=null?'（'+(r.chg>0?'+':'')+fmt(r.chg,2)+'）':'')],['投信'+W(),fmt(lotsOf(r))+' 張'],[W()+'金額',fmt(r.amt,2)+' 億'],['掛牌股數',fmt(r.s/1000)+' 張','chk'],['觀測站股數',r.sm?fmt(r.sm/1000)+' 張':'—','chk'],['股數差異',r.sm?(r.sdiff??0).toFixed(2)+'%':'—','chk'],['近5日上榜',r.in5+' / '+ctx.avail5+' 天'],['近5日累計',sg(r.cum5)],['產業',indName(indOf(r.c))],['細產業',subName(r.c)],...techItems(r.t));
+    items.push(['收盤價',fmt(r.cl,2)+' 元'],['市值',capTxt(r)+' 億'],['漲跌',chgTxt(r)+(r.chg!=null?'（'+(r.chg>0?'+':'')+fmt(r.chg,2)+'）':'')],['投信'+W(),fmt(lotsOf(r))+' 張'],[W()+'金額',fmt(r.amt,2)+' 億'],['掛牌股數',fmt(r.s/1000)+' 張','chk'],['觀測站股數',r.sm?fmt(r.sm/1000)+' 張':'—','chk'],['股數差異',r.sm?(r.sdiff??0).toFixed(2)+'%':'—','chk'],['近5日上榜',r.in5+' / '+ctx.avail5+' 天'],['近5日累計',sg(r.cum5)],['產業',indName(indOf(r.c))],['細產業',subName(r.c)],...techItems(r.t));
     if(sd)notes.push(['≠觀測站','差異 '+r.sdiff.toFixed(2)+'%，'+why+'。佔股本以掛牌股數計算。']);
     if(r.cb)notes.push(['可轉債','公司目前有流通中的公司債，未來轉換可能讓掛牌股數增加。']);
     notes.push(['近5日',bars5(r.last5,r.per,dir),'html']);notes.push(['計算式','近5日合計 '+(r.cum5v>0?'+':'')+fmt(r.cum5v)+' 股 ÷ 掛牌 '+fmt(r.s)+' 股 ＝ '+sg(r.cum5),'chk']);
     const fv=fvOf(cur,r.c);if(fv!=null)notes.push(['外資當天',fv>0?'淨買超 '+lotStr(fv):fv<0?'淨賣超 '+lotStr(fv):'沒有買賣']);
     if(r.streak>=3)notes.push(['🔥','連續 '+(r.open?'≥':'')+r.streak+' 個交易日都在投信'+W()+'前 20 名。']);
   }else if(view==='fi'){
-    items.push(['收盤價',fmt(r.cl,2)+' 元'],['漲跌',chgTxt(r)+(r.chg!=null?'（'+(r.chg>0?'+':'')+fmt(r.chg,2)+'）':'')],['外資'+W(),fmt(r.lots)+' 張'],[W()+'金額',fmt(r.amt,2)+' 億'],['掛牌股數',fmt(r.s/1000)+' 張','chk'],['外本比',r.p.toFixed(4)+'%'],['外資持股',pctOr(r.hp)],['尚可投資',pctOr(r.rm)],['近5日上榜',r.in5+' / '+ctx.avail5+' 天'],['近5日累計',sg(r.cum5)],['產業',indName(indOf(r.c))],['細產業',subName(r.c)],...techItems(r.t));
+    items.push(['收盤價',fmt(r.cl,2)+' 元'],['市值',capTxt(r)+' 億'],['漲跌',chgTxt(r)+(r.chg!=null?'（'+(r.chg>0?'+':'')+fmt(r.chg,2)+'）':'')],['外資'+W(),fmt(r.lots)+' 張'],[W()+'金額',fmt(r.amt,2)+' 億'],['掛牌股數',fmt(r.s/1000)+' 張','chk'],['外本比',r.p.toFixed(4)+'%'],['外資持股',pctOr(r.hp)],['尚可投資',pctOr(r.rm)],['近5日上榜',r.in5+' / '+ctx.avail5+' 天'],['近5日累計',sg(r.cum5)],['產業',indName(indOf(r.c))],['細產業',subName(r.c)],...techItems(r.t));
     if(dir==='buy'&&!r.t)notes.push(['技術欄位','外資技術欄位從 10/06 起由每日盤後排程計算。']);
     if(dir==='buy'&&r.rm!=null&&r.rm<10)notes.push(['持股上限','外資尚可投資比率只剩 '+r.rm.toFixed(2)+'%，接近法令上限，後續買盤空間有限。']);
     notes.push(['近5日',bars5(r.last5,r.last5.map((_,k)=>r.per[k]??0),dir),'html']);notes.push(['計算式','近5日合計 '+(r.cum5v>0?'+':'')+fmt(r.cum5v)+' 股 ÷ 掛牌 '+fmt(r.s)+' 股 ＝ '+sg(r.cum5),'chk']);
     if(r.trow)notes.push(['投信當天',r.trow.v>0?'淨買超 '+lotStr(r.trow.v)+'（投本比 '+r.trow.p.toFixed(3)+'%）':'淨賣超 '+lotStr(r.trow.v)+'（投本比 '+r.trow.p.toFixed(3)+'%）']);
     if(r.streak>=3)notes.push(['🔥','連續 '+(r.open?'≥':'')+r.streak+' 個交易日都在外資'+W()+'前 20 名。']);
   }else{
-    items.push(['收盤價',fmt(r.cl,2)+' 元'],['漲跌',chgTxt(r)+(r.chg!=null?'（'+(r.chg>0?'+':'')+fmt(r.chg,2)+'）':'')],['投信'+W(),fmt(lotsOf(r))+' 張'],['投信金額',fmt(r.amt,2)+' 億'],['外資'+W(),fmt(r.flots)+' 張'],['外資金額',fmt(r.famt,2)+' 億'],['投本比',r.p.toFixed(4)+'%'],['外本比',r.fp.toFixed(4)+'%'],['合計',r.sum.toFixed(4)+'%'],['外資持股',pctOr(r.frow?.hp)],['產業',indName(indOf(r.c))],['細產業',subName(r.c)],...techItems(r.t||r.frow?.t));
+    items.push(['收盤價',fmt(r.cl,2)+' 元'],['市值',capTxt(r)+' 億'],['漲跌',chgTxt(r)+(r.chg!=null?'（'+(r.chg>0?'+':'')+fmt(r.chg,2)+'）':'')],['投信'+W(),fmt(lotsOf(r))+' 張'],['投信金額',fmt(r.amt,2)+' 億'],['外資'+W(),fmt(r.flots)+' 張'],['外資金額',fmt(r.famt,2)+' 億'],['投本比',r.p.toFixed(4)+'%'],['外本比',r.fp.toFixed(4)+'%'],['合計',r.sum.toFixed(4)+'%'],['外資持股',pctOr(r.frow?.hp)],['產業',indName(indOf(r.c))],['細產業',subName(r.c)],...techItems(r.t||r.frow?.t));
     notes.push([dir==='buy'?'雙買連續':'雙賣連續','投信、外資兩邊都'+(dir==='buy'?'淨買超 ':'淨賣超 ')+(r.dopen?'≥':'')+r.dstreak+' 個交易日（外資資料從 9/24 起）。']);
     if(!r.frow)notes.push(['外資金額','外資'+W()+'未達 0.5 億，金額以外資張數 × 收盤價估算。']);
   }
@@ -796,14 +813,14 @@ function render(){
   fltSumSet();
   if(!ctx){$('hMeta').textContent='';$('hMetaS').textContent='';tb.innerHTML=`<tr><td colspan="14" class="empty">這一天沒有${view==='fi'?'外資':'投信'}資料。外資資料從 9/24 起。</td></tr>`;return}
   const lt=minLots()?'≥'+fmt(minLots())+' 張':'張數不限';
-  $('hMeta').innerHTML=view==='it'?`門檻 <b>${lt}</b>、<b>${minAmt()?'≥'+minAmt()+' 億':'金額不限'}</b> · 投信${W()} ${ctx.base} 檔，篩掉 <b>${ctx.base-ctx.kept}</b> 檔 · 近5日可用 <b>${ctx.avail5}</b> 個交易日`+(cumN>5?` · 近${cumN}日可用 <b>${ctx.availN}</b> 個交易日`:'')
-    :view==='fi'?`門檻 <b>${lt}</b>、<b>≥${fMinAmt()} 億</b> · 外資${W()} ≥0.5 億 ${ctx.base} 檔，篩掉 <b>${ctx.base-ctx.kept}</b> 檔`+(ctx.cnt!=null?` · 外資全市場${W()} ${ctx.cnt} 檔`:'')+(cumN>5?` · 近${cumN}日外資累計為近似值（≈）`:'')
-    :view==='both'?`投信門檻 <b>${lt}</b>、<b>${minAmt()?'≥'+minAmt()+' 億':'金額不限'}</b> · 投信${W()} ${ctx.base} 檔中，外資也${W()} <b>${ctx.kept}</b> 檔`
+  $('hMeta').innerHTML=view==='it'?`門檻 <b>${lt}</b>、<b>${minAmt()?'≥'+minAmt()+' 億':'金額不限'}</b>${capMeta()} · 投信${W()} ${ctx.base} 檔，篩掉 <b>${ctx.base-ctx.kept}</b> 檔 · 近5日可用 <b>${ctx.avail5}</b> 個交易日`+(cumN>5?` · 近${cumN}日可用 <b>${ctx.availN}</b> 個交易日`:'')
+    :view==='fi'?`門檻 <b>${lt}</b>、<b>≥${fMinAmt()} 億</b>${capMeta()} · 外資${W()} ≥0.5 億 ${ctx.base} 檔，篩掉 <b>${ctx.base-ctx.kept}</b> 檔`+(ctx.cnt!=null?` · 外資全市場${W()} ${ctx.cnt} 檔`:'')+(cumN>5?` · 近${cumN}日外資累計為近似值（≈）`:'')
+    :view==='both'?`投信門檻 <b>${lt}</b>、<b>${minAmt()?'≥'+minAmt()+' 億':'金額不限'}</b>${capMeta()} · 投信${W()} ${ctx.base} 檔中，外資也${W()} <b>${ctx.kept}</b> 檔`
     :`上市＋上櫃合併 · 淨額＝買超金額−賣超金額（億） · 近5日外資資料 <b>${ctx.f5}</b> 天`;
   {const ltS=minLots()?'≥'+fmt(minLots())+'張·':'';
-   $('hMetaS').textContent=view==='it'?`${ltS}${minAmt()?'≥'+minAmt()+'億':'金額不限'}｜${ctx.base}→${ctx.kept}檔｜近5日${ctx.avail5}天`
-    :view==='fi'?`${ltS}≥${fMinAmt()}億｜${ctx.base}→${ctx.kept}檔`+(cumN>5?'｜累計≈':'')
-    :view==='both'?`${ltS}${minAmt()?'≥'+minAmt()+'億':'金額不限'}｜${ctx.base}檔中外資也${W()} ${ctx.kept}檔`
+   $('hMetaS').textContent=view==='it'?`${ltS}${minAmt()?'≥'+minAmt()+'億':'金額不限'}${capMetaS()}｜${ctx.base}→${ctx.kept}檔｜近5日${ctx.avail5}天`
+    :view==='fi'?`${ltS}≥${fMinAmt()}億${capMetaS()}｜${ctx.base}→${ctx.kept}檔`+(cumN>5?'｜累計≈':'')
+    :view==='both'?`${ltS}${minAmt()?'≥'+minAmt()+'億':'金額不限'}${capMetaS()}｜${ctx.base}檔中外資也${W()} ${ctx.kept}檔`
     :`淨額（億）｜外資近5日${ctx.f5}天`}
   const list=ctx.list;
   if(!list.length){tb.innerHTML=`<tr><td colspan="14" class="empty">${V.empty}</td></tr>`;return}
@@ -831,7 +848,7 @@ function render(){
   sorted.forEach(r=>{
     const open=expanded.has(view+dir+r.c);const hot=r[hotK]>=3;
     const tr=document.createElement('tr');tr.className='row '+(r.rank<=3?'top3 ':'')+(hot?'hot ':'')+(open?'open':'');
-    const extra=(view==='it'&&r.fx?`<span class="tag ${s>0?'fx':'sx'}">外資同${s>0?'買':'賣'}</span>`:view==='fi'&&r.both?`<span class="tag ${s>0?'both':'sx'}">投信同${s>0?'買':'賣'}</span>`:'')+`<span class="tag ind" role="button" aria-pressed="${indFilter===indOf(r.c)}" title="只看同產業"></span><span class="tag sub${subMapped(r.c)?'':' um'}" role="button" aria-pressed="${subFilter===subName(r.c)}" title="${subMapped(r.c)?'只看同細產業':'尚未細分，暫以證交所產業顯示'}"></span>`;
+    const extra=(view==='it'&&r.fx?`<span class="tag ${s>0?'fx':'sx'}">外資同${s>0?'買':'賣'}</span>`:view==='fi'&&r.both?`<span class="tag ${s>0?'both':'sx'}">投信同${s>0?'買':'賣'}</span>`:'')+capTag(r)+`<span class="tag ind" role="button" aria-pressed="${indFilter===indOf(r.c)}" title="只看同產業"></span><span class="tag sub${subMapped(r.c)?'':' um'}" role="button" aria-pressed="${subFilter===subName(r.c)}" title="${subMapped(r.c)?'只看同細產業':'尚未細分，暫以證交所產業顯示'}"></span>`;
     tr.innerHTML=`<td class="rk">${r.rank}</td><td class="l nmc"><button class="exp" aria-expanded="${open}" aria-label="展開明細"><span class="chev">${open?'▾':'▸'}</span><span class="rkm">${r.rank}</span><span class="cd"></span><span class="nm"></span></button>${hot?'<span class="fire">🔥</span>':''}${tagsHtml(r,extra)}${pxLine(r)}</td><td class="l x"><span class="mk ${r.m==='上櫃'?'otc':''}"></span></td>`+cols.map(c=>`<td class="${c.x?'x ':''}${c.cls||''}">${c.cell(r,max,ctx)}</td>`).join('');
     tr.querySelector('.cd').textContent=r.c;tr.querySelector('.nm').textContent=r.n;tr.querySelector('.mk').textContent=r.m;
     {const it=tr.querySelector('.tag.ind'),ik=indOf(r.c);it.textContent=indName(ik);it.onclick=e=>{e.stopPropagation();indFilter=indFilter===ik?null:ik;render()}}
@@ -857,11 +874,13 @@ document.querySelectorAll('.vtabs button').forEach(b=>b.onclick=()=>{view=b.data
 document.querySelectorAll('.dseg button').forEach(b=>b.onclick=()=>{dir=b.dataset.d;sortK=defSort();sortDir=-S();try{localStorage.setItem('itrust.dir',dir)}catch(e){}render()});
 document.querySelectorAll('.seg button').forEach(b=>b.onclick=()=>{filter=b.dataset.f;document.querySelectorAll('.seg button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));render()});
 ['minLots','minAmt','fMinAmt'].forEach(id=>$(id).onchange=render);
+$('minCap').onchange=()=>{try{localStorage.setItem('itrust.minCap',$('minCap').value)}catch(e){}render()};
 document.querySelectorAll('#cumSeg button').forEach(b=>b.onclick=()=>{cumN=+b.dataset.n;if(sortK==='cumX'&&cumN===5)sortK='cum5';try{localStorage.setItem('itrust.cumN',String(cumN))}catch(e){}render()});
 $('msort').onchange=()=>{sortK=$('msort').value;sortDir=-S();render()};
 let XD={},XF={};
+const capMeta=()=>minCap()?`、市值 <b>≥${minCap()} 億</b>`:'';const capMetaS=()=>minCap()?`·市值≥${minCap()}億`:'';
 function fltSumSet(){try{const lt=minLots()?'≥'+minLots()+'張·':'';
-  $('fltSum').textContent=view==='ind'?'排序':view==='fi'?lt+fMinAmt()+'億':lt+(minAmt()?minAmt()+'億':'不限')}catch(e){}}
+  $('fltSum').textContent=(view==='ind'?'排序':view==='fi'?lt+fMinAmt()+'億':lt+(minAmt()?minAmt()+'億':'不限'))+(view!=='ind'&&minCap()?'·市值'+minCap()+'億':'')}catch(e){}}
 $('fltBtn').onclick=()=>{const p=$('fltPanel'),o=!p.classList.contains('open');p.classList.toggle('open',o);$('fltBtn').setAttribute('aria-expanded',String(o))};
 $('hMetaS').onclick=()=>{const h=$('headBox'),o=!h.classList.contains('full');h.classList.toggle('full',o);$('hMetaS').setAttribute('aria-expanded',String(o))};
 try{const cb=$('ctlbar'),hd=document.querySelector('header.hd');if(cb&&hd&&'IntersectionObserver' in window)new IntersectionObserver(([e])=>cb.classList.toggle('stuck',!e.isIntersecting)).observe(hd)}catch(e){}
