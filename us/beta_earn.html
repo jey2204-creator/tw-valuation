@@ -109,6 +109,9 @@ tr.e td{color:var(--accent)}
 .ec{display:inline-flex;align-items:baseline;gap:5px;font-size:12.5px;text-decoration:none;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:4px 10px}
 .ec b{font-family:var(--f-num);font-weight:600;color:var(--accent)}.ec small{font-size:11px;color:var(--muted)}.ec.hot{border-color:var(--warm);background:var(--b4)}
 .ec .n{max-width:8em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;color:var(--muted)}
+.card h2 .more{margin-left:auto;font-size:12.5px;font-weight:500;color:var(--accent);text-decoration:none}
+.ecal .d{cursor:pointer;user-select:none}.ecal .d .ar{font-size:11px;color:var(--muted);margin-left:auto}.ecal .row.fold .ec small{display:none}.ecal .row.fold .ec .n{display:none}.ecal .row.fold .ec{padding:3px 9px}
+.ecal.mini .d{margin:8px 0 4px;font-size:13px}.ecal.mini .ec small,.ecal.mini .ec .n{display:none}.ecal.mini .ec{padding:3px 9px}.ec.pl{color:var(--muted);border-style:dashed}
 .etab{display:flex;gap:6px;margin-top:8px}.etab button{font:inherit;font-size:12.5px;border:1px solid var(--line);background:var(--bg);color:var(--muted);border-radius:999px;padding:4px 12px}.etab button.on{background:var(--accent);border-color:var(--accent);color:#fff}
 .notes{margin-top:8px;display:flex;flex-direction:column;gap:4px}
 .notes p{margin:0;font-size:12.5px;background:var(--b1);border-radius:8px;padding:6px 10px}
@@ -152,17 +155,23 @@ html{scroll-behavior:smooth}
     <div class="chart" id="cCapAll"></div>
     <p class="foot">現金流量表「購置不動產、廠房及設備」；季資料由累計數相減推算。AI 供應鏈需求的源頭指標。</p>
   </section>
-  <section class="card" id="earnCal" hidden>
-    <h2>📅 財報公布日 <small id="uEarn"></small></h2>
-    <div class="etab"><button data-m="focus" class="on">追蹤股＋大型股</button><button data-m="all">全市場 7 天內</button></div>
-    <div class="ecal" id="ecal"></div>
-    <p class="foot" id="fEarn">日期為美東；台灣時間：盤前 ≈ 當晚 19–20 點、盤後 ≈ 隔日清晨 4–5 點。資料來源 Finnhub，日期可能微調，請以公司 IR 公告為準。</p>
+  <section class="card ecard" id="earnCal" hidden>
+    <h2>📅 財報公布日 <small id="uEarn"></small><a class="more" href="#EARN">看全部 →</a></h2>
+    <div class="ecal mini" id="ecalMini"></div>
   </section>
   <div id="groups"></div>
   <p class="legend">清單欄位：收盤價（日漲跌）　本益比／淨值比。<span class="pill">循環</span> 循環股以淨值比為主</p>
 </div>
 
 <!-- ===== 個股頁 ===== -->
+<div id="earnPage" hidden>
+  <div class="top"><a href="#">← 主題清單</a><span class="meta">美東日期｜點日期展開預估 EPS</span></div>
+  <h1 style="font-size:22px;margin:6px 0 2px">📅 財報公布日</h1>
+  <p class="meta" id="uEarn2"></p>
+  <div class="etab"><button data-m="focus">追蹤股＋大型股（3 週）</button><button data-m="all">全市場 7 天內</button></div>
+  <div class="ecal" id="ecal"></div>
+  <p class="foot">台灣時間：盤前 ≈ 當晚 19–20 點、盤後 ≈ 隔日清晨 4–5 點。資料來源 Nasdaq／Finnhub，日期在公司正式公告前為預估，請以公司 IR 為準。</p>
+</div>
 <div id="stock" hidden>
 <header class="quote">
   <div class="top"><a href="#">← 主題清單</a><span class="meta" id="theme"></span></div>
@@ -266,19 +275,26 @@ function earnBox(id){const el=$('earn'),ls=EARN.e[id];if(!ls||!ls.length){el.hid
   if(past&&dayDiff(past[0],t)<=10){const bt=past[2]!=null&&past[3]!=null?(past[3]>=past[2]?`優於預估 ${past[2].toFixed(2)}`:`低於預估 ${past[2].toFixed(2)}`):'';
     h+=`<p class="done"><span class="lb">✅ 已公布</span><b>${mdw(past[0])}</b>${past[6]?`<small>${past[6]}</small>`:''}<small>${past[3]!=null?`EPS ${past[3].toFixed(2)}${bt?`（${bt}）`:''}`:`預估 EPS ${past[2]!=null?past[2].toFixed(2):'—'}｜實際值待更新`}${past[5]?`｜營收 ${bil(past[5])}`:''}</small></p>`}
   el.innerHTML=h;el.hidden=!h}
-let EMODE='focus';
-function earnCal(){const e=EARN.e;if(!Object.keys(e).length){$('earnCal').hidden=true;return}
-  const t=etToday(),lim=EMODE==='all'?7:21,nm=Object.fromEntries(ALL.map(s=>[s.id,s.name]));IDX.forEach(s=>nm[s.id]=s.name);
-  const hot=new Set(IDX.map(s=>s.id)),focus=new Set([...hot,...MEGA]);const by={};
-  for(const [id,ls] of Object.entries(e)){if(EMODE==='focus'&&!focus.has(id))continue;for(const x of ls){if(x[0]<t||dayDiff(t,x[0])>lim)continue;(by[x[0]]=by[x[0]]||[]).push([id,x])}}
-  const ds=Object.keys(by).sort();const o={bmo:0,dmh:1,amc:2,'':3};
-  $('ecal').innerHTML=ds.map(d=>{const it=by[d].sort((a,b)=>(hot.has(b[0])-hot.has(a[0]))||(o[a[1][1]]-o[b[1][1]])||a[0].localeCompare(b[0]));
-    const tw=twTime(d,'amc').tw.split(' 約')[0];
-    return `<div class="d">${mdw(d)}<small>盤後 ≈ ${tw} 清晨${d===t?'　← 今天':''}</small></div><div class="row">`+
-      it.map(([id,x])=>`<a class="ec${hot.has(id)?' hot':''}" href="#${id}">${hot.has(id)?'🔴':''}<b>${id}</b><span class="n">${esc((nm[id]||'').split(/[ ,]/)[0])}</span><small>${{bmo:'盤前',amc:'盤後',dmh:'盤中'}[x[1]]||''}${x[2]!=null?` ${x[2].toFixed(2)}`:''}</small></a>`).join('')+'</div>'}).join('')
+let EMODE='focus';try{EMODE=localStorage.getItem('earnMode')||'focus'}catch(e){}
+const OPEN=new Set();
+function earnRows(mode,lim){const e=EARN.e,t=etToday(),nm=Object.fromEntries(ALL.map(s=>[s.id,s.name]));IDX.forEach(s=>nm[s.id]=s.name);
+  const hot=new Set(IDX.map(s=>s.id)),focus=new Set([...hot,...MEGA]),by={},o={bmo:0,dmh:1,amc:2,'':3};
+  for(const [id,ls] of Object.entries(e)){if(mode==='focus'&&!focus.has(id))continue;for(const x of ls){if(x[0]<t||dayDiff(t,x[0])>lim)continue;(by[x[0]]=by[x[0]]||[]).push([id,x])}}
+  return{t,hot,nm,ds:Object.keys(by).sort().map(d=>[d,by[d].sort((a,b)=>(hot.has(b[0])-hot.has(a[0]))||(o[a[1][1]]-o[b[1][1]])||a[0].localeCompare(b[0]))])}}
+const chip=(id,x,hot,nm)=>`<a class="ec${hot.has(id)?' hot':''}" href="#${id}">${hot.has(id)?'🔴':''}<b>${id}</b><span class="n">${esc((nm[id]||'').split(/[ ,]/)[0])}</span><small>${{bmo:'盤前',amc:'盤後',dmh:'盤中'}[x[1]]||''}${x[2]!=null?` ${x[2].toFixed(2)}`:''}</small></a>`;
+const dhead=(d,t)=>`${mdw(d)}<small>盤後 ≈ 台灣 ${twTime(d,'amc').tw.split(' 約')[0].replace('台灣 ','')} 清晨${d===t?'　← 今天':''}</small>`;
+function earnMini(){if(!Object.keys(EARN.e).length){$('earnCal').hidden=true;return}
+  const {t,hot,nm,ds}=earnRows('focus',7),n=ds.reduce((a,[,r])=>a+r.length,0),h=ds.reduce((a,[,r])=>a+r.filter(([id])=>hot.has(id)).length,0);
+  $('uEarn').textContent=`本週 ${n} 檔，🔴 ${h} 檔追蹤股`;
+  $('ecalMini').innerHTML=ds.slice(0,2).map(([d,r])=>`<div class="d">${dhead(d,t)}</div><div class="row">${r.slice(0,6).map(([id,x])=>chip(id,x,hot,nm)).join('')}${r.length>6?`<a class="ec pl" href="#EARN">+${r.length-6}</a>`:''}</div>`).join('')||'<p class="meta" style="margin-top:8px">本週沒有追蹤股財報</p>';
+  $('earnCal').hidden=false}
+function earnCal(){const {t,hot,nm,ds}=earnRows(EMODE,EMODE==='all'?7:21);
+  [...$('earnPage').querySelectorAll('button[data-m]')].forEach(b=>b.classList.toggle('on',b.dataset.m===EMODE));
+  $('ecal').innerHTML=ds.map(([d,r],i)=>{const op=OPEN.has(d)||(i===0&&!OPEN.size);return `<div class="d" data-d="${d}">${dhead(d,t)}<span class="ar">${r.length} 檔 ${op?'▾':'▸'}</span></div><div class="row${op?'':' fold'}">${r.map(([id,x])=>chip(id,x,hot,nm)).join('')}</div>`}).join('')
     ||`<p class="meta" style="margin-top:10px">${EMODE==='all'?'未來 7 天':'未來 3 週'}沒有財報</p>`;
-  $('uEarn').textContent=`更新 ${(EARN.updated||'').slice(0,10).replaceAll('-','/')}｜🔴 = 本站追蹤主題股｜數字 = 預估 EPS`;$('earnCal').hidden=false}
-$('earnCal').addEventListener('click',e=>{const b=e.target.closest('button[data-m]');if(!b)return;EMODE=b.dataset.m;[...$('earnCal').querySelectorAll('button')].forEach(x=>x.classList.toggle('on',x===b));earnCal()});
+  $('uEarn2').textContent=`更新 ${(EARN.updated||'').slice(0,10).replaceAll('-','/')}｜🔴 = 本站追蹤主題股｜展開後數字 = 預估 EPS`}
+$('earnPage').addEventListener('click',e=>{const b=e.target.closest('button[data-m]');if(b){EMODE=b.dataset.m;try{localStorage.setItem('earnMode',EMODE)}catch(x){}earnCal();return}
+  const d=e.target.closest('.d[data-d]');if(d){const k=d.dataset.d;if(!OPEN.size)OPEN.add($('ecal').querySelector('.d').dataset.d);OPEN.has(k)?OPEN.delete(k):OPEN.add(k);earnCal()}});
 
 // ---------- 全市場（不在 45 檔時）：財報讀 data/all/{T}.json，股價由瀏覽器抓 FinMind，河流圖在前端算 ----------
 const FM='https://api.finmindtrade.com/api/v4/data',YEARS=6;
@@ -573,7 +589,9 @@ async function capexAll(){
 function route(){
   const id=decodeURIComponent(location.hash.slice(1)).toUpperCase();
   if(ALIAS[id]&&!IDX.some(s=>s.id===id)){location.replace('#'+ALIAS[id]);return}   // #FB → #META
-  if(/^[A-Z][A-Z.\-]{0,5}$/.test(id))load(id);
+  $('earnPage').hidden=true;
+  if(id==='EARN'){$('stock').hidden=true;$('home').hidden=true;$('earnPage').hidden=false;document.title='財報公布日';earnCal();scrollTo(0,0)}
+  else if(/^[A-Z][A-Z.\-]{0,5}$/.test(id))load(id);
   else{$('stock').hidden=true;$('home').hidden=false;document.title='美股估值看板（財報日測試版）';Object.values(charts).forEach(c=>c.resize())}
 }
 $('q').addEventListener('input',homeRender);
@@ -593,7 +611,7 @@ addEventListener('hashchange',route);
   try{const r=await fetch('data/all/aliases.json?t='+Date.now());if(r.ok)Object.assign(ALIAS,await r.json())}catch(e){}   // 同公司別名（GOOG→GOOGL、BRK-A→BRK-B…）由抓取程式自動產生
   try{const r=await fetch('data/earnings.json?t='+Date.now());if(r.ok)EARN=await r.json()}catch(e){}
   await twOrder();
-  homeRender();earnCal();route();capexAll();
+  homeRender();earnMini();route();capexAll();
 })();
 ['iQ1','iNm','iQg','iYg'].forEach(id=>$(id).addEventListener('input',()=>D&&renderFwd()));
 let rt;addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>Object.values(charts).forEach(c=>c.resize()),120)});
