@@ -1,6 +1,6 @@
 """投信／外資／土洋同買前20名（聯集）日K資料（給 itrust 自用版頁面的 db kline 用）
 
-代號清單＝近 20 個交易日每天的三份前20名聯集（頁面「上榜隔日」要算名單隔天與之後抱著的報酬），最多 300 檔。
+代號清單＝近 20 個交易日每天的三份前20名聯集（頁面「上榜隔日」要算名單隔天與之後抱著的報酬），再加當天與前一日的投信／外資賣超前20名（即時看線的賣超分頁要日K底圖，2026-10-22 起），最多 400 檔。
 由 .github/workflows/itrust_kline.yml 手動觸發（雲端排程用 workflow_dispatch 帶入參數）。
 用法：python itrust/kline_fetch.py 20261019 "8021:L,3264:O:202610,..."
   L＝上市（證交所 STOCK_DAY），O＝上櫃（櫃買 tradingStock）
@@ -226,7 +226,7 @@ def main():
         codes.append((m.group(1), m.group(2)))
         if m.group(3) and m.group(3) <= D[:6]:
             since[m.group(1)] = m.group(3)
-    assert 0 < len(codes) <= 300, "1–300 codes"
+    assert 0 < len(codes) <= 400, "1–400 codes"
     diag["since"] = len(since)
     t0 = time.time()
     bars = {}
