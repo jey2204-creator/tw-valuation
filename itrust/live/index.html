@@ -197,7 +197,7 @@ body.shopen{overflow:hidden}
 
   <section class="notes">
     <h2>怎麼看</h2>
-    <p>每張卡片＝名單日盤後的排行前 20 名（投信 ≥0.5 億、外資 ≥1 億，與排行頁預設門檻相同），日K用自己的資料（每晚更新），最右邊<b>虛線框</b>那根是今天盤中到目前為止的K棒。</p>
+    <p>每張卡片＝名單日盤後的排行前 20 名（投信、外資皆 ≥0.5 億，與排行頁預設門檻相同），日K用自己的資料（每晚更新），最右邊<b>虛線框</b>那根是今天盤中到目前為止的K棒。</p>
     <p><b>投信賣／外資賣</b>分頁＝名單日投信、外資<b>賣超佔股本</b>前 20 名（賣超金額 ≥0.5 億，佔股本為負、越負越前面），用來看法人正在出脫哪些股票與族群；名單是前一交易日的，盤中看的是「昨天被賣的股今天怎麼走」，不是今天的即時賣壓。賣超名單的日K底圖從 10/22 晚上起才會齊全。</p>
     <p><b>另一邊法人</b>徽章：買超卡片上若另一邊法人在名單日是<b>賣超</b>，標 ⚠「外資賣 N張」／「投信賣 N張」（投信買、外資倒貨的要特別小心）；賣超卡片上另一邊也賣標 ⚠「也賣」（雙賣），另一邊反向買標紅色「買」（分歧）。張數＝名單日當天的淨買賣超。</p>
     <p><b>紅色虛線</b>＝前20日高：名單日（含）往前 20 個交易日的最高價。現價或盤中最高碰到它，卡片加紅框並標「突破」；開盤就高於它標「跳空」。價格未還原權息，近 20 日內有除權息時標 ⚠，那條線可能偏高。</p>
@@ -244,7 +244,7 @@ const days=(SD&&SD.days)||{},fdays=(SD&&SD.fdays)||{};
 const sym=r=>(r.m==='上櫃'?'otc_':'tse_')+r.c;
 const pick=(r,i,p,lab)=>({c:r.c,n:r.n,m:r.m,cl:r.cl,chg:r.chg,p,lab,rank:i+1,k:sym(r)});
 function listIt(){const d=days[L];if(!d)return[];return d.rows.filter(r=>r.v>0&&r.amt>=0.5).sort((a,b)=>b.p-a.p).slice(0,20).map((r,i)=>pick(r,i,r.p,'投本比'))}
-function listFi(){const d=fdays[L];if(!d)return[];return d.rows.filter(r=>r.fv>0&&r.amt>=1).sort((a,b)=>b.p-a.p).slice(0,20).map((r,i)=>pick(r,i,r.p,'外本比'))}
+function listFi(){const d=fdays[L];if(!d)return[];return d.rows.filter(r=>r.fv>0&&r.amt>=0.5).sort((a,b)=>b.p-a.p).slice(0,20).map((r,i)=>pick(r,i,r.p,'外本比'))}
 function listBoth(){const d=days[L],f=fdays[L];if(!d||!f)return[];const fm=new Map(f.rows.map(x=>[x.c,x]));const out=[];
   d.rows.forEach(r=>{if(!(r.v>0&&r.amt>=0.5))return;const x=fm.get(r.c);const fv=x?x.fv:(f.tf&&r.c in f.tf?f.tf[r.c]:null);if(fv==null||fv<=0||!(r.s>0))return;out.push({r,sum:r.p+fv/r.s*100})});
   return out.sort((a,b)=>b.sum-a.sum).slice(0,20).map((o,i)=>pick(o.r,i,o.sum,'投＋外本比'))}
