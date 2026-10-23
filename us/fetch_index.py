@@ -1,4 +1,4 @@
-"""美股四大指數日線：Stooq（免 key）→ us/data/index_px.json
+"""美股四大指數日線＋VIX：Yahoo（免 key）→ us/data/index_px.json
 用法：python us/fetch_index.py
 備援：Stooq 失敗時用 FRED（只有 S&P 500、Nasdaq 綜合、道瓊，約 10 年）。
 只用 Python 標準函式庫。
@@ -12,13 +12,15 @@
 """
 import csv, io, json, sys, time, datetime as dt
 from pathlib import Path
-import urllib.request, urllib.error
+import urllib.request, urllib.parse, urllib.error
 
 ROOT = Path(__file__).resolve().parent
 OUT = ROOT / "data" / "index_px.json"
 START = "2000-01-01"
 # 代號: (Stooq 代號, FRED 代號或 None)
-IDX = {"SPX": ("^spx", "SP500"), "NDX": ("^ndx", "NASDAQ100"), "DJI": ("^dji", "DJIA"), "SOX": ("^sox", None), "VIX": ("^vix", "VIXCLS")}
+# 代號: (Yahoo 代號, Stooq 代號, FRED 代號或 None)；來源順序 Yahoo → Stooq → FRED → 舊資料
+IDX = {"SPX": ("^GSPC", "^spx", "SP500"), "NDX": ("^NDX", "^ndx", "NASDAQ100"), "DJI": ("^DJI", "^dji", "DJIA"),
+       "SOX": ("^SOX", "^sox", None), "VIX": ("^VIX", "^vix", "VIXCLS")}
 UA = {"User-Agent": "Mozilla/5.0 (tw-valuation; github.com/jey2204-creator/tw-valuation)"}
 
 
@@ -32,8 +34,27 @@ def fetch(url, tries=3):
     return ""
 
 
+def yahoo(sym):
+    txt = fetch(f"https://query1.finance.yahoo.com/v8/finance/chart/{urllib.parse.quote(sym)}?range=max&interval=1d&events=none")
+    rows = []
+    try:
+        r = json.loads(txt)["chart"]["result"][0]
+        ts, cl = r["timestamp"], r["indicators"]["quote"][0]["close"]
+        for t, c in zip(ts, cl):
+            if c is None:
+                continue
+            d = dt.datetime.fromtimestamp(t, dt.timezone.utc).astimezone(dt.timezone(dt.timedelta(hours=-5))).strftime("%Y-%m-%d")
+            if d >= START:
+                rows.append([d, round(float(c), 2)])
+    except Exception as e:  # noqa
+        print(f"[warn] yahoo {sym}: {e} {txt[:120]!r}", file=sys.stderr)
+    return rows
+
+
 def stooq(sym):
     txt = fetch(f"https://stooq.com/q/d/l/?s={sym}&i=d")
+    if "Date" not in txt[:200]:
+        print(f"[warn] stooq {sym}: {txt[:120]!r}", file=sys.stderr)
     rows = []
     for r in csv.DictReader(io.StringIO(txt)):
         d, c = r.get("Date"), r.get("Close")
@@ -65,13 +86,14 @@ def main():
         except Exception:  # noqa
             pass
     out, src = {}, {}
-    for k, (sq, fr) in IDX.items():
-        rows = stooq(sq)
-        if len(rows) > 500:
-            src[k] = "stooq"
-        else:
-            rows = fred(fr) if fr else []
-            src[k] = "fred" if len(rows) > 500 else "old"
+    for k, (ya, sq, fr) in IDX.items():
+        rows, src[k] = yahoo(ya), "yahoo"
+        if len(rows) <= 500:
+            rows, src[k] = stooq(sq), "stooq"
+        if len(rows) <= 500:
+            rows, src[k] = (fred(fr) if fr else []), "fred"
+        if len(rows) <= 500:
+            src[k] = "old"
         if len(rows) <= 500:
             rows = old.get(k, [])
             print(f"[warn] {k}: 來源失敗，沿用舊資料 {len(rows)} 筆", file=sys.stderr)
