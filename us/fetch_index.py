@@ -23,8 +23,9 @@ IDX = {"SPX": (["SPX", "spx", "INX", "^SPX", "S&P 500"], "^GSPC", "^spx", "SP500
        "DJI": (["DJI", "DJIA", "INDU", "^DJI", "DOW"], "^DJI", "^dji", "DJIA"),
        "SOX": (["SOX"], "^SOX", "^sox", None), "VIX": (["VIX", "VXX", "^VIX"], "^VIX", "^vix", "VIXCLS")}
 # Cboe 公開 CSV（VIX 最可靠）
-CBOE = {"VIX": "https://cdn.cboe.com/api/global/us_indices/daily_prices/VIX_History.csv",
-        "SPX": "https://cdn.cboe.com/api/global/us_indices/daily_prices/SPX_History.csv"}
+CBOE = {"VIX": ("https://cdn.cboe.com/api/global/us_indices/daily_prices/VIX_History.csv", 1),
+        "SPX": ("https://cdn.cboe.com/api/global/us_indices/daily_prices/SPX_History.csv", 1),
+        "DJI": ("https://cdn.cboe.com/api/global/us_indices/daily_prices/DJX_History.csv", 100)}   # DJX = 道瓊 ÷ 100
 UA = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
       "Accept": "application/json, text/plain, */*", "Accept-Language": "en-US,en;q=0.9"}
 NQ_H = dict(UA, Origin="https://www.nasdaq.com", Referer="https://www.nasdaq.com/")
@@ -82,16 +83,19 @@ def nasdaq(sym):
 def cboe(k):
     if k not in CBOE:
         return []
-    txt = fetch(CBOE[k])
+    url, mult = CBOE[k]
+    txt = fetch(url)
     rows = []
     for r in csv.reader(io.StringIO(txt)):
-        # DATE,OPEN,HIGH,LOW,CLOSE
-        if len(r) >= 5 and r[0][:2] in ("19", "20"):
-            d, c = r[0][:10].replace("/", "-"), num(r[4])
-            if "/" in r[0]:  # MM/DD/YYYY
-                m, dd, y = r[0].split("/"); d = f"{y}-{m}-{dd}"
-            if c and d >= START:
-                rows.append([d, c])
+        # 兩種格式：DATE,SPX 或 DATE,OPEN,HIGH,LOW,CLOSE；日期 MM/DD/YYYY 或 YYYY-MM-DD；收盤取最後一欄
+        if len(r) < 2 or not r[0] or not r[0][0].isdigit():
+            continue
+        d = r[0].strip()
+        if "/" in d:
+            m, dd, y = d.split("/"); d = f"{y}-{m.zfill(2)}-{dd.zfill(2)}"
+        c = num(r[-1])
+        if c and d >= START:
+            rows.append([d, round(c * mult, 2)])
     if len(rows) <= 500:
         warn(f"cboe {k}: {len(rows)} rows {txt[:100]!r}")
     rows.sort()
