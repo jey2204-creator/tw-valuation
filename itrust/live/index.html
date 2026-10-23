@@ -49,11 +49,13 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[r
 .sub b{font:600 12.5px var(--font-num);color:var(--fg)}
 .sub .w{color:var(--warn);font-weight:700}
 .ctl{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:8px;margin:0 -16px;padding:6px 16px;background:var(--bg);border-bottom:1px solid var(--line)}
-.tabs{display:flex;flex:1 1 auto;min-width:0;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface);max-width:420px}
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);flex:1 1 auto;min-width:0;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface);max-width:420px}
 .tabs button{flex:1 1 0;border:0;background:transparent;padding:0 6px;min-height:36px;font-weight:700;font-size:14px;color:var(--muted);cursor:pointer;white-space:nowrap}
-.tabs button+button{border-left:1px solid var(--line)}
+.tabs button:not(:nth-child(3n+1)){border-left:1px solid var(--line)}
+.tabs button:nth-child(n+4){border-top:1px solid var(--line);min-height:32px}
 .tabs button[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
 .tabs button.sell{color:var(--dn);font-size:13px;padding:0 4px}
+.rf{align-self:stretch}
 .tabs button.sell[aria-pressed="true"]{background:var(--dn);color:#fff}
 .rf{flex:none;display:inline-flex;align-items:center;gap:4px;min-height:36px;padding:0 14px;border-radius:10px;border:1px solid var(--buy);background:var(--buy);color:var(--surface);font-weight:700;font-size:14px;cursor:pointer;white-space:nowrap}
 .rf[disabled]{opacity:.6;cursor:progress}
@@ -163,6 +165,7 @@ body.shopen{overflow:hidden}
       <button type="button" data-v="both" aria-pressed="false">土洋</button>
       <button type="button" data-v="its" class="sell" aria-pressed="false">投信賣</button>
       <button type="button" data-v="fis" class="sell" aria-pressed="false">外資賣</button>
+      <button type="button" data-v="boths" class="sell" aria-pressed="false">土洋賣</button>
     </div>
     <button type="button" class="rf" id="rf">⚡ 更新</button>
   </div>
@@ -198,7 +201,7 @@ body.shopen{overflow:hidden}
   <section class="notes">
     <h2>怎麼看</h2>
     <p>每張卡片＝名單日盤後的排行前 20 名（投信、外資皆 ≥0.5 億，與排行頁預設門檻相同），日K用自己的資料（每晚更新），最右邊<b>虛線框</b>那根是今天盤中到目前為止的K棒。</p>
-    <p><b>投信賣／外資賣</b>分頁＝名單日投信、外資<b>賣超佔股本</b>前 20 名（賣超金額 ≥0.5 億，佔股本為負、越負越前面），用來看法人正在出脫哪些股票與族群；名單是前一交易日的，盤中看的是「昨天被賣的股今天怎麼走」，不是今天的即時賣壓。賣超名單的日K底圖從 10/22 晚上起才會齊全。</p>
+    <p><b>投信賣／外資賣</b>分頁＝名單日投信、外資<b>賣超佔股本</b>前 20 名（賣超金額 ≥0.5 億，佔股本為負、越負越前面），用來看法人正在出脫哪些股票與族群；<b>土洋賣</b>＝投信賣超（≥0.5 億）且外資同日也賣超，依投本比＋外本比越負越前面（雙賣，最該避開的一組），徽章直接顯示兩邊賣超張數；名單是前一交易日的，盤中看的是「昨天被賣的股今天怎麼走」，不是今天的即時賣壓。賣超名單的日K底圖從 10/22 晚上起才會齊全。</p>
     <p><b>另一邊法人</b>徽章：買超卡片上若另一邊法人在名單日是<b>賣超</b>，標 ⚠「外資賣 N張」／「投信賣 N張」（投信買、外資倒貨的要特別小心）；賣超卡片上另一邊也賣標 ⚠「也賣」（雙賣），另一邊反向買標紅色「買」（分歧）。張數＝名單日當天的淨買賣超。</p>
     <p><b>紅色虛線</b>＝前20日高：名單日（含）往前 20 個交易日的最高價。現價或盤中最高碰到它，卡片加紅框並標「突破」；開盤就高於它標「跳空」。價格未還原權息，近 20 日內有除權息時標 ⚠，那條線可能偏高。</p>
     <p>量：<b>0.92×→1.4×</b>＝目前累計量是前 5 日均量的 0.92 倍，依常見盤中量分布推估全天約 1.4 倍（12:00 大約完成全天 65% 的量；09:10 前不估）。量的柱狀圖裡，虛線框是推估的全天量、點線是前 5 日均量。</p>
@@ -251,9 +254,13 @@ function listBoth(){const d=days[L],f=fdays[L];if(!d||!f)return[];const fm=new M
 // 賣超（2026-10-22）：與排行頁「賣超」模式相同口徑——賣超金額絕對值 ≥0.5 億，依佔股本由小到大（越負越前面）
 function listItS(){const d=days[L];if(!d)return[];return d.rows.filter(r=>r.v<0&&r.amt<=-0.5).sort((a,b)=>a.p-b.p).slice(0,20).map((r,i)=>pick(r,i,r.p,'投信賣超佔股本'))}
 function listFiS(){const f=fdays[L];if(!f)return[];return f.rows.filter(r=>r.fv<0&&r.amt<=-0.5).sort((a,b)=>a.p-b.p).slice(0,20).map((r,i)=>pick(r,i,r.p,'外資賣超佔股本'))}
-const LISTS={it:listIt(),fi:listFi(),both:listBoth(),its:listItS(),fis:listFiS()};
-const VIEW_NAME={it:'投信買超佔股本',fi:'外資買超佔股本',both:'土洋同買',its:'投信賣超佔股本',fis:'外資賣超佔股本'};
-const SELL_VIEW={its:1,fis:1};
+// 土洋同賣（2026-10-23）：與排行頁「土洋同賣」相同——投信賣超（≥0.5 億）且外資也賣超（不設門檻），依投本比＋外本比由小到大（越負越前）
+function listBothS(){const d=days[L],f=fdays[L];if(!d||!f)return[];const fm=new Map(f.rows.map(x=>[x.c,x]));const out=[];
+  d.rows.forEach(r=>{if(!(r.v<0&&r.amt<=-0.5))return;const x=fm.get(r.c);const fv=x?x.fv:(f.tf&&r.c in f.tf?f.tf[r.c]:null);if(fv==null||fv>=0||!(r.s>0))return;out.push({r,sum:r.p+fv/r.s*100})});
+  return out.sort((a,b)=>a.sum-b.sum).slice(0,20).map((o,i)=>pick(o.r,i,o.sum,'投＋外賣超佔股本'))}
+const LISTS={it:listIt(),fi:listFi(),both:listBoth(),its:listItS(),fis:listFiS(),boths:listBothS()};
+const VIEW_NAME={it:'投信買超佔股本',fi:'外資買超佔股本',both:'土洋同買',its:'投信賣超佔股本',fis:'外資賣超佔股本',boths:'土洋同賣'};
+const SELL_VIEW={its:1,fis:1,boths:1};
 // 另一邊法人（名單日當天）：投信看 days 的 v，外資看 fdays 的 fv（不在全行列時取 tf；上櫃不在 tf 裡＝不知道）
 const tMap=new Map(((days[L]||{}).rows||[]).map(x=>[x.c,x])),fMap=new Map(((fdays[L]||{}).rows||[]).map(x=>[x.c,x])),TF=(fdays[L]||{}).tf||{};
 function other(c){const t=tMap.get(c),f=fMap.get(c);const fv=f?f.fv:(c in TF?TF[c]:null);
@@ -261,6 +268,7 @@ function other(c){const t=tMap.get(c),f=fMap.get(c);const fv=f?f.fv:(c in TF?TF[
 // 徽章：買超分頁只警示「另一邊在賣」；賣超分頁兩邊都標（也賣＝雙賣 ⚠、反向買＝分歧）
 function oppBadge(r,full){const o=other(r.c);const who=(view==='fi'||view==='fis')?'投信':'外資';const n=who==='投信'?o.tl:o.fl;
   if(n==null||n===0)return '';const lots=fmt(Math.abs(n))+'張';
+  if(view==='boths')return `<span class="tg op dnb" title="名單日投信賣 ${fmt(Math.abs(o.tl))}張、外資賣 ${lots}">${full?`投賣 ${fmt(Math.abs(o.tl))}張／外賣 ${lots}`:'雙賣'}</span>`;
   if(n<0)return `<span class="tg op dnb" title="名單日${who}淨賣超 ${lots}">⚠${who}${SELL_VIEW[view]?'也賣':'賣'}${full?' '+lots:''}</span>`;
   if(SELL_VIEW[view])return `<span class="tg op upb" title="名單日${who}淨買超 ${lots}">${who}買${full?' '+lots:''}</span>`;
   return ''}
@@ -458,7 +466,7 @@ let lastFocus=null;
 function openSheet(c){openCode=c;lastFocus=document.activeElement;$('sheet').hidden=false;document.body.classList.add('shopen');fillSheet();const x=$('shIn').querySelector('.x');if(x)x.focus()}
 function closeSheet(){openCode=null;$('sheet').hidden=true;document.body.classList.remove('shopen');if(lastFocus&&lastFocus.focus)lastFocus.focus()}
 function fillSheet(){
-  const all=[...LISTS.it,...LISTS.fi,...LISTS.both,...LISTS.its,...LISTS.fis];const r=(LISTS[view]||[]).find(x=>x.c===openCode)||all.find(x=>x.c===openCode);if(!r){closeSheet();return}
+  const all=[...LISTS.it,...LISTS.fi,...LISTS.both,...LISTS.its,...LISTS.fis,...LISTS.boths];const r=(LISTS[view]||[]).find(x=>x.c===openCode)||all.find(x=>x.c===openCode);if(!r){closeSheet();return}
   const S=series(r),q=S&&S.q,box=$('shIn');
   const cell=(k,v,c)=>`<div><span>${k}</span><b class="${c||''}">${v}</b></div>`;
   let grid='';
@@ -492,7 +500,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&openCode)closeSheet
 async function refresh(){
   const api=apiUrl();if(!api||busy){render();return}
   busy=true;$('rf').disabled=true;setStatus();
-  const syms=[...new Set([...LISTS.it,...LISTS.fi,...LISTS.both,...LISTS.its,...LISTS.fis].map(r=>r.k))];syms.push('tse_t00');
+  const syms=[...new Set([...LISTS.it,...LISTS.fi,...LISTS.both,...LISTS.its,...LISTS.fis,...LISTS.boths].map(r=>r.k))];syms.push('tse_t00');
   // 每 20 檔一個請求、同時發：Worker 免費方案每次請求最多 50 個對外連線（證交所被擋時每檔要各查一次 Yahoo）
   const chunks=[];for(let i=0;i<syms.length;i+=20)chunks.push(syms.slice(i,i+20));
   const errs=[];let got=0;
