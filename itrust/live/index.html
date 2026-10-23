@@ -48,6 +48,14 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[r
 .sub{font-size:12px;color:var(--muted);line-height:1.4}
 .sub b{font:600 12.5px var(--font-num);color:var(--fg)}
 .sub .w{color:var(--warn);font-weight:700}
+.dnav{display:inline-flex;align-items:center;gap:2px;vertical-align:middle}
+.dnav select{font:600 12.5px var(--font-num);color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:7px;padding:2px 4px;min-height:26px}
+.dnav button{border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:7px;min-width:26px;min-height:26px;font-size:15px;font-weight:700;cursor:pointer;line-height:1}
+.dnav button:disabled{opacity:.35;cursor:default}
+.sub .retro{display:inline-block;margin-left:4px;padding:1px 6px;border-radius:6px;background:var(--otc);color:#fff;font-size:11px;font-weight:800;vertical-align:middle}
+.sh-px .lcl{font:600 12px var(--font-num);color:var(--muted);margin-right:4px}
+.km-p .lcl{font:600 11px var(--font-num);color:var(--muted);margin-right:2px;letter-spacing:-.03em}
+.km.retro .km-f{font-size:10.5px;letter-spacing:-.02em}
 .ctl{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:8px;margin:0 -16px;padding:6px 16px;background:var(--bg);border-bottom:1px solid var(--line)}
 .tabs{display:grid;grid-template-columns:repeat(6,1fr);flex:1 1 auto;min-width:0;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface);max-width:520px}
 .tabs button{border:0;background:transparent;padding:0 2px;min-height:34px;font-weight:700;font-size:13.5px;color:var(--muted);cursor:pointer;white-space:nowrap;letter-spacing:-.02em}
@@ -275,8 +283,12 @@ function marketOpenNow(){const t=tpe();return t.dow>=1&&t.dow<=5&&t.min>=8*60+59
 const apiUrl=()=>(store.get(API_KEY)||DEFAULT_API||'').replace(/\/+$/,'');
 
 // ---- 名單（與排行頁預設門檻相同） ----
-const L=SD&&SD.latest;
+const LATEST=SD&&SD.latest;
 const days=(SD&&SD.days)||{},fdays=(SD&&SD.fdays)||{};
+// 歷史名單日（2026-10-23）：data.js 本來就留著最近約 20 個交易日的投信／外資全行列，直接在這頁選日期重算前 20
+const DATES=[...new Set([...Object.keys(days),...Object.keys(fdays)])].sort().reverse();
+let L=(()=>{try{const d=new URL(location.href).searchParams.get('d');if(d&&(days[d]||fdays[d]))return d}catch(e){}return LATEST})();
+const isRetro=()=>!!(L&&LATEST&&L<LATEST);
 const sym=r=>(r.m==='上櫃'?'otc_':'tse_')+r.c;
 const pick=(r,i,p,lab)=>({c:r.c,n:r.n,m:r.m,cl:r.cl,chg:r.chg,p,lab,rank:i+1,k:sym(r)});
 function listIt(){const d=days[L];if(!d)return[];return d.rows.filter(r=>r.v>0&&r.amt>=0.5).sort((a,b)=>b.p-a.p).slice(0,20).map((r,i)=>pick(r,i,r.p,'投本比'))}
@@ -291,11 +303,13 @@ function listFiS(){const f=fdays[L];if(!f)return[];return f.rows.filter(r=>r.fv<
 function listBothS(){const d=days[L],f=fdays[L];if(!d||!f)return[];const fm=new Map(f.rows.map(x=>[x.c,x]));const out=[];
   d.rows.forEach(r=>{if(!(r.v<0&&r.amt<=-0.5))return;const x=fm.get(r.c);const fv=x?x.fv:(f.tf&&r.c in f.tf?f.tf[r.c]:null);if(fv==null||fv>=0||!(r.s>0))return;out.push({r,sum:r.p+fv/r.s*100})});
   return out.sort((a,b)=>a.sum-b.sum).slice(0,20).map((o,i)=>pick(o.r,i,o.sum,'投＋外賣超佔股本'))}
-const LISTS={it:listIt(),fi:listFi(),both:listBoth(),its:listItS(),fis:listFiS(),boths:listBothS()};
+let LISTS,tMap,fMap,TF;
+function buildLists(){LISTS={it:listIt(),fi:listFi(),both:listBoth(),its:listItS(),fis:listFiS(),boths:listBothS()};
+  tMap=new Map(((days[L]||{}).rows||[]).map(x=>[x.c,x]));fMap=new Map(((fdays[L]||{}).rows||[]).map(x=>[x.c,x]));TF=(fdays[L]||{}).tf||{}}
+buildLists();
 const VIEW_NAME={it:'投信買超佔股本',fi:'外資買超佔股本',both:'土洋同買',its:'投信賣超佔股本',fis:'外資賣超佔股本',boths:'土洋同賣'};
 const SELL_VIEW={its:1,fis:1,boths:1};
 // 另一邊法人（名單日當天）：投信看 days 的 v，外資看 fdays 的 fv（不在全行列時取 tf；上櫃不在 tf 裡＝不知道）
-const tMap=new Map(((days[L]||{}).rows||[]).map(x=>[x.c,x])),fMap=new Map(((fdays[L]||{}).rows||[]).map(x=>[x.c,x])),TF=(fdays[L]||{}).tf||{};
 function other(c){const t=tMap.get(c),f=fMap.get(c);const fv=f?f.fv:(c in TF?TF[c]:null);
   return {tl:t?Math.round(t.v/1000):0,fl:fv==null?null:Math.round(fv/1000)}}
 // 徽章：買超分頁只警示「另一邊在賣」；賣超分頁兩邊都標（也賣＝雙賣 ⚠、反向買＝分歧）
@@ -345,7 +359,13 @@ function series(r){
   const hiToday=live?live[2]:null;
   const brk=live?hiToday>=hi20:false;
   const gap=live&&live[1]>hi20;
-  return {bars:all,live:!!live,lastD,state,q,px:cur,chg,hi20,avg5,exIn,dist:cur&&hi20?cur/hi20-1:null,vNow,vProj,frac,brk,gap,inst:e.i||[],ex:e.x||[]};
+  // 回顧（名單日不是最新）：lcl＝名單日收；since＝現價相對名單日收；nx＝隔日那根（開/高/低/收 相對名單日收）；after＝名單日後有幾根
+  const retro=isRetro(),lcl=base[base.length-1][4],after=all.length-base.length;
+  const nxBar=after>0?all[base.length]:null;
+  const nx=nxBar&&lcl?{o:nxBar[1]/lcl-1,h:nxBar[2]/lcl-1,c:nxBar[4]/lcl-1,brk:nxBar[2]>=hi20}:null;
+  const since=retro&&lcl&&cur?cur/lcl-1:null;
+  const mx=retro&&after>0?Math.max(...all.slice(base.length).map(x=>x[2]))/lcl-1:null;
+  return {bars:all,live:!!live,lastD,state,q,px:cur,chg:retro?since:chg,dchg:chg,hi20,avg5,exIn,dist:cur&&hi20?cur/hi20-1:null,vNow,vProj,frac,brk,gap,inst:e.i||[],ex:e.x||[],retro,lcl,since,nx,mx,after,lIdx:base.length-1};
 }
 
 // ---- 畫 K 線 ----
@@ -406,6 +426,9 @@ function drawK(cv,S,N,opt){
     if(j===liveJ){g.save();g.strokeStyle=col;g.lineWidth=1;g.beginPath();g.moveTo(xx,Y(h));g.lineTo(xx,t);g.moveTo(xx,t+hh);g.lineTo(xx,Y(l));g.stroke();
       g.fillStyle=col;g.globalAlpha=.28;g.fillRect(xx-bw/2-1,t,bw+2,hh);g.globalAlpha=1;g.setLineDash([2,2]);g.lineWidth=1.2;g.strokeRect(xx-bw/2-1,t,bw+2,hh);g.restore();return}
     g.strokeStyle=col;g.fillStyle=col;g.lineWidth=1;g.beginPath();g.moveTo(xx,Y(h));g.lineTo(xx,Y(l));g.stroke();g.fillRect(xx-bw/2,t,bw,hh)});
+  // 回顧：名單日那根畫一條直虛線（之後的K棒就是「上榜後」的走勢）
+  if(S.retro&&S.lIdx>=s&&S.lIdx<n-1){const j=S.lIdx-s,xx=X(j)+bw/2+1;g.save();g.strokeStyle=css('--otc');g.setLineDash([3,3]);g.lineWidth=1;g.beginPath();g.moveTo(xx,0);g.lineTo(xx,Hh-(axisH?10:0));g.stroke();g.restore();
+    if(!mini){g.font='700 9.5px '+css('--font-body');g.textAlign='right';g.textBaseline='top';g.fillStyle=css('--otc');g.fillText('名單日',xx-2,2);g.font='10px '+css('--font-num');g.textBaseline='middle'}}
   // 均線
   MAS.forEach(w=>{const Lr=lines[w];g.strokeStyle=MC[w];g.lineWidth=w===60?1.5:1.15;g.beginPath();let st=false;Lr.forEach((v,j)=>{if(v==null){st=false;return}const y=Y(v);st?g.lineTo(X(j),y):g.moveTo(X(j),y);st=true});g.stroke()});
   // 除權息標記（完整卡）
@@ -427,11 +450,18 @@ function drawK(cv,S,N,opt){
 // ---- 畫面 ----
 function setSub(){
   const sub=$('sub');if(!SD){sub.innerHTML='<span class="w">讀不到排行資料（data.js）</span>';return}
-  let t=`名單日 <b>${md(L)}</b> · ${VIEW_NAME[view]}前 20`;
+  const i=DATES.indexOf(L);
+  const opts=DATES.map(d=>`<option value="${d}"${d===L?' selected':''}>${md(d)}${d===LATEST?'（最新）':''}</option>`).join('');
+  let t=`名單日 <span class="dnav"><button type="button" data-dd="1" ${i>=DATES.length-1?'disabled':''} aria-label="前一天">‹</button><select id="dsel" aria-label="名單日">${opts}</select><button type="button" data-dd="-1" ${i<=0?'disabled':''} aria-label="後一天">›</button></span>${isRetro()?'<span class="retro">回顧</span>':''} · ${VIEW_NAME[view]}前 20`;
   if(H){t+=` · 日K至 <b>${md(H.asOf)}</b>`;if(H.asOf<L)t+=` <span class="w">（日K還沒更新到名單日）</span>`}
   else if(histErr)t+=` · <span class="w">日K讀取失敗</span>`;
   sub.innerHTML=t;
+  $('dsel').onchange=e=>setDate(e.target.value);
+  sub.querySelectorAll('[data-dd]').forEach(b=>b.onclick=()=>{const j=DATES.indexOf(L)+(+b.dataset.dd);if(DATES[j])setDate(DATES[j])});
 }
+function setDate(d){if(!d||d===L)return;L=d;buildLists();openCode=null;$('sheet').hidden=true;document.body.classList.remove('shopen');
+  try{const u=new URL(location.href);if(d===LATEST)u.searchParams.delete('d');else u.searchParams.set('d',d);history.replaceState(null,'',u.pathname+(u.search||'')+u.hash)}catch(e){}
+  render();if(apiUrl())refresh()}
 function setStatus(){
   const st=$('st'),api=apiUrl();
   if(!api){st.innerHTML='<span><span class="w">尚未接上即時報價</span>，目前只顯示到名單日的日K。</span>';return}
@@ -471,6 +501,8 @@ function rows(){
 function footHtml(S){
   if(!S)return '<span>沒有日K資料</span>';
   const d=S.dist,dh=`<span>距高 <b class="${d>=0?'hot':''}">${pct(d,1)}</b></span>`;
+  if(S.retro){const n=S.nx;const f=x=>`<b class="${x>0?'up':x<0?'dn':''}">${pct(x,1)}</b>`;
+    return (n?`<span title="名單日隔天：開盤→收盤相對名單日收${n.brk?'，盤中曾過前20日高':''}">隔日 ${f(n.o)}→${f(n.c)}${n.brk?'<b class="hot">突</b>':''}</span>`:'<span>隔日 —</span>')+`<span title="名單日之後 ${S.after} 根的最高價相對名單日收">高 ${f(S.mx)}</span>`}
   let v;if(S.live)v=`<span>量 <b>${S.vNow==null?'—':S.vNow.toFixed(2)+'×'}</b>${S.vProj!=null&&S.state==='live'?`→<b class="${S.vProj>=1.2?'hot':''}">${S.vProj.toFixed(1)}×</b>`:''}</span>`;
   else v=`<span>5日均量 <b>${fmt(S.avg5)}</b></span>`;
   return dh+v;
@@ -490,9 +522,9 @@ function render(){
   grid.innerHTML=R.map(({r,S})=>{
     const tg=S&&S.live?(S.gap?'<span class="tg gap">跳空</span>':S.brk?'<span class="tg">突破</span>':''):'';
     const tm=S&&S.live&&S.q&&S.q.t?S.q.t.slice(0,5):(S&&S.state==='done'?'收':md(S?S.bars[S.bars.length-1][0]:L));
-    return `<article class="km${S&&S.live&&S.brk?' brk':''}" data-c="${esc(r.c)}" role="button" tabindex="0" aria-label="${esc(r.n)} 放大">
-      <div class="km-h"><span>${r.rank}</span><b>${esc(r.n)}</b>${tg}${oppBadge(r,false)}${S&&S.exIn?'<span title="近20日有除權息，20日高未還原">⚠</span>':''}<span class="ovl">${(()=>{const o=other(r.c);const f=n=>n==null?'—':(n>0?'+':n<0?'−':'')+(Math.abs(n)>=1000?(Math.abs(n)/1000).toFixed(1)+'k':String(Math.abs(n)));return `${f(o.tl)}/${f(o.fl)}`})()}</span><span class="ovx ${cls(S&&S.chg)}">${S&&S.chg!=null?(S.chg>0?'▲':S.chg<0?'▼':'')+Math.abs(S.chg*100).toFixed(1)+'%':''}${S&&S.live&&(S.vProj??S.vNow)!=null?' 量'+(S.vProj??S.vNow).toFixed(1)+'×':''}</span><span class="tm">${tm}</span></div>
-      <div class="km-p"><b class="${cls(S&&S.chg)}">${pxFmt(S?S.px:r.cl)}</b><span class="${cls(S&&S.chg)}">${S&&S.chg!=null?(S.chg>0?'▲':S.chg<0?'▼':'')+Math.abs(S.chg*100).toFixed(2)+'%':'—'}</span></div>
+    return `<article class="km${S&&S.live&&S.brk?' brk':''}${S&&S.retro?' retro':''}" data-c="${esc(r.c)}" role="button" tabindex="0" aria-label="${esc(r.n)} 放大">
+      <div class="km-h"><span>${r.rank}</span><b>${esc(r.n)}</b>${tg}${oppBadge(r,false)}${S&&S.exIn?'<span title="近20日有除權息，20日高未還原">⚠</span>':''}<span class="ovl">${(()=>{const o=other(r.c);const f=n=>n==null?'—':(n>0?'+':n<0?'−':'')+(Math.abs(n)>=1000?(Math.abs(n)/1000).toFixed(1)+'k':String(Math.abs(n)));return `${f(o.tl)}/${f(o.fl)}`})()}</span><span class="ovx ${cls(S&&S.chg)}">${S&&S.chg!=null?(S.chg>0?'▲':S.chg<0?'▼':'')+Math.abs(S.chg*100).toFixed(1)+'%':''}${S&&S.live&&(S.vProj??S.vNow)!=null?' 量'+(S.vProj??S.vNow).toFixed(1)+'×':''}</span>${S&&S.retro?'':`<span class="tm">${tm}</span>`}</div>
+      <div class="km-p">${S&&S.retro?`<span class="lcl">${pxFmt(S.lcl)}→</span>`:''}<b class="${cls(S&&S.chg)}">${pxFmt(S?S.px:r.cl)}</b><span class="${cls(S&&S.chg)}" title="${S&&S.retro?'現價相對名單日收':''}">${S&&S.chg!=null?(S.chg>0?'▲':S.chg<0?'▼':'')+Math.abs(S.chg*100).toFixed(2)+'%':'—'}</span></div>
       ${S?'<canvas class="km-cv"></canvas>':''}
       <div class="km-f">${footHtml(S)}</div></article>`}).join('');
   const map=new Map(R.map(o=>[o.r.c,o]));
@@ -527,7 +559,7 @@ function fillSheet(){
   const tm=S&&S.live&&q.t?`盤中 ${q.t}`:S&&S.state==='close'?`今日收盤`:S?`日K至 ${md(S.bars[S.bars.length-1][0])}`:'';
   const yahoo='https://tw.stock.yahoo.com/quote/'+encodeURIComponent(r.c)+(r.m==='上櫃'?'.TWO':'.TW')+'/technical-analysis';
   box.innerHTML=`<div class="sh-h"><span class="rk">${r.rank}</span><b id="shName">${esc(r.n)}</b><span class="cd">${esc(r.c)} ${esc(r.m||'')}</span><button type="button" class="x" aria-label="關閉">✕</button></div>
-    <div class="sh-px"><span class="px ${cls(S&&S.chg)}">${pxFmt(S?S.px:r.cl)}</span><span class="chg ${cls(S&&S.chg)}">${S&&S.chg!=null?(S.chg>0?'▲':S.chg<0?'▼':'')+Math.abs(S.chg*100).toFixed(2)+'%':''}</span><span class="tm">${tm}</span></div>
+    <div class="sh-px">${S&&S.retro?`<span class="lcl" title="名單日收">${md(L)}收 ${pxFmt(S.lcl)} →</span>`:''}<span class="px ${cls(S&&S.chg)}">${pxFmt(S?S.px:r.cl)}</span><span class="chg ${cls(S&&S.chg)}" title="${S&&S.retro?'相對名單日收':''}">${S&&S.chg!=null?(S.chg>0?'▲':S.chg<0?'▼':'')+Math.abs(S.chg*100).toFixed(2)+'%':''}</span><span class="tm">${tm}</span></div>
     ${tags.length?`<div class="sh-tags">${tags.join('')}</div>`:''}
     ${S?`<div class="sh-grid">${grid}</div>
     <div class="sh-n"><span>${r.lab} <b>${r.p!=null?r.p.toFixed(3)+'%':'—'}</b></span><span class="seg" role="group" aria-label="根數">${[40,60,90].map(n=>`<button type="button" data-n="${n}" aria-pressed="${n===nBars}">${n}</button>`).join('')}</span></div>
