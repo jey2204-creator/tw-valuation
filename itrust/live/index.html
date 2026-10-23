@@ -108,7 +108,12 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[r
 .km-f b{font-weight:600;color:var(--fg)}
 .km-f b.up{color:var(--buy)}.km-f b.dn{color:var(--dn)}.km-f b.hot{color:var(--buy)}
 .empty{grid-column:1/-1;background:var(--surface);border:1px dashed var(--line);border-radius:10px;padding:18px;text-align:center;color:var(--muted);font-size:13px}
-.notes{font-size:12.5px;color:var(--muted);line-height:1.7;display:grid;gap:3px;max-width:78ch;margin-top:6px}
+.notes{font-size:12.5px;color:var(--muted);line-height:1.7;max-width:78ch;margin-top:4px}
+.notes summary{cursor:pointer;font-weight:700;color:var(--otc);font-size:13px;padding:6px 0;list-style:none;display:flex;align-items:center;gap:6px}
+.notes summary::before{content:'▸';transition:transform .15s}
+.notes[open] summary::before{transform:rotate(90deg)}
+.notes summary::-webkit-details-marker{display:none}
+.notes>*:not(summary){margin:0 0 3px}
 .notes h2{font-size:13px;color:var(--fg);margin:6px 0 0}
 .notes p{margin:0}
 /* 完整卡片（點縮圖打開） */
@@ -196,7 +201,8 @@ body.shopen{overflow:hidden}
 
   <div class="grid" id="grid"><div class="empty">讀取中…</div></div>
 
-  <section class="notes">
+  <details class="notes" id="notes">
+    <summary>怎麼看這一頁・資料與限制（點開）</summary>
     <h2>怎麼看</h2>
     <p>每張卡片＝名單日盤後的排行前 20 名（投信、外資皆 ≥0.5 億，與排行頁預設門檻相同），日K用自己的資料（每晚更新），最右邊<b>虛線框</b>那根是今天盤中到目前為止的K棒。</p>
     <p><b>投信賣／外資賣</b>分頁＝名單日投信、外資<b>賣超佔股本</b>前 20 名（賣超金額 ≥0.5 億，佔股本為負、越負越前面），用來看法人正在出脫哪些股票與族群；<b>土洋賣</b>＝投信賣超（≥0.5 億）且外資同日也賣超，依投本比＋外本比越負越前面（雙賣，最該避開的一組），徽章直接顯示兩邊賣超張數；名單是前一交易日的，盤中看的是「昨天被賣的股今天怎麼走」，不是今天的即時賣壓。賣超名單的日K底圖從 10/22 晚上起才會齊全。</p>
@@ -207,7 +213,7 @@ body.shopen{overflow:hidden}
     <p>即時行情：證交所基本市況報導（MIS），經自己的 Cloudflare Worker 轉接，通常延遲數秒。證交所在盤中有時會擋掉 Cloudflare 的連線（依機房不同，手機和電腦可能一個通一個不通），這時 Worker 會改抓 Yahoo Finance，狀態列標「改用 Yahoo 備援」，資料約延遲 20 分鐘，請看資料時間。盤中每 60 秒自動更新（可關），也可以按「⚡ 更新」。</p>
     <p>加權指數一列：「若收在此」＝假設今天收在現價時的 20 日均線（月線）與距離。</p>
     <p>這是看盤工具，不是買賣建議；下單前請以券商報價為準。</p>
-  </section>
+  </details>
 </div>
 
 <div class="sheet" id="sheet" hidden role="dialog" aria-modal="true" aria-labelledby="shName">
