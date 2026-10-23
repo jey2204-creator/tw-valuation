@@ -21,7 +21,13 @@ START = "2000-01-01"
 # 代號: (Yahoo 代號, Stooq 代號, FRED 代號或 None)；來源順序 Yahoo → Stooq → FRED → 舊資料
 IDX = {"SPX": ("^GSPC", "^spx", "SP500"), "NDX": ("^NDX", "^ndx", "NASDAQ100"), "DJI": ("^DJI", "^dji", "DJIA"),
        "SOX": ("^SOX", "^sox", None), "VIX": ("^VIX", "^vix", "VIXCLS")}
-UA = {"User-Agent": "Mozilla/5.0 (tw-valuation; github.com/jey2204-creator/tw-valuation)"}
+UA = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+      "Accept": "*/*", "Accept-Language": "en-US,en;q=0.9"}
+LOG = []
+
+
+def warn(msg):
+    print("[warn]", msg, file=sys.stderr); LOG.append(msg[:160])
 
 
 def fetch(url, tries=3):
@@ -29,14 +35,21 @@ def fetch(url, tries=3):
         try:
             with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=60) as r:
                 return r.read().decode("utf-8", "replace")
+        except urllib.error.HTTPError as e:
+            body = e.read()[:120].decode("utf-8", "replace")
+            warn(f"{url[:60]}: HTTP {e.code} {body!r}"); time.sleep(3 * (i + 1))
         except Exception as e:  # noqa
-            print(f"[warn] {url}: {e}", file=sys.stderr); time.sleep(3 * (i + 1))
+            warn(f"{url[:60]}: {e}"); time.sleep(3 * (i + 1))
     return ""
 
 
 def yahoo(sym):
-    txt = fetch(f"https://query1.finance.yahoo.com/v8/finance/chart/{urllib.parse.quote(sym)}?range=max&interval=1d&events=none")
     rows = []
+    txt = ""
+    for host in ("query1", "query2"):
+        txt = fetch(f"https://{host}.finance.yahoo.com/v8/finance/chart/{urllib.parse.quote(sym)}?range=max&interval=1d&events=none", tries=2)
+        if '"timestamp"' in txt:
+            break
     try:
         r = json.loads(txt)["chart"]["result"][0]
         ts, cl = r["timestamp"], r["indicators"]["quote"][0]["close"]
@@ -47,14 +60,14 @@ def yahoo(sym):
             if d >= START:
                 rows.append([d, round(float(c), 2)])
     except Exception as e:  # noqa
-        print(f"[warn] yahoo {sym}: {e} {txt[:120]!r}", file=sys.stderr)
+        warn(f"yahoo {sym}: {e} {txt[:120]!r}")
     return rows
 
 
 def stooq(sym):
     txt = fetch(f"https://stooq.com/q/d/l/?s={sym}&i=d")
     if "Date" not in txt[:200]:
-        print(f"[warn] stooq {sym}: {txt[:120]!r}", file=sys.stderr)
+        warn(f"stooq {sym}: {txt[:120]!r}")
     rows = []
     for r in csv.DictReader(io.StringIO(txt)):
         d, c = r.get("Date"), r.get("Close")
@@ -96,12 +109,12 @@ def main():
             src[k] = "old"
         if len(rows) <= 500:
             rows = old.get(k, [])
-            print(f"[warn] {k}: 來源失敗，沿用舊資料 {len(rows)} 筆", file=sys.stderr)
+            warn(f"{k}: 來源失敗，沿用舊資料 {len(rows)} 筆")
         out[k] = rows
         print(f"{k}: {len(rows)} 筆 {rows[0][0] if rows else '-'} ~ {rows[-1][0] if rows else '-'} ({src[k]})")
         time.sleep(1.5)
     OUT.parent.mkdir(parents=True, exist_ok=True)
-    OUT.write_text(json.dumps({"updated": dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"), "src": src, "s": out},
+    OUT.write_text(json.dumps({"updated": dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"), "src": src, "log": LOG[:40], "s": out},
                               ensure_ascii=False, separators=(",", ":")))
     print("寫入", OUT)
 
