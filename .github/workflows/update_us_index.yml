@@ -1,0 +1,30 @@
+name: 更新美股指數日線
+on:
+  schedule:
+    - cron: "50 22 * * 1-5"   # 台北時間 週二～六 06:50（美股收盤後）
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: push-data
+  cancel-in-progress: false
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: 抓四大指數（Stooq）
+        run: python us/fetch_index.py
+      - name: 有變動才提交
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add us/data/index_px.json
+          git diff --cached --quiet && exit 0
+          git commit -m "us index: $(TZ=Asia/Taipei date +%F)"
+          git pull --rebase origin main
+          git push
