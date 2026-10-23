@@ -90,7 +90,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[r
 /* 總覽模式（2026-10-23）：手機轉橫時 5×4 一屏看完 20 檔；只畫 K 棒＋20/60MA＋前20日高 */
 .ovb{flex:none;min-height:34px;padding:0 10px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--muted);font-weight:700;font-size:13px;cursor:pointer;white-space:nowrap}
 .ovb[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
-.km-h .ovx{display:none}
+.km-h .ovx,.km-h .ovl{display:none}
 @media (max-width:1000px){
 body.ov .hd,body.ov .st,body.ov .mkt,body.ov .setup,body.ov .notes,body.ov .sortbar,body.ov .km-p,body.ov .km-f,body.ov .km-h .tm{display:none}
 body.ov .wrap{padding:3px 8px 6px;gap:4px}
@@ -107,7 +107,8 @@ body.ov .km-h .ovx.up{color:var(--buy)}body.ov .km-h .ovx.dn{color:var(--dn)}
 body.ov .km-cv{margin-top:0;min-height:48px}
 }
 /* 橫向：5×4；直向：3×7（第 7 列只有 2 張） */
-@media (max-width:1000px) and (orientation:landscape){body.ov .grid{grid-template-columns:repeat(5,1fr)}body.ov .km-cv{height:calc((100dvh - 62px)/4 - 22px)}}
+@media (max-width:1000px) and (orientation:landscape){body.ov .grid{grid-template-columns:repeat(5,1fr)}body.ov .km-cv{height:calc((100dvh - 62px)/4 - 22px)}
+body.ov .km-h .ovl{display:inline;margin-left:auto;font:500 9px var(--font-num);color:var(--muted);letter-spacing:-.02em}body.ov .km-h b{flex:none}body.ov .km-h .ovx{margin-left:0}body.ov .km-h .tg{display:none}}
 @media (max-width:1000px) and (orientation:portrait){body.ov .grid{grid-template-columns:repeat(3,1fr)}body.ov .km-cv{height:calc((100dvh - 62px)/7 - 22px)}
 body.ov .tabs button{padding:0 1px;font-size:12px}body.ov .tabs button.sell{font-size:11px}body.ov .rf{padding:0 8px}body.ov .ovb{padding:0 7px}body.ov .km-h .tg{display:none}}
 }
@@ -231,7 +232,7 @@ body.shopen{overflow:hidden}
     <h2>怎麼看</h2>
     <p>每張卡片＝名單日盤後的排行前 20 名（投信、外資皆 ≥0.5 億，與排行頁預設門檻相同），日K用自己的資料（每晚更新），最右邊<b>虛線框</b>那根是今天盤中到目前為止的K棒。</p>
     <p><b>投信賣／外資賣</b>分頁＝名單日投信、外資<b>賣超佔股本</b>前 20 名（賣超金額 ≥0.5 億，佔股本為負、越負越前面），用來看法人正在出脫哪些股票與族群；<b>土洋賣</b>＝投信賣超（≥0.5 億）且外資同日也賣超，依投本比＋外本比越負越前面（雙賣，最該避開的一組），徽章直接顯示兩邊賣超張數；名單是前一交易日的，盤中看的是「昨天被賣的股今天怎麼走」，不是今天的即時賣壓。賣超名單的日K底圖從 10/22 晚上起才會齊全。</p>
-    <p><b>總覽</b>鈕：手機直向 3 欄 × 7 列、轉橫 5 欄 × 4 列，一屏看完 20 檔；小卡只畫最近 20 根 K 棒＋20/60MA＋前 20 日高，右上為漲跌幅與盤中量比，突破／跳空的排最前面；點一張放大看量與法人。</p>
+    <p><b>總覽</b>鈕：手機直向 3 欄 × 7 列、轉橫 5 欄 × 4 列，一屏看完 20 檔；小卡畫最近 20 根 K 棒＋20/60MA＋前 20 日高，下方兩條細柱帶「投」「外」＝每日投信、外資買賣超張數（紅買綠賣，到名單日為止，盤中那根沒有法人數字），右上為漲跌幅與盤中量比；橫向另在右上顯示名單日張數「投/外」（k＝千張）；突破／跳空的排最前面；點一張放大看量與完整法人圖。</p>
     <p><b>另一邊法人</b>徽章：買超卡片上若另一邊法人在名單日是<b>賣超</b>，標 ⚠「外資賣 N張」／「投信賣 N張」（投信買、外資倒貨的要特別小心）；賣超卡片上另一邊也賣標 ⚠「也賣」（雙賣），另一邊反向買標紅色「買」（分歧）。張數＝名單日當天的淨買賣超。</p>
     <p><b>紅色虛線</b>＝前20日高：名單日（含）往前 20 個交易日的最高價。現價或盤中最高碰到它，卡片加紅框並標「突破」；開盤就高於它標「跳空」。價格未還原權息，近 20 日內有除權息時標 ⚠，那條線可能偏高。</p>
     <p>量：<b>0.92×→1.4×</b>＝目前累計量是前 5 日均量的 0.92 倍，依常見盤中量分布推估全天約 1.4 倍（12:00 大約完成全天 65% 的量；09:10 前不估）。量的柱狀圖裡，虛線框是推估的全天量、點線是前 5 日均量。</p>
@@ -353,8 +354,8 @@ function drawK(cv,S,N,opt){
   const MC={5:css('--ma5'),10:css('--ma10'),20:css('--ma20'),60:css('--ma60')};
   const mini=!!opt.mini,all=S.bars,n=all.length,s=Math.max(0,n-N),vis=all.slice(s),m=vis.length,liveJ=S.live?m-1:-1;
   const padL=mini?0:6,padR=mini?0:46,top=mini?3:8;
-  const volH=opt.novol?0:Math.round(Hh*(mini?0.17:0.13)),instH=mini?0:Math.round(Hh*0.1),gap=mini?3:6,axisH=mini?0:12;
-  const nInst=mini?0:2;
+  const volH=opt.novol?0:Math.round(Hh*(mini?0.17:0.13)),instH=mini?(opt.inst?(Hh<72?7:9):0):Math.round(Hh*0.1),gap=mini?(opt.inst?2:3):6,axisH=mini?0:12;
+  const nInst=mini?(opt.inst?2:0):2;const miniInst=mini&&!!opt.inst;
   const priceH=Hh-top-volH-gap-(instH+gap)*nInst-axisH,vY0b=top+priceH+gap+volH;
   const MAS=opt.ma||[20,60];
   const ma=(w,i)=>i-w+1<0?null:all.slice(i-w+1,i+1).reduce((a,x)=>a+x[4],0)/w;
@@ -386,6 +387,10 @@ function drawK(cv,S,N,opt){
   // 投信／外資買賣超（完整卡）
   if(nInst){const im=new Map((S.inst||[]).map(x=>[x[0],x]));
     [['投信買賣超(張)',1],['外資買賣超(張)',2]].forEach(([lab,i],k)=>{const iTop=vY0+gap+(instH+gap)*k,iMid=iTop+instH/2;let imax=1;
+      if(miniInst){vis.forEach(x=>{const r=im.get(x[0]);if(r&&r[i]!=null)imax=Math.max(imax,Math.abs(r[i]))});
+        g.strokeStyle=ln;g.lineWidth=1;g.beginPath();g.moveTo(padL,iMid);g.lineTo(W-padR,iMid);g.stroke();
+        vis.forEach((x,j)=>{const r=im.get(x[0]);const v=r?r[i]:null;if(v==null||v===0)return;const y=iMid-v/imax*(instH/2-0.5);g.fillStyle=v>0?up:dn;g.globalAlpha=x[0]===L?1:.75;g.fillRect(X(j)-bw/2,Math.min(y,iMid),bw,Math.max(1,Math.abs(iMid-y)));g.globalAlpha=1});
+        g.fillStyle=mu;g.font='600 7.5px '+css('--font-body');g.textAlign='left';g.textBaseline='middle';g.fillText(k?'外':'投',padL+1,iMid);return}
       vis.forEach(x=>{const r=im.get(x[0]);if(r&&r[i]!=null)imax=Math.max(imax,Math.abs(r[i]))});
       g.strokeStyle=ln;g.lineWidth=1;g.beginPath();g.moveTo(padL,iMid);g.lineTo(W-padR,iMid);g.stroke();
       vis.forEach((x,j)=>{const r=im.get(x[0]);const v=r?r[i]:null;if(v==null||v===0)return;const y=iMid-v/imax*(instH/2-1);g.fillStyle=v>0?up:dn;g.fillRect(X(j)-bw/2,Math.min(y,iMid),bw,Math.max(1,Math.abs(iMid-y)))});
@@ -484,12 +489,12 @@ function render(){
     const tg=S&&S.live?(S.gap?'<span class="tg gap">跳空</span>':S.brk?'<span class="tg">突破</span>':''):'';
     const tm=S&&S.live&&S.q&&S.q.t?S.q.t.slice(0,5):(S&&S.state==='done'?'收':md(S?S.bars[S.bars.length-1][0]:L));
     return `<article class="km${S&&S.live&&S.brk?' brk':''}" data-c="${esc(r.c)}" role="button" tabindex="0" aria-label="${esc(r.n)} 放大">
-      <div class="km-h"><span>${r.rank}</span><b>${esc(r.n)}</b>${tg}${oppBadge(r,false)}${S&&S.exIn?'<span title="近20日有除權息，20日高未還原">⚠</span>':''}<span class="ovx ${cls(S&&S.chg)}">${S&&S.chg!=null?(S.chg>0?'▲':S.chg<0?'▼':'')+Math.abs(S.chg*100).toFixed(1)+'%':''}${S&&S.live&&(S.vProj??S.vNow)!=null?' 量'+(S.vProj??S.vNow).toFixed(1)+'×':''}</span><span class="tm">${tm}</span></div>
+      <div class="km-h"><span>${r.rank}</span><b>${esc(r.n)}</b>${tg}${oppBadge(r,false)}${S&&S.exIn?'<span title="近20日有除權息，20日高未還原">⚠</span>':''}<span class="ovl">${(()=>{const o=other(r.c);const f=n=>n==null?'—':(n>0?'+':n<0?'−':'')+(Math.abs(n)>=1000?(Math.abs(n)/1000).toFixed(1)+'k':String(Math.abs(n)));return `${f(o.tl)}/${f(o.fl)}`})()}</span><span class="ovx ${cls(S&&S.chg)}">${S&&S.chg!=null?(S.chg>0?'▲':S.chg<0?'▼':'')+Math.abs(S.chg*100).toFixed(1)+'%':''}${S&&S.live&&(S.vProj??S.vNow)!=null?' 量'+(S.vProj??S.vNow).toFixed(1)+'×':''}</span><span class="tm">${tm}</span></div>
       <div class="km-p"><b class="${cls(S&&S.chg)}">${pxFmt(S?S.px:r.cl)}</b><span class="${cls(S&&S.chg)}">${S&&S.chg!=null?(S.chg>0?'▲':S.chg<0?'▼':'')+Math.abs(S.chg*100).toFixed(2)+'%':'—'}</span></div>
       ${S?'<canvas class="km-cv"></canvas>':''}
       <div class="km-f">${footHtml(S)}</div></article>`}).join('');
   const map=new Map(R.map(o=>[o.r.c,o]));
-  grid.querySelectorAll('.km').forEach(el=>{const o=map.get(el.dataset.c);const cv=el.querySelector('canvas');if(cv&&o.S)drawK(cv,o.S,isOV()?20:30,isOV()?{mini:true,ma:[20,60],novol:true}:{mini:true,ma:[20,60]});
+  grid.querySelectorAll('.km').forEach(el=>{const o=map.get(el.dataset.c);const cv=el.querySelector('canvas');if(cv&&o.S)drawK(cv,o.S,isOV()?20:30,isOV()?{mini:true,ma:[20,60],novol:true,inst:true}:{mini:true,ma:[20,60]});
     el.onclick=()=>openSheet(o.r.c);el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openSheet(o.r.c)}}});
   if(openCode)fillSheet();
 }
