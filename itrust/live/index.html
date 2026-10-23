@@ -39,27 +39,25 @@ html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 var(--font-body);padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}
 button,input,select{font:inherit;color:inherit}
 button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[role=button]:focus-visible{outline:2px solid var(--buy);outline-offset:2px}
-.wrap{max-width:1180px;margin:0 auto;padding:12px 16px 40px;display:grid;gap:10px}
+.wrap{max-width:1180px;margin:0 auto;padding:8px 16px 40px;display:grid;gap:8px}
 .up{color:var(--buy)}.dn{color:var(--dn)}
 .hd{display:flex;align-items:baseline;gap:6px 12px;flex-wrap:wrap}
-.hd h1{margin:0;font-size:clamp(20px,3vw,26px);font-weight:900;line-height:1.25}
+.hd h1{margin:0;font-size:clamp(18px,3vw,26px);font-weight:900;line-height:1.2}
 .hd h1 em{font-style:normal;color:var(--buy)}
 .hd .back{margin-left:auto;font-size:13px;font-weight:700;color:var(--otc);text-decoration:none;white-space:nowrap}
-.sub{font-size:12.5px;color:var(--muted);line-height:1.5}
+.sub{font-size:12px;color:var(--muted);line-height:1.4}
 .sub b{font:600 12.5px var(--font-num);color:var(--fg)}
 .sub .w{color:var(--warn);font-weight:700}
 .ctl{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:8px;margin:0 -16px;padding:6px 16px;background:var(--bg);border-bottom:1px solid var(--line)}
-.tabs{display:grid;grid-template-columns:repeat(3,1fr);flex:1 1 auto;min-width:0;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface);max-width:420px}
-.tabs button{flex:1 1 0;border:0;background:transparent;padding:0 6px;min-height:36px;font-weight:700;font-size:14px;color:var(--muted);cursor:pointer;white-space:nowrap}
-.tabs button:not(:nth-child(3n+1)){border-left:1px solid var(--line)}
-.tabs button:nth-child(n+4){border-top:1px solid var(--line);min-height:32px}
+.tabs{display:grid;grid-template-columns:repeat(6,1fr);flex:1 1 auto;min-width:0;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface);max-width:520px}
+.tabs button{border:0;background:transparent;padding:0 2px;min-height:34px;font-weight:700;font-size:13.5px;color:var(--muted);cursor:pointer;white-space:nowrap;letter-spacing:-.02em}
+.tabs button+button{border-left:1px solid var(--line)}
 .tabs button[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
-.tabs button.sell{color:var(--dn);font-size:13px;padding:0 4px}
-.rf{align-self:stretch}
+.tabs button.sell{color:var(--dn);font-size:12.5px}
 .tabs button.sell[aria-pressed="true"]{background:var(--dn);color:#fff}
-.rf{flex:none;display:inline-flex;align-items:center;gap:4px;min-height:36px;padding:0 14px;border-radius:10px;border:1px solid var(--buy);background:var(--buy);color:var(--surface);font-weight:700;font-size:14px;cursor:pointer;white-space:nowrap}
+.rf{flex:none;display:inline-flex;align-items:center;gap:4px;min-height:34px;padding:0 12px;border-radius:10px;border:1px solid var(--buy);background:var(--buy);color:var(--surface);font-weight:700;font-size:14px;cursor:pointer;white-space:nowrap}
 .rf[disabled]{opacity:.6;cursor:progress}
-.st{display:flex;align-items:center;gap:6px 10px;flex-wrap:wrap;font-size:12.5px;color:var(--muted)}
+.st{display:flex;align-items:center;gap:4px 8px;flex-wrap:wrap;font-size:12px;color:var(--muted);line-height:1.35}
 .st b{font:600 12.5px var(--font-num);color:var(--fg)}
 .st .w{color:var(--warn);font-weight:700}
 .st .live{display:inline-flex;align-items:center;gap:5px;font-weight:700;color:var(--buy)}
@@ -68,7 +66,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[r
 @media (prefers-reduced-motion: reduce){.st .live i{animation:none}}
 .auto{margin-left:auto;display:inline-flex;align-items:center;gap:5px;cursor:pointer;white-space:nowrap;font-size:12.5px}
 .auto input{width:16px;height:16px;margin:0;accent-color:var(--buy)}
-.mkt{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:7px 12px;display:grid;gap:2px;font-size:12.5px;color:var(--muted)}
+.mkt{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:4px 10px;display:grid;gap:1px;font-size:12px;color:var(--muted);line-height:1.4}
 .mkt b{font:600 13px var(--font-num);color:var(--fg)}
 .mkt b.up{color:var(--buy)}.mkt b.dn{color:var(--dn)}
 .mkt .r1{display:flex;align-items:baseline;gap:4px 10px;flex-wrap:wrap}
@@ -83,8 +81,8 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[r
 .setup ol{margin:6px 0 0;padding-left:20px}
 .setup code{font:500 12px var(--font-num);background:var(--surface);padding:0 4px;border-radius:4px;word-break:break-all}
 .setup a{color:var(--otc);font-weight:700}
-.sortbar{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);flex-wrap:wrap}
-.sortbar button{border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:999px;padding:2px 10px;min-height:28px;font-size:12.5px;font-weight:600;cursor:pointer}
+.sortbar{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+.sortbar button{flex:none;border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:999px;padding:1px 9px;min-height:24px;font-size:12px;font-weight:600;cursor:pointer}
 .sortbar button[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
 .sortbar .cnt{margin-left:auto;font:500 12px var(--font-num)}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
@@ -421,8 +419,8 @@ function setMarket(){
   const c20=base.slice(-20),ma=c20.reduce((a,x)=>a+x[1],0)/20,lc=base[base.length-1][1],gapL=lc/ma-1;
   let r1='';
   if(q&&q.z&&q.d>L){const ch=q.y?q.z/q.y-1:null;const ma2=(base.slice(-19).reduce((a,x)=>a+x[1],0)+q.z)/20,g2=q.z/ma2-1;
-    r1=`<div class="r1"><strong>加權</strong><b class="${cls(ch)}">${fmt(q.z,2)}</b><b class="${cls(ch)}">${ch==null?'':(ch>0?'▲':ch<0?'▼':'')+Math.abs(ch*100).toFixed(2)+'%'}</b><span>若收在此：月線 <b>${fmt(ma2,0)}</b>，在月線${g2>=0?'上':'下'} <b class="${g2>=0?'up':'dn'}">${Math.abs(g2*100).toFixed(1)}%</b></span></div>`}
-  box.innerHTML=r1+`<div>名單日 ${md(base[base.length-1][0])} 加權收 <b>${fmt(lc,2)}</b> · 月線 <b>${fmt(ma,2)}</b> · 在月線${gapL>=0?'上':'下'} <b class="${gapL>=0?'up':'dn'}">${Math.abs(gapL*100).toFixed(1)}%</b></div>`;
+    r1=`<div class="r1"><strong>加權</strong><b class="${cls(ch)}">${fmt(q.z,0)}</b><b class="${cls(ch)}">${ch==null?'':(ch>0?'▲':ch<0?'▼':'')+Math.abs(ch*100).toFixed(2)+'%'}</b><span>若收在此：月線 <b>${fmt(ma2,0)}</b>，月線${g2>=0?'上':'下'} <b class="${g2>=0?'up':'dn'}">${Math.abs(g2*100).toFixed(1)}%</b></span></div>`}
+  box.innerHTML=r1+`<div>${md(base[base.length-1][0])} 加權收 <b>${fmt(lc,0)}</b> · 月線 <b>${fmt(ma,0)}</b> · 月線${gapL>=0?'上':'下'} <b class="${gapL>=0?'up':'dn'}">${Math.abs(gapL*100).toFixed(1)}%</b></div>`;
   box.hidden=false;
 }
 function rows(){
