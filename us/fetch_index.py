@@ -65,6 +65,8 @@ def nasdaq(sym):
     except Exception as e:  # noqa
         warn(f"nasdaq {sym}: {e} {txt[:100]!r}")
     rows.sort()
+    if len(rows) <= 500:
+        warn(f"nasdaq {sym}: {len(rows)} rows {txt[:140]!r}")
     return [r for r in rows if r[0] >= START]
 
 
@@ -100,7 +102,7 @@ def stooq(sym):
 
 
 def fred(sid):
-    txt = fetch(f"https://fred.stlouisfed.org/graph/fredgraph.csv?id={sid}")
+    txt = fetch(f"https://fred.stlouisfed.org/graph/fredgraph.csv?id={sid}", timeout=90)
     rows = []
     for r in csv.reader(io.StringIO(txt)):
         if len(r) == 2 and r[0] >= START:
@@ -133,7 +135,7 @@ def main():
         print(f"{k}: {len(rows)} 筆 {rows[0][0] if rows else '-'} ~ {rows[-1][0] if rows else '-'} ({src[k]})")
         time.sleep(1.5)
     OUT.parent.mkdir(parents=True, exist_ok=True)
-    OUT.write_text(json.dumps({"updated": dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"), "src": src, "log": LOG[:40], "s": out},
+    OUT.write_text(json.dumps({"updated": dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"), "src": src, "log": LOG[:60], "s": out},
                               ensure_ascii=False, separators=(",", ":")))
     print("寫入", OUT)
 
