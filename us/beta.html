@@ -1,1 +1,216 @@
-<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=./"><title>轉址</title>已搬到正式版，<a href="./">點此前往</a>
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>美股指數走勢（測試版）</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#f3f4f6" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0e1117" media="(prefers-color-scheme: dark)">
+<link rel="apple-touch-icon" href="../icon-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+:root{
+  --bg:#f3f4f6; --card:#ffffff; --fg:#151a23; --muted:#5d6675; --line:#e2e5ea; --grid:#eceef2;
+  --accent:#1f5fbf; --accent2:#0e8f86; --warm:#c46a12; --violet:#7a4cc2;
+  --up:#d32f2f; --down:#138a4b;
+  --f-body:"Noto Sans TC",system-ui,-apple-system,"PingFang TC",sans-serif;
+  --f-num:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0e1117; --card:#171b23; --fg:#e8ebf0; --muted:#97a0ae; --line:#272d38; --grid:#232833;
+  --accent:#6aa1ff; --accent2:#3cc7b9; --warm:#f0a04b; --violet:#b48cff; --up:#ff5b5b; --down:#35c27a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e1117; --card:#171b23; --fg:#e8ebf0; --muted:#97a0ae; --line:#272d38; --grid:#232833;
+  --accent:#6aa1ff; --accent2:#3cc7b9; --warm:#f0a04b; --violet:#b48cff; --up:#ff5b5b; --down:#35c27a; color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.5;-webkit-text-size-adjust:100%}
+.wrap{max-width:560px;margin:0 auto;padding:12px 16px 40px}
+.top{display:flex;align-items:center;gap:8px;font-size:13px}
+.top a{color:var(--accent);text-decoration:none}
+.top .sp{margin-left:auto;color:var(--muted);font-size:12px}
+h1{font-size:20px;font-weight:900;margin:6px 0 0;display:flex;align-items:center;gap:8px}
+h1 small{font-size:11px;font-weight:700;color:var(--warm);border:1px solid var(--warm);border-radius:999px;padding:0 7px}
+.take{margin:4px 0 0;font-size:13.5px;color:var(--muted)}
+.take strong{color:var(--fg)}
+.num{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+.up{color:var(--up)}.down{color:var(--down)}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px;min-width:0;border-left:4px solid var(--c,var(--line))}
+.stat .n{font-size:12px;color:var(--muted);display:flex;justify-content:space-between}
+.stat .n b{color:var(--fg);font-weight:700}
+.stat .v{font-family:var(--f-num);font-size:18px;font-weight:600;display:flex;justify-content:space-between;align-items:baseline}
+.stat .v span{font-size:13px}
+.stat .s{font-size:11px;color:var(--muted);display:flex;justify-content:space-between;margin-top:2px}
+.stat .s em{font-style:normal}
+section.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 12px 8px;margin-top:12px}
+.card h2{font-size:16px;font-weight:700;margin:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.card h2 small{font-size:11px;font-weight:500;color:var(--muted);margin-left:auto}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.chips button{font:inherit;font-size:13px;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:4px 10px;display:flex;align-items:center;gap:6px}
+.chips button i{width:14px;height:4px;border-radius:2px;background:var(--c);display:inline-block;opacity:.35}
+.chips button.on{border-color:var(--fg);font-weight:700}
+.chips button.on i{opacity:1}
+.seg{display:flex;margin-top:8px;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--bg)}
+.seg button{flex:1;font:inherit;font-size:13px;padding:6px 0;border:0;background:transparent;color:var(--fg)}
+.seg button.on{background:var(--accent);color:#fff;font-weight:700}
+.seg.sm button{font-size:12px;padding:5px 0}
+.row2{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
+.tog{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:4px;white-space:nowrap}
+.tog input{width:16px;height:16px;accent-color:var(--accent)}
+.rd{margin-top:8px;font-size:13px;display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:4px 10px}
+.rd b{font-family:var(--f-num);font-weight:600}
+.chart{width:100%;height:300px;margin-top:4px}
+.foot{font-size:11.5px;color:var(--muted);margin:4px 0 4px}
+.tbl{overflow-x:auto;margin-top:6px}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th,td{padding:6px 3px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th{font-weight:500;color:var(--muted);font-size:11.5px}
+td{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+td:first-child{font-family:var(--f-body);font-weight:700}
+details{margin-top:10px;font-size:13px;color:var(--muted)}
+summary{cursor:pointer;color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top"><a href="./">← 美股看板</a><span class="sp" id="upd">載入中…</span></div>
+  <h1>美股四大指數走勢 <small>測試版</small></h1>
+  <p class="take" id="take">—</p>
+  <div class="stats" id="stats"></div>
+
+  <section class="card">
+    <h2>走勢 <small id="rngLbl"></small></h2>
+    <div class="chips" id="chips"></div>
+    <div class="row2">
+      <div class="seg" id="mode">
+        <button data-m="rel" class="on">相對報酬</button>
+        <button data-m="abs">點數</button>
+      </div>
+      <label class="tog" id="logWrap" hidden><input type="checkbox" id="log">對數軸</label>
+    </div>
+    <div class="seg sm" id="rng">
+      <button data-r="3M">3個月</button><button data-r="6M">半年</button><button data-r="1Y" class="on">1年</button>
+      <button data-r="5Y">5年</button><button data-r="10Y">10年</button><button data-r="ALL">全部</button>
+    </div>
+    <div class="rd" id="rd"></div>
+    <div class="chart" id="ch"></div>
+    <p class="foot">線尾標示最新值；相對報酬＝區間起點設為 100，方便比較強弱。點圖可看任一日數值。</p>
+  </section>
+
+  <section class="card">
+    <h2>區間報酬 <small>以最新收盤計</small></h2>
+    <div class="tbl"><table id="ret"></table></div>
+    <p class="foot">距高點＝與該指數歷史最高收盤的距離（2000 年起）。</p>
+  </section>
+
+  <details><summary>ⓘ 說明與資料來源</summary>
+    資料：S&P 500、VIX 來自 Cboe 公開 CSV，道瓊＝Cboe DJX×100（精度到整數點），Nasdaq 100 與費半來自 Nasdaq 歷史報價 API；GitHub Actions 每個交易日台北時間 06:50 更新，備援 Yahoo／Stooq／FRED。費半＝費城半導體指數（SOX），與台股半導體供應鏈關聯最直接。VIX 已一併抓取，之後可加風險溫度圖。
+  </details>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+<script>
+const META={SPX:['S&P 500','accent'],NDX:['Nasdaq 100','violet'],DJI:['道瓊','warm'],SOX:['費半 SOX','accent2']};
+const KEYS=Object.keys(META);
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue('--'+n).trim();
+const fmt=(v,d=0)=>v==null?'—':v.toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
+const pct=v=>v==null?'—':(v>0?'+':'')+v.toFixed(1)+'%';
+const cls=v=>v>0.05?'up':v<-0.05?'down':'';
+let D={},sel=new Set(KEYS),mode='rel',rng='1Y',logY=false,chart;
+
+function startOf(r,last){const d=new Date(last+'T00:00:00Z');if(r==='ALL')return '0000';
+  const m={'3M':3,'6M':6,'1Y':12,'5Y':60,'10Y':120}[r];d.setUTCMonth(d.getUTCMonth()-m);return d.toISOString().slice(0,10)}
+function slice(k,from){const a=D[k]||[];let i=a.findIndex(x=>x[0]>=from);if(i<0)i=0;return a.slice(i)}
+function at(k,from){const a=D[k];if(!a||!a.length)return null;let i=a.findIndex(x=>x[0]>=from);if(i<0)return null;return a[i][1]}
+function ret(k,r){const a=D[k];if(!a||a.length<2)return null;const last=a[a.length-1];const b=at(k,startOf(r,last[0]));return b?(last[1]/b-1)*100:null}
+
+function stats(){
+  const el=document.getElementById('stats');el.innerHTML='';
+  let lastDate='';
+  KEYS.forEach(k=>{const a=D[k];if(!a||a.length<2)return;const [d,v]=a[a.length-1],p=a[a.length-2][1];
+    const dc=(v/p-1)*100,hi=Math.max(...a.map(x=>x[1])),dd=(v/hi-1)*100;
+    const yb=at(k,d.slice(0,4)+'-01-01');const ytd=yb?(v/yb-1)*100:null;
+    if(d>lastDate)lastDate=d;
+    el.insertAdjacentHTML('beforeend',`<div class="stat" style="--c:var(--${META[k][1]})">
+      <div class="n"><b>${META[k][0]}</b><span class="num">${d.slice(5)}</span></div>
+      <div class="v"><span class="num" style="font-size:18px">${fmt(v,v<1000?2:0)}</span><span class="${cls(dc)}">${pct(dc)}</span></div>
+      <div class="s"><span>今年 <em class="num ${cls(ytd)}">${pct(ytd)}</em></span><span>距高點 <em class="num ${cls(dd)}">${dd>-0.05?'新高':pct(dd)}</em></span></div></div>`)});
+  document.getElementById('upd').textContent='資料 '+lastDate+(D._src?'｜'+D._src:'');
+  const s=KEYS.map(k=>[k,ret(k,'1Y')]).filter(x=>x[1]!=null).sort((a,b)=>b[1]-a[1]);
+  if(s.length)document.getElementById('take').innerHTML=`近 1 年最強 <strong>${META[s[0][0]][0]} ${pct(s[0][1])}</strong>、最弱 <strong>${META[s[s.length-1][0]][0]} ${pct(s[s.length-1][1])}</strong>`;
+}
+
+function table(){
+  const rs=['3M','6M','1Y','5Y','10Y'],t=document.getElementById('ret');
+  let h='<tr><th>指數</th>'+rs.map(r=>`<th>${{'3M':'3個月','6M':'半年','1Y':'1年','5Y':'5年','10Y':'10年'}[r]}</th>`).join('')+'<th>距高點</th></tr>';
+  KEYS.forEach(k=>{const a=D[k];if(!a||!a.length)return;const v=a[a.length-1][1],hi=Math.max(...a.map(x=>x[1])),dd=(v/hi-1)*100;
+    h+=`<tr><td style="color:var(--${META[k][1]})">${META[k][0]}</td>`+rs.map(r=>{const x=ret(k,r);return `<td class="${cls(x)}">${pct(x)}</td>`}).join('')+`<td class="${cls(dd)}">${dd>-0.05?'新高':pct(dd)}</td></tr>`});
+  t.innerHTML=h;
+}
+
+function draw(){
+  const keys=KEYS.filter(k=>sel.has(k)&&D[k]&&D[k].length);
+  const last=Math.max(...keys.map(k=>D[k][D[k].length-1][0]).map(s=>s.replace(/-/g,'')))+'';
+  const lastDate=last.slice(0,4)+'-'+last.slice(4,6)+'-'+last.slice(6);
+  const from=startOf(rng,lastDate);
+  document.getElementById('rngLbl').textContent=(from==='0000'?'2000 年起':from)+' ～ '+lastDate;
+  const series=keys.map(k=>{const a=slice(k,from);const base=a.length?a[0][1]:1;
+    const data=a.map(x=>[x[0],mode==='rel'?+(x[1]/base*100).toFixed(2):x[1]]);
+    const col=css(META[k][1]);const lastV=data.length?data[data.length-1][1]:null;
+    const lbl=lastV==null?'':mode==='rel'?pct(lastV-100):fmt(lastV,lastV<1000?2:0);
+    return {name:META[k][0],type:'line',showSymbol:false,data,lineStyle:{width:keys.length>1?1.8:2.2,color:col},itemStyle:{color:col},
+      endLabel:{show:true,formatter:()=>lbl,color:col,fontFamily:css('f-num'),fontSize:11,fontWeight:600,offset:[2,0]},
+      emphasis:{disabled:true},_lbl:lbl,_v:lastV}});
+  const rd=document.getElementById('rd');
+  rd.innerHTML=series.map((s,i)=>{const k=keys[i],x=mode==='rel'?s._v-100:null;return `<span><span style="color:var(--${META[k][1]})">●</span> ${META[k][0]} <b class="${cls(x)}">${mode==='rel'?pct(x):fmt(s._v,s._v<1000?2:0)+' <span class="'+cls(ret(k,rng))+'">'+pct(ret(k,rng))+'</span>'}</b></span>`}).join('');
+  const allV=series.flatMap(s=>s.data.map(d=>d[1]));const yMin=Math.min(...allV),yMax=Math.max(...allV);
+  const isLog=mode==='abs'&&logY;
+  // 對數軸：ECharts 只在 10 的次方標刻度，改用 1-2-3-5 級距的輔助線＋標籤
+  let logLines=[];if(isLog){const lv=[];for(let e=0;e<7;e++)for(const m of [1,1.5,2,3,4,5,6,8]){const v=m*10**e;if(v>=yMin*0.96&&v<=yMax*1.04)lv.push(v)}
+    while(lv.length>7){for(let i=lv.length-2;i>0;i-=2)lv.splice(i,1)}logLines=lv}
+  const opt={
+    animation:false,
+    grid:{left:isLog?50:4,right:56,top:12,bottom:24,containLabel:true},
+    tooltip:{trigger:'axis',confine:true,backgroundColor:css('card'),borderColor:css('line'),textStyle:{color:css('fg'),fontSize:12,fontFamily:css('f-num')},
+      formatter:ps=>ps[0].axisValueLabel.slice(0,10)+'<br>'+ps.map(p=>`<span style="color:${p.color}">●</span> ${p.seriesName} <b>${mode==='rel'?pct(p.value[1]-100):fmt(p.value[1],p.value[1]<1000?2:0)}</b>`).join('<br>')},
+    xAxis:{type:'time',axisLine:{lineStyle:{color:css('line')}},axisLabel:{color:css('muted'),fontSize:11,fontFamily:css('f-num'),hideOverlap:true,
+      formatter:v=>{const d=new Date(v);return rng==='3M'||rng==='6M'?(d.getMonth()+1)+'/'+d.getDate():rng==='1Y'?(d.getMonth()+1)+'月':String(d.getFullYear())}},splitLine:{show:false}},
+    yAxis:{type:isLog?'log':'value',scale:true,...(isLog?{min:Math.floor(yMin*0.96),max:Math.ceil(yMax*1.04)}:{}),position:'left',axisLabel:{show:!isLog,color:css('muted'),fontSize:11,fontFamily:css('f-num'),formatter:v=>mode==='rel'?v:fmt(v)},
+      splitLine:{show:!isLog,lineStyle:{color:css('grid')}},axisLine:{show:false},axisTick:{show:false}},
+    series:series.concat(mode==='rel'?[{type:'line',data:[],markLine:{silent:true,symbol:'none',data:[{yAxis:100}],lineStyle:{type:'dashed',color:css('muted'),opacity:.6},label:{show:false}}}]
+      :isLog?[{type:'line',data:[],markLine:{silent:true,symbol:'none',data:logLines.map(v=>({yAxis:v})),lineStyle:{type:'solid',color:css('grid'),width:1},label:{show:true,position:'start',formatter:p=>fmt(p.value),color:css('muted'),fontSize:11,fontFamily:css('f-num'),distance:4}}}]:[])
+  };
+  chart.clear();chart.setOption(opt);
+  // 線尾標籤避免重疊：依像素位置排序，至少隔 13px，再整張重畫一次
+  if(series.length>1){
+    const pos=series.map((s,i)=>({i,y:chart.convertToPixel({seriesIndex:i},s.data[s.data.length-1])[1]})).sort((a,b)=>a.y-b.y);
+    const want=pos.map(p=>p.y),n=want.length,out=want.slice();
+    for(let k=1;k<n;k++)if(out[k]<out[k-1]+13)out[k]=out[k-1]+13;
+    const shift=(out[n-1]-want[n-1])/2;for(let k=0;k<n;k++)out[k]-=shift;
+    let moved=false;pos.forEach((p,k)=>{const dy=out[k]-p.y;if(Math.abs(dy)>.5)moved=true;series[p.i].endLabel.offset=[2,dy]});
+    if(moved){chart.clear();chart.setOption(opt)}
+  }
+}
+
+function chips(){
+  const el=document.getElementById('chips');el.innerHTML='';
+  KEYS.forEach(k=>{const b=document.createElement('button');b.style.setProperty('--c','var(--'+META[k][1]+')');b.innerHTML=`<i></i>${META[k][0]}`;b.className=sel.has(k)?'on':'';
+    b.onclick=()=>{if(mode==='abs'){sel=new Set([k])}else{if(sel.has(k)){if(sel.size>1)sel.delete(k)}else sel.add(k)}chips();draw()};el.appendChild(b)});
+}
+document.getElementById('mode').onclick=e=>{const b=e.target.closest('button');if(!b)return;mode=b.dataset.m;
+  [...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));
+  document.getElementById('logWrap').hidden=mode!=='abs';
+  if(mode==='abs'&&sel.size>1)sel=new Set([KEYS.find(k=>sel.has(k))]);chips();draw()};
+document.getElementById('rng').onclick=e=>{const b=e.target.closest('button');if(!b)return;rng=b.dataset.r;[...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));draw()};
+document.getElementById('log').onchange=e=>{logY=e.target.checked;draw()};
+window.addEventListener('resize',()=>chart&&chart.resize());
+
+fetch('data/index_px.json?v='+Date.now()).then(r=>r.json()).then(j=>{D=j.s||{};D._src=j.src&&Object.values(j.src).some(x=>x==='old')?'部分來源未更新':'';
+  chart=echarts.init(document.getElementById('ch'),null,{renderer:'canvas'});
+  stats();chips();draw();table();
+}).catch(e=>{document.getElementById('upd').textContent='資料尚未產生（Actions 還沒跑完）';console.error(e)});
+</script>
+</body>
+</html>
