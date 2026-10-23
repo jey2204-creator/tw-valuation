@@ -91,20 +91,25 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[r
 .ovb{flex:none;min-height:34px;padding:0 10px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--muted);font-weight:700;font-size:13px;cursor:pointer;white-space:nowrap}
 .ovb[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
 .km-h .ovx{display:none}
-@media (orientation:landscape) and (max-height:520px){
+@media (max-width:1000px){
 body.ov .hd,body.ov .st,body.ov .mkt,body.ov .setup,body.ov .notes,body.ov .sortbar,body.ov .km-p,body.ov .km-f,body.ov .km-h .tm{display:none}
 body.ov .wrap{padding:3px 8px 6px;gap:4px}
 body.ov .ctl{padding:3px 8px;margin:0 -8px;gap:6px}
 body.ov .tabs{max-width:none}
 body.ov .tabs button,body.ov .rf,body.ov .ovb{min-height:28px;font-size:12.5px}
-body.ov .grid{grid-template-columns:repeat(5,1fr);gap:4px}
+body.ov .grid{gap:4px}
 body.ov .km{padding:1px 4px 2px;border-radius:6px}
 body.ov .km-h{font-size:9.5px;line-height:14px;gap:3px}
 body.ov .km-h b{font-size:11.5px}
 body.ov .km-h .tg{font-size:8.5px;line-height:13px;padding:0 4px}
 body.ov .km-h .ovx{display:inline;margin-left:auto;font:600 10px var(--font-num)}
 body.ov .km-h .ovx.up{color:var(--buy)}body.ov .km-h .ovx.dn{color:var(--dn)}
-body.ov .km-cv{height:calc((100dvh - 62px)/4 - 22px);min-height:48px;margin-top:0}
+body.ov .km-cv{margin-top:0;min-height:48px}
+}
+/* 橫向：5×4；直向：3×7（第 7 列只有 2 張） */
+@media (max-width:1000px) and (orientation:landscape){body.ov .grid{grid-template-columns:repeat(5,1fr)}body.ov .km-cv{height:calc((100dvh - 62px)/4 - 22px)}}
+@media (max-width:1000px) and (orientation:portrait){body.ov .grid{grid-template-columns:repeat(3,1fr)}body.ov .km-cv{height:calc((100dvh - 62px)/7 - 22px)}
+body.ov .tabs button{padding:0 1px;font-size:12px}body.ov .tabs button.sell{font-size:11px}body.ov .rf{padding:0 8px}body.ov .ovb{padding:0 7px}body.ov .km-h .tg{display:none}}
 }
 @media (min-width:1000px){.grid{grid-template-columns:repeat(4,1fr)}}
 .km{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:4px 6px 3px;display:grid;gap:0;min-width:0;cursor:pointer}
@@ -226,6 +231,7 @@ body.shopen{overflow:hidden}
     <h2>怎麼看</h2>
     <p>每張卡片＝名單日盤後的排行前 20 名（投信、外資皆 ≥0.5 億，與排行頁預設門檻相同），日K用自己的資料（每晚更新），最右邊<b>虛線框</b>那根是今天盤中到目前為止的K棒。</p>
     <p><b>投信賣／外資賣</b>分頁＝名單日投信、外資<b>賣超佔股本</b>前 20 名（賣超金額 ≥0.5 億，佔股本為負、越負越前面），用來看法人正在出脫哪些股票與族群；<b>土洋賣</b>＝投信賣超（≥0.5 億）且外資同日也賣超，依投本比＋外本比越負越前面（雙賣，最該避開的一組），徽章直接顯示兩邊賣超張數；名單是前一交易日的，盤中看的是「昨天被賣的股今天怎麼走」，不是今天的即時賣壓。賣超名單的日K底圖從 10/22 晚上起才會齊全。</p>
+    <p><b>總覽</b>鈕：手機直向 3 欄 × 7 列、轉橫 5 欄 × 4 列，一屏看完 20 檔；小卡只畫最近 20 根 K 棒＋20/60MA＋前 20 日高，右上為漲跌幅與盤中量比，突破／跳空的排最前面；點一張放大看量與法人。</p>
     <p><b>另一邊法人</b>徽章：買超卡片上若另一邊法人在名單日是<b>賣超</b>，標 ⚠「外資賣 N張」／「投信賣 N張」（投信買、外資倒貨的要特別小心）；賣超卡片上另一邊也賣標 ⚠「也賣」（雙賣），另一邊反向買標紅色「買」（分歧）。張數＝名單日當天的淨買賣超。</p>
     <p><b>紅色虛線</b>＝前20日高：名單日（含）往前 20 個交易日的最高價。現價或盤中最高碰到它，卡片加紅框並標「突破」；開盤就高於它標「跳空」。價格未還原權息，近 20 日內有除權息時標 ⚠，那條線可能偏高。</p>
     <p>量：<b>0.92×→1.4×</b>＝目前累計量是前 5 日均量的 0.92 倍，依常見盤中量分布推估全天約 1.4 倍（12:00 大約完成全天 65% 的量；09:10 前不估）。量的柱狀圖裡，虛線框是推估的全天量、點線是前 5 日均量。</p>
@@ -299,7 +305,7 @@ function oppBadge(r,full){const o=other(r.c);const who=(view==='fi'||view==='fis
 
 // ---- 狀態 ----
 let H=null,histErr=null,view='it',sortK='rank',nBars=+store.get(N_KEY)||60,openCode=null;
-const OV_KEY='twLive.ov';let ov=store.get(OV_KEY)==='1';const ovMQ=matchMedia('(orientation:landscape) and (max-height:520px)');const isOV=()=>ov&&ovMQ.matches;
+const OV_KEY='twLive.ov';let ov=store.get(OV_KEY)==='1';const ovMQ=matchMedia('(max-width:1000px)');const isOV=()=>ov&&ovMQ.matches;
 if(![40,60,90].includes(nBars))nBars=60;
 const Q=new Map(),lastPx=new Map();
 let qAt=null,qErr=null,busy=false,timer=null;
@@ -551,7 +557,7 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 // ---- 事件 ----
 document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{view=b.dataset.v;render()});
 document.querySelectorAll('.sortbar button').forEach(b=>b.onclick=()=>{sortK=b.dataset.k;render()});
-$('ovBtn').onclick=()=>{ov=!ov;store.set(OV_KEY,ov?'1':'0');render();if(ov&&!ovMQ.matches)$('ovBtn').title='已開啟總覽：手機轉橫即 5×4 一屏看完'};
+$('ovBtn').onclick=()=>{ov=!ov;store.set(OV_KEY,ov?'1':'0');render();$('ovBtn').title=ov?'總覽：直向 3×7、轉橫 5×4':'手機一屏看完 20 檔'};
 if(ovMQ.addEventListener)ovMQ.addEventListener('change',()=>render());
 $('rf').onclick=()=>{if(!apiUrl()){$('setup').hidden=false;$('apiIn').focus();return}refresh()};
 $('apiForm').onsubmit=e=>{e.preventDefault();const v=$('apiIn').value.trim().replace(/\/+$/,'');if(!/^https:\/\/[^\s/]+/.test(v)){$('apiIn').setCustomValidity('請貼上 https:// 開頭的 Worker 網址');$('apiIn').reportValidity();return}
