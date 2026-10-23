@@ -87,6 +87,25 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[r
 .sortbar .cnt{margin-left:auto;font:500 12px var(--font-num)}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 @media (min-width:700px){.grid{grid-template-columns:repeat(3,1fr)}}
+/* 總覽模式（2026-10-23）：手機轉橫時 5×4 一屏看完 20 檔；只畫 K 棒＋20/60MA＋前20日高 */
+.ovb{flex:none;min-height:34px;padding:0 10px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--muted);font-weight:700;font-size:13px;cursor:pointer;white-space:nowrap}
+.ovb[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.km-h .ovx{display:none}
+@media (orientation:landscape) and (max-height:520px){
+body.ov .hd,body.ov .st,body.ov .mkt,body.ov .setup,body.ov .notes,body.ov .sortbar,body.ov .km-p,body.ov .km-f,body.ov .km-h .tm{display:none}
+body.ov .wrap{padding:3px 8px 6px;gap:4px}
+body.ov .ctl{padding:3px 8px;margin:0 -8px;gap:6px}
+body.ov .tabs{max-width:none}
+body.ov .tabs button,body.ov .rf,body.ov .ovb{min-height:28px;font-size:12.5px}
+body.ov .grid{grid-template-columns:repeat(5,1fr);gap:4px}
+body.ov .km{padding:1px 4px 2px;border-radius:6px}
+body.ov .km-h{font-size:9.5px;line-height:14px;gap:3px}
+body.ov .km-h b{font-size:11.5px}
+body.ov .km-h .tg{font-size:8.5px;line-height:13px;padding:0 4px}
+body.ov .km-h .ovx{display:inline;margin-left:auto;font:600 10px var(--font-num)}
+body.ov .km-h .ovx.up{color:var(--buy)}body.ov .km-h .ovx.dn{color:var(--dn)}
+body.ov .km-cv{height:calc((100dvh - 62px)/4 - 22px);min-height:48px;margin-top:0}
+}
 @media (min-width:1000px){.grid{grid-template-columns:repeat(4,1fr)}}
 .km{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:4px 6px 3px;display:grid;gap:0;min-width:0;cursor:pointer}
 .km:active{background:var(--chip)}
@@ -170,6 +189,7 @@ body.shopen{overflow:hidden}
       <button type="button" data-v="fis" class="sell" aria-pressed="false">外資賣</button>
       <button type="button" data-v="boths" class="sell" aria-pressed="false">土洋賣</button>
     </div>
+    <button type="button" class="ovb" id="ovBtn" aria-pressed="false" title="手機轉橫時 5×4 一屏看完 20 檔">總覽</button>
     <button type="button" class="rf" id="rf">⚡ 更新</button>
   </div>
 
@@ -279,6 +299,7 @@ function oppBadge(r,full){const o=other(r.c);const who=(view==='fi'||view==='fis
 
 // ---- 狀態 ----
 let H=null,histErr=null,view='it',sortK='rank',nBars=+store.get(N_KEY)||60,openCode=null;
+const OV_KEY='twLive.ov';let ov=store.get(OV_KEY)==='1';const ovMQ=matchMedia('(orientation:landscape) and (max-height:520px)');const isOV=()=>ov&&ovMQ.matches;
 if(![40,60,90].includes(nBars))nBars=60;
 const Q=new Map(),lastPx=new Map();
 let qAt=null,qErr=null,busy=false,timer=null;
@@ -326,7 +347,7 @@ function drawK(cv,S,N,opt){
   const MC={5:css('--ma5'),10:css('--ma10'),20:css('--ma20'),60:css('--ma60')};
   const mini=!!opt.mini,all=S.bars,n=all.length,s=Math.max(0,n-N),vis=all.slice(s),m=vis.length,liveJ=S.live?m-1:-1;
   const padL=mini?0:6,padR=mini?0:46,top=mini?3:8;
-  const volH=Math.round(Hh*(mini?0.17:0.13)),instH=mini?0:Math.round(Hh*0.1),gap=mini?3:6,axisH=mini?0:12;
+  const volH=opt.novol?0:Math.round(Hh*(mini?0.17:0.13)),instH=mini?0:Math.round(Hh*0.1),gap=mini?3:6,axisH=mini?0:12;
   const nInst=mini?0:2;
   const priceH=Hh-top-volH-gap-(instH+gap)*nInst-axisH,vY0b=top+priceH+gap+volH;
   const MAS=opt.ma||[20,60];
@@ -352,9 +373,9 @@ function drawK(cv,S,N,opt){
   const vY0=top+priceH+gap+volH;
   const vmax=Math.max(1,...vis.map(x=>x[5]||0),S.live&&S.vProj?S.vProj*S.avg5:0,S.avg5||0);
   const VY=v=>vY0-v/vmax*(volH-1);
-  vis.forEach((x,j)=>{const col=x[4]>=x[1]?up:dn;g.fillStyle=col;g.globalAlpha=j===liveJ?.85:.42;const y=VY(x[5]||0);g.fillRect(X(j)-bw/2,y,bw,vY0-y);g.globalAlpha=1});
-  if(liveJ>=0&&S.vProj){const y=VY(S.vProj*S.avg5);g.save();g.strokeStyle=fg;g.lineWidth=1;g.setLineDash([2,2]);g.strokeRect(X(liveJ)-bw/2,y,bw,vY0-y);g.restore()}
-  if(S.avg5){const y=VY(S.avg5);g.save();g.strokeStyle=mu;g.lineWidth=1;g.setLineDash([1,2]);g.beginPath();g.moveTo(padL,y);g.lineTo(W-padR,y);g.stroke();g.restore()}
+  if(volH)vis.forEach((x,j)=>{const col=x[4]>=x[1]?up:dn;g.fillStyle=col;g.globalAlpha=j===liveJ?.85:.42;const y=VY(x[5]||0);g.fillRect(X(j)-bw/2,y,bw,vY0-y);g.globalAlpha=1});
+  if(volH&&liveJ>=0&&S.vProj){const y=VY(S.vProj*S.avg5);g.save();g.strokeStyle=fg;g.lineWidth=1;g.setLineDash([2,2]);g.strokeRect(X(liveJ)-bw/2,y,bw,vY0-y);g.restore()}
+  if(volH&&S.avg5){const y=VY(S.avg5);g.save();g.strokeStyle=mu;g.lineWidth=1;g.setLineDash([1,2]);g.beginPath();g.moveTo(padL,y);g.lineTo(W-padR,y);g.stroke();g.restore()}
   if(!mini){g.fillStyle=mu;g.textAlign='left';g.font='9px '+css('--font-body');g.textBaseline='top';g.fillText('量(張)',padL+2,top+priceH+gap);g.font='10px '+css('--font-num');g.textBaseline='middle'}
   // 投信／外資買賣超（完整卡）
   if(nInst){const im=new Map((S.inst||[]).map(x=>[x[0],x]));
@@ -449,18 +470,20 @@ function render(){
   const grid=$('grid');
   if(!SD){grid.innerHTML='<div class="empty">讀不到排行資料。</div>';return}
   if(!H){grid.innerHTML=`<div class="empty">${histErr?'日K讀取失敗：'+esc(histErr):'讀取日K中…'}</div>`;return}
+  document.body.classList.toggle('ov',ov);$('ovBtn').setAttribute('aria-pressed',String(ov));
   const R=rows();$('cnt').textContent=R.length+' 檔';
+  if(isOV())R.sort((a,b)=>((b.S&&b.S.live?(b.S.gap?2:b.S.brk?1:0):0)-(a.S&&a.S.live?(a.S.gap?2:a.S.brk?1:0):0))||a.r.rank-b.r.rank);   // 總覽：突破／跳空排最前
   if(!R.length){grid.innerHTML='<div class="empty">這一天沒有符合門檻的名單。</div>';return}
   grid.innerHTML=R.map(({r,S})=>{
     const tg=S&&S.live?(S.gap?'<span class="tg gap">跳空</span>':S.brk?'<span class="tg">突破</span>':''):'';
     const tm=S&&S.live&&S.q&&S.q.t?S.q.t.slice(0,5):(S&&S.state==='done'?'收':md(S?S.bars[S.bars.length-1][0]:L));
     return `<article class="km${S&&S.live&&S.brk?' brk':''}" data-c="${esc(r.c)}" role="button" tabindex="0" aria-label="${esc(r.n)} 放大">
-      <div class="km-h"><span>${r.rank}</span><b>${esc(r.n)}</b>${tg}${oppBadge(r,false)}${S&&S.exIn?'<span title="近20日有除權息，20日高未還原">⚠</span>':''}<span class="tm">${tm}</span></div>
+      <div class="km-h"><span>${r.rank}</span><b>${esc(r.n)}</b>${tg}${oppBadge(r,false)}${S&&S.exIn?'<span title="近20日有除權息，20日高未還原">⚠</span>':''}<span class="ovx ${cls(S&&S.chg)}">${S&&S.chg!=null?(S.chg>0?'▲':S.chg<0?'▼':'')+Math.abs(S.chg*100).toFixed(1)+'%':''}${S&&S.live&&(S.vProj??S.vNow)!=null?' 量'+(S.vProj??S.vNow).toFixed(1)+'×':''}</span><span class="tm">${tm}</span></div>
       <div class="km-p"><b class="${cls(S&&S.chg)}">${pxFmt(S?S.px:r.cl)}</b><span class="${cls(S&&S.chg)}">${S&&S.chg!=null?(S.chg>0?'▲':S.chg<0?'▼':'')+Math.abs(S.chg*100).toFixed(2)+'%':'—'}</span></div>
       ${S?'<canvas class="km-cv"></canvas>':''}
       <div class="km-f">${footHtml(S)}</div></article>`}).join('');
   const map=new Map(R.map(o=>[o.r.c,o]));
-  grid.querySelectorAll('.km').forEach(el=>{const o=map.get(el.dataset.c);const cv=el.querySelector('canvas');if(cv&&o.S)drawK(cv,o.S,30,{mini:true,ma:[20,60]});
+  grid.querySelectorAll('.km').forEach(el=>{const o=map.get(el.dataset.c);const cv=el.querySelector('canvas');if(cv&&o.S)drawK(cv,o.S,isOV()?20:30,isOV()?{mini:true,ma:[20,60],novol:true}:{mini:true,ma:[20,60]});
     el.onclick=()=>openSheet(o.r.c);el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openSheet(o.r.c)}}});
   if(openCode)fillSheet();
 }
@@ -528,6 +551,8 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 // ---- 事件 ----
 document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{view=b.dataset.v;render()});
 document.querySelectorAll('.sortbar button').forEach(b=>b.onclick=()=>{sortK=b.dataset.k;render()});
+$('ovBtn').onclick=()=>{ov=!ov;store.set(OV_KEY,ov?'1':'0');render();if(ov&&!ovMQ.matches)$('ovBtn').title='已開啟總覽：手機轉橫即 5×4 一屏看完'};
+if(ovMQ.addEventListener)ovMQ.addEventListener('change',()=>render());
 $('rf').onclick=()=>{if(!apiUrl()){$('setup').hidden=false;$('apiIn').focus();return}refresh()};
 $('apiForm').onsubmit=e=>{e.preventDefault();const v=$('apiIn').value.trim().replace(/\/+$/,'');if(!/^https:\/\/[^\s/]+/.test(v)){$('apiIn').setCustomValidity('請貼上 https:// 開頭的 Worker 網址');$('apiIn').reportValidity();return}
   $('apiIn').setCustomValidity('');store.set(API_KEY,v);schedule();refresh()};
