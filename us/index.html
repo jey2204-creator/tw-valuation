@@ -230,6 +230,14 @@ h2.sec small{font-weight:500;letter-spacing:0}
 .ttw a b{font-family:var(--f-num);font-weight:600;color:var(--accent);margin-right:4px}
 .ttw a.all{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 40%,var(--line))}
 .grp .it:first-child{border-top:0}
+/* 主題頁個股表：同台股站 .lst 五欄（股票／收盤／本益比／淨值比／營收年增） */
+.lst{font-size:13px}.lst tbody tr{cursor:pointer}.lst tbody tr:active{background:var(--bg)}
+.lst td{padding-block:8px;vertical-align:top}.lst td:first-child{white-space:normal;font-family:var(--f-body)}
+.lst .nm{font-weight:700;font-size:14px;font-family:var(--f-num)}.lst .cd{font-size:11.5px;color:var(--muted);margin-left:4px}
+.lst .role{font-size:11.5px;color:var(--muted);line-height:1.35}.lst .role .pill{font-size:10.5px;padding:0 6px;margin-right:3px;vertical-align:1px}
+.lst .sub{display:block;font-size:11px;color:var(--muted)}.lst .sub.sm{font-size:10.5px}
+.lst .cap{display:block;font-size:11px;color:var(--muted);font-family:var(--f-num)}
+.lst th[data-k]{cursor:pointer;user-select:none}.lst th.on{color:var(--fg);font-weight:700}
 .it .x{grid-column:1/-1;font-size:11.5px;color:var(--muted);line-height:1.5;margin-top:-2px}
 .it .x em{font-style:normal;color:var(--fg);background:var(--b1);border-radius:4px;padding:0 5px;margin-right:2px}
 .it .x b{font-family:var(--f-num);font-weight:600;color:var(--fg)}
@@ -330,7 +338,7 @@ html{scroll-behavior:smooth}
   <p class="tsum" id="tSum"></p>
   <div class="tearn" id="tEarn"></div>
   <div class="ttw" id="tTw"></div>
-  <div class="grp" id="tList"></div>
+  <div class="panel"><div class="tbl"><table class="lst" id="tList"></table></div></div>
   <p class="legend" id="tFoot"></p>
 </div>
 
@@ -582,7 +590,7 @@ const fxFoot=()=>fxOn()?`　台幣 = 美元 × ${FX.rate}（自設固定匯率�
 function fxRender(){document.querySelectorAll('[data-fx]').forEach(el=>{const seg=`<span class="fxseg"><button type="button" data-c="0"${fxOn()?'':' class="on"'}>美元</button><button type="button" data-c="1"${fxOn()?' class="on"':''}>台幣${el.dataset.fx==='mini'&&fxOn()?`<small>@${FX.rate}</small>`:''}</button></span>`;
   if(el.dataset.fx==='mini'){el.innerHTML=seg;el.title=fxOn()?`台幣 = 美元 × ${FX.rate}（自設固定匯率，比率不變；匯率在首頁改）`:'改用台幣顯示絕對金額（固定匯率，比率不變）';return}
   el.innerHTML=seg+(fxOn()?`<label>固定匯率 <input type="number" step="0.1" min="20" max="45" inputmode="decimal" value="${FX.rate}" data-rate></label><span>≈ 金額 = 美元 × ${FX.rate}（非即時匯率）；比率、分位、年增不受影響</span>`:'<span>比率不分幣別；台幣模式只換股價／EPS／營收等絕對金額</span>')})}
-function fxApply(){fxSave();fxRender();if(D&&!$('stock').hidden){header();render()}capexAll()}
+function fxApply(){fxSave();fxRender();if(D&&!$('stock').hidden){header();render()}if(!$('themePage').hidden&&CUR_T)themeRender(CUR_T);capexAll()}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-fx] button[data-c]');if(!b)return;const on=b.dataset.c==='1';if(on===FX.on)return;FX.on=on;fxApply()});
 document.addEventListener('change',e=>{if(!e.target.matches('[data-fx] input[data-rate]'))return;const r=+e.target.value;if(!(r>=20&&r<=45)){e.target.value=FX.rate;return}FX.rate=Math.round(r*10)/10;fxApply()});
 fxRender();
@@ -847,6 +855,7 @@ function statOf(d,s){const q=d.q||[],lq=q[q.length-1],o={lq:lq?(d.freq==='Q'?lq[
     if(w.every((x,i)=>!i||nextQ(w[i-1][0])===x[0])&&w.every(x=>x[6]!=null)){const a=sum(w.slice(4).map(x=>x[6])),b=sum(w.slice(0,4).map(x=>x[6]));
       if(a<=0)o.ek='虧損';else if(b<=0)o.ek='轉盈';else o.ey=(a/b-1)*100}}
   if(s.pe&&o.ey>0&&o.ey<=300)o.peg=s.pe/o.ey;   // 年增 >300% 是低基期，不算 PEG（同台股站）
+  if(lq&&lq[8]>0)o.sh=lq[8];
   const r=d.riv||[],r1=r[r.length-1],r0=r[r.length-2];if(r1&&r0&&r0[1]>0&&s.date&&r1[0]===s.date.slice(0,7))o.mtd=(r1[1]/r0[1]-1)*100;
   return o}
 function loadStats(){return ST_P||(ST_P=Promise.all(IDX.map(async s=>{const d=await getD(s.id);if(d)ST[s.id]=statOf(d,s)})).then(()=>{ST_OK=true}))}
@@ -913,17 +922,34 @@ function themeRender(tid){
   $('tEarn').innerHTML=ev.length?'<span class="lb">📅 財報</span>'+ev.map(([id,x,dd])=>`<a class="ec${dd<0?' done':''}" href="#${id}">${dd<0?'✅':''}<b>${id}</b><small>${+x[0].slice(5,7)}/${+x[0].slice(8)}${dd<0?' 已公布':({bmo:' 盤前',amc:' 盤後',dmh:' 盤中'}[x[1]]||'')}</small></a>`).join(''):'';
   $('tTw').innerHTML=t.tw.length?'<span class="lb">對應台股</span>'+t.tw.map(([c,n])=>`<a href="../#${c}"><b>${c}</b>${esc(n)}</a>`).join('')+(!t.custom&&t.id!=='cloud'?`<a class="all" href="../#t/${t.id}">台股同主題 →</a>`:''):(t.dem?'<span class="lb">對應台股：全供應鏈（需求層）</span>':'');
   const nx=ids.filter(id=>!tracked(id)).length;
-  $('tList').innerHTML=t.stocks.map(([id,note])=>{const s=stockOf(id),tr=tracked(id),o=ST[id]||{},col=s.chg>0?'var(--up)':s.chg<0?'var(--down)':'var(--muted)';
-    const x=[(note?`<em>${esc(note)}</em>`:'')+(tr?'':`<span class="pill o">${s.unk?'查無資料':'全市場'}</span>`)+(s.cyc?'<span class="pill">循環</span>':'')+(s.freq==='A'?'<span class="pill b">僅年報</span>':''),
-      o.ry!=null?`營收 <b class="${sgc(o.ry)}">${pct(o.ry)}</b>`:'',
-      o.ey!=null?`EPS <b class="${sgc(o.ey)}">${pct(o.ey)}</b>`:o.ek?`EPS ${o.ek}`:'',
-      o.peg!=null?`PEG <b class="${pegc(o.peg)}">${fmt(o.peg,2)}</b>`:'',
-      o.mtd!=null?`本月 <b class="${sgc(o.mtd)}">${pct(o.mtd,1)}</b>`:''].filter(Boolean).join('・');
-    return `<a class="it" href="#${id}"><span class="t">${id}</span><span class="n">${esc(cnOf(s)||s.name||'')}</span>`+
-      (tr?`<span class="p" style="color:${col}">${fmt(s.close,2)}<br><small>${s.chg==null?'':(s.chg>0?'+':'')+s.chg+'%'}</small></span>`:'<span class="p" style="color:var(--muted)">—</span>')+
-      `<span class="v">PE ${s.pe??'—'}<br>PB ${s.pb??'—'}</span>${x?`<span class="x">${x}</span>`:''}</a>`}).join('');
-  $('tFoot').innerHTML=`營收＝最新一季對比去年同季；EPS＝近四季合計對比前四季（「虧損」＝近四季合計 ≤ 0，「轉盈」＝前四季是虧損）；PEG＝本益比 ÷ EPS 年增，年增 &gt;300% 低基期不算${it.some(s=>s.cyc)?'；<span class="pill">循環</span> 股 PEG 參考性低，以淨值比河流為主':''}；本月＝最新收盤對比上月底。收盤為美元。`+
+  tTable(t);
+  $('tFoot').innerHTML=`營收＝最新一季對比去年同季；EPS＝近四季合計對比前四季（「虧損」＝近四季合計 ≤ 0，「轉盈」＝前四季是虧損）；PEG＝本益比 ÷ EPS 年增，年增 &gt;300% 低基期不算${it.some(s=>s.cyc)?'；<span class="pill">循環</span> 股 PEG 參考性低，以淨值比河流為主':''}；本月＝最新收盤對比上月底。收盤為美元；市值＝最新季稀釋股數 × 收盤${fxOn()?'，台幣以固定匯率 '+FX.rate+' 換算':''}。點欄位標題可排序（本益比連點：本益比 → EPS年增 → PEG）。`+
     (nx?'<br><span class="pill o">全市場</span>＝不在每日追蹤清單：只有每週更新的財報，沒有本益比與本月漲跌，點進個股頁才即時抓股價。':'')}
+// ---------- 主題頁個股表（排版同台股站）----------
+// 市值＝最新季稀釋股數 × 收盤（百萬美元），跟著美元／台幣切換：美元顯示「億美元」、台幣顯示「≈ 億」
+const capM=id=>{const s=stockOf(id),o=ST[id]||{};return tracked(id)&&s.close&&o.sh?o.sh*s.close:null};
+const capT=m=>{if(m==null)return '';const a=fxOn()?m*FX.rate/100:m/100;return (fxOn()?'≈':'$')+(a>=1e4?fmt(a/1e4,2)+'兆':fmt(a,a<10?1:0)+'億')};
+const TSORT={cap:capM,px:id=>stockOf(id).chg,pe:id=>stockOf(id).pe||null,eps:id=>(ST[id]||{}).ey,peg:id=>(ST[id]||{}).peg,pb:id=>stockOf(id).pb||null,ry:id=>(ST[id]||{}).ry};
+const TPE=['pe:-1','pe:1','eps:-1','peg:1',''],TPEL={pe:'本益比',eps:'EPS年增',peg:'PEG'};
+let TS='';
+function tTable(t){const el=$('tList'),[k,dir]=TS.split(':');let rows=t.stocks.slice();
+  if(k){const f=TSORT[k];rows.sort((a,b)=>{const x=f(a[0]),y=f(b[0]);if(x==null)return 1;if(y==null)return -1;return (x-y)*(+dir||-1)})}
+  const lqs=rows.map(([id])=>(ST[id]||{}).lq).filter(Boolean).sort(),LQ=lqs[lqs.length-1];
+  const th=(key,lb)=>{const on=key==='pe'?k in TPEL:k===key;return `<th data-k="${key}" class="${on?'on':''}">${key==='pe'&&on?TPEL[k]:key==='cap'&&on?'市值':lb}${on?(+dir>0?' ▲':' ▼'):''}</th>`};
+  el.innerHTML=`<thead><tr>${th('cap','股票')}${th('px','收盤')}${th('pe','本益比')}${th('pb','淨值比')}${th('ry','營收年增')}</tr></thead><tbody>`+rows.map(([id,note])=>{
+    const s=stockOf(id),tr=tracked(id),o=ST[id]||{},cm=capM(id);
+    const pills=(tr?'':`<span class="pill o">${s.unk?'查無資料':'全市場'}</span>`)+(s.cyc?'<span class="pill">循環</span>':'')+(s.freq==='A'?'<span class="pill b">僅年報</span>':'');
+    // EPS 年增＋PEG：規則同台股站 epsCell（虧損／轉盈、>300% 低基期不算 PEG）
+    let e;if(o.ek)e=`<span class="sub ${o.ek==='轉盈'?'vu':'vd'}">四季 ${o.ek}</span>`;
+    else if(o.ey!=null)e=`<span class="sub ${sgc(o.ey)}">四季 ${o.ey>300?'>+300%':pct(o.ey)}</span>`;else e='<span class="sub">EPS —</span>';
+    if(o.peg!=null)e+=`<span class="sub ${pegc(o.peg)}">PEG ${fmt(o.peg,o.peg<10?2:1)}</span>`;else if(o.ey>300)e+='<span class="sub">低基期</span>';
+    return `<tr data-id="${id}"><td><span class="nm">${id}</span><span class="cd">${esc(cnOf(s)||s.name||'')}</span>${cm?`<span class="cap">${capT(cm)}</span>`:''}${pills||note?`<div class="role">${pills}${esc(note||'')}</div>`:''}</td>`+
+      (tr?`<td>${fmt(s.close,2)}<span class="sub ${sgc(s.chg)}">${s.chg==null?'—':pct(s.chg,2)}</span>${o.mtd!=null?`<span class="sub sm">本月 <span class="${sgc(o.mtd)}">${pct(o.mtd,1)}</span></span>`:''}</td>`:'<td>—</td>')+
+      `<td>${s.pe?fmt(s.pe,1):'—'}${e}</td><td>${s.pb?fmt(s.pb,2):'—'}</td>`+
+      `<td class="${sgc(o.ry)}">${o.ry!=null?pct(o.ry,1):'—'}<span class="sub"${o.lq&&o.lq!==LQ?' style="color:var(--warm)" title="跟其他檔不同季"':''}>${o.lq||''}</span></td></tr>`}).join('')+'</tbody>';
+  el.onclick=e=>{const h=e.target.closest('th[data-k]');if(h){const nk=h.dataset.k,cur=TS.split(':');
+      if(nk==='pe'){const i=TPE.indexOf(TS);TS=TPE[i<0?0:(i+1)%TPE.length]}else TS=cur[0]===nk?(cur[1]==='-1'?nk+':1':''):nk+':-1';tTable(t);return}
+    const r=e.target.closest('tr[data-id]');if(r)location.hash=r.dataset.id}}
 async function capexAll(){
   const ids=IDX.filter(s=>s.dem).map(s=>s.id);if(!ids.length)return;
   const ds=(await Promise.all(ids.map(getD))).filter(Boolean);
