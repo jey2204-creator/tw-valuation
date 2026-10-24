@@ -98,19 +98,29 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[r
 /* 總覽模式（2026-10-23）：手機轉橫時 5×4 一屏看完 20 檔；只畫 K 棒＋20/60MA＋前20日高 */
 .ovb{flex:none;min-height:34px;padding:0 10px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--muted);font-weight:700;font-size:13px;cursor:pointer;white-space:nowrap}
 .ovb[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.ovd{position:relative;flex:none}
+.ovdb{min-height:34px;padding:0 8px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--fg);font:700 12.5px var(--font-num);cursor:pointer;white-space:nowrap}
+.ovdb.retro{background:var(--otc);border-color:var(--otc);color:#fff}
+.ovdp{position:absolute;right:0;top:calc(100% + 4px);z-index:30;min-width:150px;max-height:min(60vh,380px);overflow-y:auto;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.18);padding:4px}
+.ovdp .nav{position:sticky;top:-4px;z-index:1;display:flex;gap:4px;padding:4px 2px;margin:-4px -4px 2px;background:var(--surface);border-bottom:1px solid var(--line)}.ovdp .nav button{flex:1;min-height:30px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg);font-weight:700;font-size:14px;cursor:pointer}.ovdp .nav button:disabled{opacity:.35}
+.ovdp .it{display:flex;align-items:center;gap:6px;width:100%;min-height:32px;padding:0 8px;border:0;border-radius:7px;background:transparent;color:var(--fg);font:600 13px var(--font-num);cursor:pointer;text-align:left}
+.ovdp .it[aria-selected="true"]{background:var(--fg);color:var(--bg)}
+.ovdp .it small{margin-left:auto;font:500 10.5px var(--font-body);color:var(--muted)}.ovdp .it[aria-selected="true"] small{color:var(--bg)}
+body.ov .ovd{display:inline-block}
 .km-h .ovx,.km-h .ovl{display:none}
 @media (max-width:1000px){
 body.ov .hd,body.ov .st,body.ov .mkt,body.ov .setup,body.ov .notes,body.ov .sortbar,body.ov .km-p,body.ov .km-f,body.ov .km-h .tm{display:none}
 body.ov .wrap{padding:3px 8px 6px;gap:4px}
 body.ov .ctl{padding:3px 8px;margin:0 -8px;gap:6px}
 body.ov .tabs{max-width:none}
-body.ov .tabs button,body.ov .rf,body.ov .ovb{min-height:28px;font-size:12.5px}
+body.ov .tabs button,body.ov .rf,body.ov .ovb,body.ov .ovdb{min-height:28px;font-size:12.5px}
 body.ov .grid{gap:4px}
 body.ov .km{padding:1px 4px 2px;border-radius:6px}
 body.ov .km-h{font-size:9.5px;line-height:14px;gap:3px}
 body.ov .km-h b{font-size:11.5px}
 body.ov .km-h .tg{font-size:8.5px;line-height:13px;padding:0 4px}
 body.ov .km-h .ovx{display:inline;margin-left:auto;font:600 10px var(--font-num)}
+.km-h .nx{flex:none;font:800 9px var(--font-body);line-height:13px;padding:0 3px;border-radius:4px;background:var(--buy);color:#fff}
 body.ov .km-h .ovx.up{color:var(--buy)}body.ov .km-h .ovx.dn{color:var(--dn)}
 body.ov .km-cv{margin-top:0;min-height:48px}
 }
@@ -118,7 +128,7 @@ body.ov .km-cv{margin-top:0;min-height:48px}
 @media (max-width:1000px) and (orientation:landscape){body.ov .grid{grid-template-columns:repeat(5,1fr)}body.ov .km-cv{height:calc((100dvh - 62px)/4 - 22px)}
 body.ov .km-h .ovl{display:inline;margin-left:auto;font:500 9px var(--font-num);color:var(--muted);letter-spacing:-.02em}body.ov .km-h b{flex:none}body.ov .km-h .ovx{margin-left:0}body.ov .km-h .tg{display:none}}
 @media (max-width:1000px) and (orientation:portrait){body.ov .grid{grid-template-columns:repeat(3,1fr)}body.ov .km-cv{height:calc((100dvh - 62px)/7 - 22px)}
-body.ov .tabs button{padding:0 1px;font-size:12px}body.ov .tabs button.sell{font-size:11px}body.ov .rf{padding:0 8px}body.ov .ovb{padding:0 7px}body.ov .km-h .tg{display:none}}
+body.ov .tabs button{padding:0 1px;font-size:11.5px}body.ov .tabs button.sell{font-size:10.5px}body.ov .rf{padding:0 6px}body.ov .ovb{padding:0 6px}body.ov .ovdb{padding:0 6px;font-size:12px;min-height:28px}body.ov .ctl{gap:4px}body.ov .km-h .tg{display:none}}
 }
 @media (min-width:1000px){.grid{grid-template-columns:repeat(4,1fr)}}
 .km{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:4px 6px 3px;display:grid;gap:0;min-width:0;cursor:pointer}
@@ -213,6 +223,8 @@ body.shopen{overflow:hidden}
       <button type="button" data-v="fis" class="sell" aria-pressed="false">外資賣</button>
       <button type="button" data-v="boths" class="sell" aria-pressed="false">土洋賣</button>
     </div>
+    <span class="ovd" id="ovd" hidden><button type="button" class="ovdb" id="ovdBtn" aria-haspopup="listbox" aria-expanded="false" title="名單日">10/22 ▾</button>
+      <div class="ovdp" id="ovdp" hidden role="listbox" aria-label="名單日"></div></span>
     <button type="button" class="ovb" id="ovBtn" aria-pressed="false" title="手機轉橫時 5×4 一屏看完 20 檔">總覽</button>
     <button type="button" class="rf" id="rf">⚡ 更新</button>
   </div>
@@ -531,14 +543,17 @@ function render(){
   if(!SD){grid.innerHTML='<div class="empty">讀不到排行資料。</div>';return}
   if(!H){grid.innerHTML=`<div class="empty">${histErr?'日K讀取失敗：'+esc(histErr):'讀取日K中…'}</div>`;return}
   document.body.classList.toggle('ov',ov);$('ovBtn').setAttribute('aria-pressed',String(ov));
+  // 總覽的名單日按鈕（2026-10-24）：總覽把頂部收掉，所以在控制列放一顆日期鈕
+  {const w=$('ovd'),b=$('ovdBtn');w.hidden=!ov;b.textContent=md(L)+' ▾';b.classList.toggle('retro',isRetro());b.title='名單日 '+md(L)+(isRetro()?'（回顧）':'（最新）')}
   const R=rows();$('cnt').textContent=R.length+' 檔';
   if(isOV())R.sort((a,b)=>((b.S&&b.S.live?(b.S.gap?2:b.S.brk?1:0):0)-(a.S&&a.S.live?(a.S.gap?2:a.S.brk?1:0):0))||a.r.rank-b.r.rank);   // 總覽：突破／跳空排最前
   if(!R.length){grid.innerHTML='<div class="empty">這一天沒有符合門檻的名單。</div>';return}
   grid.innerHTML=R.map(({r,S})=>{
     const tg=S&&S.live?(S.gap?'<span class="tg gap">跳空</span>':S.brk?'<span class="tg">突破</span>':''):'';
+    const nxTag=S&&S.retro&&S.nx&&S.nx.brk?'<span class="nx" title="名單日隔天盤中過前20日高">突</span>':'';
     const tm=S&&S.live&&S.q&&S.q.t?S.q.t.slice(0,5):(S&&S.state==='done'?'收':md(S?S.bars[S.bars.length-1][0]:L));
     return `<article class="km${S&&S.live&&S.brk?' brk':''}${S&&S.retro?' retro':''}" data-c="${esc(r.c)}" role="button" tabindex="0" aria-label="${esc(r.n)} 放大">
-      <div class="km-h"><span>${r.rank}</span><b>${esc(r.n)}</b>${tg}${oppBadge(r,false)}${S&&S.exIn?'<span title="近20日有除權息，20日高未還原">⚠</span>':''}<span class="ovl">${(()=>{const o=other(r.c);const f=n=>n==null?'—':(n>0?'+':n<0?'−':'')+(Math.abs(n)>=1000?(Math.abs(n)/1000).toFixed(1)+'k':String(Math.abs(n)));return `${f(o.tl)}/${f(o.fl)}`})()}</span><span class="ovx ${cls(S&&S.chg)}">${S&&S.chg!=null?(S.chg>0?'▲':S.chg<0?'▼':'')+Math.abs(S.chg*100).toFixed(1)+'%':''}${S&&S.live&&(S.vProj??S.vNow)!=null?' 量'+(S.vProj??S.vNow).toFixed(1)+'×':''}</span>${S&&S.retro?'':`<span class="tm">${tm}</span>`}</div>
+      <div class="km-h"><span>${r.rank}</span><b>${esc(r.n)}</b>${tg}${oppBadge(r,false)}${S&&S.exIn?'<span title="近20日有除權息，20日高未還原">⚠</span>':''}<span class="ovl">${(()=>{const o=other(r.c);const f=n=>n==null?'—':(n>0?'+':n<0?'−':'')+(Math.abs(n)>=1000?(Math.abs(n)/1000).toFixed(1)+'k':String(Math.abs(n)));return `${f(o.tl)}/${f(o.fl)}`})()}</span>${nxTag}<span class="ovx ${cls(S&&S.chg)}">${S&&S.chg!=null?(S.chg>0?'▲':S.chg<0?'▼':'')+Math.abs(S.chg*100).toFixed(1)+'%':''}${S&&S.live&&(S.vProj??S.vNow)!=null?' 量'+(S.vProj??S.vNow).toFixed(1)+'×':''}</span>${S&&S.retro?'':`<span class="tm">${tm}</span>`}</div>
       <div class="km-p">${S&&S.retro?`<span class="lcl">${pxFmt(S.lcl)}→</span>`:''}<b class="${cls(S&&S.chg)}">${pxFmt(S?S.px:r.cl)}</b><span class="${cls(S&&S.chg)}" title="${S&&S.retro?'現價相對名單日收':''}">${S&&S.chg!=null?(S.chg>0?'▲':S.chg<0?'▼':'')+Math.abs(S.chg*100).toFixed(2)+'%':'—'}</span></div>
       ${S?'<canvas class="km-cv"></canvas>':''}
       <div class="km-f">${footHtml(S)}</div></article>`}).join('');
@@ -637,6 +652,18 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 // ---- 事件 ----
 document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{view=b.dataset.v;render()});
 document.querySelectorAll('.sortbar button').forEach(b=>b.onclick=()=>{sortK=b.dataset.k;render()});
+(function(){const b=$('ovdBtn'),pop=$('ovdp');
+  function build(){const i=DATES.indexOf(L);
+    pop.innerHTML=`<div class="nav"><button type="button" data-dd="1" ${i>=DATES.length-1?'disabled':''} aria-label="前一天">‹ 前一天</button><button type="button" data-dd="-1" ${i<=0?'disabled':''} aria-label="後一天">後一天 ›</button></div>`+
+      DATES.map(d=>`<button type="button" class="it" role="option" data-d="${d}" aria-selected="${d===L}">${md(d)}<small>${d===LATEST?'最新':''}</small></button>`).join('');
+    pop.querySelectorAll('[data-dd]').forEach(x=>x.onclick=()=>{const j=DATES.indexOf(L)+(+x.dataset.dd);if(DATES[j]){setDate(DATES[j]);build()}});
+    pop.querySelectorAll('.it').forEach(x=>x.onclick=()=>{setDate(x.dataset.d);close()})}
+  function open(){build();pop.hidden=false;b.setAttribute('aria-expanded','true');const sel=pop.querySelector('[aria-selected="true"]');if(sel)sel.scrollIntoView({block:'center'})}
+  function close(){pop.hidden=true;b.setAttribute('aria-expanded','false')}
+  b.onclick=e=>{e.stopPropagation();pop.hidden?open():close()};
+  document.addEventListener('click',e=>{if(!pop.hidden&&!e.composedPath().includes(pop))close()});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!pop.hidden)close()});
+})();
 $('ovBtn').onclick=()=>{ov=!ov;store.set(OV_KEY,ov?'1':'0');render();$('ovBtn').title=ov?'總覽：直向 3×7、轉橫 5×4':'手機一屏看完 20 檔'};
 if(ovMQ.addEventListener)ovMQ.addEventListener('change',()=>render());
 $('rf').onclick=()=>{if(!apiUrl()){$('setup').hidden=false;$('apiIn').focus();return}refresh()};
