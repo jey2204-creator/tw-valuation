@@ -59,8 +59,8 @@ section.card{background:var(--card);border:1px solid var(--line);border-radius:1
 .card h2[data-who]::before{content:attr(data-who);flex:none;font-size:11px;font-weight:600;color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent);border-radius:6px;padding:2px 6px;letter-spacing:.02em}
 .take{margin:4px 0 0;font-size:13.5px;color:var(--muted)}
 .take strong{color:var(--fg);font-weight:700}
-.chart{width:100%;height:260px;margin-top:6px}
-.chart.tall{height:300px}
+.chart{width:100%;height:200px;margin-top:4px}
+.chart.tall{height:240px}
 .foot{font-size:11.5px;color:var(--muted);margin:2px 0 6px}
 .pill{display:inline-block;font-size:11.5px;font-weight:700;border-radius:999px;padding:1px 8px;background:var(--b4);color:var(--fg)}
 .inputs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
@@ -91,6 +91,14 @@ tr.e td{color:var(--accent)}
 .stat i .flag{font-size:9px;padding:0 2px;margin-left:3px;vertical-align:0}
 .stat b.cyc{color:var(--muted)}.stat b.txt{font-family:var(--f-body);font-size:12.5px}
 #pegNote{margin-top:6px;line-height:1.5}
+/* 手機省高度：PEG 解讀收進 ⓘ（點了用底部提示框顯示）；搜尋框預設收起，標題列放大鏡點開 */
+.stats.peg{position:relative}
+.pegi{position:absolute;right:5px;top:3px;z-index:1;font:inherit;font-size:12px;line-height:1;color:var(--accent);background:none;border:0;padding:3px 4px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.pegi.cyc{color:var(--warm);font-weight:700;font-size:10.5px;top:4px}
+.qbtn{flex:none;align-self:center;width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--line);border-radius:999px;background:var(--card);color:var(--muted);cursor:pointer;-webkit-tap-highlight-color:transparent}
+.qbtn svg{width:16px;height:16px;stroke:currentColor}
+.qbtn[aria-expanded="true"]{color:var(--accent);border-color:var(--accent)}
+header.quote .search{margin-top:8px}
 .srlink{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:8px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;color:var(--fg);text-decoration:none}.srlink b{font-size:14px}.srlink span{font-size:12px;color:var(--muted);text-align:right}
 .scard{margin-top:10px;padding:10px 12px;font-size:13px;line-height:1.55}.scard .hd{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}.scard .hd b{font-size:16px}.scard .hd .cd{font-family:var(--f-num);color:var(--muted)}.scard .big{font-family:var(--f-num);font-size:20px;font-weight:700}.scard .row{display:flex;flex-wrap:wrap;gap:4px 14px;color:var(--muted)}.scard .row strong{color:var(--fg)}.scard .acts{display:flex;gap:8px;margin-top:8px}.scard .acts a{font-size:12.5px;color:var(--accent);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:3px 10px}
 #srank .mrow{flex-wrap:wrap;margin-top:10px}#srank .lst td:first-child{font-family:var(--f-num);color:var(--muted);font-size:12px;white-space:nowrap}#srank .lst td.co{font-family:var(--f-body);color:var(--fg);white-space:normal}#srank .lst td.co .nm{font-size:13.5px}#srank .lst th:nth-child(2),#srank .lst td:nth-child(2){text-align:left}#srank .lst .ind{font-size:11px;color:var(--muted);display:block}#sMore{width:100%;margin:6px 0 2px}.sback{font-size:12.5px;color:var(--accent);text-decoration:none;margin-left:8px}.lst .cap.sal{font-size:10.5px}.ail3{color:var(--up)!important;border-color:var(--up)!important}.ail2{color:var(--warm)!important;border-color:var(--warm)!important}.ail1{color:var(--ai1)!important;border-color:var(--ai1)!important}.ail0{color:var(--muted)!important;border-color:var(--muted)!important}.lst .cap.ai{font-size:10.5px;display:flex;align-items:center;gap:1px 3px;margin-top:1px;flex-wrap:wrap}.lst .cap.ai .flag{margin-left:0;font-family:var(--f-body)}.lst .cap.ai .sm{font-family:var(--f-body)}.meta.ai{margin-top:4px}.meta.ai b{color:var(--fg);font-family:var(--f-num);font-size:13px}.meta.ai .flag{font-size:11px;padding:0 5px;vertical-align:0;margin-left:0}.meta.ai a{color:var(--accent);text-decoration:none}.meta.ai .old{color:var(--warm)}.meta.sal b{color:var(--fg);font-family:var(--f-num);font-size:13px}
@@ -351,6 +359,7 @@ details.ind.hot summary b{color:var(--up)}
     <span class="code" id="code"></span>
     <span class="name" id="nm">—</span>
     <span class="px" id="px">—</span>
+    <button type="button" class="qbtn" id="qBtn" aria-label="搜尋股票" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button>
   </div>
   <div class="meta" id="meta"></div>
   <div class="meta sal" id="sal" hidden></div>
@@ -366,12 +375,13 @@ details.ind.hot summary b{color:var(--up)}
     <div class="stat"><span>每股淨值</span><b id="sBV">—</b></div>
   </div>
   <div class="stats peg" id="pegRow">
+    <button type="button" class="pegi" id="pegI" hidden aria-label="PEG 解讀">ⓘ</button>
     <div class="stat"><span class="dtip" id="pgL1">PEG 近四季</span><b id="pg1">—</b><i id="pgS1"></i></div>
     <div class="stat"><span class="dtip" id="pgL2">PEG 單季</span><b id="pg2">—</b><i id="pgS2"></i></div>
     <div class="stat"><span class="dtip" id="pgL3">PEG 預估</span><b id="pg3">—</b><i id="pgS3"></i></div>
   </div>
   <div class="meta" id="pegNote" hidden></div>
-  <div class="search" role="search">
+  <div class="search" role="search" id="qBox" hidden>
     <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
     <input id="q" type="search" inputmode="search" autocomplete="off" placeholder="輸入代號或名稱，例如 2454、聯發科" aria-label="搜尋股票">
     <div class="results" id="res" hidden></div>
@@ -386,7 +396,6 @@ details.ind.hot summary b{color:var(--up)}
   <h2>月營收 <small>億元｜近 36 個月</small></h2>
   <p class="take" id="tRev"></p>
   <div class="chart" id="cRev"></div>
-  <p class="foot">柱：單月營收　線：年增率（右軸 %）</p>
 </section>
 <section class="card" id="chip">
   <h2 style="display:flex;align-items:center;gap:8px">逐日籌碼 <small>張｜近 60 個交易日</small><span class="segm" id="chipSeg" style="margin-left:auto"><button aria-pressed="true" data-m="i">法人</button><button aria-pressed="false" data-m="m">融資券</button></span></h2>
@@ -405,7 +414,6 @@ details.ind.hot summary b{color:var(--up)}
   <h2>EPS <small>季｜元</small></h2>
   <p class="take" id="tEps"></p>
   <div class="chart" id="cEps"></div>
-  <p class="foot">柱：單季 EPS　線：近四季累計（右軸）</p>
 </section>
 <section class="card" id="capex">
   <h2>資本支出 <small>季｜億元</small></h2>
@@ -876,16 +884,18 @@ function renderPeg(){
 }
 // 解讀列：三個成長率的排列本身就是訊號（都有數字且 >0 才判斷）；循環股改顯示警語
 function pegRead(s,f,e){
-  const el=$('pegNote');
-  if(D.cyclical){el.innerHTML='<span class="pill">循環股</span> PEG 在景氣高峰最漂亮（EPS 年增最高、本益比最低），參考性低，請以淨值比河流圖與資本支出 ÷ 折舊為主';el.hidden=false;return}
-  if(![s,f,e].every(r=>r&&r.y!=null&&r.y>0)){el.hidden=true;el.innerHTML='';return}
+  const el=$('pegNote'),bi=$('pegI');el.hidden=true;el.innerHTML='';
+  // 解讀文字不直接佔版面，收進 PEG 列右上角的 ⓘ，點了用底部提示框顯示（省約兩行高度）
+  if(D.cyclical){bi.dataset.tip='循環股：PEG 在景氣高峰最漂亮（EPS 年增最高、本益比最低），參考性低，請以淨值比河流圖與資本支出 ÷ 折舊為主';bi.textContent='循環股ⓘ';bi.className='pegi cyc';bi.hidden=false;return}
+  bi.className='pegi';bi.textContent='ⓘ';
+  if(![s,f,e].every(r=>r&&r.y!=null&&r.y>0)){bi.hidden=true;return}
   let t;
   if(s.y>f.y*1.15&&f.y>e.y*1.15)t='單季 ＞ 近四季 ＞ 預估：成長正在加速、但模型預估未來四季趨緩——單季 PEG 最漂亮時別只看它，再確認月營收年增有沒有繼續加速';
   else if(s.y<f.y*0.85)t='單季成長已低於近四季：減速中，就算近四季 PEG 很低，也先看月營收年增的方向';
   else if(e.y>f.y*1.15)t='預估成長高於近四季：預估 PEG 靠模型假設撐著，先檢查下方「預估 EPS」的假設是不是太樂觀';
   else if(e.y<f.y*0.7)t='預估成長明顯低於近四季：高成長難以延續（或「明年營收年增」假設偏保守），拿預估 PEG 當基準比較穩';
   else t='三個成長率接近：穩定成長，PEG 比較可信';
-  el.innerHTML='📐 '+t;el.hidden=false;
+  bi.dataset.tip='📐 '+t;bi.hidden=false;
 }
 // ---------- PEG 歷史位階：每月 月底本益比（證交所近四季）÷ 當時已公布的近四季 EPS 年增 ----------
 // 當月看得到哪一季財報：Q1 5 月、Q2 8 月、Q3 11 月、Q4 次年 3 月起（法定公告期限）
@@ -1253,7 +1263,7 @@ function showRes(q,box){
   }
   box.innerHTML=html;box.hidden=!html;
 }
-function go(id){document.querySelectorAll('.results').forEach(b=>b.hidden=true);document.querySelectorAll('.search input').forEach(i=>{i.value='';i.blur()});if(location.hash.slice(1)!==id){if(document.body.dataset.view==='stock'&&isStk(id))swapTo(id);else location.hash=id}else route()}
+function go(id){document.querySelectorAll('.results').forEach(b=>b.hidden=true);document.querySelectorAll('.search input').forEach(i=>{i.value='';i.blur()});if(!$('qBox').hidden)qToggle(false);if(location.hash.slice(1)!==id){if(document.body.dataset.view==='stock'&&isStk(id))swapTo(id);else location.hash=id}else route()}
 function bindSearch(qid,rid){const q=$(qid),box=$(rid);
   q.addEventListener('focus',()=>showRes(q,box));
   q.addEventListener('input',()=>showRes(q,box));
@@ -1261,6 +1271,9 @@ function bindSearch(qid,rid){const q=$(qid),box=$(rid);
   box.addEventListener('mousedown',e=>e.preventDefault());
   box.addEventListener('click',e=>{const b=e.target.closest('button');if(b)go(b.dataset.id)});}
 bindSearch('q','res');bindSearch('q2','res2');
+// 個股頁搜尋框預設收起：按標題列放大鏡展開並聚焦，選到股票（go）後自動收回
+function qToggle(open){const b=$('qBox'),k=$('qBtn');if(open==null)open=b.hidden;b.hidden=!open;k.setAttribute('aria-expanded',open);if(open)$('q').focus();else{$('res').hidden=true;$('q').blur()}}
+$('qBtn').addEventListener('click',()=>qToggle());
 document.addEventListener('click',e=>{if(!e.target.closest('.search'))document.querySelectorAll('.results').forEach(b=>b.hidden=true)});
 
 // ---------- 主題／產業／自選 ----------
