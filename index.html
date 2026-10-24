@@ -93,12 +93,18 @@ tr.e td{color:var(--accent)}
 .stat b.cyc{color:var(--muted)}.stat b.txt{font-family:var(--f-body);font-size:12.5px}
 #pegNote{margin-top:6px;line-height:1.5}
 /* 手機省高度：PEG 解讀收進 ⓘ（點了用底部提示框顯示）；搜尋框預設收起，標題列放大鏡點開 */
-/* 估值 7 格合成一條橫向滑動 chip 列：標題＋數字同一行，PEG 往右滑 */
-.strip{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin-top:8px;padding-bottom:2px;-webkit-overflow-scrolling:touch}
-.strip::-webkit-scrollbar{display:none}
-.strip .stats{display:contents}
-.strip .stat{flex:none;display:flex;align-items:baseline;gap:5px;padding:5px 9px;border-radius:999px;white-space:nowrap}
-.strip .stat span{font-size:11px}.strip .stat b{display:inline;font-size:14px}.strip .stat i{display:inline;font-size:10.5px;margin:0;overflow:visible}
+/* 估值 7 格改成兩列一行 chip（第一列本益比等 4 格、第二列 PEG 3 格直接可見）：標題＋數字同一行，太寬時各列自行橫滑 */
+.strip{margin-top:8px}
+.strip .stats{display:flex;gap:5px;overflow-x:auto;scrollbar-width:none;margin-top:5px;padding-bottom:1px;-webkit-overflow-scrolling:touch}
+.strip .stats:first-child{margin-top:0}
+.strip .stats::-webkit-scrollbar{display:none}
+.strip .stat{flex:1 1 0;min-width:0;display:flex;align-items:baseline;gap:4px;padding:4px 7px;border-radius:10px;white-space:nowrap;justify-content:center}
+/* PEG 列：數字同行、成長率另起小字一行，三格剛好一列塞滿 */
+.strip .stats.peg .stat{flex-wrap:wrap;row-gap:0;justify-content:flex-start;position:relative}
+.strip .pegi{position:absolute;right:5px;top:5px;padding:0}
+.strip .stats.peg .stat i{flex:1 0 100%;font-size:10px;line-height:1.3;order:3}
+.strip .stats:not(.peg){gap:4px}.strip .stats:not(.peg) .stat{padding:4px 4px;gap:3px}.strip .stats:not(.peg) .stat span{font-size:10px}.strip .stats:not(.peg) .stat b{font-size:12.5px}
+.strip .stat span{font-size:10.5px;letter-spacing:0}.strip .stat b{display:inline;font-size:13px}.strip .stat i{display:inline;font-size:10.5px;margin:0;overflow:visible}
 .strip .stat b.txt{font-size:12px}
 .pegi{font:inherit;font-size:13px;line-height:1;color:var(--accent);background:none;border:0;padding:0 0 0 3px;cursor:pointer;-webkit-tap-highlight-color:transparent;vertical-align:-1px}
 .pegi.cyc{color:var(--warm);font-weight:700;font-size:10.5px}
@@ -378,12 +384,12 @@ details.ind.hot summary b{color:var(--up)}
   <div class="strip" id="valStrip">
   <div class="stats">
     <div class="stat"><span>本益比</span><b id="sPE">—</b></div>
-    <div class="stat"><span>股價淨值比</span><b id="sPB">—</b></div>
-    <div class="stat"><span>近四季EPS</span><b id="sEPS">—</b></div>
+    <div class="stat"><span>淨值比</span><b id="sPB">—</b></div>
+    <div class="stat"><span>近4季EPS</span><b id="sEPS">—</b></div>
     <div class="stat"><span>每股淨值</span><b id="sBV">—</b></div>
   </div>
   <div class="stats peg" id="pegRow">
-    <div class="stat"><span class="dtip" id="pgL1">PEG 近四季</span><b id="pg1">—</b><i id="pgS1"></i></div>
+    <div class="stat"><span class="dtip" id="pgL1">PEG 近4季</span><b id="pg1">—</b><i id="pgS1"></i></div>
     <div class="stat"><span class="dtip" id="pgL2">PEG 單季</span><b id="pg2">—</b><i id="pgS2"></i></div>
     <div class="stat"><span class="dtip" id="pgL3">PEG 預估</span><b id="pg3">—</b><i id="pgS3"></i><button type="button" class="pegi" id="pegI" hidden aria-label="PEG 解讀">ⓘ</button></div>
   </div>
