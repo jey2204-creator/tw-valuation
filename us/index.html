@@ -68,6 +68,11 @@ section.card{background:var(--card);border:1px solid var(--line);border-radius:1
 .foot{font-size:11.5px;color:var(--muted);margin:2px 0 6px}
 .pill{display:inline-block;font-size:11.5px;font-weight:700;border-radius:999px;padding:1px 8px;background:var(--b4);color:var(--fg)}
 .pill.b{background:var(--b2)}
+/* 幣別切換（固定匯率換算，只動絕對金額） */
+.fx{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px;font-size:12px;color:var(--muted)}
+.fxseg{display:inline-flex}.fxseg button{font:inherit;font-size:12px;border:1px solid var(--line);background:var(--card);color:var(--muted);padding:3px 11px;cursor:pointer;margin-left:-1px}
+.fxseg button:first-child{border-radius:999px 0 0 999px;margin-left:0}.fxseg button:last-child{border-radius:0 999px 999px 0}.fxseg button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.fx label{display:inline-flex;align-items:center;gap:4px}.fx input{font-family:var(--f-num);font-size:13px;width:4.6em;padding:3px 6px;border:1px solid var(--line);border-radius:7px;background:var(--card);color:var(--fg)}
 .inputs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
 .inputs label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--muted);min-width:0}
 .inputs input{font-family:var(--f-num);font-size:16px;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg);width:100%}
@@ -143,6 +148,7 @@ html{scroll-behavior:smooth}
     <div class="top"><span class="code">US</span><a class="sp" href="../">← 台股看板</a></div>
     <div class="name">美股估值看板</div>
     <div class="meta">45 檔供應鏈美股依主題分組；搜尋框可查全美股（約 5,400 檔 SEC 申報公司），點台股代號開台股看板</div>
+    <div class="fx" data-fx></div>
     <div class="search" role="search">
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
       <input id="q" type="search" inputmode="search" autocomplete="off" autocapitalize="characters" placeholder="搜尋代號、公司或台股代號，例如 NVDA、2330" aria-label="搜尋" role="combobox" aria-expanded="false" aria-controls="sug" aria-autocomplete="list">
@@ -151,7 +157,7 @@ html{scroll-behavior:smooth}
     <div class="sug" id="sug" role="listbox" hidden></div>
   </header>
   <section class="card" id="capexAll" hidden>
-    <h2>☁️ 四大雲端資本支出 <small>十億美元｜日曆季</small></h2>
+    <h2>☁️ 四大雲端資本支出 <small id="uCapAll">十億美元｜日曆季</small></h2>
     <p class="take" id="tCapAll"></p>
     <div class="chart" id="cCapAll"></div>
     <p class="foot">現金流量表「購置不動產、廠房及設備」；季資料由累計數相減推算。AI 供應鏈需求的源頭指標。</p>
@@ -191,6 +197,7 @@ html{scroll-behavior:smooth}
     <div class="stat"><span>近四季EPS</span><b id="sEPS">—</b></div>
     <div class="stat"><span>每股淨值</span><b id="sBV">—</b></div>
   </div>
+  <div class="fx" data-fx></div>
   <div class="tw" id="tw"></div>
   <div class="earn" id="earn" hidden></div>
   <div class="notes" id="notes"></div>
@@ -270,13 +277,14 @@ const etToday=()=>{try{return new Date().toLocaleDateString('en-CA',{timeZone:'A
 function twTime(d,h){const et={bmo:7*60,amc:16*60+5,dmh:12*60}[h];if(et==null)return{when:'時間未定',tw:''};
   const t=new Date(d+'T00:00:00Z');t.setUTCMinutes(et+(isDST(d)?12:13)*60);const s=t.toISOString();
   return{when:{bmo:'盤前',amc:'盤後',dmh:'盤中'}[h],tw:`台灣 ${mdw(s.slice(0,10))} 約 ${s.slice(11,16)}`}}
-const bil=v=>v==null?'':v>=1e9?`${(v/1e9).toFixed(1)}B`:`${(v/1e6).toFixed(0)}M`;
+const bil=v=>v==null?'':fxOn()?`≈${amt(v/1e6)}`:v>=1e9?`${(v/1e9).toFixed(1)}B`:`${(v/1e6).toFixed(0)}M`;
+const epsT=v=>v==null?'—':fxOn()?`≈${fmt(v*FX.rate,1)}`:v.toFixed(2);   // 財報日曆區的 EPS（預估／實際）
 function earnBox(id){const el=$('earn'),ls=EARN.e[id];if(!ls||!ls.length){el.hidden=true;el.innerHTML='';return}
   const t=etToday(),fut=ls.find(x=>x[0]>=t);let past=[...ls].reverse().find(x=>x[0]<t);let h='';
-  if(fut){const w=twTime(fut[0],fut[1]);h+=`<p><span class="lb">📅 下次財報</span><b>${mdw(fut[0])} ${w.when}</b>${w.tw?`<small>${w.tw}</small>`:''}${fut[6]?`<small>${fut[6]}</small>`:''}${fut[2]!=null?`<small>預估 EPS ${fut[2].toFixed(2)}${fut[4]?`｜營收 ${bil(fut[4])}`:''}</small>`:''}</p>`}
+  if(fut){const w=twTime(fut[0],fut[1]);h+=`<p><span class="lb">📅 下次財報</span><b>${mdw(fut[0])} ${w.when}</b>${w.tw?`<small>${w.tw}</small>`:''}${fut[6]?`<small>${fut[6]}</small>`:''}${fut[2]!=null?`<small>預估 EPS ${epsT(fut[2])}${fut[4]?`｜營收 ${bil(fut[4])}`:''}</small>`:''}</p>`}
   if(past&&dayDiff(past[0],t)<=10){const aq=AUTOQ[id];if(past[3]==null&&aq&&aq.date===past[0]&&aq.epsAct!=null){past=[...past];past[3]=aq.epsAct;if(aq.epsEst!=null)past[2]=aq.epsEst}
-    const bt=past[2]!=null&&past[3]!=null?(past[3]>=past[2]?`優於預估 ${past[2].toFixed(2)}`:`低於預估 ${past[2].toFixed(2)}`):'';
-    h+=`<p class="done"><span class="lb">✅ 已公布</span><b>${mdw(past[0])}</b>${CMPSET.has(id)?`<a href="earnings.html#${id}" style="color:var(--accent);text-decoration:none;font-weight:600">📊 預期對照 →</a>`:''}${past[6]?`<small>${past[6]}</small>`:''}<small>${past[3]!=null?`EPS ${past[3].toFixed(2)}${bt?`（${bt}）`:''}`:`預估 EPS ${past[2]!=null?past[2].toFixed(2):'—'}｜實際值待更新`}${past[5]?`｜營收 ${bil(past[5])}`:''}</small></p>`}
+    const bt=past[2]!=null&&past[3]!=null?(past[3]>=past[2]?`優於預估 ${epsT(past[2])}`:`低於預估 ${epsT(past[2])}`):'';
+    h+=`<p class="done"><span class="lb">✅ 已公布</span><b>${mdw(past[0])}</b>${CMPSET.has(id)?`<a href="earnings.html#${id}" style="color:var(--accent);text-decoration:none;font-weight:600">📊 預期對照 →</a>`:''}${past[6]?`<small>${past[6]}</small>`:''}<small>${past[3]!=null?`EPS ${epsT(past[3])}${bt?`（${bt}）`:''}`:`預估 EPS ${epsT(past[2])}｜實際值待更新`}${past[5]?`｜營收 ${bil(past[5])}`:''}</small></p>`}
   el.innerHTML=h;el.hidden=!h}
 let EMODE='focus';try{EMODE=localStorage.getItem('earnMode')||'focus'}catch(e){}
 const OPEN=new Set();
@@ -348,7 +356,33 @@ function bands(vals){
   const out=[];for(const p of [.02,.2,.4,.6,.8,.98]){let x=nice(v[Math.round(p*(v.length-1))]);if(out.length&&x<=out[out.length-1])x=nice(out[out.length-1]*1.05+(x>=10?1:0.1));out.push(x)}
   return out;
 }
-const money=(m,d)=>U.k===1e3?fmt(m/1e3,d??1):fmt(m,d??0);   // 百萬 → 顯示單位
+// ---------- 幣別：localStorage fx = {on, rate}。只換「絕對金額」（股價、EPS、每股淨值、營收、CapEx），比率／分位／年增全部不動 ----------
+// 刻意用「自設固定匯率」而不是即時匯率：若用每季實際匯率，營收季增會混進匯率變動，正是要避免的干擾。數字旁一律帶 ≈ 提醒是估算。
+let FX={on:false,rate:32};try{Object.assign(FX,JSON.parse(localStorage.getItem('fx'))||{})}catch(e){}
+const fxOn=()=>FX.on&&FX.rate>0;
+const fxSave=()=>{try{localStorage.setItem('fx',JSON.stringify(FX))}catch(e){}};
+const ap=()=>fxOn()?'≈':'';                                   // 台幣模式所有金額前綴
+const sym=()=>fxOn()?'NT$':'$',cur=()=>fxOn()?'台幣':'美元';
+const ps=v=>v==null?null:fxOn()?v*FX.rate:v;                   // 每股金額、股價（美元→台幣）
+const pf=(v,d=2)=>v==null?'—':fxOn()?fmt(v*FX.rate,d>=2?1:d):fmt(v,d);   // 每股金額文字：台幣只留 1 位小數
+const pv=(v,d=2)=>v==null?null:fxOn()?+(v*FX.rate).toFixed(1):+v.toFixed(d);   // 每股金額（圖表值）
+const un=()=>fxOn()?'億台幣':U.n;                              // 營收單位
+const money=(m,d)=>m==null?'—':fxOn()?fmt(m*FX.rate/100,d??(Math.abs(m)*FX.rate/100<100?1:0)):(U.k===1e3?fmt(m/1e3,d??1):fmt(m,d??0));   // 百萬美元 → 顯示單位
+const mval=m=>m==null?null:fxOn()?+(m*FX.rate/100).toFixed(1):(U.k===1e3?+(m/1e3).toFixed(2):m);   // 營收（圖表值）
+const capU=()=>fxOn()?'億台幣':'十億美元';                     // CapEx 單位
+// 文字用的「金額＋單位」：台幣 ≥1 兆自動改用「兆」；圖表軸與表格欄仍統一用億，避免同一軸混兩種單位
+const amt=(m,d)=>{if(m==null)return '—';if(fxOn()){const a=m*FX.rate/100;return a>=1e4?`${fmt(a/1e4,2)} 兆台幣`:`${fmt(a,d??(a<100?1:0))} 億台幣`}return `${money(m,d)} ${U.n}`};
+const camt=(m,d)=>{if(m==null)return '—';if(fxOn()){const a=m*FX.rate/100;return a>=1e4?`${fmt(a/1e4,2)} 兆台幣`:`${fmt(a,d??0)} 億台幣`}return `${cap(m,d)} 十億美元`};
+const cap=(m,d)=>m==null?'—':fxOn()?fmt(m*FX.rate/100,d??0):fmt(m/1e3,d??1);
+const cval=m=>m==null?null:fxOn()?+(m*FX.rate/100).toFixed(0):+(m/1e3).toFixed(2);
+const fxFoot=()=>fxOn()?`　台幣 = 美元 × ${FX.rate}（自設固定匯率，非即時匯率，只換絕對金額）`:'';
+function fxRender(){document.querySelectorAll('[data-fx]').forEach(el=>{el.innerHTML=
+  `<span class="fxseg"><button type="button" data-c="0"${fxOn()?'':' class="on"'}>美元</button><button type="button" data-c="1"${fxOn()?' class="on"':''}>台幣</button></span>`+
+  (fxOn()?`<label>固定匯率 <input type="number" step="0.1" min="20" max="45" inputmode="decimal" value="${FX.rate}" data-rate></label><span>≈ 金額 = 美元 × ${FX.rate}（非即時匯率）；比率、分位、年增不受影響</span>`:'<span>比率不分幣別；台幣模式只換股價／EPS／營收等絕對金額</span>')})}
+function fxApply(){fxSave();fxRender();if(D&&!$('stock').hidden){header();render()}capexAll()}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-fx] button[data-c]');if(!b)return;const on=b.dataset.c==='1';if(on===FX.on)return;FX.on=on;fxApply()});
+document.addEventListener('change',e=>{if(!e.target.matches('[data-fx] input[data-rate]'))return;const r=+e.target.value;if(!(r>=20&&r<=45)){e.target.value=FX.rate;return}FX.rate=Math.round(r*10)/10;fxApply()});
+fxRender();
 // 前一年同季：用標籤找（25Q2 ↔ 26Q2），不靠陣列位置，中間缺季或新上市只有零星季度也能算
 const prevYearIdx=i=>{if(D.freq!=='Q')return i-1;const l=Q[i][0],want=String(+l.slice(0,2)-1).padStart(2,'0')+l.slice(2);return Q.findIndex(x=>x[0]===want)};
 function yoyOf(i){const p=Q[prevYearIdx(i)];if(!p||!p[2])return null;return +((Q[i][2]/p[2]-1)*100).toFixed(1)}
@@ -372,13 +406,13 @@ const MONTHS=['','1','2','3','4','5','6','7','8','9','10','11','12'];
 function header(){
   const qn=Q.length,q1=Q[qn-1],q0=Q[qn-2];
   $('code').textContent=D.id;$('nm').innerHTML=dispName(D);
-  $('px').textContent='$'+fmt(L.close,2);
+  $('px').textContent=ap()+sym()+fmt(ps(L.close),fxOn()?0:2);
   const ch=L.close-L.prev,chp=L.prev?ch/L.prev*100:0,col=ch>0?'var(--up)':ch<0?'var(--down)':'var(--muted)';
-  $('chg').textContent=(ch>0?'▲ ':ch<0?'▼ ':'')+fmt(Math.abs(ch),2)+'（'+(ch>=0?'+':'')+chp.toFixed(2)+'%）';
+  $('chg').textContent=(ch>0?'▲ ':ch<0?'▼ ':'')+fmt(Math.abs(ps(ch)),fxOn()?1:2)+'（'+(ch>=0?'+':'')+chp.toFixed(2)+'%）';
   $('px').style.color=col;$('chg').style.color=col;
   $('asof').textContent='收盤 '+L.date.replaceAll('-','/')+'（美東）';
   $('sPE').textContent=L.pe?L.pe.toFixed(1):(L.ttm!=null&&L.ttm<=0?'虧損':'—');$('sPB').textContent=L.pb?L.pb.toFixed(2):'—';
-  $('sEPS').textContent=L.ttm!=null?L.ttm.toFixed(2):'—';$('sBV').textContent=L.bvps!=null?L.bvps.toFixed(2):'—';
+  $('sEPS').textContent=ap()+pf(L.ttm);$('sBV').textContent=ap()+pf(L.bvps);
   $('theme').textContent=D.theme||'';earnBox(D.id);
   $('tw').innerHTML=D.tw.length?'<span class="lb">對應台股</span>'+D.tw.map(([c,n])=>`<a href="../#${c}"><b>${c}</b>${esc(n)}</a>`).join(''):(D.demand?'<span class="lb">對應台股：全供應鏈（需求層）</span>':'');
   const notes=[...(D.note||[])];
@@ -390,37 +424,38 @@ function header(){
   // 營收
   const yy=yoyOf(qn-1);
   const per=D.freq==='Q'?'季':'年度';
-  $('tRev').innerHTML=`${qlbl(q1)}${D.freq==='Q'&&q1[1]?`（${q1[1]}）`:''} 營收 <strong>${money(q1[2])} ${U.n}</strong>${yy!=null?`，年增 <strong>${yy}%</strong>`:''}${D.freq==='Q'&&isPrevQ(q0,q1)?`，季增 <strong>${((q1[2]/q0[2]-1)*100).toFixed(1)}%</strong>`:''}`;
-  $('uRev').textContent=`${U.n}｜${D.freq==='Q'?'日曆季':'會計年度'}`;
+  $('tRev').innerHTML=`${qlbl(q1)}${D.freq==='Q'&&q1[1]?`（${q1[1]}）`:''} 營收 <strong>${ap()}${amt(q1[2])}</strong>${yy!=null?`，年增 <strong>${yy}%</strong>`:''}${D.freq==='Q'&&isPrevQ(q0,q1)?`，季增 <strong>${((q1[2]/q0[2]-1)*100).toFixed(1)}%</strong>`:''}`;
+  $('uRev').textContent=`${un()}｜${D.freq==='Q'?'日曆季':'會計年度'}`;$('fRev').textContent=`柱：單季營收　線：年增率（右軸 %）${fxFoot()}`;
   $('uMar').textContent=`${per}｜%`;
   const pc=v=>v==null?'—':v+'%';
   $('tMar').innerHTML=q0?`${qlbl(q1)} 毛利率 <strong>${pc(q1[3])}</strong>、營益率 <strong>${pc(q1[4])}</strong>、淨利率 <strong>${pc(q1[5])}</strong>（前期 ${pc(q0[3])}／${pc(q0[4])}／${pc(q0[5])}）`:'';
   const t1=ttm(qn-1);
-  $('tEps').innerHTML=q1[6]==null?'財報沒有 EPS 資料':`${qlbl(q1)} EPS <strong>${q1[6].toFixed(2)}</strong> 美元${isPrevQ(q0,q1)&&q0[6]>0?`，季增 ${((q1[6]/q0[6]-1)*100).toFixed(0)}%`:''}${t1!=null&&D.freq==='Q'?`；近四季 <strong>${t1.toFixed(2)}</strong>`:''}`;
-  $('fEps').textContent=D.freq==='Q'?'柱：單季稀釋 EPS　線：近四季累計（右軸）。10-K 的第四季 = 全年 − 前三季':'年度稀釋 EPS（只有年報）';
+  $('tEps').innerHTML=q1[6]==null?'財報沒有 EPS 資料':`${qlbl(q1)} EPS <strong>${ap()}${pf(q1[6])}</strong> ${cur()}${isPrevQ(q0,q1)&&q0[6]>0?`，季增 ${((q1[6]/q0[6]-1)*100).toFixed(0)}%`:''}${t1!=null&&D.freq==='Q'?`；近四季 <strong>${ap()}${pf(t1)}</strong>`:''}`;
+  $('uEps').textContent=`稀釋｜${cur()}`;
+  $('fEps').textContent=(D.freq==='Q'?'柱：單季稀釋 EPS　線：近四季累計（右軸）。10-K 的第四季 = 全年 − 前三季':'年度稀釋 EPS（只有年報）')+fxFoot();
   // 河流
   const pct=(arr,v)=>{const a=arr.filter(x=>x!=null);return Math.round(a.filter(x=>x<=v).length/a.length*100)};
   const band=(ms,v)=>{for(let i=ms.length-1;i>=0;i--)if(v>=ms[i])return i===ms.length-1?`${ms[i]} 倍以上`:`${ms[i]}–${ms[i+1]} 倍`;return `${ms[0]} 倍以下`};
   const yrsOf=c=>(R.filter(r=>r[c]!=null).length/12).toFixed(1);
   $('tPE').innerHTML=!PEM?'歷史資料不足（需至少 12 個月有正的近四季 EPS）':L.pe?`目前 <strong>${L.pe} 倍</strong>，位在 <span class="pill">${band(PEM,L.pe)}</span> 帶，高於近 ${yrsOf(4)} 年 <strong>${pct(R.map(r=>r[4]),L.pe)}%</strong> 的月份`:'近四季虧損，本益比不適用';
   $('tPB').innerHTML=!PBM?'歷史資料不足':L.pb?`目前 <strong>${L.pb} 倍</strong>，位在 <span class="pill">${band(PBM,L.pb)}</span> 帶，高於近 ${yrsOf(5)} 年 <strong>${pct(R.map(r=>r[5]),L.pb)}%</strong> 的月份`:'股東權益為負，淨值比不適用';
-  $('fPE').textContent=PEM?`色帶 = 近四季 EPS × ${PEM.join('／')} 倍（歷史 2／20／40／60／80／98% 分位數）；粗線為月底收盤價。EPS 以財報實際公布日起算，不偷看未來`:'';
-  $('fPB').textContent=PBM?`色帶 = 每股淨值 × ${PBM.join('／')} 倍（歷史 2／20／40／60／80／98% 分位數）；每股淨值 = 股東權益 ÷ 稀釋加權股數`:'';
+  $('fPE').textContent=PEM?`色帶 = 近四季 EPS × ${PEM.join('／')} 倍（歷史 2／20／40／60／80／98% 分位數）；粗線為月底收盤價。EPS 以財報實際公布日起算，不偷看未來${fxOn()?`；股價軸以 ${FX.rate} 固定匯率換成台幣，倍數不變`:''}`:'';
+  $('fPB').textContent=PBM?`色帶 = 每股淨值 × ${PBM.join('／')} 倍（歷史 2／20／40／60／80／98% 分位數）；每股淨值 = 股東權益 ÷ 稀釋加權股數${fxOn()?`；股價軸以 ${FX.rate} 固定匯率換成台幣，倍數不變`:''}`:'';
   $('note').textContent=`資料來源：SEC EDGAR（10-Q／10-K XBRL 財報）、FinMind（美股股價）。財報更新 ${D.updated.replace('T',' ').replace('Z',' UTC')}。每個交易日台北早上自動更新。本頁不構成投資建議。`;
   // CapEx
   $('capex').hidden=!D.demand;
   if(D.demand){const cs=Q.map((x,i)=>[i,x[7]]).filter(x=>x[1]!=null),last=cs[cs.length-1];
     if(last){const i=last[0],p=Q[prevYearIdx(i)],w=Q.slice(i-3,i+1),tt=(D.freq!=='Q'||w.every((x,j)=>!j||isPrevQ(w[j-1],x)))?w.map(x=>x[7]):[null];
-      $('tCap').innerHTML=`${Q[i][0]} 資本支出 <strong>${fmt(Q[i][7]/1e3,1)} 十億美元</strong>${p&&p[7]?`，年增 <strong>${((Q[i][7]/p[7]-1)*100).toFixed(0)}%</strong>`:''}；占營收 <strong>${(Q[i][7]/Q[i][2]*100).toFixed(0)}%</strong>${tt.every(x=>x!=null)?`；近四季合計 <strong>${fmt(sum(tt)/1e3,1)}</strong> 十億`:''}`}
-    $('uCap').textContent='十億美元｜日曆季'}
+      $('tCap').innerHTML=`${Q[i][0]} 資本支出 <strong>${ap()}${camt(Q[i][7])}</strong>${p&&p[7]?`，年增 <strong>${((Q[i][7]/p[7]-1)*100).toFixed(0)}%</strong>`:''}；占營收 <strong>${(Q[i][7]/Q[i][2]*100).toFixed(0)}%</strong>${tt.every(x=>x!=null)?`；近四季合計 <strong>${ap()}${camt(sum(tt))}</strong>`:''}`}
+    $('uCap').textContent=`${capU()}｜日曆季`}
   $('chips').innerHTML=(D.demand?'<a href="#capex" data-s>CapEx</a>':'')+'<a href="#rev" data-s>營收</a><a href="#margin" data-s>三率</a><a href="#eps" data-s>EPS</a><a href="#fwd" data-s>預估EPS</a><a href="#pe" data-s>本益比河流</a><a href="#pb" data-s>淨值比河流</a>';
 }
 function render(){
   const acc=css('--accent'),acc2=css('--accent2'),warm=css('--warm'),n=D.freq==='Q'?20:8,st=Math.max(0,Q.length-n),S=Q.slice(st);
   {const o=base(),c=mk('cRev');o.xAxis.data=S.map(qlbl);o.yAxis.scale=false;
    o.yAxis=[o.yAxis,{...o.yAxis,scale:true,splitLine:{show:false},axisLabel:{...o.yAxis.axisLabel,formatter:'{value}%'}}];
-   o.tooltip.formatter=ps=>{const i=st+ps[0].dataIndex;return `<b>${qtip(i)}</b><br>營收 ${money(Q[i][2],U.k===1e3?2:0)} ${U.n}<br>年增 ${yoyOf(i)??'—'}%`};
-   o.series=[{name:`營收(${U.n})`,type:'bar',data:S.map(x=>U.k===1e3?+(x[2]/1e3).toFixed(2):x[2]),itemStyle:{color:acc,borderRadius:[2,2,0,0]},barCategoryGap:'25%'},
+   o.tooltip.formatter=ps=>{const i=st+ps[0].dataIndex;return `<b>${qtip(i)}</b><br>營收 ${ap()}${amt(Q[i][2],fxOn()?1:U.k===1e3?2:0)}<br>年增 ${yoyOf(i)??'—'}%`};
+   o.series=[{name:`營收(${un()})`,type:'bar',data:S.map(x=>mval(x[2])),itemStyle:{color:acc,borderRadius:[2,2,0,0]},barCategoryGap:'25%'},
      {name:'年增率',type:'line',yAxisIndex:1,data:S.map((x,j)=>yoyOf(st+j)),symbol:'none',connectNulls:false,lineStyle:{width:2,color:warm},itemStyle:{color:warm}}];
    c.setOption(o,true)}
   {const o=base(),c=mk('cMar');o.xAxis.data=S.map(qlbl);o.yAxis.axisLabel.formatter='{value}%';o.tooltip.valueFormatter=v=>v==null?'—':v+'%';
@@ -428,15 +463,15 @@ function render(){
    o.grid.right=34;c.setOption(o,true)}
   {const o=base(),c=mk('cEps');o.xAxis.data=S.map(qlbl);o.yAxis.scale=false;
    o.yAxis=[o.yAxis,{...o.yAxis,splitLine:{show:false}}];
-   o.tooltip.formatter=ps=>{const i=st+ps[0].dataIndex;return `<b>${qtip(i)}</b><br>EPS ${Q[i][6]?.toFixed(2)??'—'}${D.freq==='Q'?`<br>近四季 ${ttm(i)?.toFixed(2)??'—'}`:''}`};
-   const s=[{name:D.freq==='Q'?'單季EPS':'年度EPS',type:'bar',data:S.map(x=>x[6]==null?null:+x[6].toFixed(2)),itemStyle:{color:acc2,borderRadius:[2,2,0,0]},label:{show:true,position:'top',fontSize:9,color:css('--muted'),fontFamily:'IBM Plex Mono',formatter:p=>p.dataIndex>=S.length-4?p.value:''}}];
-   if(D.freq==='Q')s.push({name:'近四季',type:'line',yAxisIndex:1,data:S.map((x,j)=>ttm(st+j)),symbol:'none',lineStyle:{width:2,color:warm},itemStyle:{color:warm}});
+   o.tooltip.formatter=ps=>{const i=st+ps[0].dataIndex;return `<b>${qtip(i)}</b><br>EPS ${ap()}${pf(Q[i][6])}${D.freq==='Q'?`<br>近四季 ${ap()}${pf(ttm(i))}`:''}`};
+   const s=[{name:`${D.freq==='Q'?'單季EPS':'年度EPS'}(${cur()})`,type:'bar',data:S.map(x=>pv(x[6])),itemStyle:{color:acc2,borderRadius:[2,2,0,0]},label:{show:true,position:'top',fontSize:9,color:css('--muted'),fontFamily:'IBM Plex Mono',formatter:p=>p.dataIndex>=S.length-4?p.value:''}}];
+   if(D.freq==='Q')s.push({name:'近四季',type:'line',yAxisIndex:1,data:S.map((x,j)=>pv(ttm(st+j))),symbol:'none',lineStyle:{width:2,color:warm},itemStyle:{color:warm}});
    o.series=s;c.setOption(o,true)}
   if(D.demand){const o=base(),c=mk('cCap');o.xAxis.data=S.map(qlbl);o.yAxis.scale=false;
    o.yAxis=[o.yAxis,{...o.yAxis,scale:true,splitLine:{show:false},axisLabel:{...o.yAxis.axisLabel,formatter:'{value}%'}}];
    const cy=i=>{const p=Q[prevYearIdx(i)];return p&&p[7]&&Q[i][7]!=null?+((Q[i][7]/p[7]-1)*100).toFixed(0):null};
-   o.tooltip.formatter=ps=>{const i=st+ps[0].dataIndex;return `<b>${qtip(i)}</b><br>CapEx ${Q[i][7]==null?'—':fmt(Q[i][7]/1e3,2)} 十億<br>年增 ${cy(i)??'—'}%<br>占營收 ${Q[i][7]==null?'—':(Q[i][7]/Q[i][2]*100).toFixed(0)}%`};
-   o.series=[{name:'CapEx(十億)',type:'bar',data:S.map(x=>x[7]==null?null:+(x[7]/1e3).toFixed(2)),itemStyle:{color:css('--violet'),borderRadius:[2,2,0,0]},barCategoryGap:'25%'},
+   o.tooltip.formatter=ps=>{const i=st+ps[0].dataIndex;return `<b>${qtip(i)}</b><br>CapEx ${ap()}${camt(Q[i][7],fxOn()?0:2)}<br>年增 ${cy(i)??'—'}%<br>占營收 ${Q[i][7]==null?'—':(Q[i][7]/Q[i][2]*100).toFixed(0)}%`};
+   o.series=[{name:`CapEx(${capU()})`,type:'bar',data:S.map(x=>cval(x[7])),itemStyle:{color:css('--violet'),borderRadius:[2,2,0,0]},barCategoryGap:'25%'},
      {name:'年增率',type:'line',yAxisIndex:1,data:S.map((x,j)=>cy(st+j)),symbol:'none',lineStyle:{width:2,color:warm},itemStyle:{color:warm}}];
    c.setOption(o,true)}
   renderFwd();river('cPE',PEM,2,'倍 PE');river('cPB',PBM,3,'倍 PB');
@@ -459,7 +494,7 @@ function model(){
 function renderFwd(){
   const m=model(),acc2=css('--accent2'),est=css('--est');
   if(!m){$('tFwd').textContent='缺少股數資料，無法估算';return}
-  const o=base(),c=mk('cFwd');o.yAxis.scale=false;o.tooltip.valueFormatter=v=>v==null?'-':v.toFixed(2);
+  const o=base(),c=mk('cFwd');o.yAxis.scale=false;o.tooltip.valueFormatter=v=>v==null?'-':ap()+pf(v);
   let cats,act,es,tot,rows;
   if(m.annual){cats=[...m.hist.map(x=>x[0]),...m.rows.map(x=>x[0])];act=[...m.hist.map(x=>x[1]),null,null];es=[...m.hist.map(()=>null),m.eY,m.eN];tot=[...m.hist.map(x=>x[1]),m.eY,m.eN];
     rows=m.rows.map(x=>[x[0],x[1],x[2],L.close/x[2]])}
@@ -467,20 +502,20 @@ function renderFwd(){
     cats=[...yrs.map(x=>String(x.y)),m.y+'E',(m.y+1)+'E'];act=[...yrs.map(x=>x.e),m.actY,null];es=[...yrs.map(()=>null),m.eY-m.actY,m.eN];tot=[...yrs.map(x=>x.e),m.eY,m.eN];
     rows=[...m.est.map(x=>[x.lbl,x.r,x.e,null]),[m.y+'E',m.rY,m.eY,L.close/m.eY],[(m.y+1)+'E',m.rN,m.eN,L.close/m.eN]]}
   o.xAxis.data=cats;
-  o.series=[{name:'已公布',type:'bar',stack:'e',data:act.map(v=>v==null?null:+v.toFixed(2)),itemStyle:{color:acc2},barWidth:'46%'},
-    {name:'預估',type:'bar',stack:'e',data:es.map(v=>v==null?null:+v.toFixed(2)),itemStyle:{color:est,borderRadius:[3,3,0,0]},
-     label:{show:true,position:'top',fontFamily:'IBM Plex Mono',fontSize:11,color:css('--fg'),formatter:p=>tot[p.dataIndex]?.toFixed(2)??''}}];
+  o.series=[{name:`已公布(${cur()})`,type:'bar',stack:'e',data:act.map(v=>pv(v)),itemStyle:{color:acc2},barWidth:'46%'},
+    {name:'預估',type:'bar',stack:'e',data:es.map(v=>pv(v)),itemStyle:{color:est,borderRadius:[3,3,0,0]},
+     label:{show:true,position:'top',fontFamily:'IBM Plex Mono',fontSize:11,color:css('--fg'),formatter:p=>tot[p.dataIndex]==null?'':pf(tot[p.dataIndex])}}];
   o.grid.top=34;c.setOption(o,true);
-  $('tbFwd').innerHTML=`<tr><th>期間</th><th>營收(${U.n})</th><th>EPS</th><th>本益比@${fmt(L.close,2)}</th></tr>`+
-    rows.map(r=>`<tr class="e"><td>${r[0]}</td><td>${money(r[1],U.k===1e3?1:0)}</td><td>${r[2].toFixed(2)}</td><td>${r[3]==null?'—':r[3]>0?r[3].toFixed(1):'虧損'}</td></tr>`).join('');
+  $('tbFwd').innerHTML=`<tr><th>期間</th><th>營收(${un()})</th><th>EPS(${cur()})</th><th>本益比@${ap()}${fmt(ps(L.close),fxOn()?0:2)}</th></tr>`+
+    rows.map(r=>`<tr class="e"><td>${r[0]}</td><td>${ap()}${money(r[1],fxOn()?undefined:U.k===1e3?1:0)}</td><td>${ap()}${pf(r[2])}</td><td>${r[3]==null?'—':r[3]>0?r[3].toFixed(1):'虧損'}</td></tr>`).join('');
   const lbY=m.annual?`FY${m.y}E`:`${m.y}E`,lbN=m.annual?`FY${m.y+1}E`:`${m.y+1}E`;
   const pe=v=>v>0?(L.close/v).toFixed(1):'—';
-  $('tFwd').innerHTML=`依目前假設，${lbY} EPS <strong>${m.eY.toFixed(2)}</strong>、${lbN} <strong>${m.eN.toFixed(2)}</strong>；以現價換算預估本益比 <strong>${pe(m.eY)}</strong>／<strong>${pe(m.eN)}</strong> 倍`;
+  $('tFwd').innerHTML=`依目前假設，${lbY} EPS <strong>${ap()}${pf(m.eY)}</strong>、${lbN} <strong>${ap()}${pf(m.eN)}</strong> ${cur()}；以現價換算預估本益比 <strong>${pe(m.eY)}</strong>／<strong>${pe(m.eN)}</strong> 倍`;
   const ql=Q[Q.length-1];
   if(window.__nmAbn)$('tFwd').innerHTML+=`<br><span class="pill">業外影響</span> ${qlbl(ql)} 淨利率 ${ql[5]}% 高於營益率 ${ql[4]}% 超過 5 個百分點，可能含一次性收益，預設改用近四季平均淨利率`;
   if(m.annual){$('lQ1').textContent=`FY${m.y} 營收年增（%）`;$('lYg').textContent=`FY${m.y+1} 營收年增（%）`;$('iQg').parentElement.hidden=true}
   else{$('lQ1').textContent=`${m.est[0].lbl.replace('E','')} 營收季增（%）`;$('lYg').textContent=`${m.y+1} 營收年增（%）`;$('iQg').parentElement.hidden=m.est.length<2}
-  $('fFwd').textContent=`EPS = 營收 × 淨利率 ÷ ${fmt(m.sh,0)} 百萬股（最新稀釋加權股數）。預設值刻意偏保守、避免把高成長直線外推：下季季增取近四季平均（上限 15%）、之後各季減半、明年年增取近四季營收年增的一半（上限 30%）、淨利率取${window.__nmAbn?'近四季平均':'最新一期'}。年度以日曆年計。`;
+  $('fFwd').textContent=`EPS = 營收 × 淨利率 ÷ ${fmt(m.sh,0)} 百萬股（最新稀釋加權股數）。預設值刻意偏保守、避免把高成長直線外推：下季季增取近四季平均（上限 15%）、之後各季減半、明年年增取近四季營收年增的一半（上限 30%）、淨利率取${window.__nmAbn?'近四季平均':'最新一期'}。年度以日曆年計。${fxFoot()}`;
 }
 function river(id,ms,col,unit){
   const c=mk(id);
@@ -490,13 +525,14 @@ function river(id,ms,col,unit){
   const i0=R.findIndex(r=>r[col]!=null&&r[col]>0),rr=R.slice(i0);   // 虧損月份留白，不刪掉（避免時間軸被壓縮）
   const ok=r=>r[col]!=null&&r[col]>0;
   o.xAxis.data=rr.map(r=>r[0].slice(2).replace('-','/'));o.xAxis.boundaryGap=false;
-  const s=[{name:ms[0]+unit,type:'line',stack:'r',data:rr.map(r=>ok(r)?+(r[col]*ms[0]).toFixed(2):null),symbol:'none',lineStyle:{width:0},silent:true}];
-  for(let i=1;i<ms.length;i++)s.push({name:ms[i]+unit,type:'line',stack:'r',data:rr.map(r=>ok(r)?+(r[col]*(ms[i]-ms[i-1])).toFixed(2):null),symbol:'none',lineStyle:{width:0},areaStyle:{color:cols[i-1],opacity:1},silent:true});
-  s.push({name:'股價',type:'line',data:rr.map(r=>r[1]),symbol:'none',lineStyle:{width:2.2,color:css('--price')},itemStyle:{color:css('--price')},z:5,endLabel:{show:true,formatter:p=>p.value,fontFamily:'IBM Plex Mono',fontSize:10,color:css('--price')}});
+  const s=[{name:ms[0]+unit,type:'line',stack:'r',data:rr.map(r=>ok(r)?+ps(r[col]*ms[0]).toFixed(2):null),symbol:'none',lineStyle:{width:0},silent:true}];
+  for(let i=1;i<ms.length;i++)s.push({name:ms[i]+unit,type:'line',stack:'r',data:rr.map(r=>ok(r)?+ps(r[col]*(ms[i]-ms[i-1])).toFixed(2):null),symbol:'none',lineStyle:{width:0},areaStyle:{color:cols[i-1],opacity:1},silent:true});
+  s.push({name:'股價',type:'line',data:rr.map(r=>+ps(r[1]).toFixed(fxOn()?0:2)),symbol:'none',lineStyle:{width:2.2,color:css('--price')},itemStyle:{color:css('--price')},z:5,endLabel:{show:true,formatter:p=>p.value,fontFamily:'IBM Plex Mono',fontSize:10,color:css('--price')}});
   // Y 軸上限 = 股價最高點 × 1.6：極端倍數（EPS 谷底時）不會把股價線壓扁
-  o.yAxis.max=Math.ceil(Math.max(...rr.map(r=>r[1]))*1.6/10)*10;s[s.length-1].endLabel.formatter=p=>p.value>=100?Math.round(p.value):p.value;
-  o.series=s;o.legend.show=false;o.grid.right=44;o.grid.top=12;
-  o.tooltip.formatter=ps=>{const r=rr[ps[0].dataIndex];let h=`<b>${r[0]}</b>　股價 ${fmt(r[1],2)}<br>`;if(!ok(r))return h+'近四季虧損，倍數不適用';for(let k=ms.length-1;k>=0;k--)h+=`${ms[k]}${unit}：${fmt(r[col]*ms[k],2)}<br>`;return h};
+  o.yAxis.max=Math.ceil(Math.max(...rr.map(r=>ps(r[1])))*1.6/10)*10;s[s.length-1].endLabel.formatter=p=>p.value>=100?Math.round(p.value):p.value;
+  o.series=s;o.legend.show=false;o.grid.right=fxOn()?52:44;o.grid.top=12;
+  const pd=fxOn()?0:2;
+  o.tooltip.formatter=ps_=>{const r=rr[ps_[0].dataIndex];let h=`<b>${r[0]}</b>　股價 ${ap()}${fmt(ps(r[1]),pd)}<br>`;if(!ok(r))return h+'近四季虧損，倍數不適用';for(let k=ms.length-1;k>=0;k--)h+=`${ms[k]}${unit}：${ap()}${fmt(ps(r[col]*ms[k]),pd)}<br>`;return h};
   c.setOption(o,true);
 }
 // ---------- 載入個股 ----------
@@ -583,14 +619,15 @@ async function capexAll(){
   const lbls=[...new Set(ds.flatMap(d=>d.q.filter(x=>x[7]!=null).map(x=>x[0])))].sort().slice(-16);
   const cols=['--accent','--accent2','--warm','--violet'].map(css);
   const o=base(),c=mk('cCapAll');o.xAxis.data=lbls;o.yAxis.scale=false;
-  const val=(d,l)=>{const x=d.q.find(z=>z[0]===l);return x&&x[7]!=null?+(x[7]/1e3).toFixed(2):null};
+  const val=(d,l)=>{const x=d.q.find(z=>z[0]===l);return cval(x&&x[7])};
   o.series=ds.map((d,i)=>({name:d.id,type:'bar',stack:'c',data:lbls.map(l=>val(d,l)),itemStyle:{color:cols[i%4]},barCategoryGap:'25%'}));
   const tot=l=>{const v=ds.map(d=>val(d,l));return v.every(x=>x!=null)?sum(v):null};
-  o.series[o.series.length-1].label={show:true,position:'top',fontSize:9,fontFamily:'IBM Plex Mono',color:css('--muted'),formatter:p=>p.dataIndex>=lbls.length-4&&tot(lbls[p.dataIndex])!=null?tot(lbls[p.dataIndex]).toFixed(0):''};
+  o.series[o.series.length-1].label={show:true,position:'top',fontSize:9,fontFamily:'IBM Plex Mono',color:css('--muted'),formatter:p=>p.dataIndex>=lbls.length-4&&tot(lbls[p.dataIndex])!=null?fmt(tot(lbls[p.dataIndex]),0):''};
   o.grid.top=34;c.setOption(o,true);
   const full=lbls.filter(l=>tot(l)!=null),la=full[full.length-1];
   if(la){const pl=`${+la.slice(0,2)-1}${la.slice(2)}`,p=tot(pl);
-    $('tCapAll').innerHTML=`${la} 合計 <strong>${tot(la).toFixed(1)} 十億美元</strong>${p?`，年增 <strong>${((tot(la)/p-1)*100).toFixed(0)}%</strong>`:''}（${ds.map(d=>`${d.id} ${val(d,la)??'—'}`).join('、')}）`}
+    $('tCapAll').innerHTML=`${la} 合計 <strong>${ap()}${fxOn()&&tot(la)>=1e4?`${fmt(tot(la)/1e4,2)} 兆台幣`:`${fmt(tot(la),fxOn()?0:1)} ${capU()}`}</strong>${p?`，年增 <strong>${((tot(la)/p-1)*100).toFixed(0)}%</strong>`:''}（${ds.map(d=>`${d.id} ${val(d,la)==null?'—':fmt(val(d,la),fxOn()?0:2)}`).join('、')}）`}
+  $('uCapAll').textContent=`${capU()}｜日曆季`;
   $('capexAll').hidden=false;c.resize();
 }
 function route(){
