@@ -42,7 +42,8 @@ header.quote{padding-block:14px 0}
 .top .sp{margin-left:auto}
 .qrow{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
 .code{font-family:var(--f-num);font-weight:600;font-size:13px;color:var(--muted);letter-spacing:.06em}
-.name{font-weight:900;font-size:22px;line-height:1.25}
+.name{font-weight:900;font-size:22px;line-height:1.25}.name small{display:block;font-weight:500;font-size:12.5px;color:var(--muted);line-height:1.3}
+.it .n small,.sug .n small,.qs small{color:var(--muted);font-weight:400;font-size:11px;margin-left:4px}
 .px{margin-left:auto;font-family:var(--f-num);font-weight:600;font-size:24px}
 .chg{font-family:var(--f-num);font-size:13px}
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px}
@@ -279,11 +280,11 @@ function earnBox(id){const el=$('earn'),ls=EARN.e[id];if(!ls||!ls.length){el.hid
   el.innerHTML=h;el.hidden=!h}
 let EMODE='focus';try{EMODE=localStorage.getItem('earnMode')||'focus'}catch(e){}
 const OPEN=new Set();
-function earnRows(mode,lim){const e=EARN.e,t=etToday(),nm=Object.fromEntries(ALL.map(s=>[s.id,s.name]));IDX.forEach(s=>nm[s.id]=s.name);
+function earnRows(mode,lim){const e=EARN.e,t=etToday(),nm=Object.fromEntries(ALL.map(s=>[s.id,s.name]));IDX.forEach(s=>nm[s.id]=s.cn||s.name);
   const hot=new Set(IDX.map(s=>s.id)),focus=new Set([...hot,...MEGA]),by={},o={bmo:0,dmh:1,amc:2,'':3};
   for(const [id,ls] of Object.entries(e)){if(mode==='focus'&&!focus.has(id))continue;for(const x of ls){if(x[0]<t||dayDiff(t,x[0])>lim)continue;(by[x[0]]=by[x[0]]||[]).push([id,x])}}
   return{t,hot,nm,ds:Object.keys(by).sort().map(d=>[d,by[d].sort((a,b)=>(hot.has(b[0])-hot.has(a[0]))||(o[a[1][1]]-o[b[1][1]])||a[0].localeCompare(b[0]))])}}
-const chip=(id,x,hot,nm)=>`<a class="ec${hot.has(id)?' hot':''}" href="#${id}">${hot.has(id)?'🔴':''}<b>${id}</b><span class="n">${esc((nm[id]||'').split(/[ ,]/)[0])}</span><small>${{bmo:'盤前',amc:'盤後',dmh:'盤中'}[x[1]]||''}${x[2]!=null?` ${x[2].toFixed(2)}`:''}</small></a>`;
+const chip=(id,x,hot,nm)=>`<a class="ec${hot.has(id)?' hot':''}" href="#${id}">${hot.has(id)?'🔴':''}<b>${id}</b><span class="n">${esc(/[\u4e00-\u9fff]/.test(nm[id]||'')?nm[id].replace(/ .*/,''):(nm[id]||'').split(/[ ,]/)[0])}</span><small>${{bmo:'盤前',amc:'盤後',dmh:'盤中'}[x[1]]||''}${x[2]!=null?` ${x[2].toFixed(2)}`:''}</small></a>`;
 const dhead=(d,t)=>`${mdw(d)}<small>盤後 ≈ 台灣 ${twTime(d,'amc').tw.split(' 約')[0].replace('台灣 ','')} 清晨${d===t?'　← 今天':''}</small>`;
 function earnMini(){if(!Object.keys(EARN.e).length){$('earnCal').hidden=true;return}
   const {t,hot,nm,ds}=earnRows('focus',7),n=ds.reduce((a,[,r])=>a+r.length,0),h=ds.reduce((a,[,r])=>a+r.filter(([id])=>hot.has(id)).length,0);
@@ -370,7 +371,7 @@ const MONTHS=['','1','2','3','4','5','6','7','8','9','10','11','12'];
 
 function header(){
   const qn=Q.length,q1=Q[qn-1],q0=Q[qn-2];
-  $('code').textContent=D.id;$('nm').textContent=D.name||D.id;
+  $('code').textContent=D.id;$('nm').innerHTML=dispName(D);
   $('px').textContent='$'+fmt(L.close,2);
   const ch=L.close-L.prev,chp=L.prev?ch/L.prev*100:0,col=ch>0?'var(--up)':ch<0?'var(--down)':'var(--muted)';
   $('chg').textContent=(ch>0?'▲ ':ch<0?'▼ ':'')+fmt(Math.abs(ch),2)+'（'+(ch>=0?'+':'')+chp.toFixed(2)+'%）';
@@ -504,7 +505,7 @@ async function load(id){
   document.body.classList.add('dim');$('asof').textContent=`載入 ${id} 中…`;$('err').hidden=true;earnBox(id);
   try{
     D=await loadAny(id);L=D.last;R=D.riv;Q=D.q;
-    $('code').textContent=D.id;$('nm').textContent=D.name||D.id;
+    $('code').textContent=D.id;$('nm').innerHTML=dispName(D);
     if(Q.length<2)throw new Error(`${id} 的財報資料不足（新上市或尚未申報），無法繪圖`);
     const big=Math.max(...Q.slice(-4).map(x=>x[2]))>=1000;U=big?{k:1e3,n:'十億美元'}:{k:1,n:'百萬美元'};
     PEM=bands(R.map(r=>r[4]));PBM=bands(R.map(r=>r[5]));
@@ -532,12 +533,16 @@ const rankOf=t=>{const i=ORD.ids.indexOf(TID[t]||ORD.byName[t]);return i<0?999:i
 const ALIAS={FB:'META',GOOG:'GOOGL',SPACEX:'SPCX',NVIDIA:'NVDA',BROADCOM:'AVGO',MICRON:'MU',GOOGLE:'GOOGL',ALPHABET:'GOOGL',AMAZON:'AMZN',MICROSOFT:'MSFT',FACEBOOK:'META',SUPERMICRO:'SMCI',VERTIV:'VRT',ARISTA:'ANET',ASTERA:'ALAB',LUMENTUM:'LITE',COHERENT:'COHR',FABRINET:'FN',CREDO:'CRDO',MARVELL:'MRVL',APPLIED:'AMAT',LAM:'LRCX',AMKOR:'AMKR',SANDISK:'SNDK'};
 const aliasOf=v=>{const u=v.toUpperCase();return ALIAS[u]||ALIAS[u.replace(/[^A-Z]/g,'')]};
 const ext=t=>`<a href="https://finance.yahoo.com/lookup/?s=${encodeURIComponent(t)}" target="_blank" rel="noopener">Yahoo 查代號 ↗</a><a href="https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&company=${encodeURIComponent(t)}" target="_blank" rel="noopener">SEC EDGAR ↗</a>`;
+// 中文名：index.json 的 cn（來自 fetch_us.py 的 CN 表）；個股頁的 D 沒有 cn 就查 IDX。沒有中文名就顯示英文
+const cnOf=s=>s.cn||IDX.find(x=>x.id===s.id)?.cn||'';
+const cnName=s=>{const c=cnOf(s);return c?`${esc(c)}<small>${esc(s.name||'')}</small>`:esc(s.name||'')};
+const dispName=s=>{const c=cnOf(s);return c?`${esc(c)}<small>${esc(s.name||'')}</small>`:esc(s.name||s.id)};
 function matches(v){
   if(!v)return[];
   const al=aliasOf(v),vl=v.toLowerCase();
-  const sc=s=>{const id=s.id.toLowerCase(),nm=(s.name||'').toLowerCase();
+  const sc=s=>{const id=s.id.toLowerCase(),nm=(s.name||'').toLowerCase(),cn=s.cn||'';
     if(al&&s.id===al)return 0;if(id===vl)return 1;if(id.startsWith(vl))return 2;if(s.tw.some(([c])=>c===vl))return 3;
-    if(nm.startsWith(vl))return 4;if(nm.includes(vl)||s.tw.some(([c,n])=>c.startsWith(vl)||n.toLowerCase().includes(vl)))return 5;return 99};
+    if(nm.startsWith(vl)||cn.startsWith(v))return 4;if(nm.includes(vl)||cn.includes(v)||s.tw.some(([c,n])=>c.startsWith(vl)||n.toLowerCase().includes(vl)))return 5;return 99};
   const have=new Set(IDX.map(s=>s.id));
   const ms=IDX.map(s=>[sc(s),s]).filter(x=>x[0]<99).sort((a,b)=>a[0]-b[0]||rankOf(a[1].theme)-rankOf(b[1].theme)).map(x=>x[1]);
   const extra=ALL.filter(s=>!have.has(s.id)).map(s=>[sc(s),s]).filter(x=>x[0]<99).sort((a,b)=>a[0]-b[0]||(a[1].id<b[1].id?-1:1)).map(x=>x[1]);
@@ -547,14 +552,14 @@ let SI=-1;
 function sugRender(v,ms){
   const box=$('sug'),al=aliasOf(v);SI=-1;
   if(!v||!ms.length){box.hidden=true;box.innerHTML='';$('q').setAttribute('aria-expanded','false');return}
-  box.innerHTML=ms.slice(0,8).map(s=>`<a href="#${s.id}" role="option"><span class="t">${s.id}</span><span class="n">${esc(s.name||'')}${al===s.id?` <span class="al">← ${esc(v.toUpperCase())}</span>`:''}</span><span class="th">${esc(s.theme)}</span></a>`).join('');
+  box.innerHTML=ms.slice(0,8).map(s=>`<a href="#${s.id}" role="option"><span class="t">${s.id}</span><span class="n">${cnName(s)}${al===s.id?` <span class="al">← ${esc(v.toUpperCase())}</span>`:''}</span><span class="th">${esc(s.theme)}</span></a>`).join('');
   box.hidden=false;$('q').setAttribute('aria-expanded','true');
 }
 function qsRender(v,ms){
   const el=$('qs'),al=aliasOf(v),up=v.toUpperCase();el.className='qs';
   if(!v){el.innerHTML='';return}
   const exact=ms.find(s=>s.id===up)||(al&&ms.find(s=>s.id===al));
-  if(exact){el.classList.add('ok');el.innerHTML=`✓ <code>${exact.id}</code> ${esc(exact.name||'')}｜${esc(exact.theme)}${exact.theme==='全市場'?(exact.n?`（${exact.freq==='A'?'僅年報':exact.n+' 季財報'}，股價即時抓）`:'（SEC 有申報，但抓不到營收科目——銀行、非美元申報等，暫無圖表）'):''}${al&&al===exact.id&&up!==al?`（${esc(up)} 已對應到 ${al}）`:''}`}
+  if(exact){el.classList.add('ok');el.innerHTML=`✓ <code>${exact.id}</code> ${cnName(exact)}｜${esc(exact.theme)}${exact.theme==='全市場'?(exact.n?`（${exact.freq==='A'?'僅年報':exact.n+' 季財報'}，股價即時抓）`:'（SEC 有申報，但抓不到營收科目——銀行、非美元申報等，暫無圖表）'):''}${al&&al===exact.id&&up!==al?`（${esc(up)} 已對應到 ${al}）`:''}`}
   else if(ms.length){el.innerHTML=`找到 ${ms.length} 檔，按 Enter 或點選第一個：<code>${ms[0].id}</code>`}
   else{el.classList.add('no');el.innerHTML=`✗ <code>${esc(up)}</code> 本站 ${IDX.length+ALL.length} 檔都沒有（可能打錯、剛上市或非美國申報公司）${/^[A-Z.\-]{1,6}$/.test(up)?ext(up):''}`}
 }
@@ -567,7 +572,7 @@ function homeRender(){
   $('groups').innerHTML=groups.filter(g=>g.items.length).map(g=>`<div class="grp"><h3>${esc(g.t)}</h3>`+
     (g.tw.length?`<div class="gtw">台股：${g.tw.map(([c,n])=>`<a href="../#${c}">${c} ${esc(n)}</a>`).join('、')}</div>`:g.all?`<div class="gtw">財報每週更新，點開時即時抓股價；共 ${ALL.length} 檔</div>`:'<div class="gtw">台股：全供應鏈（需求層）</div>')+
     g.items.map(s=>{const col=s.chg>0?'var(--up)':s.chg<0?'var(--down)':'var(--muted)';
-      return `<a class="it" href="#${s.id}"><span class="t">${s.id}</span><span class="n">${esc(s.name||'')}${s.cyc?' <span class="pill">循環</span>':''}${s.freq==='A'?' <span class="pill b">僅年報</span>':''}</span>`+
+      return `<a class="it" href="#${s.id}"><span class="t">${s.id}</span><span class="n">${cnName(s)}${s.cyc?' <span class="pill">循環</span>':''}${s.freq==='A'?' <span class="pill b">僅年報</span>':''}</span>`+
       `<span class="p" style="color:${col}">${fmt(s.close,2)}<br><small>${s.chg==null?'':(s.chg>0?'+':'')+s.chg+'%'}</small></span>`+
       (g.all?`<span class="p"></span><span class="v">${s.freq==='A'?'僅年報':s.n+' 季'}<br>${s.lq||''}</span>`:`<span class="v">PE ${s.pe??'—'}<br>PB ${s.pb??'—'}</span>`)+`</a>`}).join('')+'</div>').join('')||'<p class="meta" style="margin-top:14px">找不到符合的股票</p>';
 }

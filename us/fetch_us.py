@@ -35,7 +35,23 @@ THEMES = [
     ("🔌 電力", [("GEV", "")],
      [("1519", "華城"), ("1503", "士電"), ("1513", "中興電"), ("1514", "亞力")]),
 ]
-CFG = {t: dict(theme=th, flags=f, tw=tw) for th, items, tw in THEMES for t, f in items}
+# 中文名（首頁、個股頁、搜尋顯示用；沒有通用中文名的就留英文簡稱）
+CN = {
+    "SPCX": "太空探索 SpaceX", "ASTS": "AST 太空行動", "RKLB": "火箭實驗室", "ECHO": "回聲星 EchoStar",
+    "IRDM": "銥星通訊", "GSAT": "全球星", "VSAT": "衛訊 Viasat",
+    "WOLF": "沃孚 Wolfspeed", "COHR": "高意 Coherent", "ENTG": "英特格",
+    "VSH": "威世", "LFUS": "力特", "APH": "安費諾",
+    "TTMI": "TTM 科技", "SANM": "新美亞", "JBL": "捷普", "CLS": "天弘 Celestica",
+    "AVGO": "博通", "MRVL": "邁威爾", "LITE": "魯門騰 Lumentum", "FN": "Fabrinet",
+    "CRDO": "Credo", "CIEN": "思佳訊 Ciena", "AAOI": "應用光電",
+    "AMKR": "艾克爾", "AMAT": "應用材料", "KLAC": "科磊", "ONTO": "安圖 Onto",
+    "CAMT": "康特 Camtek", "LRCX": "科林研發", "FORM": "福達 FormFactor",
+    "NVDA": "輝達", "AMD": "超微", "MU": "美光", "ARM": "安謀", "SNDK": "晟碟 Sandisk",
+    "MSFT": "微軟", "GOOGL": "字母 Google", "AMZN": "亞馬遜", "META": "Meta",
+    "SMCI": "美超微", "VRT": "維諦 Vertiv", "ETN": "伊頓",
+    "ANET": "Arista", "ALAB": "Astera Labs", "GEV": "奇異威諾華",
+}
+CFG = {t: dict(theme=th, flags=f, tw=tw, cn=CN.get(t, "")) for th, items, tw in THEMES for t, f in items}
 STOCKS = list(CFG)
 PRICE_ALIAS = {"ECHO": ["SATS"]}   # 改過代號：舊代號的股價接在前面，歷史才不會斷
 
@@ -451,7 +467,7 @@ def main():
             (OUT / f"{tk}.json").write_text(json.dumps(d, ensure_ascii=False, separators=(",", ":")), "utf-8")
             lq = d["q"][-1] if d["q"] else None
             L = d["last"]
-            ok.append(dict(id=tk, name=d["name"], theme=d["theme"], freq=d["freq"], n=len(d["q"]),
+            ok.append(dict(id=tk, name=d["name"], cn=CFG[tk]["cn"], theme=d["theme"], freq=d["freq"], n=len(d["q"]),
                            close=L["close"], chg=round((L["close"] / L["prev"] - 1) * 100, 2) if L["prev"] else None,
                            pe=L["pe"], pb=L["pb"], lq=lq[0] if lq else None, cyc=d["cyclical"], dem=d["demand"],
                            tw=d["tw"], date=L["date"]))
