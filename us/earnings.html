@@ -1,0 +1,1570 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>美股財報對照</title>
+<meta name="description" content="美股重要公司財報：市場預期 vs 實際公布、驚喜率、股價影響因子（多檔版）">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="美股財報">
+<meta name="theme-color" content="#f6f7fb" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b1220" media="(prefers-color-scheme: dark)">
+<meta name="format-detection" content="telephone=no">
+<link rel="manifest" href="manifest_earnings.json">
+<link rel="apple-touch-icon" href="../icon-180.png">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#f6f7fb;--card:#ffffff;--text:#111827;--muted:#6b7280;--line:#e5e7eb;
+  /* 台股慣例：紅漲綠跌 */
+  --up:#dc2626;--down:#16a34a;--flat:#d97706;--accent:#2563eb;
+  --up-bg:#fef2f2;--down-bg:#ecfdf5;--flat-bg:#fffbeb;--est:#9ca3af;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0b1220;--card:#131c2e;--text:#e5e7eb;--muted:#9ca3af;--line:#243049;
+    --up:#f87171;--down:#22c55e;--flat:#fbbf24;--accent:#60a5fa;
+    --up-bg:#2e1515;--down-bg:#0f2a1e;--flat-bg:#2d2309;--est:#6b7280;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0b1220;--card:#131c2e;--text:#e5e7eb;--muted:#9ca3af;--line:#243049;
+  --up:#f87171;--down:#22c55e;--flat:#fbbf24;--accent:#60a5fa;
+  --up-bg:#2e1515;--down-bg:#0f2a1e;--flat-bg:#2d2309;--est:#6b7280;
+}
+*{box-sizing:border-box}
+html,body{overflow-x:hidden}
+body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"PingFang TC","Noto Sans TC",sans-serif;line-height:1.5}
+.wrap{max-width:720px;margin:0 auto;padding:calc(8px + env(safe-area-inset-top)) 12px calc(40px + env(safe-area-inset-bottom))}
+.top{position:sticky;top:0;z-index:5;background:var(--bg);padding:4px 0 6px}
+.sel{display:flex;gap:6px;align-items:center}
+.sel select{flex:1;padding:9px 10px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--text);font-size:15px;font-weight:600;-webkit-appearance:none;appearance:none}
+.sel .q{font-size:11px;color:var(--muted);white-space:nowrap}
+.tabs{display:flex;gap:4px;margin-top:6px}
+.tabs button{flex:1;padding:8px 4px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--muted);font-size:13px;font-weight:600;-webkit-tap-highlight-color:transparent}
+.tabs button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.panel{display:none}.panel.on{display:block}
+header{padding:6px 0 4px;display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px}
+.tk{font-size:11px;color:var(--muted);width:100%}
+h1{font-size:18px;margin:0}
+.react{display:inline-block;padding:2px 8px;border-radius:999px;font-weight:600;font-size:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:8px 0}
+h2{font-size:14px;margin:0 0 8px;display:flex;align-items:center;gap:6px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.grid>*{min-width:0}
+canvas{max-width:100%}
+.kpi{border:1px solid var(--line);border-radius:10px;padding:8px 10px;display:grid;grid-template-columns:1fr auto;grid-template-areas:'n n' 'v d' 'e d';align-items:center;column-gap:6px}
+.kpi .n{grid-area:n;font-size:11px;color:var(--muted)}
+.kpi .v{grid-area:v;font-size:19px;font-weight:700;line-height:1.1}
+.kpi .e{grid-area:e;font-size:11px;color:var(--muted)}
+.kpi .d{grid-area:d;display:inline-block;padding:2px 6px;border-radius:999px;font-size:11px;font-weight:600;white-space:nowrap}
+.up{background:var(--up-bg);color:var(--up)}
+.down{background:var(--down-bg);color:var(--down)}
+.flat{background:var(--flat-bg);color:var(--flat)}
+.chart{position:relative;width:100%;height:190px}
+.note{font-size:11.5px;color:var(--muted);margin-top:6px;line-height:1.4}
+details.card{padding:0}
+details.card>summary{list-style:none;cursor:pointer;padding:10px 12px;font-size:14px;font-weight:600;display:flex;align-items:center;gap:6px;-webkit-tap-highlight-color:transparent}
+details.card>summary::-webkit-details-marker{display:none}
+details.card>summary::after{content:'＋';margin-left:auto;color:var(--muted);font-weight:400}
+details.card[open]>summary::after{content:'－'}
+details.card>.body{padding:0 12px 10px}
+.toolbar{display:flex;gap:8px;margin:0 0 6px}
+.toolbar button{flex:1;padding:5px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--text);font-size:12px}
+table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
+th,td{padding:6px 4px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:500;font-size:12px}
+table.impact td:first-child{width:64px;padding-top:8px}
+table.ov td:first-child{width:52px;font-weight:600}
+table.ov td,table.ov th{text-align:right;white-space:nowrap}
+table.ov td:first-child,table.ov th:first-child{text-align:left}
+.tag{display:inline-block;padding:1px 7px;border-radius:999px;font-size:11px;font-weight:600;white-space:nowrap}
+.why{font-size:11.5px;color:var(--muted)}
+.kv .row{padding:7px 0;border-bottom:1px solid var(--line)}
+.kv .row:last-child{border-bottom:0}
+.kv .t{font-size:13px;font-weight:600;margin-bottom:2px}
+.kv .c{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center;font-size:13px;font-variant-numeric:tabular-nums}
+.kv .c small{display:block;font-size:11px;color:var(--muted);font-weight:400;line-height:1.2}
+.src{font-size:11px;color:var(--muted);line-height:1.7}
+.src a{color:var(--accent);text-decoration:none}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;color:var(--muted);margin-bottom:6px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:-1px}
+a.lnk{color:var(--accent);text-decoration:none;font-weight:600}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="top">
+  <div class="sel">
+    <select id="company"></select>
+    <span class="q" id="qlabel"></span>
+  </div>
+  <div class="tabs" role="tablist">
+    <button type="button" data-tab="result" class="on">🎯 結果</button>
+    <button type="button" data-tab="charts">📈 圖表</button>
+    <button type="button" data-tab="factors">🧭 因子</button>
+  </div>
+</div>
+
+<div id="app"></div>
+
+</div>
+
+<script id="data" type="application/json">
+{
+  "season": "2026 Q3",
+  "companies": [
+    {
+      "ticker": "META",
+      "name": "Meta Platforms",
+      "exchange": "NASDAQ",
+      "date": "2026/10/21 盤後",
+      "reaction": {
+        "text": "盤後 +2.5～3.8%（約 $724）",
+        "dir": "up",
+        "pct": 3.1
+      },
+      "kpi": [
+        {
+          "n": "營收（億）",
+          "v": "646",
+          "e": "預期 633",
+          "s": 2.0
+        },
+        {
+          "n": "調整後 EPS",
+          "v": "7.40",
+          "e": "預期 6.50",
+          "s": 13.8
+        },
+        {
+          "n": "GAAP EPS",
+          "v": "3.83",
+          "e": "預期 5.46",
+          "s": -29.9
+        },
+        {
+          "n": "Q4 指引中值（億）",
+          "v": "745",
+          "e": "共識 736.5",
+          "s": 1.2
+        }
+      ],
+      "kpiNote": "GAAP EPS 含 $98.9 億和解費，排除後約 $7.40；多數預期未計入，故「GAAP miss、調整後 beat」。",
+      "surprise": {
+        "labels": [
+          "營收",
+          "調整後 EPS",
+          "GAAP EPS",
+          "Q4 指引中值",
+          "RL 營收",
+          "RL 虧損"
+        ],
+        "data": [
+          2.0,
+          13.8,
+          -29.9,
+          1.2,
+          -13.6,
+          9.1
+        ],
+        "min": -45,
+        "max": 30,
+        "note": "Reality Labs 虧損「少虧 9%」以正值呈現；GAAP EPS 以 LSEG 共識 $5.46 計。"
+      },
+      "charts": [
+        {
+          "title": "🔍 廣告結構：量在放緩、價在接棒",
+          "open": true,
+          "type": "bar",
+          "fmt": "pct",
+          "labels": [
+            "Q3'25",
+            "Q4'25",
+            "Q1'26",
+            "Q2'26",
+            "Q3'26"
+          ],
+          "datasets": [
+            {
+              "label": "曝光量 YoY",
+              "data": [
+                14,
+                18,
+                19,
+                14,
+                10
+              ],
+              "color": "#06b6d4"
+            },
+            {
+              "label": "廣告單價 YoY",
+              "data": [
+                10,
+                6,
+                12,
+                12,
+                14
+              ],
+              "color": "accent"
+            }
+          ],
+          "note": "曝光量年增從 19% 降到 10%，單價年增升到 14%——成長動能正從「量」轉向「價」，靠 AI 提升廣告效果撐住。"
+        },
+        {
+          "title": "⚖️ 預期 vs 實際",
+          "open": true,
+          "type": "bar",
+          "fmt": "num",
+          "labels": [
+            "營收（億）",
+            "Q4 指引（億）"
+          ],
+          "datasets": [
+            {
+              "label": "市場預期",
+              "data": [
+                633,
+                736.5
+              ],
+              "color": "est"
+            },
+            {
+              "label": "實際公布",
+              "data": [
+                646,
+                745
+              ],
+              "color": "accent"
+            }
+          ]
+        },
+        {
+          "title": "⚖️ EPS 預期 vs 實際",
+          "open": false,
+          "type": "bar",
+          "fmt": "usd",
+          "labels": [
+            "調整後 EPS",
+            "GAAP EPS"
+          ],
+          "datasets": [
+            {
+              "label": "市場預期",
+              "data": [
+                6.5,
+                5.46
+              ],
+              "color": "est"
+            },
+            {
+              "label": "實際公布",
+              "data": [
+                7.4,
+                3.83
+              ],
+              "color": "accent"
+            }
+          ]
+        },
+        {
+          "title": "📈 近五季驚喜率趨勢",
+          "open": false,
+          "type": "line",
+          "fmt": "pct",
+          "labels": [
+            "Q3'25",
+            "Q4'25",
+            "Q1'26",
+            "Q2'26",
+            "Q3'26"
+          ],
+          "datasets": [
+            {
+              "label": "營收驚喜率",
+              "data": [
+                3.7,
+                2.37,
+                1.38,
+                0.97,
+                2.0
+              ],
+              "color": "accent"
+            },
+            {
+              "label": "EPS 驚喜率（Non-GAAP）",
+              "data": [
+                8.86,
+                8.42,
+                9.6,
+                -13.9,
+                13.8
+              ],
+              "color": "#f59e0b"
+            }
+          ],
+          "note": "Q2'26 EPS −13.9% 是過去五季唯一 miss；本季調整後 EPS 回到 +13.8%，營收驚喜率連續五季為正。"
+        },
+        {
+          "title": "🌍 分區廣告營收 YoY",
+          "open": false,
+          "type": "bar",
+          "fmt": "pct",
+          "horizontal": true,
+          "max": 45,
+          "labels": [
+            "美加",
+            "歐洲",
+            "亞太",
+            "其他"
+          ],
+          "datasets": [
+            {
+              "label": "YoY",
+              "data": [
+                33.3,
+                17.9,
+                15.0,
+                33.0
+              ],
+              "color": "accent"
+            }
+          ],
+          "note": "美加與其他地區 +33% 是成長主力；亞太 +15% 最弱。"
+        },
+        {
+          "title": "👤 每用戶平均營收 ARPU（美元）",
+          "open": false,
+          "type": "line",
+          "fmt": "usd",
+          "min": 12,
+          "max": 19.5,
+          "labels": [
+            "Q3'25",
+            "Q4'25",
+            "Q1'26",
+            "Q2'26",
+            "Q3'26"
+          ],
+          "datasets": [
+            {
+              "label": "ARPU",
+              "data": [
+                14.4,
+                16.6,
+                15.6,
+                16.9,
+                17.72
+              ],
+              "color": "accent"
+            }
+          ],
+          "note": "連四季上升至 $17.72，變現能力持續提高。前四季為圖表讀值（約略）。"
+        }
+      ],
+      "impact": [
+        {
+          "d": "up",
+          "t": "Q4 營收指引 $730～760 億，隱含 YoY +22～27%",
+          "w": "證明廣告動能未衰退，是盤後上漲主因"
+        },
+        {
+          "d": "up",
+          "t": "廣告單價 +14%、曝光量 +10%",
+          "w": "量價齊揚＝AI 投資已在本業兌現"
+        },
+        {
+          "d": "down",
+          "t": "2026 CapEx $1,350～1,450 億，下緣上修",
+          "w": "2027 未給數字，只說「持續積極投資」"
+        },
+        {
+          "d": "down",
+          "t": "自由現金流 −$21 億（IPO 以來首度轉負）",
+          "w": "負債 $837 億 > 現金 $824 億；同日宣布可發行無投票權新股"
+        },
+        {
+          "d": "flat",
+          "t": "$98.9 億和解費＋青少年訴訟陸續開庭",
+          "w": "一次性，但法律風險未出清"
+        },
+        {
+          "d": "up",
+          "t": "Muse 6 週 1,000 萬用戶、25% 日活",
+          "w": "AI 敘事有了數據支撐"
+        },
+        {
+          "d": "flat",
+          "t": "2 比 1 分割，2027/1 底掛牌",
+          "w": "不改變價值，但可能帶動散戶情緒"
+        }
+      ],
+      "other": [
+        {
+          "t": "營收 YoY",
+          "c": [
+            [
+              "實際",
+              "+26%"
+            ]
+          ]
+        },
+        {
+          "t": "公司自訂 Q3 指引（億）",
+          "c": [
+            [
+              "指引",
+              "610～640"
+            ],
+            [
+              "實際",
+              "646"
+            ],
+            [
+              "tag",
+              "up",
+              "超過上緣"
+            ]
+          ]
+        },
+        {
+          "t": "Reality Labs 營收（億）",
+          "c": [
+            [
+              "預期",
+              "5.13"
+            ],
+            [
+              "實際",
+              "4.43"
+            ],
+            [
+              "tag",
+              "down",
+              "−13.6%"
+            ]
+          ]
+        },
+        {
+          "t": "Reality Labs 虧損（億）",
+          "c": [
+            [
+              "預期",
+              "−45.4"
+            ],
+            [
+              "實際",
+              "−41.3"
+            ],
+            [
+              "tag",
+              "up",
+              "少虧 9.1%"
+            ]
+          ]
+        },
+        {
+          "t": "營業利益率",
+          "c": [
+            [
+              "去年",
+              "40%"
+            ],
+            [
+              "本季",
+              "20%"
+            ],
+            [
+              "排除和解費",
+              "35%"
+            ]
+          ]
+        },
+        {
+          "t": "資本支出（億）",
+          "c": [
+            [
+              "本季",
+              "349"
+            ],
+            [
+              "全年指引",
+              "1,350～1,450"
+            ]
+          ]
+        },
+        {
+          "t": "每日活躍人數",
+          "c": [
+            [
+              "DAP",
+              "36.4 億"
+            ],
+            [
+              "YoY",
+              "+3%"
+            ]
+          ]
+        },
+        {
+          "t": "自由現金流（億）",
+          "c": [
+            [
+              "去年",
+              "+106"
+            ],
+            [
+              "本季",
+              "−21"
+            ],
+            [
+              "tag",
+              "down",
+              "IPO 首度轉負"
+            ]
+          ]
+        }
+      ],
+      "sources": [
+        [
+          "Meta 10-Q（SEC）",
+          "https://www.sec.gov/Archives/edgar/data/0001326801/000162828026066773/meta-20260930.htm"
+        ],
+        [
+          "法說會逐字稿（Motley Fool）",
+          "https://www.fool.com/earnings/call-transcripts/2026/10/21/meta-meta-q3-2026-earnings-call-transcript/"
+        ],
+        [
+          "Benzinga 共識與歷史驚喜率",
+          "https://www.benzinga.com/quote/META/earnings-forecasts"
+        ],
+        [
+          "LSEG 共識（Variety 引述）",
+          "https://variety.com/2026/biz/news/meta-q3-earnings-2026-1236918874/"
+        ],
+        [
+          "StreetAccount（CNBC 引述）",
+          "https://www.cnbc.com/2026/10/21/meta-earnings-q3-2026-live-updates.html"
+        ],
+        [
+          "分區營收／ARPU／曝光單價：IEObserve 整理圖",
+          ""
+        ]
+      ]
+    },
+    {
+      "ticker": "TSLA",
+      "name": "Tesla",
+      "exchange": "NASDAQ",
+      "date": "2026/10/21 盤後",
+      "reaction": {
+        "text": "盤後 −3.3%（約 $374）",
+        "dir": "down",
+        "pct": -3.3
+      },
+      "kpi": [
+        {
+          "n": "營收（億）",
+          "v": "280.5",
+          "e": "預期 280.6",
+          "s": 0.0
+        },
+        {
+          "n": "調整後 EPS",
+          "v": "0.48",
+          "e": "預期 0.45",
+          "s": 6.7
+        },
+        {
+          "n": "交付量（萬輛）",
+          "v": "48.7",
+          "e": "預期 46.2",
+          "s": 5.3
+        },
+        {
+          "n": "2026 CapEx 指引（億）",
+          "v": "200",
+          "e": "原指引 >250",
+          "s": -20.0,
+          "label": "下修 20%"
+        }
+      ],
+      "kpiNote": "EPS 小勝、交付大勝，但營收持平、GAAP 淨利年減 43%，加上 CapEx 下修引發「AI 投資縮手」疑慮，盤後由漲轉跌。",
+      "surprise": {
+        "labels": [
+          "營收",
+          "調整後 EPS",
+          "交付量",
+          "營業費用",
+          "儲能部署",
+          "CapEx 指引"
+        ],
+        "data": [
+          0.0,
+          6.7,
+          5.3,
+          -10.0,
+          -13.8,
+          -20.0
+        ],
+        "min": -30,
+        "max": 20,
+        "note": "營業費用高於預期（$47.8 億 vs $43.4 億）、CapEx 指引下修，皆以負值呈現；EPS 以 LSEG 共識 $0.45 計。"
+      },
+      "charts": [
+        {
+          "title": "🔍 分部營收 YoY：汽車、能源衰退，服務撐場",
+          "open": true,
+          "type": "bar",
+          "fmt": "pct",
+          "signColor": true,
+          "labels": [
+            "汽車",
+            "能源儲能",
+            "服務與其他",
+            "碳權"
+          ],
+          "datasets": [
+            {
+              "label": "YoY",
+              "data": [
+                -3,
+                -16,
+                33,
+                -73
+              ]
+            }
+          ],
+          "note": "汽車 $205.6 億（−3%）、能源 $28.8 億（−16%）、服務 $46.1 億（+33%）。汽車毛利率（排除碳權）18.1%，優於去年 15.4%，是本季少數亮點。"
+        },
+        {
+          "title": "⚖️ 預期 vs 實際",
+          "open": true,
+          "type": "bar",
+          "fmt": "num",
+          "labels": [
+            "營收（億）",
+            "交付量（萬輛）"
+          ],
+          "datasets": [
+            {
+              "label": "市場預期",
+              "data": [
+                280.6,
+                46.2
+              ],
+              "color": "est"
+            },
+            {
+              "label": "實際公布",
+              "data": [
+                280.5,
+                48.7
+              ],
+              "color": "accent"
+            }
+          ]
+        },
+        {
+          "title": "📈 近四季驚喜率趨勢",
+          "open": false,
+          "type": "line",
+          "fmt": "pct",
+          "labels": [
+            "Q4'25",
+            "Q1'26",
+            "Q2'26",
+            "Q3'26"
+          ],
+          "datasets": [
+            {
+              "label": "營收驚喜率",
+              "data": [
+                0.02,
+                0.98,
+                11.9,
+                0.0
+              ],
+              "color": "accent"
+            },
+            {
+              "label": "EPS 驚喜率（Non-GAAP）",
+              "data": [
+                25.0,
+                36.7,
+                -25.0,
+                20.0
+              ],
+              "color": "#f59e0b"
+            }
+          ],
+          "note": "Tesla 驚喜率波動大：Q2'26 EPS −25%，本季反彈 +20%（Benzinga 口徑，共識 $0.40）。營收除 Q2'26 外皆貼近共識。"
+        },
+        {
+          "title": "💸 現金流 vs 資本支出（億美元）",
+          "open": false,
+          "type": "bar",
+          "fmt": "num",
+          "labels": [
+            "營業現金流",
+            "資本支出",
+            "自由現金流"
+          ],
+          "datasets": [
+            {
+              "label": "Q3'25",
+              "data": [
+                null,
+                22.5,
+                39.9
+              ],
+              "color": "est"
+            },
+            {
+              "label": "Q3'26",
+              "data": [
+                62.6,
+                47.3,
+                15.3
+              ],
+              "color": "accent"
+            }
+          ],
+          "note": "CapEx 翻倍至 $47.3 億，自由現金流從 $39.9 億縮到 $15.3 億。現金與投資 $454 億。"
+        },
+        {
+          "title": "📉 獲利能力：毛利率升、營益率崩",
+          "open": false,
+          "type": "bar",
+          "fmt": "pct",
+          "labels": [
+            "毛利率",
+            "汽車毛利率(排碳權)",
+            "營業利益率"
+          ],
+          "datasets": [
+            {
+              "label": "Q3'25",
+              "data": [
+                18.0,
+                15.4,
+                5.8
+              ],
+              "color": "est"
+            },
+            {
+              "label": "Q3'26",
+              "data": [
+                19.6,
+                18.1,
+                2.6
+              ],
+              "color": "accent"
+            }
+          ],
+          "note": "毛利率靠降本改善，但營業費用年增 $13.5 億（AI、研發、股酬），營業利益 $7.2 億（−56%）。"
+        }
+      ],
+      "impact": [
+        {
+          "d": "down",
+          "t": "2026 CapEx 從「>$250 億」下修至約 $200 億",
+          "w": "未說明砍哪些項目；市場解讀為 AI／機器人投資縮手，是盤後轉跌主因"
+        },
+        {
+          "d": "down",
+          "t": "GAAP 淨利 $7.9 億（−43%）、營業利益率 2.6%",
+          "w": "毛利率改善被營業費用年增 $13.5 億吃掉"
+        },
+        {
+          "d": "down",
+          "t": "營收持平、汽車 −3%、能源 −16%、碳權 −73%",
+          "w": "本業沒有成長，估值完全靠 AI 敘事撐"
+        },
+        {
+          "d": "up",
+          "t": "交付 48.7 萬輛，勝預期 5%；汽車毛利率 18.1%（去年 15.4%）",
+          "w": "降本有成，單車獲利回升"
+        },
+        {
+          "d": "up",
+          "t": "調整後 EPS $0.48 勝 $0.45",
+          "w": "小幅勝，但基期低（去年 $0.50）"
+        },
+        {
+          "d": "flat",
+          "t": "Robotaxi：Austin 已上線、11 月擴 Dallas；每英里成本尚未達 $0.30",
+          "w": "進度有、經濟性未證明"
+        },
+        {
+          "d": "flat",
+          "t": "Optimus 早期量產，客戶交付目標 2027 底；AI5 晶片 2027/4",
+          "w": "時程仍遠，短期無法貢獻獲利"
+        },
+        {
+          "d": "flat",
+          "t": "未提供 Q4／2027 量化指引",
+          "w": "共識 Q4 EPS $0.44、營收 $287 億"
+        }
+      ],
+      "other": [
+        {
+          "t": "營收 YoY",
+          "c": [
+            [
+              "本季",
+              "$280.5 億"
+            ],
+            [
+              "YoY",
+              "0%"
+            ]
+          ]
+        },
+        {
+          "t": "GAAP 淨利／EPS",
+          "c": [
+            [
+              "淨利",
+              "$7.9 億"
+            ],
+            [
+              "YoY",
+              "−43%"
+            ],
+            [
+              "EPS",
+              "$0.22"
+            ]
+          ]
+        },
+        {
+          "t": "營業利益",
+          "c": [
+            [
+              "本季",
+              "$7.2 億"
+            ],
+            [
+              "YoY",
+              "−56%"
+            ],
+            [
+              "tag",
+              "down",
+              "營益率 2.6%"
+            ]
+          ]
+        },
+        {
+          "t": "營業費用（億）",
+          "c": [
+            [
+              "預期",
+              "43.4"
+            ],
+            [
+              "實際",
+              "47.8"
+            ],
+            [
+              "tag",
+              "down",
+              "+10%"
+            ]
+          ]
+        },
+        {
+          "t": "交付／生產（輛）",
+          "c": [
+            [
+              "交付",
+              "486,532"
+            ],
+            [
+              "生產",
+              "464,391"
+            ],
+            [
+              "交付 YoY",
+              "−2.1%"
+            ]
+          ]
+        },
+        {
+          "t": "儲能部署（GWh）",
+          "c": [
+            [
+              "預期",
+              "15.9"
+            ],
+            [
+              "實際",
+              "13.7"
+            ],
+            [
+              "tag",
+              "down",
+              "−13.8%"
+            ]
+          ]
+        },
+        {
+          "t": "碳權收入（億）",
+          "c": [
+            [
+              "去年",
+              "4.17"
+            ],
+            [
+              "本季",
+              "1.13"
+            ],
+            [
+              "tag",
+              "down",
+              "−73%"
+            ]
+          ]
+        },
+        {
+          "t": "資本支出",
+          "c": [
+            [
+              "本季",
+              "$47.3 億"
+            ],
+            [
+              "前三季",
+              "$130 億"
+            ],
+            [
+              "全年指引",
+              "約 $200 億"
+            ]
+          ]
+        },
+        {
+          "t": "現金與投資",
+          "c": [
+            [
+              "期末",
+              "$454 億"
+            ]
+          ]
+        }
+      ],
+      "sources": [
+        [
+          "Electrek（財報與共識對照）",
+          "https://electrek.co/2026/10/21/tesla-tsla-q3-2026-financial-results/"
+        ],
+        [
+          "INDmoney（營業費用、CapEx 下修、Robotaxi／Optimus、盤後）",
+          "https://www.indmoney.com/blog/us-stocks/tesla-stock-q3-earnings-analysis-tsla"
+        ],
+        [
+          "Benzinga（歷史驚喜率、Q4 共識）",
+          "https://www.benzinga.com/quote/TSLA/earnings-forecasts"
+        ],
+        [
+          "註：各家營收共識 $278～283 億；KPI 採 LSEG，趨勢圖採 Benzinga 單一口徑",
+          ""
+        ]
+      ]
+    },
+    {
+      "ticker": "SPCX",
+      "name": "SpaceX",
+      "exchange": "NASDAQ",
+      "date": "2026/10/20 盤後",
+      "reaction": {
+        "text": "次日收盤 +7.8%（$159.31；盤後最高 +2.6%）",
+        "dir": "up",
+        "pct": 7.8
+      },
+      "kpi": [
+        {
+          "n": "營收（億）",
+          "v": "145.8",
+          "e": "預期 127.2",
+          "s": 14.6
+        },
+        {
+          "n": "GAAP EPS",
+          "v": "0.35",
+          "e": "預期 0.11～0.14",
+          "s": 150.0,
+          "label": "+150% 以上 勝"
+        },
+        {
+          "n": "淨利（億）",
+          "v": "44.0",
+          "e": "去年 −10.5",
+          "s": 100,
+          "label": "IPO 後首度獲利"
+        },
+        {
+          "n": "資本支出（億）",
+          "v": "196",
+          "e": "占營收 134%",
+          "s": -100,
+          "label": "燒錢 >營收"
+        }
+      ],
+      "kpiNote": "營收、EPS 大幅超預期，上市後首次單季獲利；但 CapEx $196 億是營收的 1.3 倍，其中 $164 億投在超級智慧（SI）算力。市場先買單成長，暫不計較現金流。",
+      "surprise": {
+        "labels": [
+          "營收",
+          "GAAP EPS",
+          "Starlink 營收 YoY",
+          "SI 營收 YoY",
+          "太空發射 YoY",
+          "Starlink ARPU YoY"
+        ],
+        "data": [
+          14.6,
+          150.0,
+          69,
+          835,
+          6,
+          -17
+        ],
+        "min": -40,
+        "max": 200,
+        "note": "SI（超級智慧／AI 算力）營收 $76 億，去年僅 $8.1 億，年增 8 倍以上，已超越 Starlink；ARPU 由 $83 降至 $69，以負值呈現。EPS 共識各家 $0.11～0.14，以 $0.14 計。"
+      },
+      "charts": [
+        {
+          "title": "🔍 三大事業：SI 一季超車 Starlink",
+          "open": true,
+          "type": "bar",
+          "fmt": "num",
+          "labels": [
+            "太空發射",
+            "Starlink 連網",
+            "超級智慧 SI"
+          ],
+          "datasets": [
+            {
+              "label": "Q3'25",
+              "data": [
+                17,
+                30.8,
+                8.1
+              ],
+              "color": "est"
+            },
+            {
+              "label": "Q3'26",
+              "data": [
+                18,
+                52,
+                76
+              ],
+              "color": "accent"
+            }
+          ],
+          "note": "單位：億美元。SI 從 $8.1 億衝到 $76 億（含 Cursor $6.1 億）；Starlink +69%；傳統發射業務只 +6%。公司重心已明顯轉向 AI 算力。"
+        },
+        {
+          "title": "⚖️ 預期 vs 實際",
+          "open": true,
+          "type": "bar",
+          "fmt": "num",
+          "labels": [
+            "營收（億）",
+            "EPS（美分）"
+          ],
+          "datasets": [
+            {
+              "label": "市場預期",
+              "data": [
+                127.2,
+                14
+              ],
+              "color": "est"
+            },
+            {
+              "label": "實際公布",
+              "data": [
+                145.8,
+                35
+              ],
+              "color": "accent"
+            }
+          ],
+          "note": "EPS 以美分呈現方便同圖比較。"
+        },
+        {
+          "title": "📉 獲利結構：Starlink 賺、SI 幾乎不賺",
+          "open": false,
+          "type": "bar",
+          "fmt": "pct",
+          "labels": [
+            "Starlink 營業利益率",
+            "SI 營業利益率",
+            "整體營益率"
+          ],
+          "datasets": [
+            {
+              "label": "Q3'26",
+              "data": [
+                45.1,
+                5.7,
+                19.1
+              ],
+              "color": "accent"
+            }
+          ],
+          "note": "SI 營業利益僅 $4.3 億（排除 Cursor 股酬 $12 億約 $16 億），營益率 5.7%；整體 $27.9 億獲利主要靠 Starlink 45% 的高利潤撐。"
+        },
+        {
+          "title": "💸 資本支出 vs 營收（億美元）",
+          "open": false,
+          "type": "bar",
+          "fmt": "num",
+          "labels": [
+            "本季營收",
+            "本季 CapEx",
+            "Q4 CapEx 指引下緣",
+            "Q4 CapEx 指引上緣"
+          ],
+          "datasets": [
+            {
+              "label": "億美元",
+              "data": [
+                145.8,
+                196,
+                350,
+                400
+              ]
+            }
+          ],
+          "signColor": false,
+          "note": "Q4 CapEx 指引 $350～400 億，是本季營收的 2.4～2.7 倍。期末現金 $513 億，依此速度現金跑道以「季」計算——融資或與 Tesla 合併是明顯的下一步。"
+        },
+        {
+          "title": "📡 Starlink 用戶與 ARPU",
+          "open": false,
+          "type": "bar",
+          "fmt": "num",
+          "labels": [
+            "消費者用戶（百萬）",
+            "本季新增（百萬）",
+            "月 ARPU（美元）",
+            "去年 ARPU（美元）"
+          ],
+          "datasets": [
+            {
+              "label": "數值",
+              "data": [
+                13.6,
+                1.6,
+                69,
+                83
+              ],
+              "color": "accent"
+            }
+          ],
+          "note": "用戶 1,360 萬、單季 +160 萬；ARPU 季增 5% 但年減 17%，代表靠降價換規模。Starlink Mobile 月活 2,200 萬（季增 37%）。"
+        }
+      ],
+      "impact": [
+        {
+          "d": "up",
+          "t": "營收 $145.8 億（+161%），勝預期 15%；上市後首次獲利 $44 億",
+          "w": "成長與獲利同時兌現，是次日大漲 7.8% 主因"
+        },
+        {
+          "d": "up",
+          "t": "SI 營收 $76 億，一季超越 Starlink；積壓訂單 $630 億（12 個月內轉化 $420 億）",
+          "w": "AI 算力需求可見度高，支撐 2027 營收指引"
+        },
+        {
+          "d": "up",
+          "t": "Q1'27 營收指引 $330～370 億；目標 2026 底 ARR $1,000 億",
+          "w": "隱含再翻倍以上；但指引極度激進，達成率是最大變數"
+        },
+        {
+          "d": "down",
+          "t": "CapEx $196 億（營收 134%）；Q4 指引 $350～400 億",
+          "w": "前九月自由現金流約 −$350 億，現金 $513 億只夠燒幾季"
+        },
+        {
+          "d": "down",
+          "t": "SI 營益率僅 5.7%，獲利 37% 來自營業外（含關係人收益 $5.6 億）",
+          "w": "獲利品質不高，主要靠 Starlink 45% 利潤率撐"
+        },
+        {
+          "d": "down",
+          "t": "Starlink ARPU $69，年減 17%",
+          "w": "用規模換價格，連網事業利潤率可能見頂"
+        },
+        {
+          "d": "flat",
+          "t": "Musk 稱雙方董事會已成立委員會討論 SpaceX–Tesla 合併，無協議",
+          "w": "Wedbush 估 2027 底前合併機率 80～90%；對兩邊股東都是重大不確定"
+        },
+        {
+          "d": "flat",
+          "t": "Starship Flight 15 下月試飛，首次嘗試同時回收助推器與船體",
+          "w": "成功＝發射成本再降；失敗＝時程延後，管理層已預警不保證成功"
+        }
+      ],
+      "other": [
+        {
+          "t": "營收 YoY",
+          "c": [
+            [
+              "本季",
+              "$145.8 億"
+            ],
+            [
+              "去年",
+              "$56 億"
+            ],
+            [
+              "tag",
+              "up",
+              "+161%"
+            ]
+          ]
+        },
+        {
+          "t": "GAAP 淨利",
+          "c": [
+            [
+              "本季",
+              "$44.0 億"
+            ],
+            [
+              "去年",
+              "−$10.5 億"
+            ],
+            [
+              "tag",
+              "up",
+              "轉盈"
+            ]
+          ]
+        },
+        {
+          "t": "調整後 EBITDA",
+          "c": [
+            [
+              "本季",
+              "$88.1 億"
+            ],
+            [
+              "YoY",
+              "+306%"
+            ]
+          ]
+        },
+        {
+          "t": "營業利益",
+          "c": [
+            [
+              "本季",
+              "$27.9 億"
+            ],
+            [
+              "上季",
+              "−$1.4 億"
+            ]
+          ]
+        },
+        {
+          "t": "資本支出",
+          "c": [
+            [
+              "本季",
+              "$196 億"
+            ],
+            [
+              "其中 SI",
+              "$164 億"
+            ],
+            [
+              "Q4 指引",
+              "$350～400 億"
+            ]
+          ]
+        },
+        {
+          "t": "現金",
+          "c": [
+            [
+              "期末",
+              "$513 億"
+            ],
+            [
+              "前九月營業現金流",
+              "$131 億"
+            ],
+            [
+              "tag",
+              "down",
+              "前九月 FCF 約 −$350 億"
+            ]
+          ]
+        },
+        {
+          "t": "算力",
+          "c": [
+            [
+              "Q3 底",
+              "1.7 GW"
+            ],
+            [
+              "Q4 底目標",
+              "2.5～3 GW"
+            ]
+          ]
+        },
+        {
+          "t": "發射",
+          "c": [
+            [
+              "本季",
+              "35 次"
+            ],
+            [
+              "客戶任務",
+              "12"
+            ],
+            [
+              "入軌質量市占",
+              "約 90%"
+            ]
+          ]
+        },
+        {
+          "t": "Starlink",
+          "c": [
+            [
+              "消費者用戶",
+              "1,360 萬"
+            ],
+            [
+              "月 ARPU",
+              "$69"
+            ],
+            [
+              "航空機隊簽約",
+              "約 12,000 架"
+            ]
+          ]
+        },
+        {
+          "t": "Grok Bot",
+          "c": [
+            [
+              "付費週活",
+              "80 萬"
+            ]
+          ]
+        }
+      ],
+      "sources": [
+        [
+          "法說會逐字稿（Motley Fool）",
+          "https://www.fool.com/earnings/call-transcripts/2026/10/20/spacex-spcx-q3-2026-earnings-call-transcript/"
+        ],
+        [
+          "Shacknews（營收／EPS 共識與耳語）",
+          "https://www.shacknews.com/article/151074/spacex-spcxq3-2026-earnings-results"
+        ],
+        [
+          "TECHi（LSEG 共識、獲利結構、現金流、合併討論、次日股價）",
+          "https://www.techi.com/spacex-q3-2026-earnings-first-profit-ai-revenue/"
+        ],
+        [
+          "註：SpaceX 2026/6 上市，歷史驚喜率序列不足，暫無趨勢圖；Q4／Q1'27 指引出自法說會口述，部分媒體稱公司未給正式指引",
+          ""
+        ]
+      ]
+    }
+  ]
+}
+</script>
+
+<script>
+(function(){
+  const DATA = JSON.parse(document.getElementById('data').textContent);
+  const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+  const C = {up:css('--up'),down:css('--down'),flat:css('--flat'),muted:css('--muted'),line:css('--line'),accent:css('--accent'),text:css('--text'),est:css('--est')};
+  const col = c => C[c] || c || C.accent;
+  const esc = s => String(s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+  const pct = v=>(v>0?'+':'')+v+'%';
+  const FMT = {pct, num:v=>String(v), usd:v=>'$'+v};
+  const dirOf = s => s>0.5?'up':(s<-0.5?'down':'flat');
+
+  Chart.defaults.color = C.muted;
+  Chart.defaults.font.family = '-apple-system,BlinkMacSystemFont,"PingFang TC","Noto Sans TC",sans-serif';
+  Chart.defaults.font.size = 12;
+
+  // 數值標籤
+  Chart.register({
+    id:'valueLabels',
+    afterDatasetsDraw(chart,_a,opts){
+      if(!opts||!opts.fmt) return;
+      const {ctx}=chart; const horizontal=chart.options.indexAxis==='y';
+      ctx.save(); ctx.font='600 11px -apple-system,BlinkMacSystemFont,"PingFang TC","Noto Sans TC",sans-serif'; ctx.fillStyle=C.text;
+      chart.data.datasets.forEach((ds,di)=>{
+        const meta=chart.getDatasetMeta(di); if(meta.hidden) return;
+        meta.data.forEach((el,i)=>{
+          const v=ds.data[i]; if(v==null) return;
+          const s=opts.fmt(v); const p=el.tooltipPosition();
+          if(chart.config.type==='line'){ctx.textAlign='center';ctx.textBaseline='bottom';ctx.fillText(s,p.x,p.y-7);}
+          else if(horizontal){ctx.textBaseline='middle'; if(v>=0){ctx.textAlign='left';ctx.fillText(s,p.x+5,p.y);} else {ctx.textAlign='right';ctx.fillText(s,p.x-5,p.y);}}
+          else {ctx.textAlign='center';ctx.textBaseline='bottom';ctx.fillText(s,p.x,p.y-4);}
+        });
+      });
+      ctx.restore();
+    }
+  });
+
+  let charts=[];
+  const destroyCharts=()=>{charts.forEach(c=>c.destroy());charts=[];};
+  const mkChart=(el,cfg)=>{const c=new Chart(el,cfg);charts.push(c);return c;};
+
+  // ---------- 渲染 ----------
+  const app=document.getElementById('app');
+  const sel=document.getElementById('company');
+  const qlabel=document.getElementById('qlabel');
+  const tabBtns=[...document.querySelectorAll('.tabs button')];
+
+  function kpiHtml(k){
+    const d=dirOf(k.s);
+    const arrow=d==='up'?'▲':(d==='down'?'▼':'●');
+    const word=k.label||(d==='up'?pct(k.s)+' 勝':(d==='down'?pct(k.s)+' 低':pct(k.s)+' 持平'));
+    return `<div class="kpi"><div class="n">${esc(k.n)}</div><div class="v">${esc(k.v)}</div><div class="e">${esc(k.e)}</div><span class="d ${d}">${arrow} ${esc(word)}</span></div>`;
+  }
+  function kvHtml(rows){
+    return `<div class="kv">`+rows.map(r=>`<div class="row"><div class="t">${esc(r.t)}</div><div class="c">`+
+      r.c.map(x=>x[0]==='tag'?`<span class="tag ${x[1]}">${esc(x[2])}</span>`:`<span><small>${esc(x[0])}</small>${esc(x[1])}</span>`).join('')+`</div></div>`).join('')+`</div>`;
+  }
+  function chartCard(ch,i){
+    const legend=ch.datasets.length>1?`<div class="legend">`+ch.datasets.map(d=>`<span><i style="background:${col(d.color)}"></i>${esc(d.label)}</span>`).join('')+`</div>`:'';
+    return `<details class="card"${ch.open?' open':''}><summary>${esc(ch.title)}</summary><div class="body">${legend}<div class="chart"><canvas id="ch${i}"></canvas></div>${ch.note?`<div class="note">${esc(ch.note)}</div>`:''}</div></details>`;
+  }
+  function impactHtml(list){
+    const tag={up:'🔴 正面',down:'🟢 負面',flat:'🟡 中性'};
+    return `<table class="impact"><tbody>`+list.map(r=>`<tr><td><span class="tag ${r.d}">${tag[r.d]}</span></td><td>${esc(r.t)}<div class="why">${esc(r.w)}</div></td></tr>`).join('')+`</tbody></table>`;
+  }
+  function srcHtml(list){
+    return `<div class="src">`+list.map(s=>s[1]?`<a href="${esc(s[1])}" target="_blank" rel="noopener">${esc(s[0])}</a>`:esc(s[0])).join('<br>')+`</div>`;
+  }
+
+  function overviewHtml(){
+    const rows=DATA.companies.map((c,i)=>{
+      const rev=c.kpi[0], eps=c.kpi[1]; const r=c.reaction;
+      const cell=s=>`<span class="tag ${dirOf(s)}">${pct(s)}</span>`;
+      return `<tr><td><a class="lnk" href="#" data-i="${i}">${esc(c.ticker)}</a></td><td>${cell(rev.s)}</td><td>${cell(eps.s)}</td><td><span class="tag ${r.dir}">${pct(r.pct)}</span></td></tr>`;
+    }).join('');
+    return `<header><div class="tk">${esc(DATA.season)} · 美股財報季總覽</div><h1>本季誰勝誰敗</h1></header>
+    <div class="card"><h2>📋 驚喜率一覽</h2><table class="ov"><thead><tr><th>公司</th><th>營收</th><th>EPS</th><th>盤後</th></tr></thead><tbody>${rows}</tbody></table>
+    <div class="note">EPS 以調整後（Non-GAAP）計；點代號看詳情。</div></div>
+    <div class="card"><h2>📊 驚喜率 vs 盤後反應</h2><div class="chart"><canvas id="ovchart"></canvas></div>
+    <div class="note">理想情況是三根同向；「EPS 勝但盤後跌」代表市場看的是別的東西（例如 Tesla 的 CapEx 下修）。</div></div>`;
+  }
+
+  function companyHtml(c){
+    return `
+    <header><div class="tk">${esc(c.exchange)}: ${esc(c.ticker)} · ${esc(DATA.season)} · 公布日 ${esc(c.date)}</div><h1>${esc(c.name)} 財報對照</h1><div class="react ${c.reaction.dir}">${esc(c.reaction.text)}</div></header>
+    <section class="panel on" id="tab-result">
+      <div class="card"><h2>🎯 一眼看結果</h2><div class="grid">${c.kpi.map(kpiHtml).join('')}</div>${c.kpiNote?`<div class="note">${esc(c.kpiNote)}</div>`:''}</div>
+      <div class="card"><h2>📊 驚喜率（實際 − 預期）÷ 預期</h2><div class="chart" style="height:200px"><canvas id="surprise"></canvas></div><div class="note">${esc(c.surprise.note||'')}</div></div>
+      <div class="card"><h2>📋 其他數字</h2>${kvHtml(c.other)}</div>
+    </section>
+    <section class="panel" id="tab-charts">
+      <div class="toolbar"><button type="button" id="expAll">全部展開</button><button type="button" id="colAll">全部收合</button></div>
+      ${c.charts.map(chartCard).join('')}
+    </section>
+    <section class="panel" id="tab-factors">
+      <div class="card"><h2>🧭 會影響股價的項目</h2>${impactHtml(c.impact)}</div>
+      <div class="card"><h2>🔗 資料來源</h2>${srcHtml(c.sources)}</div>
+    </section>`;
+  }
+
+  function drawCompanyCharts(c){
+    // 驚喜率
+    const sv=c.surprise.data;
+    mkChart(document.getElementById('surprise'),{type:'bar',
+      data:{labels:c.surprise.labels,datasets:[{data:sv,backgroundColor:sv.map(v=>v>=0?C.up:C.down),borderRadius:6,barThickness:18}]},
+      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false},valueLabels:{fmt:pct},tooltip:{callbacks:{label:x=>pct(x.raw)}}},
+        scales:{x:{grid:{color:C.line},ticks:{callback:v=>v+'%'},min:c.surprise.min,max:c.surprise.max},y:{grid:{display:false},ticks:{color:C.text}}}}});
+    // 自訂圖
+    c.charts.forEach((ch,i)=>{
+      const fmt=FMT[ch.fmt]||FMT.num;
+      const datasets=ch.datasets.map(d=>{
+        const base={label:d.label,data:d.data};
+        if(ch.type==='line') Object.assign(base,{borderColor:col(d.color),backgroundColor:col(d.color),tension:.3,pointRadius:4,fill:false});
+        else Object.assign(base,{backgroundColor:ch.signColor?d.data.map(v=>v>=0?C.up:C.down):col(d.color),borderRadius:6});
+        return base;
+      });
+      const valueAxis={grid:{color:C.line},ticks:{callback:v=>ch.fmt==='pct'?v+'%':(ch.fmt==='usd'?'$'+v:v)}};
+      if(ch.min!=null) valueAxis.min=ch.min; else valueAxis.beginAtZero=true;
+      if(ch.max!=null) valueAxis.max=ch.max; else valueAxis.grace='18%';
+      const catAxis={grid:{display:false},ticks:{color:C.text}};
+      mkChart(document.getElementById('ch'+i),{type:ch.type,
+        data:{labels:ch.labels,datasets},
+        options:{indexAxis:ch.horizontal?'y':'x',responsive:true,maintainAspectRatio:false,
+          plugins:{legend:{display:false},valueLabels:{fmt},tooltip:{callbacks:{label:x=>(x.dataset.label?x.dataset.label+'：':'')+fmt(x.raw)}}},
+          scales:ch.horizontal?{x:valueAxis,y:catAxis}:{x:catAxis,y:valueAxis}}});
+    });
+  }
+
+  function drawOverview(){
+    const L=DATA.companies.map(c=>c.ticker);
+    mkChart(document.getElementById('ovchart'),{type:'bar',
+      data:{labels:L,datasets:[
+        {label:'營收驚喜率',data:DATA.companies.map(c=>c.kpi[0].s),backgroundColor:C.est,borderRadius:6},
+        {label:'EPS 驚喜率',data:DATA.companies.map(c=>c.kpi[1].s),backgroundColor:C.accent,borderRadius:6},
+        {label:'盤後漲跌',data:DATA.companies.map(c=>c.reaction.pct),backgroundColor:DATA.companies.map(c=>c.reaction.pct>=0?C.up:C.down),borderRadius:6}]},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{position:'bottom'},valueLabels:{fmt:pct},tooltip:{callbacks:{label:x=>x.dataset.label+'：'+pct(x.raw)}}},
+        scales:{x:{grid:{display:false},ticks:{color:C.text}},y:{grid:{color:C.line},grace:'20%',ticks:{callback:v=>v+'%'}}}}});
+  }
+
+  let current='ALL', tab='result';
+  function render(){
+    destroyCharts();
+    const c=DATA.companies.find(x=>x.ticker===current);
+    document.querySelector('.tabs').style.display=c?'flex':'none';
+    if(!c){ app.innerHTML=overviewHtml(); drawOverview();
+      app.querySelectorAll('a.lnk').forEach(a=>a.onclick=e=>{e.preventDefault();sel.value=DATA.companies[+a.dataset.i].ticker;sel.onchange();});
+    } else {
+      app.innerHTML=companyHtml(c); drawCompanyCharts(c);
+      app.querySelectorAll('details.card').forEach(d=>d.addEventListener('toggle',()=>{if(d.open) requestAnimationFrame(()=>charts.forEach(x=>x.resize()));}));
+      document.getElementById('expAll').onclick=()=>app.querySelectorAll('details.card').forEach(d=>d.open=true);
+      document.getElementById('colAll').onclick=()=>app.querySelectorAll('details.card').forEach(d=>d.open=false);
+      showTab(tab);
+    }
+    qlabel.textContent=DATA.season;
+    try{localStorage.setItem('us_earn_co',current);}catch(e){}
+  }
+  function showTab(name){
+    tab=name;
+    tabBtns.forEach(b=>b.classList.toggle('on',b.dataset.tab===name));
+    app.querySelectorAll('.panel').forEach(p=>p.classList.toggle('on',p.id==='tab-'+name));
+    requestAnimationFrame(()=>charts.forEach(c=>c.resize()));
+    try{localStorage.setItem('us_earn_tab',name);}catch(e){}
+  }
+  tabBtns.forEach(b=>b.onclick=()=>{showTab(b.dataset.tab);window.scrollTo({top:0});});
+
+  // 下拉
+  sel.innerHTML=`<option value="ALL">📋 本季總覽</option>`+DATA.companies.map(c=>`<option value="${c.ticker}">${c.ticker} · ${esc(c.name)}</option>`).join('');
+  sel.onchange=()=>{current=sel.value;render();window.scrollTo({top:0});};
+  try{const t=localStorage.getItem('us_earn_tab'); if(t) tab=t; const co=localStorage.getItem('us_earn_co'); if(co&&(co==='ALL'||DATA.companies.some(c=>c.ticker===co))) current=co;}catch(e){}
+  sel.value=current; render();
+})();
+</script>
+</body>
+</html>
