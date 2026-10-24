@@ -1210,10 +1210,12 @@ function pnPaint(id,t){
   $('pnNext').disabled=!nx;$('pnNext').innerHTML=nx?`<span>${esc(nameOf(nx))}</span> ›`:'<span>最後一檔</span> ›';
   PN.t=t;$('pnMid').innerHTML=`<b>${esc(nameOf(id))}<small>${esc(id)}</small></b>${esc(t.name.split(' ')[0])} <i>${i+1}/${ids.length}</i> ▴`;$('pnMid').setAttribute('aria-label',`目前 ${nameOf(id)} ${id}，${t.name} 第 ${i+1} 檔，共 ${ids.length} 檔，點開選擇`);
 }
-// 目前在看哪個圖表區塊：區塊上緣進到畫面上半部就算（捲到最底時最後一張圖也能被選到）
-function curSec(){const nb=document.querySelector('nav.chips').getBoundingClientRect().bottom;let cur=null;
-  const lim=Math.max(nb+40,(innerHeight+nb)/2);
-  document.querySelectorAll('section.card').forEach(s=>{if(s.offsetParent&&s.getBoundingClientRect().top<=lim)cur=s.id});return cur}
+// 目前在看哪個圖表區塊：以「貼在導覽列正下方的那張卡」為準（和 goSec 對齊方式一致），
+// 卡片下緣捲到只剩不到 40px 才算離開、換下一張；捲到最底時取最後一張可見的卡
+function curSec(){const nb=document.querySelector('nav.chips').getBoundingClientRect().bottom;
+  const secs=[...document.querySelectorAll('section.card')].filter(s=>s.offsetParent);if(!secs.length)return null;
+  if(scrollY+innerHeight>=document.documentElement.scrollHeight-10){let last=null;secs.forEach(s=>{if(s.getBoundingClientRect().top<innerHeight)last=s.id});if(last)return last}
+  const top=secs.find(s=>s.getBoundingClientRect().bottom>nb+40);return top?top.id:secs[secs.length-1].id}
 function goSec(sec){const s=$(sec);if(!s||!s.offsetParent){scrollTo(0,0);return}
   const nb=document.querySelector('nav.chips').offsetHeight;scrollTo(0,s.getBoundingClientRect().top+scrollY-nb-6)}
 function pnGo(d){if(!PN)return;const id=PN.ids[PN.i+d];if(!id)return;KEEP=curSec();swapTo(id)}
