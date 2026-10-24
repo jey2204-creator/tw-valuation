@@ -156,7 +156,7 @@ html{scroll-behavior:smooth}
     <p class="foot">現金流量表「購置不動產、廠房及設備」；季資料由累計數相減推算。AI 供應鏈需求的源頭指標。</p>
   </section>
   <section class="card ecard" id="earnCal" hidden>
-    <h2>📅 財報公布日 <small id="uEarn"></small><a class="more" href="#EARN">看全部 →</a></h2>
+    <h2>📅 財報公布日 <small id="uEarn"></small><a class="more" href="earnings.html">📊 預期 vs 實際</a><a class="more" href="#EARN" style="margin-left:10px">看全部 →</a></h2>
     <div class="ecal mini" id="ecalMini"></div>
   </section>
   <div id="groups"></div>
@@ -168,6 +168,7 @@ html{scroll-behavior:smooth}
   <div class="top"><a href="#">← 主題清單</a><span class="meta">美東日期｜點日期展開預估 EPS</span></div>
   <h1 style="font-size:22px;margin:6px 0 2px">📅 財報公布日</h1>
   <p class="meta" id="uEarn2"></p>
+  <p class="meta"><a href="earnings.html" style="color:var(--accent);text-decoration:none;font-weight:600">📊 已公布財報：預期 vs 實際對照 →</a></p>
   <div class="etab"><button data-m="focus">追蹤股＋大型股（3 週）</button><button data-m="all">全市場 7 天內</button></div>
   <div class="ecal" id="ecal"></div>
   <p class="foot">台灣時間：盤前 ≈ 當晚 19–20 點、盤後 ≈ 隔日清晨 4–5 點。資料來源 Nasdaq／Finnhub，日期在公司正式公告前為預估，請以公司 IR 為準。</p>
@@ -259,7 +260,7 @@ const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 let IDX=[],ALL=[],D,L,R,Q,PEM,PBM,U;const charts={};
 // ---------- 財報公布日（data/earnings.json，Finnhub，每日更新） ----------
-let EARN={e:{}};
+let EARN={e:{}},CMPSET=new Set();
 const MEGA=['AAPL','TSLA','NFLX','ORCL','TSM','ASML','QCOM','INTC','TXN','IBM','COST','WMT','JPM','PLTR','CRWD','ANET','VRT','DELL','HPE','ADBE','CRM','NOW','UBER','V','MA','BRK-B','LLY','UNH','XOM'];
 const nthSun=(y,m,n)=>{const w=new Date(Date.UTC(y,m,1)).getUTCDay();return 1+(7-w)%7+7*(n-1)};
 const isDST=d=>{const y=+d.slice(0,4),t=Date.UTC(y,+d.slice(5,7)-1,+d.slice(8));return t>=Date.UTC(y,2,nthSun(y,2,2))&&t<Date.UTC(y,10,nthSun(y,10,1))};
@@ -273,7 +274,7 @@ function earnBox(id){const el=$('earn'),ls=EARN.e[id];if(!ls||!ls.length){el.hid
   const t=etToday(),fut=ls.find(x=>x[0]>=t),past=[...ls].reverse().find(x=>x[0]<t);let h='';
   if(fut){const w=twTime(fut[0],fut[1]);h+=`<p><span class="lb">📅 下次財報</span><b>${mdw(fut[0])} ${w.when}</b>${w.tw?`<small>${w.tw}</small>`:''}${fut[6]?`<small>${fut[6]}</small>`:''}${fut[2]!=null?`<small>預估 EPS ${fut[2].toFixed(2)}${fut[4]?`｜營收 ${bil(fut[4])}`:''}</small>`:''}</p>`}
   if(past&&dayDiff(past[0],t)<=10){const bt=past[2]!=null&&past[3]!=null?(past[3]>=past[2]?`優於預估 ${past[2].toFixed(2)}`:`低於預估 ${past[2].toFixed(2)}`):'';
-    h+=`<p class="done"><span class="lb">✅ 已公布</span><b>${mdw(past[0])}</b>${past[6]?`<small>${past[6]}</small>`:''}<small>${past[3]!=null?`EPS ${past[3].toFixed(2)}${bt?`（${bt}）`:''}`:`預估 EPS ${past[2]!=null?past[2].toFixed(2):'—'}｜實際值待更新`}${past[5]?`｜營收 ${bil(past[5])}`:''}</small></p>`}
+    h+=`<p class="done"><span class="lb">✅ 已公布</span><b>${mdw(past[0])}</b>${CMPSET.has(id)?`<a href="earnings.html#${id}" style="color:var(--accent);text-decoration:none;font-weight:600">📊 預期對照 →</a>`:''}${past[6]?`<small>${past[6]}</small>`:''}<small>${past[3]!=null?`EPS ${past[3].toFixed(2)}${bt?`（${bt}）`:''}`:`預估 EPS ${past[2]!=null?past[2].toFixed(2):'—'}｜實際值待更新`}${past[5]?`｜營收 ${bil(past[5])}`:''}</small></p>`}
   el.innerHTML=h;el.hidden=!h}
 let EMODE='focus';try{EMODE=localStorage.getItem('earnMode')||'focus'}catch(e){}
 const OPEN=new Set();
@@ -610,6 +611,7 @@ addEventListener('hashchange',route);
   try{const r=await fetch('data/all/index.json?t='+Date.now());if(r.ok)ALL=(await r.json()).map(([id,name,freq,n,lq])=>({id,name,freq,n,lq,theme:'全市場',tw:[]}))}catch(e){}
   try{const r=await fetch('data/all/aliases.json?t='+Date.now());if(r.ok)Object.assign(ALIAS,await r.json())}catch(e){}   // 同公司別名（GOOG→GOOGL、BRK-A→BRK-B…）由抓取程式自動產生
   try{const r=await fetch('data/earnings.json?t='+Date.now());if(r.ok)EARN=await r.json()}catch(e){}
+  try{const r=await fetch('data/earnings_auto.json?t='+Date.now());if(r.ok)CMPSET=new Set(Object.keys((await r.json()).q||{}))}catch(e){}
   await twOrder();
   homeRender();earnMini();route();capexAll();
 })();

@@ -20,12 +20,18 @@ jobs:
         env:
           FINNHUB_KEY: ${{ secrets.FINNHUB_KEY }}
         run: python us/fetch_earnings.py
+      - name: 抓財報對照自動層（Finnhub 驚喜率＋FinMind 首日股價）
+        if: always()
+        env:
+          FINNHUB_KEY: ${{ secrets.FINNHUB_KEY }}
+          FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
+        run: python us/fetch_earnings_cmp.py
       - name: 有變動才提交
         if: always()
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add us/data/earnings.json
+          git add us/data/earnings.json us/data/earnings_auto.json
           git diff --cached --quiet && exit 0
           git commit -m "us earnings: $(TZ=Asia/Taipei date +%F)"
           git pull --rebase origin main
