@@ -26,12 +26,31 @@ jobs:
           FINNHUB_KEY: ${{ secrets.FINNHUB_KEY }}
           FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
         run: python us/fetch_earnings_cmp.py
+      - name: 財報後補抓 SEC 財報（最近 6 天公布、且有全市場檔的代號）
+        if: always()
+        env:
+          FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
+          SEC_UA: ${{ secrets.SEC_UA }}
+          SEC_MODE: api
+        run: |
+          T=$(python - <<'PY'
+          import json, datetime as dt, pathlib
+          e = json.load(open('us/data/earnings.json'))['e']
+          t = dt.date.today(); out = []
+          for s, ls in e.items():
+              if any(0 <= (t - dt.date.fromisoformat(x[0])).days <= 6 for x in ls if x[0]) and pathlib.Path(f'us/data/all/{s}.json').exists():
+                  out.append(s)
+          print(' '.join(sorted(out)[:40]))
+          PY
+          )
+          echo "補抓：$T"
+          [ -n "$T" ] && python us/fetch_us_all.py $T || true
       - name: 有變動才提交
         if: always()
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add us/data/earnings.json us/data/earnings_auto.json
+          git add us/data/earnings.json us/data/earnings_auto.json us/data/all/
           git diff --cached --quiet && exit 0
           git commit -m "us earnings: $(TZ=Asia/Taipei date +%F)"
           git pull --rebase origin main
