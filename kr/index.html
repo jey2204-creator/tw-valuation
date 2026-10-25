@@ -287,6 +287,12 @@ details.ind .in{padding:0 12px 12px}
 html{scroll-behavior:smooth}
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 [hidden]{display:none!important}
+/* ---- 🏆 市值排行 #rank：同 .lst 表格；首頁入口同台股站 .srlink ---- */
+.srlink{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:10px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;color:var(--fg);text-decoration:none}.srlink b{font-size:14px;white-space:nowrap}.srlink span{font-size:12px;color:var(--muted);text-align:right}
+#rankPage .top{padding-top:12px}#rankPage h1{font-size:22px;font-weight:900;margin:6px 0 0;line-height:1.3}#rankPage .fx{margin-top:8px}
+#rkList td:first-child{min-width:7.5em}.lst .mk{font-size:10px;padding:0 5px;border-radius:4px;border:1px solid var(--line);color:var(--muted);margin-left:4px;vertical-align:1px}
+.lst .bar{display:block;height:3px;border-radius:2px;background:var(--accent);opacity:.55;margin-top:3px;max-width:100%}
+.lst .trk{font-size:10.5px;color:var(--accent);margin-left:3px}
 </style>
 </head>
 <body>
@@ -307,6 +313,7 @@ html{scroll-behavior:smooth}
     <div class="sug" id="sug" role="listbox" hidden></div>
   </header>
   <div id="tsec">
+    <a class="srlink" id="rkLink" href="#rank" hidden><b>🏆 市值排行 Top 20</b><span id="rkSub">KOSPI＋KOSDAQ</span></a>
     <h2 class="sec"><span>產業主題 <small id="tAsof"></small></span><a class="act" id="hEdit" href="#edit">✏️ 編輯</a></h2>
     <div class="tgrid" id="tgrid"></div>
     <p class="legend">各主題中位數。<i class="cv">5/7</i>＝7 檔裡只有 5 檔有值（虧損、資料不足不算），檔數少時別當成整個主題。營收年增＝最新一季對比去年同季；EPS 年增＝近四季合計對比前四季；PEG＝本益比 ÷ EPS 年增，<span class="cheap">&lt;1</span>、<span class="pricey">&gt;2</span>；本月至今＝收盤對比上月底；外資持股＝主題內中位數，外資是韓股主力，持股比轉折常領先股價。</p>
@@ -335,6 +342,16 @@ html{scroll-behavior:smooth}
   <div class="ttw" id="tTw"></div>
   <div class="panel"><div class="tbl"><table class="lst" id="tList"></table></div></div>
   <p class="legend" id="tFoot"></p>
+</div>
+
+<!-- ===== 市值排行：#rank（資料 data/rank.json，kr/fetch_rank.py 每個交易日收盤後更新） ===== -->
+<div id="rankPage" hidden>
+  <div class="top"><a href="#">← 全部主題</a></div>
+  <h1>🏆 韓股市值排行 Top 20</h1>
+  <p class="tsum" id="rkSum">載入中…</p>
+  <div class="fx" data-fx="mini"></div>
+  <div class="panel"><div class="tbl"><table class="lst" id="rkList"></table></div></div>
+  <p class="legend" id="rkFoot"></p>
 </div>
 
 <!-- ===== 編輯主題：#edit 清單（排序／隱藏／新增）、#edit/{id} 單一主題（名稱、成份股、細分）。只存在這支手機 ===== -->
@@ -513,7 +530,7 @@ const amt=(m,d)=>{if(m==null)return '—';if(fxOn()){const a=m/FX.rate;return a>
 function fxRender(){document.querySelectorAll('[data-fx]').forEach(el=>{const seg=`<span class="fxseg"><button type="button" data-c="0"${fxOn()?'':' class="on"'}>韓元</button><button type="button" data-c="1"${fxOn()?' class="on"':''}>台幣${el.dataset.fx==='mini'&&fxOn()?`<small>÷${FX.rate}</small>`:''}</button></span>`;
   if(el.dataset.fx==='mini'){el.innerHTML=seg;el.title=fxOn()?`台幣 = 韓元 ÷ ${FX.rate}（自設固定匯率，比率不變；匯率在首頁改）`:'改用台幣顯示絕對金額（固定匯率，比率不變）';return}
   el.innerHTML=seg+(fxOn()?`<label>1 台幣 = <input type="number" step="0.1" min="30" max="60" inputmode="decimal" value="${FX.rate}" data-rate> 韓元</label><span>≈ 金額 = 韓元 ÷ ${FX.rate}（非即時匯率）；比率、分位、年增不受影響</span>`:'<span>比率不分幣別；台幣模式只換股價／EPS／營收等絕對金額</span>')})}
-function fxApply(){fxSave();fxRender();if(D&&!$('stock').hidden){header();render()}if(!$('themePage').hidden&&CUR_T)themeRender(CUR_T);if(!$('home').hidden)homeRender()}
+function fxApply(){fxSave();fxRender();if(D&&!$('stock').hidden){header();render()}if(!$('themePage').hidden&&CUR_T)themeRender(CUR_T);if(!$('home').hidden)homeRender();if(!$('rankPage').hidden)rkRender()}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-fx] button[data-c]');if(!b)return;const on=b.dataset.c==='1';if(on===FX.on)return;FX.on=on;fxApply()});
 document.addEventListener('change',e=>{if(!e.target.matches('[data-fx] input[data-rate]'))return;const r=+e.target.value;if(!(r>=30&&r<=60)){e.target.value=FX.rate;return}FX.rate=Math.round(r*10)/10;fxApply()});
 fxRender();
@@ -949,22 +966,47 @@ function backPaint(id){const t=themeOfStock(id);$('back').href=t?'#t/'+t.id:'#';
 let HOMEY=0;
 function route(){
   const raw=decodeURIComponent(location.hash.slice(1)),id=raw.toUpperCase();
-  const em=/^edit(?:\/([a-z0-9_-]+))?$/.exec(raw);   // 編輯頁 #edit、#edit/{主題}（小寫，跟代號 EDIT 分開）
-  if(!em&&ALIAS[id]&&!IDX.some(s=>s.id===id)){location.replace('#'+ALIAS[id]);return}   // #FB → #META
-  const tm=/^t\/([a-z0-9_-]+)$/i.exec(raw),tid=tm?tm[1].toLowerCase():null,h=em?raw:tid?'t/'+tid:id;   // 主題頁 #t/pcb
+  const em=/^edit(?:\/([a-z0-9_-]+))?$/.exec(raw),rk=raw.toLowerCase()==='rank';   // 編輯頁 #edit、#edit/{主題}（小寫，跟代號 EDIT 分開）
+  if(!em&&!rk&&ALIAS[id]&&!IDX.some(s=>s.id===id)){location.replace('#'+ALIAS[id]);return}   // #FB → #META
+  const tm=/^t\/([a-z0-9_-]+)$/i.exec(raw),tid=tm?tm[1].toLowerCase():null,h=em?raw:rk?'rank':tid?'t/'+tid:id;   // 主題頁 #t/pcb
   bkTrack(h);
-  $('themePage').hidden=!tid;$('editList').hidden=!em||!!em[1];$('editTheme').hidden=!em||!em[1];const stk=!tid&&!em&&isStk(id);
+  $('themePage').hidden=!tid;$('rankPage').hidden=!rk;$('editList').hidden=!em||!!em[1];$('editTheme').hidden=!em||!em[1];const stk=!tid&&!em&&!rk&&isStk(id);
   if(!stk){$('pnav').hidden=true;document.body.classList.remove('pn');pnShut();qToggle(false)}
-  if(tid&&VPREV==='home')HOMEY=scrollY;   // 從首頁點卡片進主題：記住首頁捲到哪
+  if((tid||rk)&&VPREV==='home')HOMEY=scrollY;   // 從首頁點卡片進主題：記住首頁捲到哪
   if(em){$('stock').hidden=true;$('home').hidden=true;document.title='編輯主題';if(em[1])openEditor(em[1],HPREV);else renderOrder();scrollTo(0,0)}
   else if(tid){$('stock').hidden=true;$('home').hidden=true;themeRender(tid);scrollTo(0,0)}
+  else if(rk){$('stock').hidden=true;$('home').hidden=true;document.title='韓股市值排行';rkLoad().then(rkRender);scrollTo(0,0)}
   else if(stk){const k=KEEP;KEEP=null;if(!D||D.id!==id){if(!k)scrollTo(0,0);load(id).then(()=>{if(k)requestAnimationFrame(()=>goSec(k))})}else{$('home').hidden=true;$('stock').hidden=false;pnPaint(id);setTimeout(()=>Object.values(charts).forEach(c=>c.resize()),0);k?goSec(k):scrollTo(0,0)}}
   else{$('stock').hidden=true;$('home').hidden=false;document.title='韓股估值看板';if(!$('q').value.trim())cardsRender();Object.values(charts).forEach(c=>c.resize());
     if(id==='EXP')requestAnimationFrame(()=>{if(!$('exp').hidden)$('exp').scrollIntoView()});   // 個股頁「看趨勢 →」：回首頁捲到出口卡
     if(VPREV==='edit')requestAnimationFrame(()=>scrollTo(0,$('tsec').getBoundingClientRect().top+scrollY-8));   // 編輯完回首頁：停在主題卡
     if(VPREV==='theme'){const y=HOMEY,pt=HPREV;requestAnimationFrame(()=>{scrollTo(0,y);const c=document.querySelector(`a.tcard[href="#${pt}"]`);if(c){c.classList.remove('bkflash');void c.offsetWidth;c.classList.add('bkflash')}})}}
-  bkRestore(h);VPREV=stk?'stock':em?'edit':tid?'theme':'home';HPREV=h;
+  bkRestore(h);VPREV=stk?'stock':em?'edit':tid||rk?'theme':'home';HPREV=h;
 }
+// ---------- 🏆 市值排行 #rank：rows 欄位 0代號 1中文名 2韓文名 3市場 4市值(億韓元) 5收盤 6日漲跌% 7本益比 8淨值比 9殖利率% 10外資持股% ----------
+let RK=null,RK_P=null,RKS='cap:-1';
+const rkLoad=()=>RK_P||(RK_P=fetch(`data/rank.json?t=${Date.now()}`).then(r=>r.ok?r.json():null).catch(()=>null).then(j=>{RK=j;rkLink();return j}));
+function rkLink(){const a=$('rkLink');if(!RK||!RK.rows||!RK.rows.length){a.hidden=true;return}a.hidden=false;
+  const r=RK.rows,t1=r[0],s2=(r[0][4]+(r[1]?r[1][4]:0))/RK.total*100;
+  $('rkSub').textContent=`${RK.date.slice(5).replace('-','/')} 收盤｜前兩名占 ${fmt(s2,0)}%`}
+const RKF={cap:r=>r[4],chg:r=>r[6],pe:r=>r[7]>0?r[7]:null,pb:r=>r[8]>0?r[8]:null,dy:r=>r[9],fr:r=>r[10]};
+function rkRender(){const el=$('rkList');if(!RK||!RK.rows){$('rkSum').textContent='排行資料還沒產生（Actions「更新韓股市值排行」跑完就會出現）';el.innerHTML='';return}
+  const [k,dir]=RKS.split(':'),rows=RK.rows.map((r,i)=>[i+1,r]),max=RK.rows[0][4];
+  if(k!=='cap'||dir!=='-1')rows.sort((a,b)=>{const x=RKF[k](a[1]),y=RKF[k](b[1]);if(x==null)return 1;if(y==null)return -1;return (x-y)*(+dir)});
+  const tot=RK.total,kq=RK.rows.filter(r=>r[3]==='KOSDAQ').length,top2=(RK.rows[0][4]+RK.rows[1][4])/tot*100;
+  const trk=new Set(IDX.map(s=>s.id)),n=RK.rows.filter(r=>trk.has(r[0])).length;
+  $('rkSum').innerHTML=`前 ${RK.rows.length} 大合計 <b>${ap()}${capT(tot,1)}</b>${fxOn()?'台幣':'韓元'}；前兩名占 <b>${fmt(top2,0)}%</b>（集中度高，指數漲跌多半看這兩檔）；KOSDAQ <b>${kq}</b> 檔；已在看板追蹤 <b>${n}</b> 檔`;
+  const th=(key,lb)=>`<th data-k="${key}" class="${k===key?'on':''}">${lb}${k===key?(+dir>0?' ▲':' ▼'):''}</th>`;
+  el.innerHTML=`<thead><tr>${th('cap','股票／市值')}${th('chg','收盤')}${th('pe','本益比')}${th('pb','淨值比')}</tr></thead><tbody>`+rows.map(([i,r])=>{
+    const [c,zh,kn,mk,cap,px,chg,pe,pb,dy,fr]=r,t=trk.has(c);
+    return `<tr data-id="${c}" data-t="${t?1:0}"><td><span class="rk">#${i}</span><span class="nm" style="font-family:var(--f-body)">${esc(zh||kn||c)}</span><span class="cd">${c}</span>${mk?`<span class="mk">${mk==='KOSDAQ'?'KQ':'KS'}</span>`:''}${t?'<span class="trk" title="看板有追蹤，點開個股頁">●</span>':''}`+
+      `${zh&&kn?`<span class="sub sm">${esc(kn)}</span>`:''}<span class="cap">${ap()}${capT(cap)}・${fmt(cap/tot*100,1)}%</span><span class="bar" style="width:${(cap/max*100).toFixed(1)}%"></span></td>`+
+      `<td>${ap()}${pxT(px)}<span class="sub ${sgc(chg)}">${chg==null?'—':pct(chg,2)}</span></td>`+
+      `<td>${pe>0?(pe>=100?'>100':fmt(pe,1)):'—'}<span class="sub sm">殖利率${dy!=null?fmt(dy,1)+'%':'—'}</span></td>`+
+      `<td>${pb>0?fmt(pb,2):'—'}<span class="sub sm">外資${fr!=null?fmt(fr,0)+'%':'—'}</span></td></tr>`}).join('')+'</tbody>';
+  $('rkFoot').innerHTML=`資料：Naver（KOSPI＋KOSDAQ 合併，含特別股），${esc(RK.date)} 收盤，更新於 ${esc(RK.built)} KST。市值後的 % ＝占前 ${RK.rows.length} 大合計比重，色條長度對比第一名。<span style="color:var(--accent)">●</span>＝看板已追蹤，點了開個股頁；其他點了開 Naver 個股頁。本益比為近四季（虧損顯示 —，≥100 顯示 &gt;100）；本益比欄下方為殖利率、淨值比欄下方為外資持股比。點欄位標題可排序（本益比、淨值比由低到高）。${fxOn()?`收盤、市值以 1 台幣 = ${FX.rate} 韓元固定匯率換算（≈）。`:''}`;
+  el.onclick=e=>{const h=e.target.closest('th[data-k]');if(h){const nk=h.dataset.k,cur=RKS.split(':');RKS=cur[0]===nk?nk+':'+(-cur[1]):nk+':'+(nk==='cap'||nk==='chg'||nk==='dy'?-1:1);rkRender();return}
+    const r=e.target.closest('tr[data-id]');if(!r)return;if(r.dataset.t==='1')location.hash=r.dataset.id;else window.open(`https://m.stock.naver.com/domestic/stock/${r.dataset.id}/total`,'_blank','noopener')}}
 // ---------- 底部導覽列：依目前主題（剛看的主題頁，或首頁順序第一個有它的主題）的成份股順序上下檔切換，並停在同一張圖；不在任何主題的只剩 ↩ ----------
 const isStk=h=>/^[0-9A-Z]{6}$/.test(h);   // 韓股代號 6 碼
 const nameOf=id=>{const s=IDX.find(x=>x.id===id);if(s)return s.name||id;if(D&&D.id===id)return D.name||id;return id};
@@ -1208,6 +1250,7 @@ addEventListener('hashchange',route);
   IDX=a||[];EXP=b;$('eN').textContent=IDX.length;
   BASE=baseThemes();applyCfg();syStat();syncRun();
   homeRender();try{expRender()}catch(e){console.error(e)}route();
+  rkLoad();   // 首頁「🏆 市值排行」入口：有 rank.json 才顯示
   // 主題卡的年增／PEG／本月至今／市值要讀各個股檔（各約 30KB）；讀完重畫卡片與主題頁
   loadStats().then(statsRefresh);
 })();
