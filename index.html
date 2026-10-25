@@ -304,6 +304,16 @@ details.ind.hot summary b{color:var(--up)}
 .gnotes li{margin:3px 0}
 #guide.nog :is(#gdScen,h3,#cGd,.tbl,#tGdH,#tGdCx,#gdNotes,.foot:not(#fGd)){display:none}
 .foot a{color:var(--accent)}
+
+/* 首頁頂部壓縮 */
+#home .hhead{padding-top:8px;row-gap:6px}
+#home .hhead h1{font-size:18px}
+#home .hnav{gap:3px}#home .hnav .ghost{font-size:12px;padding:2px 7px}
+#home .search{margin-top:8px}
+#home .search input{padding-block:6px}
+#home .search+h2.sec{margin:10px 0 6px;align-items:center}
+#home .search+h2.sec .act{padding-left:6px}
+#home .search+h2.sec .segm button{padding:3px 9px}
 </style>
 
 </head>
@@ -316,7 +326,7 @@ details.ind.hot summary b{color:var(--up)}
     <input id="q2" type="search" inputmode="search" autocomplete="off" placeholder="輸入代號或名稱，例如 2454、聯發科" aria-label="搜尋股票">
     <div class="results" id="res2" hidden></div>
   </div>
-  <h2 class="sec"><span>⭐ 自選 <small class="asof" id="favAsof"></small><a class="act" href="#f" id="favEdit" hidden>✏️ 排序</a></span><span class="segw"><span class="segm" data-seg></span><button type="button" class="dns" data-dense></button></span></h2><p class="asofN" id="asofNote" hidden></p>
+  <h2 class="sec"><span>⭐ 自選 <small class="asof" id="favAsof"></small><a class="act" href="#f" id="favEdit" hidden aria-label="自選排序" title="自選排序">✏️</a></span><span class="segw"><span class="segm" data-seg></span><button type="button" class="dns" data-dense></button></span></h2><p class="asofN" id="asofNote" hidden></p>
   <div id="favBox"></div>
   <h2 class="sec"><span>產業主題 <small><span id="sumAsof"></span>・中位數</small></span><a class="act" href="#e">✏️ 編輯</a></h2>
   <div class="tgrid" id="tgrid"></div>
@@ -1633,7 +1643,12 @@ const isBad=f=>!!f&&(f.st==='late'||f.st==='miss');
 const tag=(lab,f,d)=>`<span class="asof${isBad(f)?' stale':''}">${lab}${lab?' ':''}${md(d)}</span>`;
 // 目前畫面看得到的資料：估值模式只有收盤；動能模式＝價、法人、集保
 function frTags(){
-  if(MODE==='m'&&MO)return tag('價',FR.mo,MO.asof)+'・'+tag('法人',FR.inst,MO.instAsof)+(TD?'・'+tag('集保',FR.td,TD.asof):'');
+  if(MODE==='m'&&MO){
+    const L=[['價',FR.mo,MO.asof],['法人',FR.inst,MO.instAsof]];if(TD)L.push(['集保',FR.td,TD.asof]);
+    // 三個日期都一樣 → 只顯示一次（任一落後就標橘）；不一樣才分開列
+    if(L.every(x=>md(x[2])===md(L[0][2]))){const bad=L.some(x=>isBad(x[1]));return `<span class="asof${bad?' stale':''}" title="價、法人${TD?'、集保':''}都是 ${md(L[0][2])}">📅${md(L[0][2])}</span>`}
+    return L.map(x=>tag(x[0],x[1],x[2])).join('・');
+  }
   return S&&S.pxAsof?tag('收盤',FR.px,S.pxAsof):'';
 }
 function frNote(){
