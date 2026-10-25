@@ -1252,6 +1252,8 @@ const syOn=()=>!!(SY.token&&SY.gist);
 function cfgRaw(){let c=null;try{c=JSON.parse(localStorage.getItem(UKEY))}catch(e){}
   return c&&typeof c==='object'?{site:'us',order:c.order||[],hidden:c.hidden||[],themes:c.themes||{},at:+c.at||0}:{site:'us',order:[],hidden:[],themes:{},at:0}}
 const cfgKey=c=>JSON.stringify([c.order||[],c.hidden||[],c.themes||{}]);
+// 上傳前一定要有 at：舊版設定沒有 at（=0），不補的話另一台會以為雲端沒變
+function cfgStamp(){const l=cfgRaw();if(!l.at){l.at=Date.now();try{localStorage.setItem(UKEY,JSON.stringify(l))}catch(e){}}return l}
 function syMsg(t){$('syMsg').textContent=t}
 function syStat(){const on=syOn();$('syOff').hidden=on;$('syOn').hidden=!on;$('syCf').hidden=!SYC;
   const tm=SY.last?new Date(SY.last).toLocaleString('zh-TW',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}):'';
@@ -1283,21 +1285,21 @@ async function syncRun(force){
       if(!$('editTheme').hidden){syWait=true;syMsg('雲端有新版本，離開編輯頁後套用');return}
       applyRemote(r);syMsg('已套用另一台的最新設定');return}
     if(r&&r.at!==(SY.at||0))SY.at=r.at;                     // 內容一樣，只是時間戳不同
-    if(SY.pend||!r){await remotePut(l);SY.at=l.at}
+    if(SY.pend||!r){const u=cfgStamp();await remotePut(u);SY.at=u.at}
     SY.pend=false;SY.last=Date.now();sySave();syMsg('')
   }catch(e){syMsg('同步失敗：'+e.message+'（設定仍存在這台，下次開頁再試）')}
   finally{syBusy=false;syStat()}}
-$('syGo').addEventListener('click',async()=>{const t=$('syTok').value.trim();
-  if(!/^(ghp_|github_pat_)[A-Za-z0-9_]{20,}$/.test(t)){syMsg('token 格式不對：應該是 ghp_ 開頭的一長串');return}
+$('syGo').addEventListener('click',async()=>{const t=$('syTok').value.replace(/[\s\u200b-\u200d\ufeff]/g,'');   // 去掉貼上時夾帶的空白、換行、隱形字元
+  if(!/^(ghp_|github_pat_)[A-Za-z0-9_]{20,}$/.test(t)){const h=t.slice(0,4);syMsg(`token 格式不對：應該是 ghp_ 開頭的一長串（目前貼上的是「${h}…」開頭、${t.length} 個字）`);return}
   SY={token:t};syMsg('連線中…');$('syGo').disabled=true;
   try{const list=await gh('/gists?per_page=100'),g=list.find(x=>x.description===GDESC&&x.files&&x.files[GFILE]),l=cfgRaw();
     if(g){SY.gist=g.id;const r=await remoteGet();
-      if(!r){await remotePut(l);SY.at=l.at;SY.last=Date.now();syMsg('已開啟同步（雲端是空的，已上傳這台的設定）')}
+      if(!r){const u=cfgStamp();await remotePut(u);SY.at=u.at;SY.last=Date.now();syMsg('已開啟同步（雲端是空的，已上傳這台的設定）')}
       else if(cfgKey(r)===cfgKey(l)){SY.at=r.at;SY.last=Date.now();syMsg('已開啟同步（兩邊設定相同）')}
-      else if(!l.at){applyRemote(r);syMsg('已開啟同步，套用雲端的設定')}
+      else if(cfgKey(l)===cfgKey({})){applyRemote(r);syMsg('已開啟同步，套用雲端的設定')}   // 這台沒有任何自訂才直接套用
       else{SY.at=-1;SY.pend=true;syConflict(r)}}
-    else{const n=await gh('/gists',{method:'POST',body:JSON.stringify({description:GDESC,public:false,files:{[GFILE]:{content:JSON.stringify(l)}}})});
-      SY.gist=n.id;SY.at=l.at;SY.last=Date.now();syMsg('已開啟同步，已在你的 GitHub 建立秘密 Gist 存這台的設定。另一台貼同一個 token 就會抓到')}
+    else{const u=cfgStamp(),n=await gh('/gists',{method:'POST',body:JSON.stringify({description:GDESC,public:false,files:{[GFILE]:{content:JSON.stringify(u)}}})});
+      SY.gist=n.id;SY.at=u.at;SY.last=Date.now();syMsg('已開啟同步，已在你的 GitHub 建立秘密 Gist 存這台的設定。另一台貼同一個 token 就會抓到')}
     sySave();$('syTok').value=''}
   catch(e){SY={};sySave();syMsg('開啟失敗：'+e.message)}
   finally{$('syGo').disabled=false;syStat()}});
