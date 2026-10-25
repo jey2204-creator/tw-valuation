@@ -313,7 +313,6 @@ html{scroll-behavior:smooth}
     <div class="sug" id="sug" role="listbox" hidden></div>
   </header>
   <div id="tsec">
-    <a class="srlink" id="rkLink" href="#rank" hidden><b>🏆 市值排行 Top 20</b><span id="rkSub">KOSPI＋KOSDAQ</span></a>
     <h2 class="sec"><span>產業主題 <small id="tAsof"></small></span><a class="act" id="hEdit" href="#edit">✏️ 編輯</a></h2>
     <div class="tgrid" id="tgrid"></div>
     <p class="legend">各主題中位數。<i class="cv">5/7</i>＝7 檔裡只有 5 檔有值（虧損、資料不足不算），檔數少時別當成整個主題。營收年增＝最新一季對比去年同季；EPS 年增＝近四季合計對比前四季；PEG＝本益比 ÷ EPS 年增，<span class="cheap">&lt;1</span>、<span class="pricey">&gt;2</span>；本月至今＝收盤對比上月底；外資持股＝主題內中位數，外資是韓股主力，持股比轉折常領先股價。</p>
@@ -986,7 +985,7 @@ function route(){
 // ---------- 🏆 市值排行 #rank：rows 欄位 0代號 1中文名 2韓文名 3市場 4市值(億韓元) 5收盤 6日漲跌% 7本益比 8淨值比 9殖利率% 10外資持股% ----------
 let RK=null,RK_P=null,RKS='cap:-1';
 const rkLoad=()=>RK_P||(RK_P=fetch(`data/rank.json?t=${Date.now()}`).then(r=>r.ok?r.json():null).catch(()=>null).then(j=>{RK=j;rkLink();return j}));
-function rkLink(){const a=$('rkLink');if(!RK||!RK.rows||!RK.rows.length){a.hidden=true;return}a.hidden=false;
+function rkLink(){const a=$('rkLink');if(!a)return;if(!RK||!RK.rows||!RK.rows.length){a.hidden=true;return}a.hidden=false;
   const r=RK.rows,t1=r[0],s2=(r[0][4]+(r[1]?r[1][4]:0))/RK.total*100;
   $('rkSub').textContent=`${RK.date.slice(5).replace('-','/')} 收盤｜前兩名占 ${fmt(s2,0)}%`}
 const RKF={cap:r=>r[4],chg:r=>r[6],pe:r=>r[7]>0?r[7]:null,pb:r=>r[8]>0?r[8]:null,dy:r=>r[9],fr:r=>r[10]};
@@ -1250,7 +1249,6 @@ addEventListener('hashchange',route);
   IDX=a||[];EXP=b;$('eN').textContent=IDX.length;
   BASE=baseThemes();applyCfg();syStat();syncRun();
   homeRender();try{expRender()}catch(e){console.error(e)}route();
-  rkLoad();   // 首頁「🏆 市值排行」入口：有 rank.json 才顯示
   // 主題卡的年增／PEG／本月至今／市值要讀各個股檔（各約 30KB）；讀完重畫卡片與主題頁
   loadStats().then(statsRefresh);
 })();
