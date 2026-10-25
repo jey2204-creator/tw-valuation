@@ -26,6 +26,13 @@ jobs:
           FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
           SEC_UA: ${{ secrets.SEC_UA }}
         run: python us/fetch_us.py ${{ github.event.inputs.tickers }}
+      - name: 員工薪資中位數＋CEO 倍數＋員工人數（DEF 14A／10-K 沒換新就不重抓）
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 10
+        env:
+          SEC_UA: ${{ secrets.SEC_UA }}
+        run: python us/fetch_salary.py ${{ github.event.inputs.tickers }}
       - name: 有變動才提交
         if: always()
         run: |
