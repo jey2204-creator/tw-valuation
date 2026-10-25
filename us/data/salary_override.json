@@ -1,0 +1,12 @@
+{
+ "_說明": "覆蓋 fetch_salary.py 抓錯的欄位；null＝這欄不顯示。改完手動跑 Actions（force_salary=1）或等下次更新",
+ "TTMI": {
+  "med": null,
+  "medPrev": null,
+  "medChg": null
+ },
+ "LRCX": {
+  "emp": null,
+  "empDate": null
+ }
+}
