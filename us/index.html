@@ -237,6 +237,7 @@ h2.sec small{font-weight:500;letter-spacing:0}
 .lst .role{font-size:11.5px;color:var(--muted);line-height:1.35}.lst .role .pill{font-size:10.5px;padding:0 6px;margin-right:3px;vertical-align:1px}
 .lst .sub{display:block;font-size:11px;color:var(--muted)}.lst .sub.sm{font-size:10.5px}
 .lst .cap{display:block;font-size:11px;color:var(--muted);font-family:var(--f-num)}
+.lst .rk{font-family:var(--f-num);font-size:11px;font-weight:700;color:var(--muted);margin-right:5px}
 .lst th[data-k]{cursor:pointer;user-select:none}.lst th.on{color:var(--fg);font-weight:700}
 /* 員工薪酬（同台股站）：個股頁一列、主題表小字、首頁入口卡、排行頁 #SALARY */
 .meta.sal{margin-top:6px;font-size:12px;color:var(--muted);line-height:1.6}.meta.sal b{color:var(--fg);font-family:var(--f-num);font-size:13px}.meta.sal .dtip{border-bottom:1px dotted currentColor}
@@ -905,7 +906,8 @@ const stockOf=id=>IDX.find(s=>s.id===id)||ALLM[id]||{id,name:'',tw:[],unk:true};
 const itemsOf=t=>t.stocks.map(([id])=>stockOf(id));
 function cfgGet(){let c=null;try{c=JSON.parse(localStorage.getItem(UKEY))}catch(e){}if(!c||typeof c!=='object')c={};
   const th={};if(c.themes&&typeof c.themes==='object')for(const [k,v] of Object.entries(c.themes)){if(!v||typeof v.name!=='string'||!Array.isArray(v.stocks))continue;
-    th[k]={id:k,name:v.name,stocks:v.stocks.filter(x=>Array.isArray(x)&&typeof x[0]==='string'&&x[0]).map(x=>[x[0].toUpperCase(),String(x[1]??'')])}}
+    th[k]={id:k,name:v.name,stocks:v.stocks.filter(x=>Array.isArray(x)&&typeof x[0]==='string'&&x[0]).map(x=>[x[0].toUpperCase(),String(x[1]??'')])};
+    if(typeof v.sort==='string'&&/^([a-z]+:-?1)?$/.test(v.sort))th[k].sort=v.sort}   // sort＝這個主題記住的表格排序（自訂主題才存這裡，會跟著雲端同步）
   const ls=a=>Array.isArray(a)?a.filter(x=>typeof x==='string'):[];
   return {order:ls(c.order),hidden:ls(c.hidden),themes:th}}
 function cfgSave(c){try{localStorage.setItem(UKEY,JSON.stringify({site:'us',order:c.order,hidden:c.hidden,themes:c.themes,at:Date.now()}))}catch(e){}applyCfg();syncDirty()}   // at＝這次修改時間，雲端同步用來判斷哪份比較新
@@ -942,7 +944,7 @@ function cardsRender(){
       kv('PEG',pg,v=>fmt(v,2),pegc(pg.v))+kv('本月至今',mt,v=>pct(v,1),sgc(mt.v))+
       `<span class="k"><span>兩週內財報</span><span class="num">${ne?ne+' 檔':'—'}</span></span></a>`}).join('')
     :'<p class="meta" style="grid-column:1/-1;margin:4px 0">主題都隱藏了。按右上「✏️ 編輯」把要看的顯示回來。</p>'}
-let CUR_T=null,LAST_T=null;try{LAST_T=sessionStorage.getItem('lastTheme')}catch(e){}
+let CUR_T=null,LAST_T=null,LAST_TS=null;try{LAST_T=sessionStorage.getItem('lastTheme')}catch(e){}
 function themeRender(tid){
   const t=THEMES.find(x=>x.id===tid);if(!t){location.replace('#');return}
   CUR_T=tid;LAST_T=tid;try{sessionStorage.setItem('lastTheme',tid)}catch(e){}
@@ -959,20 +961,40 @@ function themeRender(tid){
   $('tEarn').innerHTML=ev.length?'<span class="lb">📅 財報</span>'+ev.map(([id,x,dd])=>`<a class="ec${dd<0?' done':''}" href="#${id}">${dd<0?'✅':''}<b>${id}</b><small>${+x[0].slice(5,7)}/${+x[0].slice(8)}${dd<0?' 已公布':({bmo:' 盤前',amc:' 盤後',dmh:' 盤中'}[x[1]]||'')}</small></a>`).join(''):'';
   $('tTw').innerHTML=t.tw.length?'<span class="lb">對應台股</span>'+t.tw.map(([c,n])=>`<a href="../#${c}"><b>${c}</b>${esc(n)}</a>`).join('')+(!t.custom&&t.id!=='cloud'?`<a class="all" href="../#t/${t.id}">台股同主題 →</a>`:''):(t.dem?'<span class="lb">對應台股：全供應鏈（需求層）</span>':'');
   const nx=ids.filter(id=>!tracked(id)).length;
+  if(LAST_TS!==tid){TS=tsGet(tid);LAST_TS=tid}loadPx(t);
   tTable(t);
-  $('tFoot').innerHTML=`營收＝最新一季對比去年同季；EPS＝近四季合計對比前四季（「虧損」＝近四季合計 ≤ 0，「轉盈」＝前四季是虧損）；PEG＝本益比 ÷ EPS 年增，年增 &gt;300% 低基期不算${it.some(s=>s.cyc)?'；<span class="pill">循環</span> 股 PEG 參考性低，以淨值比河流為主':''}；本月＝最新收盤對比上月底。收盤為美元；市值＝最新季稀釋股數 × 收盤${fxOn()?'，台幣以固定匯率 '+FX.rate+' 換算':''}。點欄位標題可排序（本益比連點：本益比 → EPS年增 → PEG；股票連點：市值 → 薪酬中位數）。${it.some(s=>sal(s.id,'med')!=null)?'<span class="cap sal" style="display:inline">薪</span>＝員工年度總薪酬中位數（全球全體員工、含股票，DEF 14A 揭露），跟台股「非主管全時」口徑不同。':''}`+
+  $('tFoot').innerHTML=`營收＝最新一季對比去年同季；EPS＝近四季合計對比前四季（「虧損」＝近四季合計 ≤ 0，「轉盈」＝前四季是虧損）；PEG＝本益比 ÷ EPS 年增，年增 &gt;300% 低基期不算${it.some(s=>s.cyc)?'；<span class="pill">循環</span> 股 PEG 參考性低，以淨值比河流為主':''}；本月＝最新收盤對比上月底。收盤為美元；市值＝最新季稀釋股數 × 收盤（全市場股票用 FinMind 即時抓的收盤；ADR 依每 ADR 股數換算）${fxOn()?'，台幣以固定匯率 '+FX.rate+' 換算':''}。點欄位標題可排序，每個主題會記住上次的排序（本益比連點：本益比 → EPS年增 → PEG；股票連點：市值 → 薪酬中位數）。${it.some(s=>sal(s.id,'med')!=null)?'<span class="cap sal" style="display:inline">薪</span>＝員工年度總薪酬中位數（全球全體員工、含股票，DEF 14A 揭露），跟台股「非主管全時」口徑不同。':''}`+
     (nx?'<br><span class="pill o">全市場</span>＝不在每日追蹤清單：只有每週更新的財報，沒有本益比與本月漲跌，點進個股頁才即時抓股價。':'')}
 // ---------- 主題頁個股表（排版同台股站）----------
 // 市值＝最新季稀釋股數 × 收盤（百萬美元），跟著美元／台幣切換：美元顯示「億美元」、台幣顯示「≈ 億」
-const capM=id=>{const s=stockOf(id),o=ST[id]||{};return tracked(id)&&s.close&&o.sh?o.sh*s.close:null};
+// ADR：SEC 股數是普通股，股價是 ADR → 股數 ÷ 每 ADR 普通股數（TSM 1 ADR = 5 股）
+const ADR={TSM:5};
+// 全市場股票（不在每日追蹤）：主題頁開著時跟 FinMind 抓近兩週收盤，只用來算市值與顯示收盤
+const PX={},PXREQ=new Set();
+function loadPx(t){const ids=t.stocks.map(x=>x[0]).filter(id=>!tracked(id)&&ALLM[id]&&!PXREQ.has(id));if(!ids.length)return;
+  ids.forEach(id=>PXREQ.add(id));const d0=new Date(Date.now()-20*864e5).toISOString().slice(0,10);
+  Promise.all(ids.map(async id=>{try{const r=await fetch(`${FM}?dataset=USStockPrice&data_id=${encodeURIComponent(id)}&start_date=${d0}`);if(!r.ok)return;
+    const px=((await r.json()).data||[]).filter(x=>x.Close>0).sort((a,b)=>a.date<b.date?-1:1);if(!px.length)return;
+    const l=px[px.length-1],p=px[px.length-2];PX[id]={close:l.Close,chg:p?(l.Close/p.Close-1)*100:null,date:l.date}}catch(e){}}))
+  .then(()=>{if(!$('themePage').hidden&&CUR_T===t.id)tTable(THEMES.find(x=>x.id===CUR_T)||t)})}
+const capM=id=>{const s=stockOf(id),o=ST[id]||{};if(tracked(id))return s.close&&o.sh?o.sh*s.close:null;
+  return PX[id]&&o.sh?o.sh/(ADR[id]||1)*PX[id].close:null};
 const capT=m=>{if(m==null)return '';const a=fxOn()?m*FX.rate/100:m/100;return (fxOn()?'≈':'$')+(a>=1e4?fmt(a/1e4,2)+'兆':fmt(a,a<10?1:0)+'億')};
 const TSORT={cap:capM,sal:id=>sal(id,'med'),px:id=>stockOf(id).chg,pe:id=>stockOf(id).pe||null,eps:id=>(ST[id]||{}).ey,peg:id=>(ST[id]||{}).peg,pb:id=>stockOf(id).pb||null,ry:id=>(ST[id]||{}).ry};
 const TPE=['pe:-1','pe:1','eps:-1','peg:1',''],TPEL={pe:'本益比',eps:'EPS年增',peg:'PEG'};
 const TCAP=['cap:-1','sal:-1',''],TCAPL={cap:'市值',sal:'薪酬中位'};   // 「股票」欄連點：市值 → 薪酬中位數 → 預設
 let TS='';
+// 每個主題記住自己的排序：自訂主題存進主題設定（雲端同步）；內建主題存這台（寫進設定會被當成「改過」而凍結成份股）
+const TSKEY='usThemeSort';
+function tsGet(tid){const c=cfgGet();if(c.themes[tid]&&!BASE.some(b=>b.id===tid))return c.themes[tid].sort||'';
+  try{return (JSON.parse(localStorage.getItem(TSKEY))||{})[tid]||''}catch(e){return ''}}
+function tsSet(tid,v){const c=cfgGet();if(c.themes[tid]&&!BASE.some(b=>b.id===tid)){if((c.themes[tid].sort||'')===v)return;
+    if(v)c.themes[tid].sort=v;else delete c.themes[tid].sort;
+    try{localStorage.setItem(UKEY,JSON.stringify({site:'us',order:c.order,hidden:c.hidden,themes:c.themes,at:Date.now()}))}catch(e){}syncDirty();return}   // 不呼叫 cfgSave：免得整頁重畫
+  try{const m=JSON.parse(localStorage.getItem(TSKEY))||{};if(v)m[tid]=v;else delete m[tid];localStorage.setItem(TSKEY,JSON.stringify(m))}catch(e){}}
 function tTable(t){const el=$('tList'),[k,dir]=TS.split(':');let rows=t.stocks.slice();
   if(k){const f=TSORT[k];rows.sort((a,b)=>{const x=f(a[0]),y=f(b[0]);if(x==null)return 1;if(y==null)return -1;return (x-y)*(+dir||-1)})}
-  const lqs=rows.map(([id])=>(ST[id]||{}).lq).filter(Boolean).sort(),LQ=lqs[lqs.length-1];
+  const lqs=rows.map(([id])=>(ST[id]||{}).lq).filter(Boolean).sort(),LQ=lqs[lqs.length-1];let RK=0;
   const th=(key,lb)=>{const on=key==='pe'?k in TPEL:key==='cap'?k in TCAPL:k===key;return `<th data-k="${key}" class="${on?'on':''}">${key==='pe'&&on?TPEL[k]:key==='cap'&&on?TCAPL[k]:lb}${on?(+dir>0?' ▲':' ▼'):''}</th>`};
   el.innerHTML=`<thead><tr>${th('cap','股票')}${th('px','收盤')}${th('pe','本益比')}${th('pb','淨值比')}${th('ry','營收年增')}</tr></thead><tbody>`+rows.map(([id,note])=>{
     const s=stockOf(id),tr=tracked(id),o=ST[id]||{},cm=capM(id);
@@ -981,12 +1003,12 @@ function tTable(t){const el=$('tList'),[k,dir]=TS.split(':');let rows=t.stocks.s
     let e;if(o.ek)e=`<span class="sub ${o.ek==='轉盈'?'vu':'vd'}">四季 ${o.ek}</span>`;
     else if(o.ey!=null)e=`<span class="sub ${sgc(o.ey)}">四季 ${o.ey>300?'>+300%':pct(o.ey)}</span>`;else e='<span class="sub">EPS —</span>';
     if(o.peg!=null)e+=`<span class="sub ${pegc(o.peg)}">PEG ${fmt(o.peg,o.peg<10?2:1)}</span>`;else if(o.ey>300)e+='<span class="sub">低基期</span>';
-    return `<tr data-id="${id}"><td><span class="nm">${id}</span><span class="cd">${esc(cnOf(s)||s.name||'')}</span>${cm?`<span class="cap">${capT(cm)}</span>`:''}${salCell(id)}${pills||note?`<div class="role">${pills}${esc(note||'')}</div>`:''}</td>`+
-      (tr?`<td>${fmt(s.close,2)}<span class="sub ${sgc(s.chg)}">${s.chg==null?'—':pct(s.chg,2)}</span>${o.mtd!=null?`<span class="sub sm">本月 <span class="${sgc(o.mtd)}">${pct(o.mtd,1)}</span></span>`:''}</td>`:'<td>—</td>')+
+    return `<tr data-id="${id}"><td>${k==='cap'&&capM(id)!=null?`<span class="rk">#${++RK}</span>`:''}<span class="nm">${id}</span><span class="cd">${esc(cnOf(s)||s.name||'')}</span>${cm?`<span class="cap">${capT(cm)}</span>`:''}${salCell(id)}${pills||note?`<div class="role">${pills}${esc(note||'')}</div>`:''}</td>`+
+      (!tr&&PX[id]?`<td>${fmt(PX[id].close,2)}<span class="sub ${sgc(PX[id].chg)}">${PX[id].chg==null?'—':pct(PX[id].chg,2)}</span></td>`:tr?`<td>${fmt(s.close,2)}<span class="sub ${sgc(s.chg)}">${s.chg==null?'—':pct(s.chg,2)}</span>${o.mtd!=null?`<span class="sub sm">本月 <span class="${sgc(o.mtd)}">${pct(o.mtd,1)}</span></span>`:''}</td>`:'<td>—</td>')+
       `<td>${s.pe?fmt(s.pe,1):'—'}${e}</td><td>${s.pb?fmt(s.pb,2):'—'}</td>`+
       `<td class="${sgc(o.ry)}">${o.ry!=null?pct(o.ry,1):'—'}<span class="sub"${o.lq&&o.lq!==LQ?' style="color:var(--warm)" title="跟其他檔不同季"':''}>${o.lq||''}</span></td></tr>`}).join('')+'</tbody>';
   el.onclick=e=>{const h=e.target.closest('th[data-k]');if(h){const nk=h.dataset.k,cur=TS.split(':');
-      if(nk==='pe'){const i=TPE.indexOf(TS);TS=TPE[i<0?0:(i+1)%TPE.length]}else if(nk==='cap'){const i=TCAP.indexOf(TS);TS=TCAP[i<0?0:(i+1)%TCAP.length]}else TS=cur[0]===nk?(cur[1]==='-1'?nk+':1':''):nk+':-1';tTable(t);return}
+      if(nk==='pe'){const i=TPE.indexOf(TS);TS=TPE[i<0?0:(i+1)%TPE.length]}else if(nk==='cap'){const i=TCAP.indexOf(TS);TS=TCAP[i<0?0:(i+1)%TCAP.length]}else TS=cur[0]===nk?(cur[1]==='-1'?nk+':1':''):nk+':-1';tsSet(t.id,TS);tTable(t);return}
     const r=e.target.closest('tr[data-id]');if(r)location.hash=r.dataset.id}}
 // ---------- 員工薪酬（us/data/salary.json，fetch_salary.py 從 DEF 14A／10-K 抓）----------
 // d[代號] = {med 中位數USD, medPrev, medChg %, ceo CEO總薪酬USD, ratio 倍數, emp 員工人數, empDate, sbc 股票酬勞(億美元), sbcFY, fy 會計年度, filed 申報日, fpi 外國發行人, url, miss}
@@ -1221,7 +1243,7 @@ $('eSave').addEventListener('click',()=>{
   if(!ED.stocks.length){$('eMsg').textContent='請至少加入一檔股票';$('eQ').focus();return}
   const c=cfgGet(),b=BASE.find(t=>t.id===ED.id),st=ED.stocks.map(([a,r])=>[a,r.trim()]);
   if(b&&b.name===name&&JSON.stringify(b.stocks)===JSON.stringify(st))delete c.themes[ED.id];   // 改回跟預設一樣：不算改過
-  else c.themes[ED.id]={id:ED.id,name,stocks:st};
+  else c.themes[ED.id]={id:ED.id,name,stocks:st,...(c.themes[ED.id]&&c.themes[ED.id].sort?{sort:c.themes[ED.id].sort}:{})};   // 編輯成份股不洗掉記住的排序
   if(ED.isNew){if(!c.order.length)c.order=allThemes().map(t=>t.id);c.order=[...c.order.filter(i=>i!==ED.id),ED.id]}
   cfgSave(c);loadExtra().then(statsRefresh);
   location.hash=ED.hidden?'edit':'t/'+ED.id});
