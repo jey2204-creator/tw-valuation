@@ -849,7 +849,10 @@ const ROLE={'005930':'DRAM／NAND／HBM＋晶圓代工','000660':'HBM 龍頭、D
   '042700':'HBM TC 本德機','095340':'測試插座','058470':'測試插座','089030':'探針卡／檢測','039030':'雷射加工設備','240810':'沉積設備','036930':'沉積設備','403870':'高壓氫退火設備',
   '007660':'AI 伺服器／網通 PCB','011070':'FC-BGA 基板＋光學','353200':'FC-BGA 基板','222800':'記憶體 PCB／基板','007810':'PCB 製造',
   '009150':'MLCC＋FC-BGA 基板','011790':'玻璃基板／SiC','357780':'前驅物／濕式化學品','005290':'半導體材料',
-  '267260':'變壓器／旋轉機','010120':'配電／電力設備','298040':'變壓器／重電','103590':'變壓器'};
+  '267260':'變壓器／旋轉機','010120':'配電／電力設備','298040':'變壓器／重電','103590':'變壓器',
+  '402340':'SK海力士控股公司','373220':'電動車電池','207940':'生技 CDMO','005380':'汽車','105560':'銀行／金控','032830':'壽險',
+  '028260':'三星集團控股＋營建','068270':'生物相似藥','000270':'汽車','055550':'銀行／金控','012450':'航太／國防','006400':'電動車電池',
+  '034020':'核電／燃氣渦輪','034730':'SK集團控股','329180':'造船','086790':'銀行／金控'};
 const median=a=>{a=a.filter(x=>x!=null&&isFinite(x)).sort((x,y)=>x-y);if(!a.length)return null;const m=a.length>>1;return a.length%2?a[m]:(a[m-1]+a[m])/2};
 const pct=(v,d=0)=>{if(v==null)return '—';const t=fmt(v,d);return /^-0(\.0+)?$/.test(t)?t.slice(1)+'%':(v>0?'+':'')+t+'%'};   // 四捨五入成 0 的負數顯示 0%，不出現「-0%」
 const sgc=v=>v==null?'':v>0?'vu':v<0?'vd':'';
@@ -905,7 +908,7 @@ const cvT=a=>a.v!=null&&a.n<a.N?`<i class="cv${a.n*2<a.N?' lo':''}" title="${a.N
 function cardsRender(){
   const kv=(lb,a,f,c)=>`<span class="k"><span>${lb}</span><span class="num ${a.v==null?'':c||''}">${a.v==null?(ST_OK?'—':'…'):f(a.v)}${cvT(a)}</span></span>`;
   const d=dv();$('tAsof').textContent=d?`收盤 ${+d.slice(5,7)}/${+d.slice(8)}・中位數`:'';
-  $('hMeta').textContent=`供應鏈韓股 ${IDX.length} 檔分 ${THEMES.length} 個產業主題（與台股站對應），點卡片看個股；點台股代號開台股看板`;
+  $('hMeta').textContent=`韓股 ${IDX.length} 檔分 ${THEMES.length} 個產業主題（與台股站對應），點卡片看個股；點台股代號開台股看板`;
   $('tgrid').innerHTML=THEMES.length?THEMES.map(t=>{const it=itemsOf(t),ry=agg(it,'ry'),ey=agg(it,'ey'),pe=agg(it,'pe'),pg=agg(it,'peg'),mt=agg(it,'mtd'),fr=agg(it,'fr');
     return `<a class="tcard" href="#t/${t.id}"><b>${esc(t.name)}<small>${it.length} 檔</small></b>`+
       kv('營收年增',ry,v=>pct(v),sgc(ry.v))+kv('EPS 年增',ey,v=>pct(v),sgc(ey.v))+kv('本益比',pe,v=>fmt(v,1))+

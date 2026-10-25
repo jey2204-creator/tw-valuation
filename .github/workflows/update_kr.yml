@@ -2,6 +2,9 @@ name: 更新韓股資料
 on:
   schedule:
     - cron: "30 9 * * 1-5"   # 台北時間 週一～五 17:30（韓股 14:30 收盤後）
+  push:                       # 改追蹤清單（THEMES）就自動跑一次
+    branches: [main]
+    paths: [kr/fetch_kr.py]
   workflow_dispatch:
     inputs:
       codes:
