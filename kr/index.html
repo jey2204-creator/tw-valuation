@@ -599,7 +599,9 @@ function header(){
     $('tFR').innerHTML=`目前 <strong>${c.toFixed(2)}%</strong>；近 1 個月 ${dd(d20)}、近 3 個月 ${dd(d60)} 個百分點；近 ${(n/250).toFixed(1)} 年區間 ${lo.toFixed(1)}–${hi.toFixed(1)}%，位在 <strong>${Math.round((c-lo)/(hi-lo||1)*100)}%</strong> 位置`}
   const cy=Object.keys(consOf()).sort();
   $('note').textContent=`資料來源：OpenDART（韓國金融監督院電子公示：季報、半年報、年報連結財報）、Naver 證券（股價、外資持股比、法人共識）。共識本益比與共識 EPS 為 Naver 彙整的法人預估${cy.length?`（${cy.join('、')} 年度）`:''}。財報更新 ${D.updated.replace('T',' ').replace('Z',' UTC')}。每個交易日台北 17:30 自動更新。本頁不構成投資建議。`;
-  $('chips').innerHTML='<a href="#rev" data-s>營收</a><a href="#margin" data-s>三率</a><a href="#eps" data-s>EPS</a><a href="#fwd" data-s>預估EPS</a>'+(F.length>=20?'<a href="#frs" data-s>外資持股</a>':'')+'<a href="#pe" data-s>本益比河流</a><a href="#pb" data-s>淨值比河流</a>';
+  // 金融股（銀行／壽險／金控）財報沒有營收科目：藏起營收、三率、預估 EPS（模型靠營收），只看 EPS 與河流
+  const NR=!Q.some(x=>x[2]!=null);['rev','margin','fwd'].forEach(k=>$(k).hidden=NR);
+  $('chips').innerHTML=(NR?'':'<a href="#rev" data-s>營收</a><a href="#margin" data-s>三率</a>')+'<a href="#eps" data-s>EPS</a>'+(NR?'':'<a href="#fwd" data-s>預估EPS</a>')+(F.length>=20?'<a href="#frs" data-s>外資持股</a>':'')+'<a href="#pe" data-s>本益比河流</a><a href="#pb" data-s>淨值比河流</a>';
 }
 function render(){
   const acc=css('--accent'),acc2=css('--accent2'),warm=css('--warm'),st=Math.max(0,Q.length-20),S=Q.slice(st);

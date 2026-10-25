@@ -230,7 +230,9 @@ def quarters(cache):
         R = {qn: cache.get(f"{y}-{rc}") or None for rc, qn, md, due in REPORTS}
         for rc, qn, md, due in REPORTS:
             r = R[qn]
-            if not r or r.get("rev") is None:
+            # 金融股（銀行、壽險、金控）損益表沒有「營收」科目：有淨利就照收，營收／利潤率留空，EPS、淨值照算
+            fin = r is not None and r.get("rev") is None and (r.get("ni") is not None or r.get("nit") is not None)
+            if not r or (r.get("rev") is None and not fin):
                 continue
             v = {}
             if qn < 4:
@@ -249,9 +251,11 @@ def quarters(cache):
                     v[k] = fy - cum if fy is not None and cum is not None else None
                 c, pc = r.get("capex"), (r3 or {}).get("capex")
                 v["capex"] = c - pc if c is not None and pc is not None else None
-            if not v["rev"] or v["rev"] <= 0:
+            if not fin and (not v["rev"] or v["rev"] <= 0):
                 continue
-            if v["gp"] is None and v["cost"] is not None and r.get("gp") is None:
+            if fin:
+                v["rev"] = v["gp"] = v["cost"] = None
+            if not fin and v["gp"] is None and v["cost"] is not None and r.get("gp") is None:
                 # 沒有毛利科目（金融、服務業常見）：以營收 − 營業成本推算，但營業成本 = 營業費用全部時不算
                 if r.get("op") is None or abs((v["rev"] - v["cost"]) - (v["op"] or 0)) > 1:
                     v["gp"] = v["rev"] - v["cost"]
@@ -260,11 +264,11 @@ def quarters(cache):
             sh = ni / v["eps"] if ni and v["eps"] and qn < 4 else None
             if qn == 4 and r.get("eps") and (r.get("ni") or r.get("nit")):
                 sh = (r.get("ni") if r.get("ni") is not None else r.get("nit")) / r["eps"]   # 年報：全年淨利 ÷ 全年 EPS
-            pct = lambda x: None if x is None else round(x / v["rev"] * 100, 1)
+            pct = lambda x: None if x is None or not v["rev"] else round(x / v["rev"] * 100, 1)
             f = r.get("rcept") or ""
             rows.append(dict(cal=f"{str(y)[2:]}Q{qn}", end=f"{y}-{md}",
                              filed=f"{f[:4]}-{f[4:6]}-{f[6:8]}" if len(f) == 8 else f"{y}-{md}",
-                             rev=round(v["rev"] / 1e8, 1), gm=pct(v["gp"]), om=pct(v["op"]), nm=pct(ni),
+                             rev=None if v["rev"] is None else round(v["rev"] / 1e8, 1), gm=pct(v["gp"]), om=pct(v["op"]), nm=pct(ni),
                              eps=None if v["eps"] is None else round(v["eps"], 1),
                              capex=None if v["capex"] is None else round(v["capex"] / 1e8, 1),
                              sh=None if not sh or sh <= 0 else round(sh / 1e6, 2),
