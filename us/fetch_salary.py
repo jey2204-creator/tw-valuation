@@ -66,14 +66,14 @@ def num(s):
 
 # ---------- DEF 14A：Pay Ratio ----------
 MED_PATS = [
-    r"(?:annual )?total compensation of (?:our |the )?median(?:[- ]compensated)? employee[^$]{0,160}?\$\s?(\d{1,3}(?:,\d{3})+|\d{4,7})(?![\d,])",
-    r"median employee[^$]{0,160}?\$\s?(\d{1,3}(?:,\d{3})+|\d{4,7})(?![\d,])",
-    r"median of the annual total compensation of (?:all )?(?:of )?(?:our |the )?employees[^$]{0,200}?\$\s?(\d{1,3}(?:,\d{3})+|\d{4,7})(?![\d,])",
-    r"\$\s?(\d{1,3}(?:,\d{3})+|\d{4,7})(?![\d,])[^.]{0,80}?median employee",
+    r"(?:annual )?total compensation of (?:our |the )?median(?:[- ]compensated)? employee[^$]{0,160}?\$\s?(\d{1,3}(?:,\d{3})+|\d{4,7})(?!\d|,\d)",
+    r"median employee[^$]{0,160}?\$\s?(\d{1,3}(?:,\d{3})+|\d{4,7})(?!\d|,\d)",
+    r"median of the annual total compensation of (?:all )?(?:of )?(?:our |the )?employees[^$]{0,200}?\$\s?(\d{1,3}(?:,\d{3})+|\d{4,7})(?!\d|,\d)",
+    r"\$\s?(\d{1,3}(?:,\d{3})+|\d{4,7})(?!\d|,\d)[^.]{0,80}?median employee",
 ]
 CEO_PATS = [
-    r"(?:annual )?total compensation of (?:our |the )?(?:Chief Executive Officer|CEO|President and Chief Executive Officer)[^$]{0,160}?\$\s?(\d{1,3}(?:,\d{3})+|\d{6,10})(?![\d,])",
-    r"(?:Chief Executive Officer|CEO)[^$]{0,120}?annual total compensation[^$]{0,80}?\$\s?(\d{1,3}(?:,\d{3})+|\d{6,10})(?![\d,])",
+    r"(?:annual )?total compensation of (?:our |the )?(?:Chief Executive Officer|CEO|President and Chief Executive Officer)[^$]{0,160}?\$\s?(\d{1,3}(?:,\d{3})+|\d{6,10})(?!\d|,\d)",
+    r"(?:Chief Executive Officer|CEO)[^$]{0,120}?annual total compensation[^$]{0,80}?\$\s?(\d{1,3}(?:,\d{3})+|\d{6,10})(?!\d|,\d)",
 ]
 RATIO_PATS = [
     r"ratio[^.]{0,200}?(\d[\d,]*(?:\.\d+)?)\s*(?:to|:|-to-|‑to‑)\s*(?:1|one)\b",
@@ -148,11 +148,16 @@ def parse_10k(t):
         zones.append(t[m.start():m.start() + 6000])
     zones.append(t)
     for z in zones:
-        for p in EMP_PATS:
+        loose = []
+        for i, p in enumerate(EMP_PATS):
             for m in re.finditer("(?i)" + p, z):
                 v = num(m.group(1))
-                if v and 10 <= v <= 5_000_000:
-                    return v
+                if v and 100 <= v <= 5_000_000:
+                    if i < 3:
+                        return v        # 「had／employed approximately N employees」這類明確句型，第一個就信
+                    loose.append(v)
+        if loose:
+            return max(loose)           # 鬆的寫法容易抓到小數字（國家數、年份），取最大的
     return None
 
 
@@ -205,7 +210,8 @@ def build(tk, cik, old):
                     pp = parse_def14a(text_of(get(doc_url(cik, prev["acc"], prev["doc"]))))
                     if pp.get("med"):
                         d["medPrev"] = pp["med"]
-                        d["medChg"] = round((p["med"] / pp["med"] - 1) * 100, 1)
+                        chg = (p["med"] / pp["med"] - 1) * 100
+                        d["medChg"] = round(chg, 1) if abs(chg) <= 60 else None   # 差太多多半是其中一年抓錯
                 except Exception as e:
                     print(f"  {tk} 前一年 DEF 14A 失敗：{e}")
     else:
