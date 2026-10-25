@@ -231,6 +231,19 @@ h2.sec small{font-weight:500;letter-spacing:0}
 /* n/N：N 檔裡只有 n 檔有值（虧損、資料不足不算）。少於全部就標出來，避免 1 檔的數字被當成整個主題 */
 .cv{font-style:normal;font-family:var(--f-num);font-size:9.5px;color:var(--muted);margin-left:3px;padding:0 3px;border-radius:4px;background:var(--b1);vertical-align:1px}
 .cv.lo{background:var(--b4)}
+/* 首頁主題排行表（緊湊模式，同台股站）：一個主題一列，點欄位排序 */
+.tpan{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:2px 8px 4px}
+.tpan .tbl{margin-top:0}
+.tlt td:first-child{white-space:normal;font-family:var(--f-body);max-width:108px}
+.tlt .tn{font-weight:700;font-size:13px;line-height:1.3}
+.tlt .tm{display:block;font-size:10.5px;color:var(--muted);font-family:var(--f-num);white-space:nowrap}
+.tlt td{padding:5px 3px;vertical-align:top;line-height:1.3}
+.tlt th{padding:4px 3px}
+.tlt td:not(:first-child),.tlt th:not(:first-child){padding-inline:2px}
+.tlt tr:last-child td{border-bottom:0}
+.tlt .few{color:var(--muted)!important;opacity:.75}.tlt .few::after{content:'*';font-size:10px;margin-left:1px}
+#hDense{margin-right:6px}
+.tgrid.tlist{display:block}.tlt tr.bkflash td{animation:bkFlash 1.8s ease-out}
 .tcard.bkflash{animation:bkFlash 1.8s ease-out}
 #themePage .top{padding-top:12px}
 #themePage h1{font-size:22px;font-weight:900;margin:6px 0 0;line-height:1.3}
@@ -347,9 +360,9 @@ html{scroll-behavior:smooth}
     <div class="ecal mini" id="ecalMini"></div>
   </section>
   <div id="tsec">
-    <h2 class="sec"><span>產業主題 <small id="tAsof"></small></span><a class="act" id="hEdit" href="#edit">✏️ 編輯</a></h2>
+    <h2 class="sec"><span>產業主題 <small id="tAsof"></small></span><span><button type="button" class="dns" id="hDense"></button><a class="act" id="hEdit" href="#edit">✏️ 編輯</a></span></h2>
     <div class="tgrid" id="tgrid"></div>
-    <p class="legend">各主題中位數。<i class="cv">5/7</i>＝7 檔裡只有 5 檔有值（虧損、資料不足不算），檔數少時別當成整個主題。營收年增＝最新一季對比去年同季；EPS 年增＝近四季合計對比前四季；PEG＝本益比 ÷ EPS 年增，<span class="cheap">&lt;1</span>、<span class="pricey">&gt;2</span>；本月至今＝收盤對比上月底。<span id="tLegX"></span></p>
+    <p class="legend">各主題中位數。<span id="tLegC"><i class="cv">5/7</i>＝7 檔裡只有 5 檔有值（虧損、資料不足不算），檔數少時別當成整個主題。</span>營收年增＝最新一季對比去年同季；EPS 年增＝近四季合計對比前四季；PEG＝本益比 ÷ EPS 年增，<span class="cheap">&lt;1</span>、<span class="pricey">&gt;2</span>；本月至今＝收盤對比上月底。<span id="tLegX"></span></p>
   </div>
   <a class="srlink" id="srLink" href="#SALARY" hidden><b>💰 員工薪酬中位數排行</b><span id="srSub"></span></a>
   <div id="groups"></div>
@@ -972,12 +985,34 @@ function cardsRender(){
   $('hMeta').textContent=`${THEMES.length} 主題｜可搜全美股約 5,400 檔`;$('hMeta').title=`供應鏈美股分 ${THEMES.length} 個產業主題，點卡片看個股；搜尋框可查全美股（約 5,400 檔 SEC 申報公司）`;
   const nx=new Set(THEMES.flatMap(t=>t.stocks.map(x=>x[0])).filter(id=>!tracked(id))).size;
   $('tLegX').textContent=nx?`主題裡有 ${nx} 檔全市場股票（不在每日追蹤清單）：只有財報，本益比、PEG、本月至今不算它們。`:'';
+  $('tgrid').classList.toggle('tlist',DENSE&&THEMES.length>0);
+  $('tLegC').innerHTML=DENSE?'<span class="few" style="color:var(--muted)">灰字*</span>＝不到一半檔數有值（虧損、資料不足不算），別當成整個主題；<span style="color:var(--warm)">橘色 N檔</span>＝少於 5 檔；📅＝兩週內財報檔數。點欄位標題排序。':'<i class="cv">5/7</i>＝7 檔裡只有 5 檔有值（虧損、資料不足不算），檔數少時別當成整個主題。';
+  if(DENSE&&THEMES.length){themeList($('tgrid'));return}
   $('tgrid').innerHTML=THEMES.length?THEMES.map(t=>{const it=itemsOf(t),ry=agg(it,'ry'),ey=agg(it,'ey'),pe=agg(it,'pe'),pg=agg(it,'peg'),mt=agg(it,'mtd'),ne=soon(it.map(s=>s.id),14);
     return `<a class="tcard" href="#t/${t.id}"><b>${esc(t.name)}</b>`+
       kv('營收年增',ry,v=>pct(v),sgc(ry.v))+kv('EPS 年增',ey,v=>pct(v),sgc(ey.v))+kv('本益比',pe,v=>fmt(v,1))+
       kv('PEG',pg,v=>fmt(v,2),pegc(pg.v))+kv('本月至今',mt,v=>pct(v,1),sgc(mt.v))+
       `<span class="k"><span>兩週內財報</span><span class="num">${ne?ne+' 檔':'—'}</span></span></a>`}).join('')
     :'<p class="meta" style="grid-column:1/-1;margin:4px 0">主題都隱藏了。按右上「✏️ 編輯」把要看的顯示回來。</p>'}
+// ---- 首頁主題排行表（緊湊模式，同台股站 themeList）：本益比、PEG 第一下由低到高，其他由高到低；第三下回預設 ----
+let TLS='';
+const TLC=[['ry','營收'],['ey','EPS'],['pe','本益比'],['peg','PEG'],['mtd','月漲']];
+function themeList(el){
+  let rows=THEMES.map(t=>{const it=itemsOf(t),r={t,n:it.length,ne:soon(it.map(s=>s.id),14)};TLC.forEach(([k])=>r[k]=agg(it,k));return r});
+  const [k,d]=TLS.split(':');
+  if(k)rows.sort((a,b)=>a[k].v==null?1:b[k].v==null?-1:(a[k].v-b[k].v)*(+d));
+  const th=([key,lb])=>{const on=k===key;return `<th data-tk="${key}" class="${on?'on':''}">${lb}${on?(+d>0?'▲':'▼'):''}</th>`};
+  // 不到一半檔數有值 → 灰字加 *（點不了 hover，手機上用顏色提醒）
+  const td=(a,f,c)=>{if(a.v==null)return `<td>${ST_OK?'—':'…'}</td>`;const few=a.n*2<a.N;return `<td class="${few?'few':c||''}" title="${a.N} 檔裡 ${a.n} 檔有值">${f(a.v)}</td>`};
+  el.innerHTML=`<div class="tpan"><div class="tbl"><table class="lst tlt"><thead><tr><th data-tk="">主題</th>${TLC.map(th).join('')}</tr></thead><tbody>`+rows.map(r=>{
+    const {t,n,ne,ry,ey,pe,peg,mtd}=r;
+    const meta=`<span style="${n<5?'color:var(--warm)':''}" title="${n} 檔的中位數${n<5?'；檔數少，中位數容易被單一股票帶動':''}">${n}檔</span>${ne?` 📅${ne}`:''}`;
+    return `<tr data-t="${t.id}"><td><span class="tn">${esc(t.name.replace(/^\p{Extended_Pictographic}\uFE0F?\s*/u,''))}</span><span class="tm">${meta}</span></td>`+
+      td(ry,v=>pct(v),sgc(ry.v))+td(ey,v=>pct(v),sgc(ey.v))+td(pe,v=>fmt(v,1))+td(peg,v=>fmt(v,2),pegc(peg.v))+td(mtd,v=>pct(v,1),sgc(mtd.v))+'</tr>'}).join('')+'</tbody></table></div></div>';
+  el.onclick=e=>{const h=e.target.closest('th[data-tk]');if(h){const nk=h.dataset.tk,[ck,cd]=TLS.split(':'),first=(nk==='pe'||nk==='peg')?'1':'-1';
+      TLS=!nk?'':ck!==nk?nk+':'+first:cd===first?nk+':'+(-first):'';themeList(el);return}
+    const r=e.target.closest('tr[data-t]');if(r)location.hash='#t/'+r.dataset.t};
+}
 let CUR_T=null,LAST_T=null,LAST_TS=null;try{LAST_T=sessionStorage.getItem('lastTheme')}catch(e){}
 function themeRender(tid){
   const t=THEMES.find(x=>x.id===tid);if(!t){location.replace('#');return}
@@ -1020,10 +1055,11 @@ const TCAP=['cap:-1','sal:-1',''],TCAPL={cap:'市值',sal:'薪酬中位'};   // 
 let TS='';
 // 主題表緊湊模式：預設開，存這台 localStorage usDense（跟台股站 tDense 分開，兩邊各自記）
 let DENSE=(()=>{try{return localStorage.getItem('usDense')!=='false'}catch(e){return true}})();
-function paintDense(){document.body.classList.toggle('dense',DENSE);const b=$('tDense');if(!b)return;b.textContent='⇕ '+(DENSE?'緊湊':'完整');b.setAttribute('aria-pressed',DENSE);
+function paintDense(){document.body.classList.toggle('dense',DENSE);const h=$('hDense');if(h){h.textContent='⇕ '+(DENSE?'緊湊':'完整');h.setAttribute('aria-pressed',DENSE);h.title=DENSE?'目前緊湊：主題一列一行。點一下改回卡片':'目前完整（卡片）。點一下改成主題排行表'}const b=$('tDense');if(!b)return;b.textContent='⇕ '+(DENSE?'緊湊':'完整');b.setAttribute('aria-pressed',DENSE);
   b.title=DENSE?'目前緊湊：每列 2 行。點一下顯示完整資訊（薪資、備註、本月漲跌）':'目前完整。點一下改成緊湊（每列 2 行）'}
 $('tDense').addEventListener('click',()=>{DENSE=!DENSE;try{localStorage.setItem('usDense',DENSE)}catch(e){}paintDense();const t=THEMES.find(x=>x.id===CUR_T);if(t)tTable(t)});
 paintDense();
+$('hDense').addEventListener('click',()=>{DENSE=!DENSE;try{localStorage.setItem('usDense',DENSE)}catch(e){}paintDense();$('tgrid').onclick=null;cardsRender()});
 // 每個主題記住自己的排序：自訂主題存進主題設定（雲端同步）；內建主題存這台（寫進設定會被當成「改過」而凍結成份股）
 const TSKEY='usThemeSort';
 function tsGet(tid){const c=cfgGet();if(c.themes[tid]&&!BASE.some(b=>b.id===tid))return c.themes[tid].sort||'';
@@ -1156,7 +1192,7 @@ function route(){
   else if(stk){const k=KEEP;KEEP=null;if(!D||D.id!==id){if(!k)scrollTo(0,0);load(id).then(()=>{if(k)requestAnimationFrame(()=>goSec(k))})}else{$('home').hidden=true;$('stock').hidden=false;pnPaint(id);setTimeout(()=>Object.values(charts).forEach(c=>c.resize()),0);k?goSec(k):scrollTo(0,0)}}
   else{$('stock').hidden=true;$('home').hidden=false;document.title='美股估值看板';if(!$('q').value.trim())cardsRender();Object.values(charts).forEach(c=>c.resize());
     if(VPREV==='edit')requestAnimationFrame(()=>scrollTo(0,$('tsec').getBoundingClientRect().top+scrollY-8));   // 編輯完回首頁：停在主題卡
-    if(VPREV==='theme'){const y=HOMEY,pt=HPREV;requestAnimationFrame(()=>{scrollTo(0,y);const c=document.querySelector(`a.tcard[href="#${pt}"]`);if(c){c.classList.remove('bkflash');void c.offsetWidth;c.classList.add('bkflash')}})}}
+    if(VPREV==='theme'){const y=HOMEY,pt=HPREV;requestAnimationFrame(()=>{scrollTo(0,y);const c=document.querySelector(`a.tcard[href="#${pt}"]`)||document.querySelector(`.tlt tr[data-t="${pt.replace(/^t\//,'')}"]`);if(c){c.classList.remove('bkflash');void c.offsetWidth;c.classList.add('bkflash')}})}}
   bkRestore(h);VPREV=stk?'stock':em?'edit':id==='EARN'?'earn':tid?'theme':'home';HPREV=h;
 }
 // ---------- 底部導覽列：依目前主題（剛看的主題頁，或首頁順序第一個有它的主題）的成份股順序上下檔切換，並停在同一張圖；不在任何主題的只剩 ↩ ----------
