@@ -139,6 +139,14 @@ span.asof{white-space:nowrap}
 .foot.asof.stale{color:var(--warm);font-weight:700}
 #tAsofN{margin:4px 0 6px}#chipAsof{margin:0 0 6px}
 .tgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tgrid.tl{display:block}
+.tlt td:first-child{white-space:normal;font-family:var(--f-body);max-width:108px}
+.tlt .tn{font-weight:700;font-size:13px;line-height:1.3}
+.tlt .tm{display:block;font-size:10.5px;color:var(--muted);font-family:var(--f-num);white-space:nowrap}
+.tlt td{padding:5px 3px;vertical-align:top;line-height:1.3}
+.tlt th{padding:4px 3px}
+.tlt td:not(:first-child),.tlt th:not(:first-child){padding-inline:2px}
+
 .tcard{display:flex;flex-direction:column;gap:2px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;color:var(--fg);text-decoration:none;min-width:0}
 .tcard b{font-size:15px;line-height:1.35}
 .tcard .k{font-size:12px;color:var(--muted);display:flex;justify-content:space-between;gap:6px}
@@ -1659,6 +1667,26 @@ function stkAsofPaint(){
   const want=FR.px.st==='wait'?prevWd(FR.px.exp):FR.px.exp,bad=d<want&&FR.px.st!=='wait'||d<prevWd(FR.px.exp)&&FR.px.st==='wait';
   a.classList.toggle('stale',bad);a.title=bad?`應有 ${md(want)} 收盤`:'';
 }
+// ---- 產業主題排行表（緊湊模式）：一個主題一列，點欄位排序（本益比、PEG 第一下由低到高，其他由高到低；第三下回預設）----
+let TLS='';
+const TLC=[['y','營收'],['ey','EPS'],['pe','本益比'],['pg','PEG'],['mm','月漲']];
+function themeStat(t){const ids=t.stocks.map(x=>x[0]);return {t,n:ids.length,y:median(ids.map(i=>sv(i,'yoy'))),pe:median(ids.map(i=>sv(i,'pe'))),ey:median(ids.map(epsY)),pg:median(ids.map(peg)),mm:median(ids.map(i=>mv(i,'m'))),nf:ids.filter(i=>mv(i,'fire')).length,
+  a3:AI?ids.filter(i=>ai(i)&&ai(i).lv===3).length:null,a2:AI?ids.filter(i=>ai(i)&&ai(i).lv===2).length:null}}
+function themeList(el){
+  let rows=THEMES.map(themeStat);const [k,d]=TLS.split(':');
+  if(k)rows.sort((a,b)=>a[k]==null?1:b[k]==null?-1:(a[k]-b[k])*(+d));
+  const th=([key,lb])=>{const on=k===key;return `<th data-tk="${key}" class="${on?'on':''}">${lb}${on?(+d>0?'▲':'▼'):''}</th>`};
+  el.innerHTML=`<div class="panel"><div class="tbl"><table class="lst tlt"><thead><tr><th data-tk="">主題</th>${TLC.map(th).join('')}</tr></thead><tbody>`+rows.map(r=>{
+    const {t,n,y,pe,ey,pg,mm,nf,a3,a2}=r;
+    const meta=`<span class="dtip" data-tip="${n} 檔的中位數${n<5?'；檔數少，中位數容易被單一股票帶動':''}" style="${n<5?'color:var(--warm)':''}">${n}檔</span>${a3!=null&&(a3||a2)?` AI<span class="ail3">${a3}</span>/<span class="ail2">${a2}</span>`:''}${nf?` 🔥${nf}`:''}`;
+    return `<tr data-t="${t.id}"><td><span class="tn">${t.name.replace(/^\p{Extended_Pictographic}\uFE0F?\s*/u,'')}</span><span class="tm">${meta}</span></td>
+      <td class="${sign(y)}">${y==null?'—':pct(y,0)}</td><td class="${sign(ey)}">${ey==null?'—':pct(ey,0)}</td>
+      <td>${pe==null?'—':fmt(pe,1)}</td><td class="${pg==null?'':pg<1?'cheap':pg>2?'pricey':''}">${pg==null?'—':fmt(pg,2)}</td>
+      <td class="${sign(mm)}">${mm==null?'—':pct(mm,1)}</td></tr>`}).join('')+'</tbody></table></div></div>';
+  el.onclick=e=>{const h=e.target.closest('th[data-tk]');if(h){const nk=h.dataset.tk,[ck,cd]=TLS.split(':'),first=(nk==='pe'||nk==='pg')?'1':'-1';
+      TLS=!nk?'':ck!==nk?nk+':'+first:cd===first?nk+':'+(-first):'';themeList(el);return}
+    const r=e.target.closest('tr[data-t]');if(r)location.hash='#t/'+r.dataset.t};
+}
 function renderHome(){
   RANK=null;srHome();
   modeQ();$('sumAsof').innerHTML=S?`<span class="asof" id="sumPx">收盤 ${S.pxAsof?S.pxAsof.slice(4,6)+'/'+S.pxAsof.slice(6):S.updated.slice(5,10).replace('-','/')}</span>・營收 ${S.revYM?+S.revYM.slice(5)+'月':'—'}${QN?'・EPS '+QN:''}`:'數字待 Actions 產生';
@@ -1670,6 +1698,8 @@ function renderHome(){
    $('hotN').textContent=MO?`主題＋自選 ${pool.length} 檔中 ${hot.length} 檔`:'資料準備中';
    const ht=$('hotTbl');ht.dataset.sort=ht.dataset.sort||'m_m:-1';table(ht,hot.map(id=>[id,(THEMES.find(t=>t.stocks.some(x=>x[0]===id))||{name:'⭐ 自選'}).name]),undefined,'m');
    $('hotFoot').innerHTML=MO?`🔥＝月漲幅 &gt; 0、量比（5 日均量 ÷ 20 日均量）≥ 1.5、且投信或外資 5 日買超 ≥ 5 日成交量的 1%。是「有資金在推」的訊號，不是買進訊號，要搭配估值位階看。資料 ${ymd(MO.asof)}`:'第一次需要回補約 3 個月的歷史資料，Actions 跑完後就會出現。'}
+  const tg=$('tgrid');tg.classList.toggle('tl',DENSE);
+  if(DENSE){themeList(tg)}else
   $('tgrid').innerHTML=THEMES.map(t=>{const ids=t.stocks.map(x=>x[0]),y=median(ids.map(i=>sv(i,'yoy'))),pe=median(ids.map(i=>sv(i,'pe'))),ey=median(ids.map(epsY)),pg=median(ids.map(peg)),mm=median(ids.map(i=>mv(i,'m'))),nf=ids.filter(i=>mv(i,'fire')).length;
     return `<a class="tcard" href="#t/${t.id}"><b>${t.name}</b><span class="k"><span>營收年增</span><span class="num ${sign(y)}">${y==null?'—':pct(y,0)}</span></span><span class="k"><span>EPS 年增（四季）</span><span class="num ${sign(ey)}">${ey==null?'—':pct(ey,0)}</span></span><span class="k"><span>本益比</span><span class="num">${pe==null?'—':fmt(pe,1)}</span></span><span class="k"><span>PEG</span><span class="num ${pg==null?'':pg<1?'cheap':pg>2?'pricey':''}">${pg==null?'—':fmt(pg,2)}</span></span><span class="k"><span>月漲幅</span><span class="num ${sign(mm)}">${mm==null?'—':pct(mm,1)}${nf?' 🔥'+nf:''}</span></span>${AI?`<span class="k"><span>AI 高／中</span><span class="num"><span class="ail3">${ids.filter(i=>ai(i)&&ai(i).lv===3).length}</span>／<span class="ail2">${ids.filter(i=>ai(i)&&ai(i).lv===2).length}</span> <span style="color:var(--muted)">檔</span></span></span>`:''}</a>`}).join('');
   if(!$('indBox').dataset.done&&LIST.length){
