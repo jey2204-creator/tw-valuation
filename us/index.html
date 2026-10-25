@@ -242,6 +242,15 @@ h2.sec small{font-weight:500;letter-spacing:0}
 /* 員工薪酬（同台股站）：個股頁一列、主題表小字、首頁入口卡、排行頁 #SALARY */
 .meta.sal{margin-top:6px;font-size:12px;color:var(--muted);line-height:1.6}.meta.sal b{color:var(--fg);font-family:var(--f-num);font-size:13px}.meta.sal .dtip{border-bottom:1px dotted currentColor}
 .lst .cap.sal{font-size:10.5px}
+/* 緊湊模式（同台股站 body.dense）：每列 2 行。股票欄＝代號＋短名／市值＋小籤；本益比欄＝一行「+74% P0.45」；薪資、備註、本月漲跌看完整模式 */
+.dns{flex:none;font:inherit;font-size:12px;font-weight:700;border:1px solid var(--line);border-radius:999px;background:var(--card);color:var(--muted);padding:3px 9px;cursor:pointer;white-space:nowrap}
+#themePage .top .dns{margin-left:auto}#themePage .top .dns+.sp{margin-left:0}
+body.dense .lst td{padding-block:4px;line-height:1.3}body.dense .lst th{padding-block:4px}
+body.dense .lst .nm{font-size:13.5px}
+body.dense .lst td.sk .nmw{white-space:nowrap}body.dense .lst td.sk .cd{display:inline-block;margin-left:3px;max-width:3.6em;font-size:10.5px;vertical-align:-2px}
+body.dense .lst .dl{display:block;font-size:10.5px;color:var(--muted);font-family:var(--f-num);white-space:nowrap}
+body.dense .lst .dl .pill{font-size:10px;padding:0 5px;margin-left:3px;vertical-align:1px;font-family:var(--f-body)}
+body.dense .lst .sub{font-size:10.5px}body.dense .lst .rk{margin-right:3px}
 /* 主題表股票欄：代號／短名、薪資／年變化各自換行（同台股），讓收盤往左、營收年增不被切 */
 .lst td.sk .nmw{white-space:normal}.lst td.sk .cd{display:block;margin-left:0;max-width:6.5em;vertical-align:baseline}.tw a small{font-size:10.5px;color:var(--muted);margin-left:4px}
 .srlink{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:12px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;color:var(--fg);text-decoration:none}.srlink b{font-size:14px}.srlink span{font-size:12px;color:var(--muted);text-align:right}
@@ -343,7 +352,7 @@ html{scroll-behavior:smooth}
 
 <!-- ===== 主題頁：#t/主題代號（與台股站相同） ===== -->
 <div id="themePage" hidden>
-  <div class="top"><a href="#">← 全部主題</a><a class="sp" id="tEdit" href="#edit">✏️ 編輯這個主題</a></div>
+  <div class="top"><a href="#">← 全部主題</a><button type="button" class="dns" id="tDense"></button><a class="sp" id="tEdit" href="#edit">✏️ 編輯這個主題</a></div>
   <h1 id="tName"></h1>
   <p class="tsum" id="tSum"></p>
   <div class="tearn" id="tEarn"></div>
@@ -990,6 +999,12 @@ const TSORT={cap:capM,sal:id=>sal(id,'med'),px:id=>stockOf(id).chg,pe:id=>stockO
 const TPE=['pe:-1','pe:1','eps:-1','peg:1',''],TPEL={pe:'本益比',eps:'EPS年增',peg:'PEG'};
 const TCAP=['cap:-1','sal:-1',''],TCAPL={cap:'市值',sal:'薪酬中位'};   // 「股票」欄連點：市值 → 薪酬中位數 → 預設
 let TS='';
+// 主題表緊湊模式：預設開，存這台 localStorage usDense（跟台股站 tDense 分開，兩邊各自記）
+let DENSE=(()=>{try{return localStorage.getItem('usDense')!=='false'}catch(e){return true}})();
+function paintDense(){document.body.classList.toggle('dense',DENSE);const b=$('tDense');if(!b)return;b.textContent='⇕ '+(DENSE?'緊湊':'完整');b.setAttribute('aria-pressed',DENSE);
+  b.title=DENSE?'目前緊湊：每列 2 行。點一下顯示完整資訊（薪資、備註、本月漲跌）':'目前完整。點一下改成緊湊（每列 2 行）'}
+$('tDense').addEventListener('click',()=>{DENSE=!DENSE;try{localStorage.setItem('usDense',DENSE)}catch(e){}paintDense();const t=THEMES.find(x=>x.id===CUR_T);if(t)tTable(t)});
+paintDense();
 // 每個主題記住自己的排序：自訂主題存進主題設定（雲端同步）；內建主題存這台（寫進設定會被當成「改過」而凍結成份股）
 const TSKEY='usThemeSort';
 function tsGet(tid){const c=cfgGet();if(c.themes[tid]&&!BASE.some(b=>b.id===tid))return c.themes[tid].sort||'';
@@ -1009,6 +1024,15 @@ function tTable(t){const el=$('tList'),[k,dir]=TS.split(':');let rows=t.stocks.s
     let e;if(o.ek)e=`<span class="sub ${o.ek==='轉盈'?'vu':'vd'}">四季 ${o.ek}</span>`;
     else if(o.ey!=null)e=`<span class="sub ${sgc(o.ey)}">四季 ${o.ey>300?'>+300%':pct(o.ey)}</span>`;else e='<span class="sub">EPS —</span>';
     if(o.peg!=null)e+=`<span class="sub ${pegc(o.peg)}">PEG ${fmt(o.peg,o.peg<10?2:1)}</span>`;else if(o.ey>300)e+='<span class="sub">低基期</span>';
+    if(DENSE){   // 緊湊：規則同台股站 epsDense，一行「四季年增 P PEG」
+      let d;if(o.ek)d=`<span class="${o.ek==='轉盈'?'vu':'vd'}">${o.ek}</span>`;else if(o.ey!=null)d=`<span class="${sgc(o.ey)}">${o.ey>300?'>300%':pct(o.ey,0)}</span>`;else d='EPS —';
+      if(o.peg!=null)d+=` <span class="${pegc(o.peg)}">P${fmt(o.peg,o.peg<10?2:1)}</span>`;else if(o.ey>300)d+=' 低基';
+      const pd=(tr?'':`<span class="pill o">${s.unk?'查無':'全市場'}</span>`)+(s.cyc?'<span class="pill">循環</span>':'')+(s.freq==='A'?'<span class="pill b">年報</span>':''),
+        sv=k==='sal'&&sal(id,'med')!=null?'薪'+salK(sal(id,'med')).replace('≈',''):cm?capT(cm).replace('≈',''):'';
+      return `<tr data-id="${id}"><td class="sk">${(k==='cap'&&cm!=null)||(k==='sal'&&sal(id,'med')!=null)?`<span class="rk">#${++RK}</span>`:''}<span class="nmw"><span class="nm">${id}</span><span class="cd" title="${esc(s.name||'')}">${esc(shortOf(s))}</span></span>${sv||pd?`<span class="dl">${sv}${pd}</span>`:''}</td>`+
+        (!tr&&PX[id]?`<td>${fmt(PX[id].close,2)}<span class="sub ${sgc(PX[id].chg)}">${PX[id].chg==null?'—':pct(PX[id].chg,2)}</span></td>`:tr?`<td>${fmt(s.close,2)}<span class="sub ${sgc(s.chg)}">${s.chg==null?'—':pct(s.chg,2)}</span></td>`:'<td>—</td>')+
+        `<td>${s.pe?fmt(s.pe,1):'—'}<span class="sub" title="近四季 EPS 年增；P＝PEG（本益比÷EPS 年增）">${d}</span></td><td>${s.pb?fmt(s.pb,2):'—'}</td>`+
+        `<td class="${sgc(o.ry)}">${o.ry!=null?pct(o.ry,1):'—'}<span class="sub"${o.lq&&o.lq!==LQ?' style="color:var(--warm)" title="跟其他檔不同季"':''}>${o.lq||''}</span></td></tr>`}
     return `<tr data-id="${id}"><td class="sk">${k==='cap'&&capM(id)!=null?`<span class="rk">#${++RK}</span>`:''}<span class="nmw"><span class="nm">${id}</span><span class="cd" title="${esc(s.name||'')}">${esc(shortOf(s))}</span></span>${cm?`<span class="cap">${capT(cm).replace('≈','')}</span>`:''}${salCell(id)}${pills||note?`<div class="role">${pills}${esc(note||'')}</div>`:''}</td>`+
       (!tr&&PX[id]?`<td>${fmt(PX[id].close,2)}<span class="sub ${sgc(PX[id].chg)}">${PX[id].chg==null?'—':pct(PX[id].chg,2)}</span></td>`:tr?`<td>${fmt(s.close,2)}<span class="sub ${sgc(s.chg)}">${s.chg==null?'—':pct(s.chg,2)}</span>${o.mtd!=null?`<span class="sub sm">本月 <span class="${sgc(o.mtd)}">${pct(o.mtd,1)}</span></span>`:''}</td>`:'<td>—</td>')+
       `<td>${s.pe?fmt(s.pe,1):'—'}${e}</td><td>${s.pb?fmt(s.pb,2):'—'}</td>`+
