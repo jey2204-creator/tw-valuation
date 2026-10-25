@@ -137,6 +137,15 @@ body.pn .wrap{padding-bottom:calc(84px + env(safe-area-inset-bottom))}
 .pill.b{background:var(--b2)}
 /* 幣別切換（固定匯率換算，只動絕對金額） */
 .fx{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px;font-size:12px;color:var(--muted)}
+/* 首頁頭區省高度：標題與「← 台股看板」同列；副標＋幣別同列（副標單行省略，完整說明在 title） */
+.htop .name{flex:0 1 auto;min-width:0}.htop .sp{flex:none}
+.hrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:4px}
+.hrow .meta{flex:1 1 0;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hrow .fx{margin-top:0;gap:6px;flex:none}.hrow .fx.open{flex-basis:100%}
+.hrow .fx label{gap:2px}.hrow .fx input{width:3.6em;padding:2px 5px}
+.fxi{font:inherit;font-size:14px;line-height:1;border:0;background:none;color:var(--muted);padding:4px 2px;cursor:pointer}.fx.open .fxi{color:var(--accent)}
+.fxn{flex-basis:100%}.fxn[hidden]{display:none}
+.ecard h2{flex-wrap:nowrap;white-space:nowrap}.ecard h2 small{min-width:0;overflow:hidden;text-overflow:ellipsis}.ecard h2 .more{flex:none}.ecard h2 .more+.more{margin-left:0}
 .fxseg{display:inline-flex}.fxseg button{font:inherit;font-size:12px;border:1px solid var(--line);background:var(--card);color:var(--muted);padding:3px 11px;cursor:pointer;margin-left:-1px}
 .fxseg button:first-child{border-radius:999px 0 0 999px;margin-left:0}.fxseg button:last-child{border-radius:0 999px 999px 0}.fxseg button.on{background:var(--accent);border-color:var(--accent);color:#fff}
 .fx label{display:inline-flex;align-items:center;gap:4px}.fx input{font-family:var(--f-num);font-size:13px;width:4.6em;padding:3px 6px;border:1px solid var(--line);border-radius:7px;background:var(--card);color:var(--fg)}
@@ -319,10 +328,8 @@ html{scroll-behavior:smooth}
 <!-- ===== 首頁：主題清單 ===== -->
 <div id="home">
   <header class="quote">
-    <div class="top"><span class="code">US</span><a class="sp" href="../">← 台股看板</a></div>
-    <div class="name">美股估值看板</div>
-    <div class="meta" id="hMeta">供應鏈美股分 12 個產業主題，點卡片看個股；搜尋框可查全美股（約 5,400 檔 SEC 申報公司）</div>
-    <div class="fx" data-fx></div>
+    <div class="top htop"><div class="name">美股估值看板</div><a class="sp" href="../">← 台股看板</a></div>
+    <div class="hrow"><div class="meta" id="hMeta">12 主題｜可搜全美股約 5,400 檔</div><div class="fx" data-fx></div></div>
     <div class="search" role="search">
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
       <input id="q" type="search" inputmode="search" autocomplete="off" autocapitalize="characters" placeholder="搜尋代號、公司或台股代號，例如 NVDA、2330" aria-label="搜尋" role="combobox" aria-expanded="false" aria-controls="sug" aria-autocomplete="list">
@@ -331,7 +338,7 @@ html{scroll-behavior:smooth}
     <div class="sug" id="sug" role="listbox" hidden></div>
   </header>
   <section class="card ecard" id="earnCal" hidden>
-    <h2>📅 財報公布日 <small id="uEarn"></small><a class="more" href="earnings.html">📊 預期 vs 實際</a><a class="more" href="#EARN" style="margin-left:10px">看全部 →</a></h2>
+    <h2>📅 財報 <small id="uEarn"></small><a class="more" href="earnings.html">📊 預期vs實際</a><a class="more" href="#EARN">全部 →</a></h2>
     <div class="ecal mini" id="ecalMini"></div>
   </section>
   <div id="tsec">
@@ -553,7 +560,7 @@ const chip=(id,x,hot,nm)=>`<a class="ec${hot.has(id)?' hot':''}" href="#${id}">$
 const dhead=(d,t)=>`${mdw(d)}<small>盤後 ≈ 台灣 ${twTime(d,'amc').tw.split(' 約')[0].replace('台灣 ','')} 清晨${d===t?'　← 今天':''}</small>`;
 function earnMini(){if(!Object.keys(EARN.e).length){$('earnCal').hidden=true;return}
   const {t,hot,nm,ds}=earnRows('focus',7),n=ds.reduce((a,[,r])=>a+r.length,0),h=ds.reduce((a,[,r])=>a+r.filter(([id])=>hot.has(id)).length,0);
-  $('uEarn').textContent=`本週 ${n} 檔，🔴 ${h} 檔追蹤股`;
+  $('uEarn').textContent=`本週 ${n}｜🔴 ${h}`;$('uEarn').title=`本週 ${n} 檔財報，其中 🔴 ${h} 檔是追蹤股`;
   $('ecalMini').innerHTML=ds.slice(0,2).map(([d,r])=>`<div class="d">${dhead(d,t)}</div><div class="row">${r.slice(0,6).map(([id,x])=>chip(id,x,hot,nm)).join('')}${r.length>6?`<a class="ec pl" href="#EARN">+${r.length-6}</a>`:''}</div>`).join('')||'<p class="meta" style="margin-top:8px">本週沒有追蹤股財報</p>';
   $('earnCal').hidden=false}
 function earnCal(){const {t,hot,nm,ds}=earnRows(EMODE,EMODE==='all'?7:21);
@@ -636,7 +643,12 @@ const fxFoot=()=>fxOn()?`　台幣 = 美元 × ${FX.rate}（自設固定匯率�
 // 首頁 [data-fx]：完整版（切換＋匯率框＋說明）；個股頁 [data-fx="mini"]：只留切換鈕，台幣鈕上標目前匯率（要改匯率回首頁）
 function fxRender(){document.querySelectorAll('[data-fx]').forEach(el=>{const seg=`<span class="fxseg"><button type="button" data-c="0"${fxOn()?'':' class="on"'}>美元</button><button type="button" data-c="1"${fxOn()?' class="on"':''}>台幣${el.dataset.fx==='mini'&&fxOn()?`<small>@${FX.rate}</small>`:''}</button></span>`;
   if(el.dataset.fx==='mini'){el.innerHTML=seg;el.title=fxOn()?`台幣 = 美元 × ${FX.rate}（自設固定匯率，比率不變；匯率在首頁改）`:'改用台幣顯示絕對金額（固定匯率，比率不變）';return}
-  el.innerHTML=seg+(fxOn()?`<label>固定匯率 <input type="number" step="0.1" min="20" max="45" inputmode="decimal" value="${FX.rate}" data-rate></label><span>≈ 金額 = 美元 × ${FX.rate}（非即時匯率）；比率、分位、年增不受影響</span>`:'<span>比率不分幣別；台幣模式只換股價／EPS／營收等絕對金額</span>')})}
+  // 首頁版面省高度：匯率框縮成「≈×」、說明收進 ⓘ（點開才顯示，展開時整組換到自己一行）
+  el.classList.toggle('open',FXI);
+  el.innerHTML=seg+(fxOn()?`<label title="自設固定匯率（非即時）">≈× <input type="number" step="0.1" min="20" max="45" inputmode="decimal" value="${FX.rate}" data-rate aria-label="固定匯率"></label>`:'')+
+    `<button type="button" class="fxi" data-fxi aria-label="幣別說明" aria-expanded="${FXI}">ⓘ</button>`+
+    `<span class="fxn"${FXI?'':' hidden'}>${fxOn()?`≈ 金額 = 美元 × ${FX.rate}（自設固定匯率，非即時）；比率、分位、年增不受影響`:'比率不分幣別；台幣模式只換股價／EPS／營收等絕對金額'}</span>`})}
+let FXI=false;document.addEventListener('click',e=>{if(!e.target.closest('[data-fxi]'))return;FXI=!FXI;fxRender()});
 function fxApply(){fxSave();fxRender();if(D&&!$('stock').hidden){header();render()}if(!$('themePage').hidden&&CUR_T)themeRender(CUR_T);if(!$('srank').hidden)renderSal();srHome();capexAll()}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-fx] button[data-c]');if(!b)return;const on=b.dataset.c==='1';if(on===FX.on)return;FX.on=on;fxApply()});
 document.addEventListener('change',e=>{if(!e.target.matches('[data-fx] input[data-rate]'))return;const r=+e.target.value;if(!(r>=20&&r<=45)){e.target.value=FX.rate;return}FX.rate=Math.round(r*10)/10;fxApply()});
@@ -950,7 +962,7 @@ const soon=(ids,days)=>{const t=etToday();return ids.filter(id=>(EARN.e[id]||[])
 function cardsRender(){
   const kv=(lb,a,f,c)=>`<span class="k"><span>${lb}</span><span class="num ${a.v==null?'':c||''}">${a.v==null?(ST_OK?'—':'…'):f(a.v)}${cvT(a)}</span></span>`;
   const d=dv();$('tAsof').textContent=d?`收盤 ${+d.slice(5,7)}/${+d.slice(8)}・中位數`:'';
-  $('hMeta').textContent=`供應鏈美股分 ${THEMES.length} 個產業主題，點卡片看個股；搜尋框可查全美股（約 5,400 檔 SEC 申報公司）`;
+  $('hMeta').textContent=`${THEMES.length} 主題｜可搜全美股約 5,400 檔`;$('hMeta').title=`供應鏈美股分 ${THEMES.length} 個產業主題，點卡片看個股；搜尋框可查全美股（約 5,400 檔 SEC 申報公司）`;
   const nx=new Set(THEMES.flatMap(t=>t.stocks.map(x=>x[0])).filter(id=>!tracked(id))).size;
   $('tLegX').textContent=nx?`主題裡有 ${nx} 檔全市場股票（不在每日追蹤清單）：只有財報，本益比、PEG、本月至今不算它們。`:'';
   $('tgrid').innerHTML=THEMES.length?THEMES.map(t=>{const it=itemsOf(t),ry=agg(it,'ry'),ey=agg(it,'ey'),pe=agg(it,'pe'),pg=agg(it,'peg'),mt=agg(it,'mtd'),ne=soon(it.map(s=>s.id),14);
