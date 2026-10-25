@@ -314,6 +314,18 @@ details.ind.hot summary b{color:var(--up)}
 #home .search+h2.sec{margin:10px 0 6px;align-items:center}
 #home .search+h2.sec .act{padding-left:6px}
 #home .search+h2.sec .segm button{padding:3px 9px}
+
+/* 首頁入口清單（合併卡片） */
+.hub{background:var(--card);border:1px solid var(--line);border-radius:12px;margin-top:10px;overflow:hidden}
+.hub>.srlink,.hub>details.ind{margin:0;border:0;border-radius:0;background:none}
+.hub>:not([hidden])~:not([hidden]){border-top:1px solid var(--line)}
+.hub>.srlink,.hub>details.ind>summary{min-height:44px;padding:0 12px;box-sizing:border-box;align-items:center;gap:10px}
+.hub>.srlink b,.hub>details.ind>summary b{font-size:14px;white-space:nowrap;flex:none}
+.hub>.srlink span,.hub>details.ind>summary span{font-size:12px;color:var(--muted);font-family:var(--f-num);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.hub>.srlink span::after,.hub>details.ind>summary span::after{content:"›";display:inline-block;margin-left:6px;font-size:14px;transition:transform .15s}
+.hub>details.ind[open]>summary span::after{transform:rotate(90deg)}
+.hub>details.ind[open]>summary{border-bottom:1px dashed var(--line)}
+.note.hnote{margin:2px 0 8px}
 </style>
 
 </head>
@@ -328,13 +340,13 @@ details.ind.hot summary b{color:var(--up)}
   </div>
   <h2 class="sec"><span>⭐ 自選 <small class="asof" id="favAsof"></small><a class="act" href="#f" id="favEdit" hidden aria-label="自選排序" title="自選排序">✏️</a></span><span class="segw"><span class="segm" data-seg></span><button type="button" class="dns" data-dense></button></span></h2><p class="asofN" id="asofNote" hidden></p>
   <div id="favBox"></div>
-  <h2 class="sec"><span>產業主題 <small><span id="sumAsof"></span>・中位數</small></span><a class="act" href="#e">✏️ 編輯</a></h2>
+  <h2 class="sec"><span>產業主題 <small><span id="sumAsof"></span>・中位數</small></span><span><button type="button" class="act" id="noteBtn" aria-expanded="false" aria-label="說明">ⓘ</button><a class="act" href="#e">✏️ 編輯</a></span></h2>
+  <p class="note hnote" id="homeNote" hidden>點「✏️ 編輯」可新增主題、增減成份股、調整順序（存在這支手機上）。數字為證交所／櫃買每日資料，本益比空白＝虧損或不適用。</p>
   <div class="tgrid" id="tgrid"></div>
-  <a class="srlink" id="srLink" href="#s" hidden><b>💰 員工薪資中位數排行</b><span id="srSub"></span></a>
-  <details class="ind hot" id="hotBox" style="margin-top:14px"><summary><b>🔥 主力訊號</b><span id="hotN">主題＋自選</span></summary><div style="padding:0 10px 8px"><div class="tbl"><table class="lst" id="hotTbl"></table></div><p class="foot" id="hotFoot"></p></div></details>
-  <details class="ind" id="aiBox" style="margin-top:14px" hidden><summary><b>🤖 AI 成分還沒查的</b><span id="aiN"></span></summary><div style="padding:0 12px 10px;font-size:13px"><p class="foot" id="aiList" style="white-space:normal;line-height:1.7"></p><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button type="button" class="star" id="aiCopy">📋 複製清單</button><span class="foot" id="aiMsg"></span></div><p class="foot">把清單貼給 Claude，查完會更新 data/ai.json，重新整理就有標籤。只看自選與自訂主題（內建主題成份股都已查過）。</p></div></details>
-  <details class="ind" id="indAll" style="margin-top:22px"><summary><b>🏭 官方產業別</b><span>點開瀏覽全部上市櫃</span></summary><div id="indBox" style="padding:0 8px 8px"></div></details>
-  <p class="note">點「✏️ 編輯」可新增主題、增減成份股、調整順序（存在這支手機上）。數字為證交所／櫃買每日資料，本益比空白＝虧損或不適用。</p>
+  <div class="hub" id="hub"><a class="srlink" id="srLink" href="#s" hidden><b>💰 薪資排行</b><span id="srSub"></span></a>
+  <details class="ind hot" id="hotBox"><summary><b>🔥 主力訊號</b><span id="hotN"></span></summary><div style="padding:0 10px 8px"><div class="tbl"><table class="lst" id="hotTbl"></table></div><p class="foot" id="hotFoot"></p></div></details>
+  <details class="ind" id="aiBox" hidden><summary><b>🤖 AI 成分還沒查的</b><span id="aiN"></span></summary><div style="padding:0 12px 10px;font-size:13px"><p class="foot" id="aiList" style="white-space:normal;line-height:1.7"></p><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button type="button" class="star" id="aiCopy">📋 複製清單</button><span class="foot" id="aiMsg"></span></div><p class="foot">把清單貼給 Claude，查完會更新 data/ai.json，重新整理就有標籤。只看自選與自訂主題（內建主題成份股都已查過）。</p></div></details>
+  <details class="ind" id="indAll"><summary><b>🏭 官方產業別</b><span>全部上市櫃</span></summary><div id="indBox" style="padding:0 8px 8px"></div></details></div>
 </section>
 <section id="theme" hidden>
   <div class="ehead"><a href="#">← 全部主題</a><a id="tEdit" href="#">✏️ 編輯這個主題</a></div>
@@ -1392,7 +1404,7 @@ const srPool=()=>srAll().filter(r=>(!SR.mkt||r.mk===SR.mkt)&&srV(r)!=null);
 const srMed=a=>median(a.map(srV));
 const srPct=(rows,x)=>rows.length?Math.round(rows.filter(r=>srV(r)<x).length/rows.length*1000)/10:null;
 function srHome(){const a=srAll().filter(r=>r.med!=null),el=$('srLink');if(!a.length){el.hidden=true;return}
-  const top=a.reduce((p,r)=>r.med>p.med?r:p,a[0]);$('srSub').innerHTML=`${SA.yrAD} 年・${fmt(a.length)} 家<br>中位數 ${salTxt(median(a.map(r=>r.med)))}・最高 ${top.nm} ${fmt(top.med,0)} 萬 →`;el.hidden=false}
+  const top=a.reduce((p,r)=>r.med>p.med?r:p,a[0]);$('srSub').textContent=`${SA.yrAD}・中位 ${salTxt(median(a.map(r=>r.med))).replace(' 萬','萬')}・最高 ${top.nm} ${fmt(top.med,0)}萬`;$('srLink').title=`${SA.yrAD} 年・${fmt(a.length)} 家`;el.hidden=false}
 const SR_TABS=[['top','排行'],['ind','產業'],['up','調薪'],['low','墊底'],['gap','差距'],['n','人數']],SR_MKT=[['','全部'],['上市','上市'],['上櫃','上櫃']],SR_MET=[['med','中位數'],['avg','平均數']];
 function renderSal(){
   const a=srAll();$('sYr').textContent=SA?`${SA.yrAD} 年（${SA.yr} 年度）`:'';
@@ -1598,7 +1610,7 @@ function aiPending(fav){const el=$('aiBox');if(!AI){el.hidden=true;return}
   let mine=[];try{mine=Object.values((store.get('themeCfg')||{}).themes||{}).flatMap(t=>(t.stocks||[]).map(x=>x[0]))}catch(e){}   // themeCfg.themes 是 {id:主題} 物件：自訂＋改過的內建主題（存在手機）＋自選
   const ids=[...new Set([...fav,...mine])].filter(id=>!ai(id)).sort();
   el.hidden=false;$('aiMsg').textContent='';
-  if(!ids.length){$('aiN').textContent='自選＋自訂主題都查過了 ✓';$('aiList').textContent='這支裝置的自選與自訂主題裡沒有還沒查的股票。之後新增股票，沒查過的會列在這裡。';$('aiCopy').hidden=true;return}
+  if(!ids.length){$('aiN').textContent='都查過了 ✓';$('aiList').textContent='這支裝置的自選與自訂主題裡沒有還沒查的股票。之後新增股票，沒查過的會列在這裡。';$('aiCopy').hidden=true;return}
   $('aiCopy').hidden=false;$('aiN').textContent=`${ids.length} 檔`;$('aiList').textContent=ids.map(id=>`${id} ${nameOf(id)}`).join('、');
   $('aiCopy').onclick=async()=>{const t=ids.map(id=>`${id} ${nameOf(id)}`).join('、');try{await navigator.clipboard.writeText(t);$('aiMsg').textContent='已複製，貼給 Claude 就好'}catch(e){$('aiMsg').textContent='複製失敗，請長按上面文字選取'}}}
 // ---------- 資料日期＋過期提醒：平日 19:30 後應該要有當天收盤；休市日看 data/hist/YYYYMMDD.json 的 closed ----------
@@ -1710,9 +1722,9 @@ function renderHome(){
   if(fav.length)table($('favTbl'),fav.map(id=>[id,'']));
   paintSeg();try{aiPending(fav)}catch(e){}
   {const pool=[...new Set([...THEMES.flatMap(t=>t.stocks.map(x=>x[0])),...fav])],hot=pool.filter(id=>mv(id,'fire'));
-   $('hotN').textContent=MO?`主題＋自選 ${pool.length} 檔中 ${hot.length} 檔`:'資料準備中';
+   $('hotN').textContent=MO?`${hot.length} / ${pool.length} 檔`:'準備中';
    const ht=$('hotTbl');ht.dataset.sort=ht.dataset.sort||'m_m:-1';table(ht,hot.map(id=>[id,(THEMES.find(t=>t.stocks.some(x=>x[0]===id))||{name:'⭐ 自選'}).name]),undefined,'m');
-   $('hotFoot').innerHTML=MO?`🔥＝月漲幅 &gt; 0、量比（5 日均量 ÷ 20 日均量）≥ 1.5、且投信或外資 5 日買超 ≥ 5 日成交量的 1%。是「有資金在推」的訊號，不是買進訊號，要搭配估值位階看。資料 ${ymd(MO.asof)}`:'第一次需要回補約 3 個月的歷史資料，Actions 跑完後就會出現。'}
+   $('hotFoot').innerHTML=MO?`範圍：產業主題＋自選共 ${pool.length} 檔。🔥＝月漲幅 &gt; 0、量比（5 日均量 ÷ 20 日均量）≥ 1.5、且投信或外資 5 日買超 ≥ 5 日成交量的 1%。是「有資金在推」的訊號，不是買進訊號，要搭配估值位階看。資料 ${ymd(MO.asof)}`:'第一次需要回補約 3 個月的歷史資料，Actions 跑完後就會出現。'}
   const tg=$('tgrid');tg.classList.toggle('tl',DENSE);
   if(DENSE){themeList(tg)}else
   $('tgrid').innerHTML=THEMES.map(t=>{const ids=t.stocks.map(x=>x[0]),y=median(ids.map(i=>sv(i,'yoy'))),pe=median(ids.map(i=>sv(i,'pe'))),ey=median(ids.map(epsY)),pg=median(ids.map(peg)),mm=median(ids.map(i=>mv(i,'m'))),nf=ids.filter(i=>mv(i,'fire')).length;
@@ -1915,6 +1927,8 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>D&&rend
  document.addEventListener('click',e=>{const x=e.target.closest('[data-tip]');if(!x){t.style.display='none';return}
   e.preventDefault();e.stopPropagation();t.textContent=x.dataset.tip;t.style.display='block';clearTimeout(tm);tm=setTimeout(()=>t.style.display='none',Math.max(5000,Math.min(12000,x.dataset.tip.length*45)))},true);
 })();
+
+document.getElementById('noteBtn').addEventListener('click',function(){const n=document.getElementById('homeNote');n.hidden=!n.hidden;this.setAttribute('aria-expanded',String(!n.hidden))});
 </script>
 </body>
 </html>
