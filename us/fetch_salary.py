@@ -66,14 +66,14 @@ def num(s):
 
 # ---------- DEF 14A：Pay Ratio ----------
 MED_PATS = [
-    r"(?:annual )?total compensation of (?:our |the )?median(?:[- ]compensated)? employee[^$]{0,160}?\$\s?([\d,]{5,9})",
-    r"median employee[^$]{0,160}?\$\s?([\d,]{5,9})",
-    r"median of the annual total compensation of (?:all )?(?:of )?(?:our |the )?employees[^$]{0,200}?\$\s?([\d,]{5,9})",
-    r"\$\s?([\d,]{5,9})[^.]{0,80}?median employee",
+    r"(?:annual )?total compensation of (?:our |the )?median(?:[- ]compensated)? employee[^$]{0,160}?\$\s?(\d{1,3}(?:,\d{3})+|\d{4,7})(?![\d,])",
+    r"median employee[^$]{0,160}?\$\s?(\d{1,3}(?:,\d{3})+|\d{4,7})(?![\d,])",
+    r"median of the annual total compensation of (?:all )?(?:of )?(?:our |the )?employees[^$]{0,200}?\$\s?(\d{1,3}(?:,\d{3})+|\d{4,7})(?![\d,])",
+    r"\$\s?(\d{1,3}(?:,\d{3})+|\d{4,7})(?![\d,])[^.]{0,80}?median employee",
 ]
 CEO_PATS = [
-    r"(?:annual )?total compensation of (?:our |the )?(?:Chief Executive Officer|CEO|President and Chief Executive Officer)[^$]{0,160}?\$\s?([\d,]{6,11})",
-    r"(?:Chief Executive Officer|CEO)[^$]{0,120}?annual total compensation[^$]{0,80}?\$\s?([\d,]{6,11})",
+    r"(?:annual )?total compensation of (?:our |the )?(?:Chief Executive Officer|CEO|President and Chief Executive Officer)[^$]{0,160}?\$\s?(\d{1,3}(?:,\d{3})+|\d{6,10})(?![\d,])",
+    r"(?:Chief Executive Officer|CEO)[^$]{0,120}?annual total compensation[^$]{0,80}?\$\s?(\d{1,3}(?:,\d{3})+|\d{6,10})(?![\d,])",
 ]
 RATIO_PATS = [
     r"ratio[^.]{0,200}?(\d[\d,]*(?:\.\d+)?)\s*(?:to|:|-to-|‑to‑)\s*(?:1|one)\b",
@@ -119,8 +119,14 @@ def parse_def14a(t):
                 break
         if "ratio" in out:
             break
-    if "ratio" not in out and out.get("med") and out.get("ceo"):
-        out["ratio"] = round(out["ceo"] / out["med"], 1)
+    if out.get("ceo") and out.get("med") and out["ceo"] <= out["med"] * 1.5:
+        out.pop("ceo")          # 抓到同一個數（句子順序顛倒），放棄 CEO
+    if out.get("med") and out.get("ceo"):
+        calc = out["ceo"] / out["med"]
+        if "ratio" not in out or abs(out["ratio"] / calc - 1) > 0.35:
+            out["ratio"] = round(calc)   # 文字倍數對不上 CEO÷中位數就用算的
+    elif out.get("ratio") and out["ratio"] < 5 and not out.get("ceo"):
+        out.pop("ratio")        # 沒 CEO 又倍數 <5，多半抓錯
     return out
 
 
@@ -130,6 +136,8 @@ EMP_PATS = [
     r"(?:workforce|headcount|employee base|team)\s(?:of|was|were|totaled|consisted of)\s(?:approximately\s|about\s)?(\d{1,3}(?:,\d{3})+|\d{2,7})",
     r"(\d{1,3}(?:,\d{3})+|\d{2,7})\s(?:full[- ]time\s)?(?:employees|team members|people)\s(?:worldwide|globally|in \d+ countries|as of)",
     r"(?:employees|headcount|workforce)[^.]{0,60}?(?:was|were|totaled|of)\s(?:approximately\s|about\s)?(\d{1,3}(?:,\d{3})+|\d{2,7})",
+    r"(?:approximately|about|over|more than)\s(\d{1,3}(?:,\d{3})+)\s(?:regular\s|global\s|full[- ]time\s)?(?:employees|people|team members|associates)",
+    r"(?:employees|headcount)\s?[:|]?\s(\d{1,3}(?:,\d{3})+)\b",
 ]
 
 
@@ -180,7 +188,7 @@ def doc_url(cik, acc, doc):
 def build(tk, cik, old):
     name, rows = filings(cik)
     px = [r for r in rows if r["form"] == "DEF 14A"]
-    tenk = [r for r in rows if r["form"] in ("10-K", "10-K/A", "20-F")]
+    tenk = [r for r in rows if r["form"] in ("10-K", "20-F")] or [r for r in rows if r["form"] == "10-K/A"]
     fpi = not px and any(r["form"] in ("20-F", "40-F") for r in rows)
     d = dict(old or {})
     d["fpi"] = fpi
@@ -206,8 +214,15 @@ def build(tk, cik, old):
     if tenk:
         k = tenk[0]
         if FORCE or d.get("acc10k") != k["acc"] or "emp" not in d:
-            t = text_of(get(doc_url(cik, k["acc"], k["doc"])))
-            d.update(emp=parse_10k(t), empDate=k["rep"] or k["filed"], acc10k=k["acc"])
+            emp = None
+            for kk in tenk[:2]:   # 最新一份抓不到人數就試前一年的
+                emp = parse_10k(text_of(get(doc_url(cik, kk["acc"], kk["doc"]))))
+                if emp:
+                    d["empDate"] = kk["rep"] or kk["filed"]
+                    break
+            d.update(emp=emp, acc10k=k["acc"])
+            if not emp:
+                d["empDate"] = None
     sbc, sbcfy = sbc_of(cik)
     d["sbc"], d["sbcFY"] = sbc, sbcfy
     for k in ("med", "ceo", "ratio", "emp", "sbc"):

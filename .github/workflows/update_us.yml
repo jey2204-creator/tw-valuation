@@ -8,6 +8,10 @@ on:
         description: "指定代號（空白分隔，留空 = 全部 45 檔）"
         required: false
         default: ""
+      force_salary:
+        description: "填 1 強制重抓員工薪資（DEF 14A／10-K）"
+        required: false
+        default: ""
 permissions:
   contents: write
 concurrency:
@@ -32,6 +36,7 @@ jobs:
         timeout-minutes: 10
         env:
           SEC_UA: ${{ secrets.SEC_UA }}
+          FORCE: ${{ github.event.inputs.force_salary || '' }}
         run: python us/fetch_salary.py ${{ github.event.inputs.tickers }}
       - name: 有變動才提交
         if: always()
