@@ -323,7 +323,7 @@ html{scroll-behavior:smooth}
     <div class="ecal mini" id="ecalMini"></div>
   </section>
   <div id="tsec">
-    <h2 class="sec"><span>產業主題 <small id="tAsof"></small></span><a class="act" href="#edit">✏️ 編輯</a></h2>
+    <h2 class="sec"><span>產業主題 <small id="tAsof"></small></span><a class="act" id="hEdit" href="#edit">✏️ 編輯</a></h2>
     <div class="tgrid" id="tgrid"></div>
     <p class="legend">各主題中位數。<i class="cv">5/7</i>＝7 檔裡只有 5 檔有值（虧損、資料不足不算），檔數少時別當成整個主題。營收年增＝最新一季對比去年同季；EPS 年增＝近四季合計對比前四季；PEG＝本益比 ÷ EPS 年增，<span class="cheap">&lt;1</span>、<span class="pricey">&gt;2</span>；本月至今＝收盤對比上月底。<span id="tLegX"></span></p>
   </div>
@@ -362,6 +362,22 @@ html{scroll-behavior:smooth}
       <label class="efield" for="bk">設定碼<textarea id="bk" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea></label>
       <div class="ebar"><button type="button" class="ib" id="bkCopy">複製</button><button type="button" class="ib" id="bkLoad">匯入</button><button type="button" class="ib warn" id="bkReset">全部還原預設</button></div>
       <p class="foot" id="bkMsg" role="status"></p>
+    </div>
+  </details>
+  <details class="ind" id="syBox"><summary><b>☁️ 雲端同步</b><span id="sySum">未開啟</span></summary>
+    <div class="in">
+      <div id="syOff">
+        <p class="foot">手機、電腦都開同步後，改主題會自動存到你 GitHub 帳號的一個秘密 Gist，另一台開頁或切回來時就會抓到。每個瀏覽器（含加到主畫面的 App）各貼一次 token。</p>
+        <p class="foot">產生 token：GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic) → Generate new token，<b>只勾 gist</b>，Expiration 選 90 days。</p>
+        <label class="efield" for="syTok">GitHub token<input id="syTok" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="ghp_…"></label>
+        <div class="ebar"><button type="button" class="ib pri" id="syGo">開啟同步</button></div>
+      </div>
+      <div id="syOn" hidden>
+        <div class="ebar" id="syCf" hidden><button type="button" class="ib pri" id="syUseCloud">用雲端版本</button><button type="button" class="ib" id="syUseLocal">用這台的版本</button></div>
+        <div class="ebar"><button type="button" class="ib" id="syNow">立即同步</button><button type="button" class="ib warn" id="syStop">關閉同步</button></div>
+      </div>
+      <p class="foot" id="syMsg" role="status"></p>
+      <p class="foot">token 只存在這個瀏覽器、只送到 api.github.com。Gist 裡只有主題設定；這個 token 讀寫得到你全部的 Gist，所以別在 Gist 放敏感資料。手機遺失就到 GitHub 撤銷 token。</p>
     </div>
   </details>
 </div>
@@ -486,8 +502,8 @@ html{scroll-behavior:smooth}
 <div id="pnSheet" hidden role="dialog" aria-modal="true" aria-label="同主題股票"><div class="sh"><div class="grab"></div><div class="hd"><a id="pnBack" href="#"></a><button type="button" id="pnClose">關閉</button></div><ol id="pnList"></ol></div></div>
 <nav id="pnav" aria-label="同主題切換" hidden><div class="in"><button type="button" class="bk" id="pnBk" aria-label="回上一頁"></button><button type="button" class="pv" id="pnPrev"></button><button type="button" class="mid" id="pnMid" aria-haspopup="dialog"></button><button type="button" class="nx" id="pnNext"></button></div></nav>
 
-<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js" integrity="sha384-Mx5lkUEQPM1pOJCwFtUICyX45KNojXbkWdYhkKUKsbv391mavbfoAmONbzkgYPzR" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js" integrity="sha384-BSxuMLxX+FCbTdYec3TbXlnMGEEM2QXTFdtDaveen71o+jswm2J36+xFqp8k4VHM" crossorigin="anonymous"></script>
 <script>
 const $=id=>document.getElementById(id);
 const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
@@ -892,7 +908,7 @@ function cfgGet(){let c=null;try{c=JSON.parse(localStorage.getItem(UKEY))}catch(
     th[k]={id:k,name:v.name,stocks:v.stocks.filter(x=>Array.isArray(x)&&typeof x[0]==='string'&&x[0]).map(x=>[x[0].toUpperCase(),String(x[1]??'')])}}
   const ls=a=>Array.isArray(a)?a.filter(x=>typeof x==='string'):[];
   return {order:ls(c.order),hidden:ls(c.hidden),themes:th}}
-function cfgSave(c){try{localStorage.setItem(UKEY,JSON.stringify({site:'us',order:c.order,hidden:c.hidden,themes:c.themes}))}catch(e){}applyCfg()}
+function cfgSave(c){try{localStorage.setItem(UKEY,JSON.stringify({site:'us',order:c.order,hidden:c.hidden,themes:c.themes,at:Date.now()}))}catch(e){}applyCfg();syncDirty()}   // at＝這次修改時間，雲端同步用來判斷哪份比較新
 // 內建主題：index.json 依主題分組；成份股順序＝index.json 順序，細分預設用 ROLE
 function baseThemes(){const g=[];IDX.forEach(s=>{const id=TID[s.theme];if(!id)return;let t=g.find(x=>x.id===id);
     if(!t)g.push(t={id,name:s.theme,stocks:[],tw:s.tw||[],dem:!!s.dem});t.stocks.push([s.id,ROLE[s.id]||''])});
@@ -1224,7 +1240,74 @@ $('bkLoad').addEventListener('click',()=>{let c=null;try{c=JSON.parse($('bk').va
   try{localStorage.setItem(UKEY,JSON.stringify(c))}catch(e){}cfgSave(cfgGet());renderOrder();loadExtra().then(statsRefresh);
   $('bkMsg').textContent=`已匯入（${allThemes().length} 個主題，首頁顯示 ${THEMES.length} 個）`});
 $('bkReset').addEventListener('click',()=>{if(Date.now()-resetArm>4000){resetArm=Date.now();$('bkMsg').textContent='會刪除所有自訂主題、排序與隱藏。4 秒內再按一次確認';return}
-  try{localStorage.removeItem(UKEY)}catch(e){}applyCfg();renderOrder();$('bkMsg').textContent='已還原預設'});
+  cfgSave({order:[],hidden:[],themes:{}});renderOrder();loadExtra().then(statsRefresh);$('bkMsg').textContent='已還原預設'});   // 存一份空設定（而不是刪掉），雲端同步才會把「還原」帶到另一台
+// ---------- ☁️ 雲端同步：設定存到自己 GitHub 帳號的一個秘密 Gist（描述 GDESC、檔名 GFILE）----------
+// usSync = {token, gist, at, pend, last}：at＝最後一次跟雲端對齊時那份設定的 at；pend＝這台有改過還沒上傳
+// 判斷用「雲端 at ≠ 上次對齊的 at」而不是比大小，兩台時鐘不準也不會漏抓；兩台都有改 → 讓你選留哪份
+const SKEY='usSync',GDESC='tw-valuation us themes',GFILE='usThemeCfg.json',GAPI='https://api.github.com';
+let SY={},SYC=null,syT=0,syBusy=false,syPullAt=0,syWait=false;
+try{SY=JSON.parse(localStorage.getItem(SKEY))||{}}catch(e){}
+function sySave(){try{localStorage.setItem(SKEY,JSON.stringify(SY))}catch(e){}}
+const syOn=()=>!!(SY.token&&SY.gist);
+function cfgRaw(){let c=null;try{c=JSON.parse(localStorage.getItem(UKEY))}catch(e){}
+  return c&&typeof c==='object'?{site:'us',order:c.order||[],hidden:c.hidden||[],themes:c.themes||{},at:+c.at||0}:{site:'us',order:[],hidden:[],themes:{},at:0}}
+const cfgKey=c=>JSON.stringify([c.order||[],c.hidden||[],c.themes||{}]);
+function syMsg(t){$('syMsg').textContent=t}
+function syStat(){const on=syOn();$('syOff').hidden=on;$('syOn').hidden=!on;$('syCf').hidden=!SYC;
+  const tm=SY.last?new Date(SY.last).toLocaleString('zh-TW',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}):'';
+  $('sySum').textContent=!on?'未開啟':SYC?'⚠️ 兩台都有改':SY.pend?'有變更待上傳':'已同步'+(tm?'・'+tm:'');
+  $('hEdit').textContent=SYC?'✏️ 編輯 ⚠️':'✏️ 編輯'}
+async function gh(path,opt={}){
+  const r=await fetch(GAPI+path,{...opt,cache:'no-store',headers:{Accept:'application/vnd.github+json',Authorization:'Bearer '+SY.token,...(opt.body?{'Content-Type':'application/json'}:{})}});
+  if(r.status===401)throw new Error('token 無效或已過期，請關閉同步後貼新的 token');
+  if(r.status===403)throw new Error('token 沒有 gist 權限，或 GitHub 暫時限流');
+  if(r.status===404)throw new Error('找不到雲端那份設定（Gist 被刪了？）請關閉同步再重開');
+  if(!r.ok)throw new Error('GitHub 回應 '+r.status);
+  return r.json()}
+async function remoteGet(){const g=await gh('/gists/'+SY.gist),f=g.files&&g.files[GFILE];if(!f)return null;
+  let txt=f.content;if(f.truncated)txt=await (await fetch(f.raw_url,{cache:'no-store'})).text();
+  try{const c=JSON.parse(txt);return c&&typeof c==='object'&&c.site==='us'?{...c,at:+c.at||0}:null}catch(e){return null}}
+const remotePut=c=>gh('/gists/'+SY.gist,{method:'PATCH',body:JSON.stringify({files:{[GFILE]:{content:JSON.stringify(c)}}})});
+function applyRemote(r){try{localStorage.setItem(UKEY,JSON.stringify(r))}catch(e){}
+  SY.at=r.at;SY.pend=false;SY.last=Date.now();SYC=null;sySave();
+  applyCfg();if(!$('editList').hidden)renderOrder();loadExtra().then(statsRefresh)}
+function syConflict(r){SYC=r;syMsg('這台跟另一台都改過設定：選要留哪一份，另一份會被蓋掉');}
+function syncDirty(){if(!syOn())return;SY.pend=true;sySave();syStat();clearTimeout(syT);syT=setTimeout(()=>syncRun(),1500)}
+// 拉＋推一次做完：雲端有別台的新版本就套用（這台也有改 → 問你），這台有改就上傳
+async function syncRun(force){
+  if(!syOn())return;if(syBusy){clearTimeout(syT);syT=setTimeout(()=>syncRun(force),1500);return}
+  syBusy=true;syPullAt=Date.now();
+  try{const r=await remoteGet(),l=cfgRaw();
+    if(r&&r.at!==(SY.at||0)&&cfgKey(r)!==cfgKey(l)){        // 雲端被另一台改過，內容也不一樣
+      if(SY.pend&&!force){syConflict(r);return}
+      if(!$('editTheme').hidden){syWait=true;syMsg('雲端有新版本，離開編輯頁後套用');return}
+      applyRemote(r);syMsg('已套用另一台的最新設定');return}
+    if(r&&r.at!==(SY.at||0))SY.at=r.at;                     // 內容一樣，只是時間戳不同
+    if(SY.pend||!r){await remotePut(l);SY.at=l.at}
+    SY.pend=false;SY.last=Date.now();sySave();syMsg('')
+  }catch(e){syMsg('同步失敗：'+e.message+'（設定仍存在這台，下次開頁再試）')}
+  finally{syBusy=false;syStat()}}
+$('syGo').addEventListener('click',async()=>{const t=$('syTok').value.trim();
+  if(!/^(ghp_|github_pat_)[A-Za-z0-9_]{20,}$/.test(t)){syMsg('token 格式不對：應該是 ghp_ 開頭的一長串');return}
+  SY={token:t};syMsg('連線中…');$('syGo').disabled=true;
+  try{const list=await gh('/gists?per_page=100'),g=list.find(x=>x.description===GDESC&&x.files&&x.files[GFILE]),l=cfgRaw();
+    if(g){SY.gist=g.id;const r=await remoteGet();
+      if(!r){await remotePut(l);SY.at=l.at;SY.last=Date.now();syMsg('已開啟同步（雲端是空的，已上傳這台的設定）')}
+      else if(cfgKey(r)===cfgKey(l)){SY.at=r.at;SY.last=Date.now();syMsg('已開啟同步（兩邊設定相同）')}
+      else if(!l.at){applyRemote(r);syMsg('已開啟同步，套用雲端的設定')}
+      else{SY.at=-1;SY.pend=true;syConflict(r)}}
+    else{const n=await gh('/gists',{method:'POST',body:JSON.stringify({description:GDESC,public:false,files:{[GFILE]:{content:JSON.stringify(l)}}})});
+      SY.gist=n.id;SY.at=l.at;SY.last=Date.now();syMsg('已開啟同步，已在你的 GitHub 建立秘密 Gist 存這台的設定。另一台貼同一個 token 就會抓到')}
+    sySave();$('syTok').value=''}
+  catch(e){SY={};sySave();syMsg('開啟失敗：'+e.message)}
+  finally{$('syGo').disabled=false;syStat()}});
+$('syUseCloud').addEventListener('click',()=>{if(!SYC)return;applyRemote(SYC);syStat();syMsg('已改用雲端版本')});
+$('syUseLocal').addEventListener('click',()=>{if(!SYC)return;SY.at=SYC.at;SY.pend=true;SYC=null;sySave();syMsg('上傳這台的版本…');syncRun(true)});
+$('syNow').addEventListener('click',()=>{syMsg('同步中…');syncRun()});
+$('syStop').addEventListener('click',()=>{SY={};SYC=null;sySave();syStat();syMsg('已關閉同步，token 已從這台刪除（雲端那份 Gist 還在）')});
+// 切回這個分頁／App 時再抓一次（最多 20 秒一次）；離開編輯頁時套用剛才等著的新版本
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&Date.now()-syPullAt>20000)syncRun()});
+addEventListener('hashchange',()=>setTimeout(()=>{if(syWait&&$('editTheme').hidden){syWait=false;syncRun()}}));   // 等 route() 先切完頁
 // 拖曳排序（按住右邊 ⠿）
 const SORT={handle:'.drag',draggable:'.erow',animation:160,ghostClass:'ghost',chosenClass:'chosen',dragClass:'dragging',forceFallback:true,fallbackOnBody:true,fallbackTolerance:3,scroll:true,scrollSensitivity:80,scrollSpeed:12,bubbleScroll:true};
 if(window.Sortable){
@@ -1241,7 +1324,7 @@ addEventListener('hashchange',route);
   try{const r=await fetch('data/salary.json?t='+Date.now());if(r.ok)SA=await r.json()}catch(e){}
   fetch('../data/salary.json?t='+Date.now()).then(r=>r.ok?r.json():null).then(j=>{if(j){TWSA=j;if(D&&!$('stock').hidden)salLine(D.id)}}).catch(()=>{});   // 台股薪資：對應台股 chip 旁小字
   try{const r=await fetch('data/earnings_auto.json?t='+Date.now());if(r.ok){AUTOQ=(await r.json()).q||{};CMPSET=new Set(Object.keys(AUTOQ))}}catch(e){}
-  BASE=baseThemes();applyCfg();
+  BASE=baseThemes();applyCfg();syStat();syncRun();
   homeRender();earnMini();srHome();route();capexAll();
   // 主題卡的年增／PEG／本月至今要讀 46 個個股檔（各約 6KB），主題裡的全市場股票另讀 data/all；讀完重畫卡片與主題頁
   Promise.all([loadStats(),loadExtra()]).then(statsRefresh);
