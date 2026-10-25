@@ -165,6 +165,19 @@ span.asof{white-space:nowrap}
 .lst .cap{display:block;font-size:11px;color:var(--muted);font-family:var(--f-num)}.lst .cap b{color:var(--warm);font-weight:600}
 .crown{margin-left:3px;font-size:12px}
 .lst th[data-k]{cursor:pointer;user-select:none}
+.dns{flex:none;font:inherit;font-size:12px;font-weight:700;letter-spacing:0;border:1px solid var(--line);border-radius:999px;background:var(--card);color:var(--muted);padding:3px 8px;margin-left:6px;cursor:pointer;white-space:nowrap}
+.segw{display:inline-flex;align-items:center;flex:none}
+h2.sec .dns{padding:3px 7px;margin-left:4px}h2.sec .dns .t{display:none}h2.sec .act{white-space:nowrap}
+body.dense .lst td{padding-block:4px;line-height:1.3}
+body.dense .lst th{padding-block:4px}
+body.dense .lst .nm{font-size:13.5px}
+body.dense .lst .cd{font-size:10.5px;margin-left:3px}
+body.dense .lst .dl{display:block;font-size:10.5px;color:var(--muted);font-family:var(--f-num);white-space:nowrap}
+body.dense .lst .dl b{color:var(--warm);font-weight:600}
+body.dense .lst .dl .flag{margin:0 2px 0 0;font-family:var(--f-body)}
+body.dense .lst .sub{font-size:10.5px}
+body.dense .lst .sub .flag{margin-left:1px}
+
 .lst th.on{color:var(--fg);font-weight:700}
 .panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:4px 12px 6px}
 .panel .tbl{margin-top:0}
@@ -295,7 +308,7 @@ details.ind.hot summary b{color:var(--up)}
     <input id="q2" type="search" inputmode="search" autocomplete="off" placeholder="輸入代號或名稱，例如 2454、聯發科" aria-label="搜尋股票">
     <div class="results" id="res2" hidden></div>
   </div>
-  <h2 class="sec"><span>⭐ 自選 <small class="asof" id="favAsof"></small><a class="act" href="#f" id="favEdit" hidden>✏️ 排序</a></span><span class="segm" data-seg></span></h2><p class="asofN" id="asofNote" hidden></p>
+  <h2 class="sec"><span>⭐ 自選 <small class="asof" id="favAsof"></small><a class="act" href="#f" id="favEdit" hidden>✏️ 排序</a></span><span class="segw"><span class="segm" data-seg></span><button type="button" class="dns" data-dense></button></span></h2><p class="asofN" id="asofNote" hidden></p>
   <div id="favBox"></div>
   <h2 class="sec"><span>產業主題 <small><span id="sumAsof"></span>・中位數</small></span><a class="act" href="#e">✏️ 編輯</a></h2>
   <div class="tgrid" id="tgrid"></div>
@@ -310,7 +323,7 @@ details.ind.hot summary b{color:var(--up)}
   <h1 id="tName" style="margin-top:6px"></h1>
   <p class="take" id="tSum"></p>
   <div class="uslink" id="tUS"></div>
-  <div class="mrow"><span class="segm" data-seg></span><span class="meta" id="tAsof"></span></div><p class="asofN" id="tAsofN" hidden></p>
+  <div class="mrow"><span class="segw"><span class="segm" data-seg></span><button type="button" class="dns" data-dense></button></span><span class="meta" id="tAsof"></span></div><p class="asofN" id="tAsofN" hidden></p>
   <div class="panel" style="margin-top:8px"><div class="tbl"><table class="lst" id="tTbl"></table></div></div>
   <p class="foot" id="tFoot" style="margin-top:8px"></p>
 </section>
@@ -1293,6 +1306,7 @@ $('qBtn').addEventListener('click',()=>qToggle());
 document.addEventListener('click',e=>{if(!e.target.closest('.search'))document.querySelectorAll('.results').forEach(b=>b.hidden=true)});
 
 // ---------- 主題／產業／自選 ----------
+let DENSE=(()=>{try{return localStorage.getItem('tDense')!=='false'}catch(e){return true}})();   // 估值表緊湊模式（預設開，記在 localStorage tDense）
 let THEMES=[],BASE=[],S=null,MO=null,MODE=(()=>{try{return localStorage.getItem('tMode')==='"m"'?'m':'v'}catch(e){return 'v'}})();
 // ---- 動能（momentum.json）：[週%, 月%, 季%, 量比, 外資5日張, 投信5日張, 外資20日張, 投信20日張, 投信連買天數, 外資連買天數, 🔥] ----
 const MF={w:0,m:1,q:2,vr:3,f5:4,t5:5,f20:6,t20:7,tS:8,fS:9,fire:10};
@@ -1446,7 +1460,10 @@ const mv=(id,k)=>MO&&MO.d[id]?MO.d[id][MF[k]]:null;
 const lots=v=>v==null?'—':(v>0?'+':v<0?'−':'')+(Math.abs(v)>=10000?(Math.abs(v)/10000).toFixed(1)+'萬':Math.abs(v).toLocaleString('zh-TW'));
 const ymd=s=>s?(+s.slice(4,6))+'/'+(+s.slice(6)):'';
 function segHTML(){return `<button type="button" data-m="v" aria-pressed="${MODE==='v'}">📈 估值</button><button type="button" data-m="m" aria-pressed="${MODE==='m'}">🚀 動能</button>`}
-function paintSeg(){document.querySelectorAll('[data-seg]').forEach(e=>e.innerHTML=segHTML())}
+function paintSeg(){document.querySelectorAll('[data-seg]').forEach(e=>e.innerHTML=segHTML());paintDense()}
+function paintDense(){document.body.classList.toggle('dense',DENSE);document.querySelectorAll('[data-dense]').forEach(b=>{b.innerHTML=`⇕<span class="t"> ${DENSE?'緊湊':'完整'}</span>`;b.setAttribute('aria-label',DENSE?'緊湊模式':'完整模式');b.setAttribute('aria-pressed',DENSE);b.title=DENSE?'目前緊湊：每列 2 行。點一下顯示完整資訊':'目前完整。點一下改成緊湊（每列 2 行）'})}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-dense]');if(!b)return;DENSE=!DENSE;store.set('tDense',DENSE);paintDense();
+  const v=document.body.dataset.view;if(v==='theme')showTheme(decodeURIComponent(location.hash.slice(3)));else if(v==='home')renderHome()});
 document.addEventListener('click',e=>{const b=e.target.closest('[data-seg] button');if(!b)return;MODE=b.dataset.m;store.set('tMode',MODE);
   const v=document.body.dataset.view;if(v==='theme')showTheme(decodeURIComponent(location.hash.slice(3)));else if(v==='home')renderHome()});
 const SF={close:0,chg:1,pe:2,pb:3,yld:4,yoy:5,rev:6,ym:7,ytd:8};
@@ -1479,6 +1496,19 @@ const epsY=id=>{const g=eG(id);return g&&g.y!=null?g.y:null};
 const peg=id=>{const pe=sv(id,'pe'),y=epsY(id);return pe!=null&&y!=null&&y>0&&y<=300?+(pe/y).toFixed(2):null};
 let QN='';
 function modeQ(){const c={};Object.values((S&&S.eps)||{}).forEach(e=>c[e[0]]=(c[e[0]]||0)+1);QN=Object.keys(c).sort((a,b)=>c[b]-c[a])[0]||''}
+// 緊湊版本益比小字：一行「+74% P0.45」（單季加「單」），業外標籤由呼叫端放在本益比數字旁
+function epsDense(id){const G=eG(id);if(!G)return '<span class="sub">EPS —</span>';
+  const {q,cur,prev,y,k}=G;let t,cl='';const pre=k===4?'':'單';
+  if(prev==null)t='EPS —';else if(prev<=0)t=pre+(cur>0?'轉盈':'虧損'),cl=cur>0?'up':'dn';else if(cur<=0)t=pre+'轉虧',cl='dn';else t=pre+(y>300?'>300%':pct(y,0)),cl=sign(y);
+  const g=peg(id),gc=g==null?'':g<1?'cheap':g>2?'pricey':'';
+  const qs=q!==QN?` <span style="color:var(--warm)" title="跟其他檔不同季">${q}</span>`:'';
+  const tip=`${k===4?'近四季':'單季'} EPS 年增${g!=null?'；P＝PEG（本益比÷近四季 EPS 年增）':''}`;
+  return `<span class="sub" title="${tip}"><span class="${cl}">${t}</span>${g!=null?` <span class="${gc}">P${fmt(g,g<10?2:1)}</span>`:y!=null&&y>300?' <span class="dtip" data-tip="基期很低，年增率與 PEG 失真">低基</span>':''}${qs}</span>`}
+const nbFlag=id=>{const G=eG(id);return G&&G.nb?` <span class="flag" data-tip="${G.k===4?'近四季有一季':'本季'}淨利率比營益率高 5 個百分點以上，EPS 可能含一次性業外收益，本益比會偏低、年增率會灌水">業外</span>`:''};
+function denseName(id){const v=cap(id),rk=RANK&&RANK[id],a=ai(id);   // 名稱欄只有約 90px：只放 AI 標籤＋市值，薪資看完整模式
+  const parts=[];if(a)parts.push(`<span class="flag ail${a.lv}" data-tip="${esc(aiTip(a))}">AI${AIL[a.lv]}</span>`);
+  if(v!=null)parts.push(`${capTxt(v).replace(/,/g,'')}${rk&&rk[0]&&rk[0]<=3?`<b>#${rk[0]}</b>`:''}`);
+  return parts.length?`<span class="dl">${parts.join(' ')}</span>`:''}
 function epsCell(id){
   const G=eG(id);if(!G)return '<span class="sub">EPS —</span>';
   const {q,cur,prev,y,k}=G,nonop=G.nb;let t,cl='';
@@ -1531,6 +1561,10 @@ function table(el,items,sortKey,mode){
   if(md==='m')el.innerHTML=`<thead><tr>${th('cap','股票')}${th('m_w','週')}${th('m_m','月')}${th('m_q','季')}${th('m_vr','量比')}</tr></thead><tbody>`+rows.map(([id,role])=>`<tr data-id="${id}">${mCells(id,role)}</tr>`).join('')+'</tbody>';
   else el.innerHTML=`<thead><tr>${th('cap','股票')}${th('px','收盤')}${COLS.map(c=>th(...c)).join('')}</tr></thead><tbody>`+rows.map(([id,role])=>{
     const c=sv(id,'close'),ch=sv(id,'chg'),y=sv(id,'yoy'),ym=sv(id,'ym');
+    if(DENSE)return `<tr data-id="${id}"><td><span class="nm">${nameOf(id)}</span>${crown(id)}<span class="cd">${id}</span>${denseName(id)}</td>
+      <td>${fmt(c,c!=null&&c<100?2:c!=null&&c<1000?1:0)}<span class="sub ${sign(ch)}">${pct(ch,2)}</span></td>
+      <td>${fmt(sv(id,'pe'),1)}${nbFlag(id)}${epsDense(id)}</td><td>${fmt(sv(id,'pb'),2)}<span class="sub">殖${sv(id,'yld')==null?'—':fmt(sv(id,'yld'),1)+'%'}</span></td>
+      <td class="${sign(y)}">${pct(y)}<span class="sub" ${ym&&S.revYM&&ym<S.revYM?'style="color:var(--warm)" title="尚未公布最新月份"':''}>${ym?(+ym.slice(5))+'月':''}</span></td></tr>`;
     return `<tr data-id="${id}"><td><span class="nm">${nameOf(id)}</span>${crown(id)}<span class="cd">${id}</span>${capLine(id)}${salCell(id)}${aiCell(id)}${role?`<div class="role">${role}</div>`:''}</td>
       <td>${fmt(c,c!=null&&c<100?2:c!=null&&c<1000?1:0)}<span class="sub ${sign(ch)}">${pct(ch,2)}</span></td>
       <td>${fmt(sv(id,'pe'),1)}${epsCell(id)}</td><td>${fmt(sv(id,'pb'),2)}<span class="sub">殖 ${sv(id,'yld')==null?'—':fmt(sv(id,'yld'),1)+'%'}</span></td>
