@@ -390,7 +390,7 @@ html{scroll-behavior:smooth}
   <div class="panel" id="eStocks"></div>
   <div class="search" role="search" style="margin-top:10px">
     <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-    <input id="eQ" type="search" inputmode="search" autocomplete="off" autocapitalize="characters" placeholder="加入股票：代號、公司名或台股代號" aria-label="加入股票" aria-controls="eRes">
+    <input id="eQ" type="search" inputmode="search" autocomplete="off" autocapitalize="characters" placeholder="加入股票：代號、公司名或台股代號（多檔用空白隔開）" aria-label="加入股票" aria-controls="eRes">
   </div>
   <div class="eres" id="eRes" role="listbox" hidden></div>
   <p class="foot" style="margin-top:8px">每日追蹤的 46 檔數字完整；<span class="tag" style="margin-left:0">全市場</span> 的股票只有財報（每週更新），主題卡只算得出營收和 EPS 年增，本益比、PEG、本月至今會空著，點進個股頁才即時抓股價。</p>
@@ -1226,6 +1226,12 @@ $('eStocks').addEventListener('click',e=>{const b=e.target.closest('button[data-
 function eSearch(){
   const v=$('eQ').value.trim(),box=$('eRes');if(!v){box.hidden=true;box.innerHTML='';return}
   const has=new Set(ED?ED.stocks.map(x=>x[0]):[]),ms=matches(v).slice(0,10);
+  // 一次貼多檔：用空白、逗號或頓號隔開的代號（例：AAPL GOOGL MSFT）→ 顯示「一次加入 N 檔」
+  const tk=[...new Set(v.toUpperCase().split(/[\s,，、;；]+/).filter(Boolean))];
+  if(tk.length>1){const ok=tk.filter(t=>(tracked(t)||ALLM[t])&&!has.has(t)),bad=tk.filter(t=>!tracked(t)&&!ALLM[t]),dup=tk.filter(t=>has.has(t));
+    box.innerHTML=(ok.length?`<button type="button" role="option" data-bulk="${ok.join(' ')}"><span class="rid">＋${ok.length} 檔</span><span class="rn">一次加入：${ok.join('、')}</span></button>`:'')+
+      (dup.length?`<div class="rh">已在清單：${dup.join('、')}</div>`:'')+(bad.length?`<div class="rh">找不到：${esc(bad.join('、'))}（不會加入）</div>`:'');
+    box.hidden=false;return}
   box.innerHTML=ms.length?ms.map(s=>{const inl=has.has(s.id),tr=tracked(s.id);
     return `<button type="button" role="option" data-id="${s.id}"${inl?' disabled':''}><span class="rid">${s.id}</span><span class="rn">${esc(cnOf(s)||s.name||'')}</span><span class="rm${inl||!tr?'':' d'}">${inl?'已在清單':tr?'每日追蹤':'全市場'}</span></button>`}).join('')
     :`<div class="rh">找不到「${esc(v)}」，試試英文代號或公司英文名</div>`;
@@ -1233,7 +1239,10 @@ function eSearch(){
 $('eQ').addEventListener('input',eSearch);
 $('eQ').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();const b=$('eRes').querySelector('button:not([disabled])');if(b)b.click()}if(e.key==='Escape'){$('eQ').value='';eSearch()}});
 $('eRes').addEventListener('mousedown',e=>e.preventDefault());   // 點結果時輸入框不先失焦，手機鍵盤不會收起又彈出
-$('eRes').addEventListener('click',e=>{const b=e.target.closest('button[data-id]');if(!b||b.disabled)return;syncRoles();
+$('eRes').addEventListener('click',e=>{const k=e.target.closest('button[data-bulk]');if(k){syncRoles();const ids=k.dataset.bulk.split(' ');
+    ids.forEach(id=>{if(!ED.stocks.some(x=>x[0]===id))ED.stocks.push([id,ROLE[id]||''])});$('eQ').value='';eSearch();drawStocks();
+    $('eMsg').textContent=`已加入 ${ids.length} 檔，可拖曳 ⠿ 調整順序，記得按「儲存」`;return}
+  const b=e.target.closest('button[data-id]');if(!b||b.disabled)return;syncRoles();
   const id=b.dataset.id;ED.stocks.push([id,ROLE[id]||'']);$('eQ').value='';eSearch();drawStocks();
   $('eMsg').textContent=`已加入 ${nameOf(id)}${tracked(id)?'':'（全市場，只有財報）'}，記得按「儲存」`;
   const r=$('eStocks').lastElementChild;if(r)r.scrollIntoView({block:'nearest'})});
