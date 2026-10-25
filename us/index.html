@@ -159,8 +159,9 @@ th:first-child,td:first-child{text-align:left}
 th{font-weight:500;color:var(--muted);font-size:12px}
 td{font-family:var(--f-num);font-variant-numeric:tabular-nums}
 tr.e td{color:var(--accent)}
-.search{position:relative;margin-top:10px}
-.search input{width:100%;font:inherit;font-size:16px;padding:9px 12px 9px 34px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--fg)}
+.search{position:relative;margin-top:8px}
+/* 第 3 步省高度：上下 padding 9→6、行高固定；字級維持 16px（低於 16px iOS 點下去會自動放大頁面） */
+.search input{width:100%;font:inherit;font-size:16px;line-height:22px;padding:6px 12px 6px 34px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--fg)}
 .search svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);width:16px;height:16px;stroke:var(--muted)}
 /* 搜尋建議與狀態 */
 .sug{margin-top:6px;background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden}
@@ -336,7 +337,7 @@ html{scroll-behavior:smooth}
     <div class="hrow"><div class="meta" id="hMeta">12 主題｜可搜全美股約 5,400 檔</div><div class="fx" data-fx></div></div>
     <div class="search" role="search">
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-      <input id="q" type="search" inputmode="search" autocomplete="off" autocapitalize="characters" placeholder="搜尋代號、公司或台股代號，例如 NVDA、2330" aria-label="搜尋" role="combobox" aria-expanded="false" aria-controls="sug" aria-autocomplete="list">
+      <input id="q" type="search" inputmode="search" autocomplete="off" autocapitalize="characters" placeholder="代號、公司或台股代號（NVDA、2330）" aria-label="搜尋" role="combobox" aria-expanded="false" aria-controls="sug" aria-autocomplete="list">
     </div>
     <div class="qs" id="qs" aria-live="polite"></div>
     <div class="sug" id="sug" role="listbox" hidden></div>
