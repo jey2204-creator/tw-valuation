@@ -241,7 +241,9 @@ h2.sec small{font-weight:500;letter-spacing:0}
 .lst th[data-k]{cursor:pointer;user-select:none}.lst th.on{color:var(--fg);font-weight:700}
 /* 員工薪酬（同台股站）：個股頁一列、主題表小字、首頁入口卡、排行頁 #SALARY */
 .meta.sal{margin-top:6px;font-size:12px;color:var(--muted);line-height:1.6}.meta.sal b{color:var(--fg);font-family:var(--f-num);font-size:13px}.meta.sal .dtip{border-bottom:1px dotted currentColor}
-.lst .cap.sal{font-size:10.5px}.tw a small{font-size:10.5px;color:var(--muted);margin-left:4px}
+.lst .cap.sal{font-size:10.5px}
+/* 主題表股票欄：代號／短名、薪資／年變化各自換行（同台股），讓收盤往左、營收年增不被切 */
+.lst td.sk .nmw{white-space:normal}.lst td.sk .cd{display:block;margin-left:0;max-width:6.5em;vertical-align:baseline}.tw a small{font-size:10.5px;color:var(--muted);margin-left:4px}
 .srlink{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:12px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;color:var(--fg);text-decoration:none}.srlink b{font-size:14px}.srlink span{font-size:12px;color:var(--muted);text-align:right}
 .mrow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:10px}.segm{flex:none;display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:var(--card)}.segm button{white-space:nowrap;font:inherit;font-size:12.5px;font-weight:700;border:0;background:none;color:var(--muted);padding:4px 11px;cursor:pointer}.segm button[aria-pressed=true]{background:var(--accent);color:#fff}
 #srank .lst td:first-child{font-family:var(--f-num);color:var(--muted);font-size:12px;white-space:nowrap}#srank .lst td.co{font-family:var(--f-body);color:var(--fg);white-space:normal}#srank .lst td.co .nm{font-size:13.5px}#srank .lst th:nth-child(2),#srank .lst td:nth-child(2){text-align:left}#srank .lst .ind{font-size:11px;color:var(--muted);display:block}#srank .foot{white-space:normal;line-height:1.6}
@@ -1007,7 +1009,7 @@ function tTable(t){const el=$('tList'),[k,dir]=TS.split(':');let rows=t.stocks.s
     let e;if(o.ek)e=`<span class="sub ${o.ek==='轉盈'?'vu':'vd'}">四季 ${o.ek}</span>`;
     else if(o.ey!=null)e=`<span class="sub ${sgc(o.ey)}">四季 ${o.ey>300?'>+300%':pct(o.ey)}</span>`;else e='<span class="sub">EPS —</span>';
     if(o.peg!=null)e+=`<span class="sub ${pegc(o.peg)}">PEG ${fmt(o.peg,o.peg<10?2:1)}</span>`;else if(o.ey>300)e+='<span class="sub">低基期</span>';
-    return `<tr data-id="${id}"><td>${k==='cap'&&capM(id)!=null?`<span class="rk">#${++RK}</span>`:''}<span class="nmw"><span class="nm">${id}</span><span class="cd" title="${esc(s.name||'')}">${esc(shortOf(s))}</span></span>${cm?`<span class="cap">${capT(cm)}</span>`:''}${salCell(id)}${pills||note?`<div class="role">${pills}${esc(note||'')}</div>`:''}</td>`+
+    return `<tr data-id="${id}"><td class="sk">${k==='cap'&&capM(id)!=null?`<span class="rk">#${++RK}</span>`:''}<span class="nmw"><span class="nm">${id}</span><span class="cd" title="${esc(s.name||'')}">${esc(shortOf(s))}</span></span>${cm?`<span class="cap">${capT(cm).replace('≈','')}</span>`:''}${salCell(id)}${pills||note?`<div class="role">${pills}${esc(note||'')}</div>`:''}</td>`+
       (!tr&&PX[id]?`<td>${fmt(PX[id].close,2)}<span class="sub ${sgc(PX[id].chg)}">${PX[id].chg==null?'—':pct(PX[id].chg,2)}</span></td>`:tr?`<td>${fmt(s.close,2)}<span class="sub ${sgc(s.chg)}">${s.chg==null?'—':pct(s.chg,2)}</span>${o.mtd!=null?`<span class="sub sm">本月 <span class="${sgc(o.mtd)}">${pct(o.mtd,1)}</span></span>`:''}</td>`:'<td>—</td>')+
       `<td>${s.pe?fmt(s.pe,1):'—'}${e}</td><td>${s.pb?fmt(s.pb,2):'—'}</td>`+
       `<td class="${sgc(o.ry)}">${o.ry!=null?pct(o.ry,1):'—'}<span class="sub"${o.lq&&o.lq!==LQ?' style="color:var(--warm)" title="跟其他檔不同季"':''}>${o.lq||''}</span></td></tr>`}).join('')+'</tbody>';
@@ -1027,7 +1029,7 @@ const perTxt=v=>v==null?'—':fxOn()?(v*FX.rate>=1e8?`≈${fmt(v*FX.rate/1e8,1)}
 const sbcTxt=v=>v==null?'—':fxOn()?`≈${fmt(v*FX.rate,0)} 億台幣`:fmt(v,v<10?1:0)+' 億美元';
 const twMed=c=>TWSA&&TWSA.d&&TWSA.d[c]?TWSA.d[c][0]:null;   // 台股 salary.json：[中位數萬, …]
 const salCell=id=>{const m=sal(id,'med');if(m==null)return '';const ch=sal(id,'medChg'),r=sal(id,'ratio');
-  return `<span class="cap sal" title="員工年度總薪酬中位數（${salFY(id)} 年申報）${r?'，CEO '+fmt(r)+' 倍':''}">薪${salK(m)}${ch!=null?` <span class="${sgc(ch)}">${pct(ch,0)}</span>`:''}</span>`};   // 欄窄：CEO 倍數只放 title，排行頁與個股頁才顯示
+  return `<span class="cap sal" title="員工年度總薪酬中位數（${salFY(id)} 年申報）${r?'，CEO '+fmt(r)+' 倍':''}">薪${salK(m).replace('≈','')}${ch!=null?` <span class="${sgc(ch)}">${pct(ch,0)}</span>`:''}</span>`};   // 欄窄：CEO 倍數只放 title，排行頁與個股頁才顯示
 function salRank(id){const t=themeOfStock(id);if(!t)return '';const ids=t.stocks.map(x=>x[0]).filter(i=>sal(i,'med')!=null).sort((a,b)=>sal(b,'med')-sal(a,'med'));const i=ids.indexOf(id);return i>=0&&ids.length>1?`・${t.name.replace(/^\S+\s/,'')}內第 <b>${i+1}</b>／${ids.length}`:''}
 function salLine(id){
   const el=$('sal'),m=sal(id,'med');
