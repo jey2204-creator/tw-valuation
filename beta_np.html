@@ -1272,7 +1272,7 @@ function renderNp(){
     o.series=[{name:'本業',type:'bar',stack:'p',barCategoryGap:'28%',data:S.map(x=>({value:x.op,itemStyle:{opacity:x.fl?.5:1}})),itemStyle:{color:acc}},
       {name:'業外',type:'bar',stack:'p',itemStyle:{color:warm},
         data:S.map((x,i)=>({value:x.nn,itemStyle:{opacity:x.fl?.5:1},label:{show:i>=S.length-8&&x.sh!=null,position:x.nn<0?'bottom':'top',fontSize:9,fontFamily:'IBM Plex Mono',
-          color:x.sh>=40||x.op<=0?up:x.sh>=20||x.sh<=-20?warm:mu,formatter:()=>Math.round(x.sh)+'%'}}))},
+          color:x.sh>=40||x.op<=0?up:x.sh>=20||x.sh<=-20?warm:mu,formatter:()=>x.sh>100?'>100%':x.sh<-100?'<-100%':Math.round(x.sh)+'%'}}))},
       {name:'母公司淨利',type:'line',data:S.map(x=>x.ni),symbol:'circle',symbolSize:4,z:5,lineStyle:{width:1.5,color:fg},itemStyle:{color:fg}}];
     o.grid.top=36;
   }
