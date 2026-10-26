@@ -1,0 +1,3425 @@
+{
+ "at": "2026-10-26T22:09:22+09:00",
+ "years": [
+  2025,
+  2024
+ ],
+ "calls": [
+  [
+   "00126380",
+   "empSttus",
+   2025,
+   1.1,
+   "000"
+  ],
+  [
+   "00126380",
+   "unrstExctvMendngSttus",
+   2025,
+   0.9,
+   "000"
+  ],
+  [
+   "00126380",
+   "indvdlByPay",
+   2025,
+   0.9,
+   "000"
+  ],
+  [
+   "00126380",
+   "empSttus",
+   2024,
+   0.9,
+   "000"
+  ],
+  [
+   "00164779",
+   "empSttus",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "00164779",
+   "unrstExctvMendngSttus",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "00164779",
+   "indvdlByPay",
+   2025,
+   1.2,
+   "000"
+  ],
+  [
+   "00164779",
+   "empSttus",
+   2024,
+   0.7,
+   "000"
+  ],
+  [
+   "00161383",
+   "empSttus",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "00161383",
+   "unrstExctvMendngSttus",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "00161383",
+   "indvdlByPay",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "00161383",
+   "empSttus",
+   2024,
+   0.7,
+   "000"
+  ],
+  [
+   "00572905",
+   "empSttus",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "00572905",
+   "unrstExctvMendngSttus",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "00572905",
+   "indvdlByPay",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "00572905",
+   "empSttus",
+   2024,
+   0.7,
+   "000"
+  ],
+  [
+   "00369657",
+   "empSttus",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "00369657",
+   "unrstExctvMendngSttus",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "00369657",
+   "indvdlByPay",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "00369657",
+   "empSttus",
+   2024,
+   0.7,
+   "000"
+  ],
+  [
+   "00535676",
+   "empSttus",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "00535676",
+   "unrstExctvMendngSttus",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "00535676",
+   "indvdlByPay",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "00535676",
+   "empSttus",
+   2024,
+   0.7,
+   "000"
+  ],
+  [
+   "00246417",
+   "empSttus",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "00246417",
+   "unrstExctvMendngSttus",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "00246417",
+   "indvdlByPay",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "00246417",
+   "empSttus",
+   2024,
+   0.7,
+   "000"
+  ],
+  [
+   "01135941",
+   "empSttus",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "01135941",
+   "unrstExctvMendngSttus",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "01135941",
+   "indvdlByPay",
+   2025,
+   0.9,
+   "000"
+  ],
+  [
+   "01135941",
+   "empSttus",
+   2024,
+   0.7,
+   "000"
+  ],
+  [
+   "00252135",
+   "empSttus",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "00252135",
+   "unrstExctvMendngSttus",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "00252135",
+   "indvdlByPay",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "00252135",
+   "empSttus",
+   2024,
+   0.7,
+   "000"
+  ],
+  [
+   "01288827",
+   "empSttus",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "01288827",
+   "unrstExctvMendngSttus",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "01288827",
+   "indvdlByPay",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "01288827",
+   "empSttus",
+   2024,
+   0.7,
+   "000"
+  ],
+  [
+   "00107613",
+   "empSttus",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "00107613",
+   "unrstExctvMendngSttus",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "00107613",
+   "indvdlByPay",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "00107613",
+   "empSttus",
+   2024,
+   0.7,
+   "000"
+  ],
+  [
+   "00105961",
+   "empSttus",
+   2025,
+   0.9,
+   "000"
+  ],
+  [
+   "00105961",
+   "unrstExctvMendngSttus",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "00105961",
+   "indvdlByPay",
+   2025,
+   0.9,
+   "000"
+  ],
+  [
+   "00105961",
+   "empSttus",
+   2024,
+   0.9,
+   "000"
+  ],
+  [
+   "01478712",
+   "empSttus",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "01478712",
+   "unrstExctvMendngSttus",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "01478712",
+   "indvdlByPay",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "01478712",
+   "empSttus",
+   2024,
+   0.7,
+   "000"
+  ],
+  [
+   "01095722",
+   "empSttus",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "01095722",
+   "unrstExctvMendngSttus",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "01095722",
+   "indvdlByPay",
+   2025,
+   0.9,
+   "000"
+  ],
+  [
+   "01095722",
+   "empSttus",
+   2024,
+   0.7,
+   "000"
+  ],
+  [
+   "00152686",
+   "empSttus",
+   2025,
+   1.5,
+   "000"
+  ],
+  [
+   "00152686",
+   "unrstExctvMendngSttus",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "00152686",
+   "indvdlByPay",
+   2025,
+   0.9,
+   "000"
+  ],
+  [
+   "00152686",
+   "empSttus",
+   2024,
+   0.7,
+   "000"
+  ],
+  [
+   "00126371",
+   "empSttus",
+   2025,
+   1.0,
+   "000"
+  ],
+  [
+   "00126371",
+   "unrstExctvMendngSttus",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "00126371",
+   "indvdlByPay",
+   2025,
+   0.9,
+   "000"
+  ],
+  [
+   "00126371",
+   "empSttus",
+   2024,
+   1.0,
+   "000"
+  ],
+  [
+   "00139889",
+   "empSttus",
+   2025,
+   0.9,
+   "000"
+  ],
+  [
+   "00139889",
+   "unrstExctvMendngSttus",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "00139889",
+   "indvdlByPay",
+   2025,
+   1.1,
+   "000"
+  ],
+  [
+   "00139889",
+   "empSttus",
+   2024,
+   0.7,
+   "000"
+  ],
+  [
+   "01489648",
+   "empSttus",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "01489648",
+   "unrstExctvMendngSttus",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "01489648",
+   "indvdlByPay",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "01489648",
+   "empSttus",
+   2024,
+   0.7,
+   "000"
+  ],
+  [
+   "00118804",
+   "empSttus",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "00118804",
+   "unrstExctvMendngSttus",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "00118804",
+   "indvdlByPay",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "00118804",
+   "empSttus",
+   2024,
+   1.0,
+   "000"
+  ],
+  [
+   "01205851",
+   "empSttus",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "01205851",
+   "unrstExctvMendngSttus",
+   2025,
+   1.0,
+   "000"
+  ],
+  [
+   "01205851",
+   "indvdlByPay",
+   2025,
+   0.9,
+   "000"
+  ],
+  [
+   "01205851",
+   "empSttus",
+   2024,
+   0.7,
+   "000"
+  ],
+  [
+   "00105855",
+   "empSttus",
+   2025,
+   1.1,
+   "000"
+  ],
+  [
+   "00105855",
+   "unrstExctvMendngSttus",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "00105855",
+   "indvdlByPay",
+   2025,
+   0.8,
+   "000"
+  ],
+  [
+   "00105855",
+   "empSttus",
+   2024,
+   0.9,
+   "000"
+  ],
+  [
+   "01316245",
+   "empSttus",
+   2025,
+   1.0,
+   "000"
+  ],
+  [
+   "01316245",
+   "unrstExctvMendngSttus",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "01316245",
+   "indvdlByPay",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "01316245",
+   "empSttus",
+   2024,
+   1.0,
+   "000"
+  ],
+  [
+   "00683469",
+   "empSttus",
+   2025,
+   0.9,
+   "000"
+  ],
+  [
+   "00683469",
+   "unrstExctvMendngSttus",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "00683469",
+   "indvdlByPay",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "00683469",
+   "empSttus",
+   2024,
+   0.9,
+   "000"
+  ],
+  [
+   "01596425",
+   "empSttus",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "01596425",
+   "unrstExctvMendngSttus",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "01596425",
+   "indvdlByPay",
+   2025,
+   0.9,
+   "000"
+  ],
+  [
+   "01596425",
+   "empSttus",
+   2024,
+   0.7,
+   "000"
+  ],
+  [
+   "01515323",
+   "empSttus",
+   2025,
+   0.9,
+   "000"
+  ],
+  [
+   "01515323",
+   "unrstExctvMendngSttus",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "01515323",
+   "indvdlByPay",
+   2025,
+   0.9,
+   "000"
+  ],
+  [
+   "01515323",
+   "empSttus",
+   2024,
+   0.7,
+   "000"
+  ],
+  [
+   "00877059",
+   "empSttus",
+   2025,
+   0.9,
+   "000"
+  ],
+  [
+   "00877059",
+   "unrstExctvMendngSttus",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "00877059",
+   "indvdlByPay",
+   2025,
+   0.9,
+   "000"
+  ],
+  [
+   "00877059",
+   "empSttus",
+   2024,
+   0.9,
+   "000"
+  ],
+  [
+   "00164742",
+   "empSttus",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "00164742",
+   "unrstExctvMendngSttus",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "00164742",
+   "indvdlByPay",
+   2025,
+   0.9,
+   "000"
+  ],
+  [
+   "00164742",
+   "empSttus",
+   2024,
+   0.7,
+   "000"
+  ],
+  [
+   "00688996",
+   "empSttus",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "00688996",
+   "unrstExctvMendngSttus",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "00688996",
+   "indvdlByPay",
+   2025,
+   0.9,
+   "000"
+  ],
+  [
+   "00688996",
+   "empSttus",
+   2024,
+   1.0,
+   "000"
+  ],
+  [
+   "00126256",
+   "empSttus",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "00126256",
+   "unrstExctvMendngSttus",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "00126256",
+   "indvdlByPay",
+   2025,
+   0.9,
+   "000"
+  ],
+  [
+   "00126256",
+   "empSttus",
+   2024,
+   0.7,
+   "000"
+  ],
+  [
+   "00149655",
+   "empSttus",
+   2025,
+   1.0,
+   "000"
+  ],
+  [
+   "00149655",
+   "unrstExctvMendngSttus",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "00149655",
+   "indvdlByPay",
+   2025,
+   0.9,
+   "000"
+  ],
+  [
+   "00149655",
+   "empSttus",
+   2024,
+   1.0,
+   "000"
+  ],
+  [
+   "00413046",
+   "empSttus",
+   2025,
+   0.9,
+   "000"
+  ],
+  [
+   "00413046",
+   "unrstExctvMendngSttus",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "00413046",
+   "indvdlByPay",
+   2025,
+   0.9,
+   "000"
+  ],
+  [
+   "00413046",
+   "empSttus",
+   2024,
+   0.9,
+   "000"
+  ],
+  [
+   "00106641",
+   "empSttus",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "00106641",
+   "unrstExctvMendngSttus",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "00106641",
+   "indvdlByPay",
+   2025,
+   0.9,
+   "000"
+  ],
+  [
+   "00106641",
+   "empSttus",
+   2024,
+   0.7,
+   "000"
+  ],
+  [
+   "00382199",
+   "empSttus",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "00382199",
+   "unrstExctvMendngSttus",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "00382199",
+   "indvdlByPay",
+   2025,
+   0.9,
+   "000"
+  ],
+  [
+   "00382199",
+   "empSttus",
+   2024,
+   0.7,
+   "000"
+  ],
+  [
+   "00126566",
+   "empSttus",
+   2025,
+   0.9,
+   "000"
+  ],
+  [
+   "00126566",
+   "unrstExctvMendngSttus",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "00126566",
+   "indvdlByPay",
+   2025,
+   0.9,
+   "000"
+  ],
+  [
+   "00126566",
+   "empSttus",
+   2024,
+   0.9,
+   "000"
+  ],
+  [
+   "00126362",
+   "empSttus",
+   2025,
+   0.9,
+   "000"
+  ],
+  [
+   "00126362",
+   "unrstExctvMendngSttus",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "00126362",
+   "indvdlByPay",
+   2025,
+   0.9,
+   "000"
+  ],
+  [
+   "00126362",
+   "empSttus",
+   2024,
+   0.9,
+   "000"
+  ],
+  [
+   "00159616",
+   "empSttus",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "00159616",
+   "unrstExctvMendngSttus",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "00159616",
+   "indvdlByPay",
+   2025,
+   1.4,
+   "000"
+  ],
+  [
+   "00159616",
+   "empSttus",
+   2024,
+   0.7,
+   "000"
+  ],
+  [
+   "00181712",
+   "empSttus",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "00181712",
+   "unrstExctvMendngSttus",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "00181712",
+   "indvdlByPay",
+   2025,
+   0.9,
+   "000"
+  ],
+  [
+   "00181712",
+   "empSttus",
+   2024,
+   0.7,
+   "000"
+  ],
+  [
+   "01390344",
+   "empSttus",
+   2025,
+   0.9,
+   "000"
+  ],
+  [
+   "01390344",
+   "unrstExctvMendngSttus",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "01390344",
+   "indvdlByPay",
+   2025,
+   0.9,
+   "000"
+  ],
+  [
+   "01390344",
+   "empSttus",
+   2024,
+   0.9,
+   "000"
+  ],
+  [
+   "00547583",
+   "empSttus",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "00547583",
+   "unrstExctvMendngSttus",
+   2025,
+   0.7,
+   "000"
+  ],
+  [
+   "00547583",
+   "indvdlByPay",
+   2025,
+   0.9,
+   "000"
+  ],
+  [
+   "00547583",
+   "empSttus",
+   2024,
+   0.7,
+   "000"
+  ]
+ ],
+ "d": {
+  "005930": {
+   "sec": 4.6,
+   "years": [
+    2025,
+    2024
+   ],
+   "keys": [
+    "avrg_cnwk_sdytrn",
+    "cnttk_abacpt_labrr_co",
+    "cnttk_co",
+    "corp_cls",
+    "corp_code",
+    "corp_name",
+    "fo_bbm",
+    "fyer_salary_totamt",
+    "jan_salary_am",
+    "rcept_no",
+    "reform_bfe_emp_co_cnttk",
+    "reform_bfe_emp_co_etc",
+    "reform_bfe_emp_co_rgllbr",
+    "rgllbr_abacpt_labrr_co",
+    "rgllbr_co",
+    "rm",
+    "sexdstn",
+    "sm",
+    "stlm_dt"
+   ],
+   "rows": [
+    {
+     "fo_bbm": "DX",
+     "sexdstn": "남",
+     "sm": "38,119",
+     "jan_salary_am": "-",
+     "fyer_salary_totamt": "-",
+     "avrg_cnwk_sdytrn": "      17.4"
+    },
+    {
+     "fo_bbm": "DX",
+     "sexdstn": "여",
+     "sm": "12,698",
+     "jan_salary_am": "-",
+     "fyer_salary_totamt": "-",
+     "avrg_cnwk_sdytrn": "      14.4"
+    },
+    {
+     "fo_bbm": "DS",
+     "sexdstn": "남",
+     "sm": "56,154",
+     "jan_salary_am": "-",
+     "fyer_salary_totamt": "-",
+     "avrg_cnwk_sdytrn": "      11.7"
+    },
+    {
+     "fo_bbm": "DS",
+     "sexdstn": "여",
+     "sm": "21,910",
+     "jan_salary_am": "-",
+     "fyer_salary_totamt": "-",
+     "avrg_cnwk_sdytrn": "      12.1"
+    },
+    {
+     "fo_bbm": "성별합계",
+     "sexdstn": "남",
+     "sm": "94,273",
+     "jan_salary_am": "167,000,000",
+     "fyer_salary_totamt": "15,562,454,000,000",
+     "avrg_cnwk_sdytrn": "      14.0"
+    },
+    {
+     "fo_bbm": "성별합계",
+     "sexdstn": "여",
+     "sm": "34,608",
+     "jan_salary_am": "130,000,000",
+     "fyer_salary_totamt": "4,237,308,000,000",
+     "avrg_cnwk_sdytrn": "      13.0"
+    }
+   ]
+  },
+  "000660": {
+   "sec": 4.1,
+   "years": [
+    2025,
+    2024
+   ],
+   "keys": [
+    "avrg_cnwk_sdytrn",
+    "cnttk_abacpt_labrr_co",
+    "cnttk_co",
+    "corp_cls",
+    "corp_code",
+    "corp_name",
+    "fo_bbm",
+    "fyer_salary_totamt",
+    "jan_salary_am",
+    "rcept_no",
+    "reform_bfe_emp_co_cnttk",
+    "reform_bfe_emp_co_etc",
+    "reform_bfe_emp_co_rgllbr",
+    "rgllbr_abacpt_labrr_co",
+    "rgllbr_co",
+    "rm",
+    "sexdstn",
+    "sm",
+    "stlm_dt"
+   ],
+   "rows": [
+    {
+     "fo_bbm": "반도체",
+     "sexdstn": "남",
+     "sm": "23,037",
+     "jan_salary_am": "198,000,000",
+     "fyer_salary_totamt": "4,376,624,000,000",
+     "avrg_cnwk_sdytrn": "12.3"
+    },
+    {
+     "fo_bbm": "반도체",
+     "sexdstn": "여",
+     "sm": "11,512",
+     "jan_salary_am": "159,000,000",
+     "fyer_salary_totamt": "1,771,407,000,000",
+     "avrg_cnwk_sdytrn": "15.7"
+    }
+   ]
+  },
+  "042700": {
+   "sec": 3.6,
+   "years": [
+    2025,
+    2024
+   ],
+   "keys": [
+    "avrg_cnwk_sdytrn",
+    "cnttk_abacpt_labrr_co",
+    "cnttk_co",
+    "corp_cls",
+    "corp_code",
+    "corp_name",
+    "fo_bbm",
+    "fyer_salary_totamt",
+    "jan_salary_am",
+    "rcept_no",
+    "reform_bfe_emp_co_cnttk",
+    "reform_bfe_emp_co_etc",
+    "reform_bfe_emp_co_rgllbr",
+    "rgllbr_abacpt_labrr_co",
+    "rgllbr_co",
+    "rm",
+    "sexdstn",
+    "sm",
+    "stlm_dt"
+   ],
+   "rows": [
+    {
+     "fo_bbm": "한미반도체",
+     "sexdstn": "남",
+     "sm": "689",
+     "jan_salary_am": "67,468,000",
+     "fyer_salary_totamt": "48,847,151,000",
+     "avrg_cnwk_sdytrn": "9년 12개월"
+    },
+    {
+     "fo_bbm": "한미반도체",
+     "sexdstn": "여",
+     "sm": "48",
+     "jan_salary_am": "34,311,000",
+     "fyer_salary_totamt": "2,161,567,000",
+     "avrg_cnwk_sdytrn": "5년 10개월"
+    }
+   ]
+  },
+  "095340": {
+   "sec": 3.6,
+   "years": [
+    2025,
+    2024
+   ],
+   "keys": [
+    "avrg_cnwk_sdytrn",
+    "cnttk_abacpt_labrr_co",
+    "cnttk_co",
+    "corp_cls",
+    "corp_code",
+    "corp_name",
+    "fo_bbm",
+    "fyer_salary_totamt",
+    "jan_salary_am",
+    "rcept_no",
+    "reform_bfe_emp_co_cnttk",
+    "reform_bfe_emp_co_etc",
+    "reform_bfe_emp_co_rgllbr",
+    "rgllbr_abacpt_labrr_co",
+    "rgllbr_co",
+    "rm",
+    "sexdstn",
+    "sm",
+    "stlm_dt"
+   ],
+   "rows": [
+    {
+     "fo_bbm": "제조",
+     "sexdstn": "남",
+     "sm": "271",
+     "jan_salary_am": "69,000,000",
+     "fyer_salary_totamt": "18,653,000,000",
+     "avrg_cnwk_sdytrn": "8.8"
+    },
+    {
+     "fo_bbm": "제조",
+     "sexdstn": "여",
+     "sm": "136",
+     "jan_salary_am": "52,000,000",
+     "fyer_salary_totamt": "7,021,000,000",
+     "avrg_cnwk_sdytrn": "9.5"
+    }
+   ]
+  },
+  "058470": {
+   "sec": 3.6,
+   "years": [
+    2025,
+    2024
+   ],
+   "keys": [
+    "avrg_cnwk_sdytrn",
+    "cnttk_abacpt_labrr_co",
+    "cnttk_co",
+    "corp_cls",
+    "corp_code",
+    "corp_name",
+    "fo_bbm",
+    "fyer_salary_totamt",
+    "jan_salary_am",
+    "rcept_no",
+    "reform_bfe_emp_co_cnttk",
+    "reform_bfe_emp_co_etc",
+    "reform_bfe_emp_co_rgllbr",
+    "rgllbr_abacpt_labrr_co",
+    "rgllbr_co",
+    "rm",
+    "sexdstn",
+    "sm",
+    "stlm_dt"
+   ],
+   "rows": [
+    {
+     "fo_bbm": "관리/제조",
+     "sexdstn": "남",
+     "sm": "301",
+     "jan_salary_am": "147,425,969",
+     "fyer_salary_totamt": "43,730,535,927",
+     "avrg_cnwk_sdytrn": "9년 8개월"
+    },
+    {
+     "fo_bbm": "관리/제조",
+     "sexdstn": "여",
+     "sm": "376",
+     "jan_salary_am": "92,668,777",
+     "fyer_salary_totamt": "34,531,864,150",
+     "avrg_cnwk_sdytrn": "9년 1개월"
+    }
+   ]
+  },
+  "089030": {
+   "sec": 3.6,
+   "years": [
+    2025,
+    2024
+   ],
+   "keys": [
+    "avrg_cnwk_sdytrn",
+    "cnttk_abacpt_labrr_co",
+    "cnttk_co",
+    "corp_cls",
+    "corp_code",
+    "corp_name",
+    "fo_bbm",
+    "fyer_salary_totamt",
+    "jan_salary_am",
+    "rcept_no",
+    "reform_bfe_emp_co_cnttk",
+    "reform_bfe_emp_co_etc",
+    "reform_bfe_emp_co_rgllbr",
+    "rgllbr_abacpt_labrr_co",
+    "rgllbr_co",
+    "rm",
+    "sexdstn",
+    "sm",
+    "stlm_dt"
+   ],
+   "rows": [
+    {
+     "fo_bbm": "반도체검사장비",
+     "sexdstn": "남",
+     "sm": "496",
+     "jan_salary_am": "60,000,000",
+     "fyer_salary_totamt": "29,959,000,000",
+     "avrg_cnwk_sdytrn": "7년 2개월"
+    },
+    {
+     "fo_bbm": "반도체검사장비",
+     "sexdstn": "여",
+     "sm": "93",
+     "jan_salary_am": "48,000,000",
+     "fyer_salary_totamt": "4,455,000,000",
+     "avrg_cnwk_sdytrn": "5년 4개월"
+    }
+   ]
+  },
+  "039030": {
+   "sec": 3.6,
+   "years": [
+    2025,
+    2024
+   ],
+   "keys": [
+    "avrg_cnwk_sdytrn",
+    "cnttk_abacpt_labrr_co",
+    "cnttk_co",
+    "corp_cls",
+    "corp_code",
+    "corp_name",
+    "fo_bbm",
+    "fyer_salary_totamt",
+    "jan_salary_am",
+    "rcept_no",
+    "reform_bfe_emp_co_cnttk",
+    "reform_bfe_emp_co_etc",
+    "reform_bfe_emp_co_rgllbr",
+    "rgllbr_abacpt_labrr_co",
+    "rgllbr_co",
+    "rm",
+    "sexdstn",
+    "sm",
+    "stlm_dt"
+   ],
+   "rows": [
+    {
+     "fo_bbm": "전사",
+     "sexdstn": "남",
+     "sm": "552",
+     "jan_salary_am": "74,508,000",
+     "fyer_salary_totamt": "41,108,007,000",
+     "avrg_cnwk_sdytrn": "9.4"
+    },
+    {
+     "fo_bbm": "전사",
+     "sexdstn": "여",
+     "sm": "84",
+     "jan_salary_am": "53,716,000",
+     "fyer_salary_totamt": "4,523,217,000",
+     "avrg_cnwk_sdytrn": "7.3"
+    }
+   ]
+  },
+  "240810": {
+   "sec": 3.7,
+   "years": [
+    2025,
+    2024
+   ],
+   "keys": [
+    "avrg_cnwk_sdytrn",
+    "cnttk_abacpt_labrr_co",
+    "cnttk_co",
+    "corp_cls",
+    "corp_code",
+    "corp_name",
+    "fo_bbm",
+    "fyer_salary_totamt",
+    "jan_salary_am",
+    "rcept_no",
+    "reform_bfe_emp_co_cnttk",
+    "reform_bfe_emp_co_etc",
+    "reform_bfe_emp_co_rgllbr",
+    "rgllbr_abacpt_labrr_co",
+    "rgllbr_co",
+    "rm",
+    "sexdstn",
+    "sm",
+    "stlm_dt"
+   ],
+   "rows": [
+    {
+     "fo_bbm": "전사 사업부",
+     "sexdstn": "남",
+     "sm": "1,319",
+     "jan_salary_am": "88,827,000",
+     "fyer_salary_totamt": "117,148,288,000",
+     "avrg_cnwk_sdytrn": "7.8"
+    },
+    {
+     "fo_bbm": "전사 사업부",
+     "sexdstn": "여",
+     "sm": "190",
+     "jan_salary_am": "63,324,000",
+     "fyer_salary_totamt": "12,369,329,000",
+     "avrg_cnwk_sdytrn": "6.1"
+    }
+   ]
+  },
+  "036930": {
+   "sec": 3.7,
+   "years": [
+    2025,
+    2024
+   ],
+   "keys": [
+    "avrg_cnwk_sdytrn",
+    "cnttk_abacpt_labrr_co",
+    "cnttk_co",
+    "corp_cls",
+    "corp_code",
+    "corp_name",
+    "fo_bbm",
+    "fyer_salary_totamt",
+    "jan_salary_am",
+    "rcept_no",
+    "reform_bfe_emp_co_cnttk",
+    "reform_bfe_emp_co_etc",
+    "reform_bfe_emp_co_rgllbr",
+    "rgllbr_abacpt_labrr_co",
+    "rgllbr_co",
+    "rm",
+    "sexdstn",
+    "sm",
+    "stlm_dt"
+   ],
+   "rows": [
+    {
+     "fo_bbm": "전사업부",
+     "sexdstn": "남",
+     "sm": "404",
+     "jan_salary_am": "97,000,000",
+     "fyer_salary_totamt": "39,340,000,000",
+     "avrg_cnwk_sdytrn": "8.6"
+    },
+    {
+     "fo_bbm": "전사업부",
+     "sexdstn": "여",
+     "sm": "81",
+     "jan_salary_am": "71,000,000",
+     "fyer_salary_totamt": "5,728,000,000",
+     "avrg_cnwk_sdytrn": "5.4"
+    }
+   ]
+  },
+  "403870": {
+   "sec": 3.6,
+   "years": [
+    2025,
+    2024
+   ],
+   "keys": [
+    "avrg_cnwk_sdytrn",
+    "cnttk_abacpt_labrr_co",
+    "cnttk_co",
+    "corp_cls",
+    "corp_code",
+    "corp_name",
+    "fo_bbm",
+    "fyer_salary_totamt",
+    "jan_salary_am",
+    "rcept_no",
+    "reform_bfe_emp_co_cnttk",
+    "reform_bfe_emp_co_etc",
+    "reform_bfe_emp_co_rgllbr",
+    "rgllbr_abacpt_labrr_co",
+    "rgllbr_co",
+    "rm",
+    "sexdstn",
+    "sm",
+    "stlm_dt"
+   ],
+   "rows": [
+    {
+     "fo_bbm": "전사사업부",
+     "sexdstn": "남",
+     "sm": "108",
+     "jan_salary_am": "146,000,000",
+     "fyer_salary_totamt": "15,414,000,000",
+     "avrg_cnwk_sdytrn": "3.4"
+    },
+    {
+     "fo_bbm": "전사사업부",
+     "sexdstn": "여",
+     "sm": "19",
+     "jan_salary_am": "124,000,000",
+     "fyer_salary_totamt": "2,132,000,000",
+     "avrg_cnwk_sdytrn": "2.1"
+    }
+   ]
+  },
+  "007660": {
+   "sec": 3.6,
+   "years": [
+    2025,
+    2024
+   ],
+   "keys": [
+    "avrg_cnwk_sdytrn",
+    "cnttk_abacpt_labrr_co",
+    "cnttk_co",
+    "corp_cls",
+    "corp_code",
+    "corp_name",
+    "fo_bbm",
+    "fyer_salary_totamt",
+    "jan_salary_am",
+    "rcept_no",
+    "reform_bfe_emp_co_cnttk",
+    "reform_bfe_emp_co_etc",
+    "reform_bfe_emp_co_rgllbr",
+    "rgllbr_abacpt_labrr_co",
+    "rgllbr_co",
+    "rm",
+    "sexdstn",
+    "sm",
+    "stlm_dt"
+   ],
+   "rows": [
+    {
+     "fo_bbm": "PCB사업부",
+     "sexdstn": "남",
+     "sm": "1,274",
+     "jan_salary_am": "99,224,000",
+     "fyer_salary_totamt": "126,411,342,000",
+     "avrg_cnwk_sdytrn": "12년8개월"
+    },
+    {
+     "fo_bbm": "PCB사업부",
+     "sexdstn": "여",
+     "sm": "94",
+     "jan_salary_am": "88,498,000",
+     "fyer_salary_totamt": "8,318,852,000",
+     "avrg_cnwk_sdytrn": "9년5개월"
+    }
+   ]
+  },
+  "011070": {
+   "sec": 4.1,
+   "years": [
+    2025,
+    2024
+   ],
+   "keys": [
+    "avrg_cnwk_sdytrn",
+    "cnttk_abacpt_labrr_co",
+    "cnttk_co",
+    "corp_cls",
+    "corp_code",
+    "corp_name",
+    "fo_bbm",
+    "fyer_salary_totamt",
+    "jan_salary_am",
+    "rcept_no",
+    "reform_bfe_emp_co_cnttk",
+    "reform_bfe_emp_co_etc",
+    "reform_bfe_emp_co_rgllbr",
+    "rgllbr_abacpt_labrr_co",
+    "rgllbr_co",
+    "rm",
+    "sexdstn",
+    "sm",
+    "stlm_dt"
+   ],
+   "rows": [
+    {
+     "fo_bbm": "광학솔루션사업부",
+     "sexdstn": "남",
+     "sm": "4,879",
+     "jan_salary_am": "86,000,000",
+     "fyer_salary_totamt": "438,787,000,000",
+     "avrg_cnwk_sdytrn": "7.4"
+    },
+    {
+     "fo_bbm": "광학솔루션사업부",
+     "sexdstn": "여",
+     "sm": "1,134",
+     "jan_salary_am": "66,000,000",
+     "fyer_salary_totamt": "93,129,000,000",
+     "avrg_cnwk_sdytrn": "6.2"
+    },
+    {
+     "fo_bbm": "패키지솔루션사업부",
+     "sexdstn": "남",
+     "sm": "2,197",
+     "jan_salary_am": "100,000,000",
+     "fyer_salary_totamt": "215,415,000,000",
+     "avrg_cnwk_sdytrn": "11.6"
+    },
+    {
+     "fo_bbm": "패키지솔루션사업부",
+     "sexdstn": "여",
+     "sm": "160",
+     "jan_salary_am": "83,000,000",
+     "fyer_salary_totamt": "13,294,000,000",
+     "avrg_cnwk_sdytrn": "9.4"
+    },
+    {
+     "fo_bbm": "모빌리티솔루션사업부",
+     "sexdstn": "남",
+     "sm": "1,139",
+     "jan_salary_am": "105,000,000",
+     "fyer_salary_totamt": "119,414,000,000",
+     "avrg_cnwk_sdytrn": "12.2"
+    },
+    {
+     "fo_bbm": "모빌리티솔루션사업부",
+     "sexdstn": "여",
+     "sm": "227",
+     "jan_salary_am": "85,000,000",
+     "fyer_salary_totamt": "19,044,000,000",
+     "avrg_cnwk_sdytrn": "14.7"
+    },
+    {
+     "fo_bbm": "본사 등",
+     "sexdstn": "남",
+     "sm": "1,923",
+     "jan_salary_am": "113,000,000",
+     "fyer_salary_totamt": "235,838,000,000",
+     "avrg_cnwk_sdytrn": "11.1"
+    },
+    {
+     "fo_bbm": "본사 등",
+     "sexdstn": "여",
+     "sm": "552",
+     "jan_salary_am": "86,000,000",
+     "fyer_salary_totamt": "49,352,000,000",
+     "avrg_cnwk_sdytrn": "11.4"
+    }
+   ]
+  },
+  "353200": {
+   "sec": 3.6,
+   "years": [
+    2025,
+    2024
+   ],
+   "keys": [
+    "avrg_cnwk_sdytrn",
+    "cnttk_abacpt_labrr_co",
+    "cnttk_co",
+    "corp_cls",
+    "corp_code",
+    "corp_name",
+    "fo_bbm",
+    "fyer_salary_totamt",
+    "jan_salary_am",
+    "rcept_no",
+    "reform_bfe_emp_co_cnttk",
+    "reform_bfe_emp_co_etc",
+    "reform_bfe_emp_co_rgllbr",
+    "rgllbr_abacpt_labrr_co",
+    "rgllbr_co",
+    "rm",
+    "sexdstn",
+    "sm",
+    "stlm_dt"
+   ],
+   "rows": [
+    {
+     "fo_bbm": "PCB",
+     "sexdstn": "남",
+     "sm": "2,271",
+     "jan_salary_am": "84,000,000",
+     "fyer_salary_totamt": "179,410,000,000",
+     "avrg_cnwk_sdytrn": "10.5"
+    },
+    {
+     "fo_bbm": "PCB",
+     "sexdstn": "여",
+     "sm": "362",
+     "jan_salary_am": "66,000,000",
+     "fyer_salary_totamt": "21,861,000,000",
+     "avrg_cnwk_sdytrn": "5.7"
+    }
+   ]
+  },
+  "222800": {
+   "sec": 3.8,
+   "years": [
+    2025,
+    2024
+   ],
+   "keys": [
+    "avrg_cnwk_sdytrn",
+    "cnttk_abacpt_labrr_co",
+    "cnttk_co",
+    "corp_cls",
+    "corp_code",
+    "corp_name",
+    "fo_bbm",
+    "fyer_salary_totamt",
+    "jan_salary_am",
+    "rcept_no",
+    "reform_bfe_emp_co_cnttk",
+    "reform_bfe_emp_co_etc",
+    "reform_bfe_emp_co_rgllbr",
+    "rgllbr_abacpt_labrr_co",
+    "rgllbr_co",
+    "rm",
+    "sexdstn",
+    "sm",
+    "stlm_dt"
+   ],
+   "rows": [
+    {
+     "fo_bbm": "PCB 사업",
+     "sexdstn": "남",
+     "sm": "2,388",
+     "jan_salary_am": "62,030,000",
+     "fyer_salary_totamt": "148,128,136,000",
+     "avrg_cnwk_sdytrn": "9.50"
+    },
+    {
+     "fo_bbm": "PCB 사업",
+     "sexdstn": "여",
+     "sm": "514",
+     "jan_salary_am": "50,471,000",
+     "fyer_salary_totamt": "25,942,344,000",
+     "avrg_cnwk_sdytrn": "9.20"
+    }
+   ]
+  },
+  "007810": {
+   "sec": 4.5,
+   "years": [
+    2025,
+    2024
+   ],
+   "keys": [
+    "avrg_cnwk_sdytrn",
+    "cnttk_abacpt_labrr_co",
+    "cnttk_co",
+    "corp_cls",
+    "corp_code",
+    "corp_name",
+    "fo_bbm",
+    "fyer_salary_totamt",
+    "jan_salary_am",
+    "rcept_no",
+    "reform_bfe_emp_co_cnttk",
+    "reform_bfe_emp_co_etc",
+    "reform_bfe_emp_co_rgllbr",
+    "rgllbr_abacpt_labrr_co",
+    "rgllbr_co",
+    "rm",
+    "sexdstn",
+    "sm",
+    "stlm_dt"
+   ],
+   "rows": [
+    {
+     "fo_bbm": "PCB",
+     "sexdstn": "남",
+     "sm": "1,155",
+     "jan_salary_am": "58,000,000",
+     "fyer_salary_totamt": "63,518,000,000",
+     "avrg_cnwk_sdytrn": "4.2"
+    },
+    {
+     "fo_bbm": "PCB",
+     "sexdstn": "여",
+     "sm": "151",
+     "jan_salary_am": "48,000,000",
+     "fyer_salary_totamt": "6,753,000,000",
+     "avrg_cnwk_sdytrn": "3.8"
+    }
+   ]
+  },
+  "009150": {
+   "sec": 4.4,
+   "years": [
+    2025,
+    2024
+   ],
+   "keys": [
+    "avrg_cnwk_sdytrn",
+    "cnttk_abacpt_labrr_co",
+    "cnttk_co",
+    "corp_cls",
+    "corp_code",
+    "corp_name",
+    "fo_bbm",
+    "fyer_salary_totamt",
+    "jan_salary_am",
+    "rcept_no",
+    "reform_bfe_emp_co_cnttk",
+    "reform_bfe_emp_co_etc",
+    "reform_bfe_emp_co_rgllbr",
+    "rgllbr_abacpt_labrr_co",
+    "rgllbr_co",
+    "rm",
+    "sexdstn",
+    "sm",
+    "stlm_dt"
+   ],
+   "rows": [
+    {
+     "fo_bbm": "컴포넌트",
+     "sexdstn": "남",
+     "sm": "3,013",
+     "jan_salary_am": "-",
+     "fyer_salary_totamt": "-",
+     "avrg_cnwk_sdytrn": "15"
+    },
+    {
+     "fo_bbm": "성별 총계",
+     "sexdstn": "여",
+     "sm": "2,895",
+     "jan_salary_am": "92,000,000",
+     "fyer_salary_totamt": "267,085,000,000",
+     "avrg_cnwk_sdytrn": "15"
+    },
+    {
+     "fo_bbm": "컴포넌트",
+     "sexdstn": "여",
+     "sm": "977",
+     "jan_salary_am": "-",
+     "fyer_salary_totamt": "-",
+     "avrg_cnwk_sdytrn": "14"
+    },
+    {
+     "fo_bbm": "패키지솔루션",
+     "sexdstn": "남",
+     "sm": "2,589",
+     "jan_salary_am": "-",
+     "fyer_salary_totamt": "-",
+     "avrg_cnwk_sdytrn": "14"
+    },
+    {
+     "fo_bbm": "패키지솔루션",
+     "sexdstn": "여",
+     "sm": "603",
+     "jan_salary_am": "-",
+     "fyer_salary_totamt": "-",
+     "avrg_cnwk_sdytrn": "13"
+    },
+    {
+     "fo_bbm": "광학솔루션",
+     "sexdstn": "남",
+     "sm": "764",
+     "jan_salary_am": "-",
+     "fyer_salary_totamt": "-",
+     "avrg_cnwk_sdytrn": "19"
+    },
+    {
+     "fo_bbm": "광학솔루션",
+     "sexdstn": "여",
+     "sm": "151",
+     "jan_salary_am": "-",
+     "fyer_salary_totamt": "-",
+     "avrg_cnwk_sdytrn": "16"
+    },
+    {
+     "fo_bbm": "기타",
+     "sexdstn": "남",
+     "sm": "2,912",
+     "jan_salary_am": "-",
+     "fyer_salary_totamt": "-",
+     "avrg_cnwk_sdytrn": "18"
+    },
+    {
+     "fo_bbm": "기타",
+     "sexdstn": "여",
+     "sm": "1,164",
+     "jan_salary_am": "-",
+     "fyer_salary_totamt": "-",
+     "avrg_cnwk_sdytrn": "15"
+    },
+    {
+     "fo_bbm": "성별 총계",
+     "sexdstn": "남",
+     "sm": "9,278",
+     "jan_salary_am": "115,000,000",
+     "fyer_salary_totamt": "1,073,521,000,000",
+     "avrg_cnwk_sdytrn": "16"
+    }
+   ]
+  },
+  "011790": {
+   "sec": 4.2,
+   "years": [
+    2025,
+    2024
+   ],
+   "keys": [
+    "avrg_cnwk_sdytrn",
+    "cnttk_abacpt_labrr_co",
+    "cnttk_co",
+    "corp_cls",
+    "corp_code",
+    "corp_name",
+    "fo_bbm",
+    "fyer_salary_totamt",
+    "jan_salary_am",
+    "rcept_no",
+    "reform_bfe_emp_co_cnttk",
+    "reform_bfe_emp_co_etc",
+    "reform_bfe_emp_co_rgllbr",
+    "rgllbr_abacpt_labrr_co",
+    "rgllbr_co",
+    "rm",
+    "sexdstn",
+    "sm",
+    "stlm_dt"
+   ],
+   "rows": [
+    {
+     "fo_bbm": "SKC",
+     "sexdstn": "남",
+     "sm": "120",
+     "jan_salary_am": "117,000,000",
+     "fyer_salary_totamt": "14,039,000,000",
+     "avrg_cnwk_sdytrn": "9.6"
+    },
+    {
+     "fo_bbm": "SKC",
+     "sexdstn": "여",
+     "sm": "52",
+     "jan_salary_am": "82,000,000",
+     "fyer_salary_totamt": "4,271,000,000",
+     "avrg_cnwk_sdytrn": "8.5"
+    }
+   ]
+  },
+  "357780": {
+   "sec": 3.6,
+   "years": [
+    2025,
+    2024
+   ],
+   "keys": [
+    "avrg_cnwk_sdytrn",
+    "cnttk_abacpt_labrr_co",
+    "cnttk_co",
+    "corp_cls",
+    "corp_code",
+    "corp_name",
+    "fo_bbm",
+    "fyer_salary_totamt",
+    "jan_salary_am",
+    "rcept_no",
+    "reform_bfe_emp_co_cnttk",
+    "reform_bfe_emp_co_etc",
+    "reform_bfe_emp_co_rgllbr",
+    "rgllbr_abacpt_labrr_co",
+    "rgllbr_co",
+    "rm",
+    "sexdstn",
+    "sm",
+    "stlm_dt"
+   ],
+   "rows": [
+    {
+     "fo_bbm": "솔브레인㈜",
+     "sexdstn": "남",
+     "sm": "1,029",
+     "jan_salary_am": "95,000,000",
+     "fyer_salary_totamt": "97,833,000,000",
+     "avrg_cnwk_sdytrn": "10.0 "
+    },
+    {
+     "fo_bbm": "솔브레인㈜",
+     "sexdstn": "여",
+     "sm": "104",
+     "jan_salary_am": "78,000,000",
+     "fyer_salary_totamt": "8,061,000,000",
+     "avrg_cnwk_sdytrn": "6.9 "
+    }
+   ]
+  },
+  "005290": {
+   "sec": 3.9,
+   "years": [
+    2025,
+    2024
+   ],
+   "keys": [
+    "avrg_cnwk_sdytrn",
+    "cnttk_abacpt_labrr_co",
+    "cnttk_co",
+    "corp_cls",
+    "corp_code",
+    "corp_name",
+    "fo_bbm",
+    "fyer_salary_totamt",
+    "jan_salary_am",
+    "rcept_no",
+    "reform_bfe_emp_co_cnttk",
+    "reform_bfe_emp_co_etc",
+    "reform_bfe_emp_co_rgllbr",
+    "rgllbr_abacpt_labrr_co",
+    "rgllbr_co",
+    "rm",
+    "sexdstn",
+    "sm",
+    "stlm_dt"
+   ],
+   "rows": [
+    {
+     "fo_bbm": "전체",
+     "sexdstn": "남",
+     "sm": "1,257",
+     "jan_salary_am": "84,604,000",
+     "fyer_salary_totamt": "106,346,673,000",
+     "avrg_cnwk_sdytrn": "9.1 "
+    },
+    {
+     "fo_bbm": "전체",
+     "sexdstn": "남",
+     "sm": "212",
+     "jan_salary_am": "70,975,000",
+     "fyer_salary_totamt": "15,046,723,000",
+     "avrg_cnwk_sdytrn": "7.1 "
+    }
+   ]
+  },
+  "267260": {
+   "sec": 4.1,
+   "years": [
+    2025,
+    2024
+   ],
+   "keys": [
+    "avrg_cnwk_sdytrn",
+    "cnttk_abacpt_labrr_co",
+    "cnttk_co",
+    "corp_cls",
+    "corp_code",
+    "corp_name",
+    "fo_bbm",
+    "fyer_salary_totamt",
+    "jan_salary_am",
+    "rcept_no",
+    "reform_bfe_emp_co_cnttk",
+    "reform_bfe_emp_co_etc",
+    "reform_bfe_emp_co_rgllbr",
+    "rgllbr_abacpt_labrr_co",
+    "rgllbr_co",
+    "rm",
+    "sexdstn",
+    "sm",
+    "stlm_dt"
+   ],
+   "rows": [
+    {
+     "fo_bbm": "전기전자",
+     "sexdstn": "남",
+     "sm": "2,020",
+     "jan_salary_am": "134,000,000",
+     "fyer_salary_totamt": "264,284,000,000",
+     "avrg_cnwk_sdytrn": "6.6"
+    },
+    {
+     "fo_bbm": "전기전자",
+     "sexdstn": "여",
+     "sm": "189",
+     "jan_salary_am": "100,000,000",
+     "fyer_salary_totamt": "18,563,000,000",
+     "avrg_cnwk_sdytrn": "4.5"
+    }
+   ]
+  },
+  "010120": {
+   "sec": 4.3,
+   "years": [
+    2025,
+    2024
+   ],
+   "keys": [
+    "avrg_cnwk_sdytrn",
+    "cnttk_abacpt_labrr_co",
+    "cnttk_co",
+    "corp_cls",
+    "corp_code",
+    "corp_name",
+    "fo_bbm",
+    "fyer_salary_totamt",
+    "jan_salary_am",
+    "rcept_no",
+    "reform_bfe_emp_co_cnttk",
+    "reform_bfe_emp_co_etc",
+    "reform_bfe_emp_co_rgllbr",
+    "rgllbr_abacpt_labrr_co",
+    "rgllbr_co",
+    "rm",
+    "sexdstn",
+    "sm",
+    "stlm_dt"
+   ],
+   "rows": [
+    {
+     "fo_bbm": "전력",
+     "sexdstn": "남",
+     "sm": "683",
+     "jan_salary_am": "101,000,000",
+     "fyer_salary_totamt": "69,003,000,000",
+     "avrg_cnwk_sdytrn": "13.4"
+    },
+    {
+     "fo_bbm": "전력",
+     "sexdstn": "여",
+     "sm": "108",
+     "jan_salary_am": "59,000,000",
+     "fyer_salary_totamt": "6,421,000,000",
+     "avrg_cnwk_sdytrn": "6.0"
+    },
+    {
+     "fo_bbm": "생산/R&D",
+     "sexdstn": "남",
+     "sm": "1,386",
+     "jan_salary_am": "100,000,000",
+     "fyer_salary_totamt": "138,258,000,000",
+     "avrg_cnwk_sdytrn": "18.2"
+    },
+    {
+     "fo_bbm": "생산/R&D",
+     "sexdstn": "여",
+     "sm": "216",
+     "jan_salary_am": "82,000,000",
+     "fyer_salary_totamt": "17,772,000,000",
+     "avrg_cnwk_sdytrn": "20.2"
+    },
+    {
+     "fo_bbm": "자동화",
+     "sexdstn": "남",
+     "sm": "589",
+     "jan_salary_am": "94,000,000",
+     "fyer_salary_totamt": "55,141,000,000",
+     "avrg_cnwk_sdytrn": "17.4"
+    },
+    {
+     "fo_bbm": "자동화",
+     "sexdstn": "여",
+     "sm": "110",
+     "jan_salary_am": "76,000,000",
+     "fyer_salary_totamt": "8,323,000,000",
+     "avrg_cnwk_sdytrn": "13.2"
+    },
+    {
+     "fo_bbm": "기타",
+     "sexdstn": "남",
+     "sm": "284",
+     "jan_salary_am": "102,000,000",
+     "fyer_salary_totamt": "28,833,000,000",
+     "avrg_cnwk_sdytrn": "13.9"
+    },
+    {
+     "fo_bbm": "기타",
+     "sexdstn": "여",
+     "sm": "106",
+     "jan_salary_am": "70,000,000",
+     "fyer_salary_totamt": "7,445,000,000",
+     "avrg_cnwk_sdytrn": "6.7"
+    }
+   ]
+  },
+  "298040": {
+   "sec": 4.2,
+   "years": [
+    2025,
+    2024
+   ],
+   "keys": [
+    "avrg_cnwk_sdytrn",
+    "cnttk_abacpt_labrr_co",
+    "cnttk_co",
+    "corp_cls",
+    "corp_code",
+    "corp_name",
+    "fo_bbm",
+    "fyer_salary_totamt",
+    "jan_salary_am",
+    "rcept_no",
+    "reform_bfe_emp_co_cnttk",
+    "reform_bfe_emp_co_etc",
+    "reform_bfe_emp_co_rgllbr",
+    "rgllbr_abacpt_labrr_co",
+    "rgllbr_co",
+    "rm",
+    "sexdstn",
+    "sm",
+    "stlm_dt"
+   ],
+   "rows": [
+    {
+     "fo_bbm": "전력",
+     "sexdstn": "남",
+     "sm": "1,691",
+     "jan_salary_am": "92,000,000",
+     "fyer_salary_totamt": "154,862,000,000",
+     "avrg_cnwk_sdytrn": "14.5"
+    },
+    {
+     "fo_bbm": "웰링턴사업단",
+     "sexdstn": "여",
+     "sm": "22",
+     "jan_salary_am": "61,000,000",
+     "fyer_salary_totamt": "1,352,000,000",
+     "avrg_cnwk_sdytrn": "5.0"
+    },
+    {
+     "fo_bbm": "기타",
+     "sexdstn": "남",
+     "sm": "487",
+     "jan_salary_am": "84,000,000",
+     "fyer_salary_totamt": "40,762,000,000",
+     "avrg_cnwk_sdytrn": "12.0"
+    },
+    {
+     "fo_bbm": "기타",
+     "sexdstn": "여",
+     "sm": "126",
+     "jan_salary_am": "59,000,000",
+     "fyer_salary_totamt": "7,439,000,000",
+     "avrg_cnwk_sdytrn": "8.5"
+    },
+    {
+     "fo_bbm": "성별합계",
+     "sexdstn": "남",
+     "sm": "3,143",
+     "jan_salary_am": "91,000,000",
+     "fyer_salary_totamt": "286,608,000,000",
+     "avrg_cnwk_sdytrn": "13.9"
+    },
+    {
+     "fo_bbm": "성별합계",
+     "sexdstn": "여",
+     "sm": "424",
+     "jan_salary_am": "55,000,000",
+     "fyer_salary_totamt": "23,343,000,000",
+     "avrg_cnwk_sdytrn": "7.4"
+    },
+    {
+     "fo_bbm": "전력",
+     "sexdstn": "여",
+     "sm": "193",
+     "jan_salary_am": "52,000,000",
+     "fyer_salary_totamt": "10,046,000,000",
+     "avrg_cnwk_sdytrn": "6.2"
+    },
+    {
+     "fo_bbm": "기전",
+     "sexdstn": "남",
+     "sm": "477",
+     "jan_salary_am": "97,000,000",
+     "fyer_salary_totamt": "46,132,000,000",
+     "avrg_cnwk_sdytrn": "18.0"
+    },
+    {
+     "fo_bbm": "기전",
+     "sexdstn": "여",
+     "sm": "58",
+     "jan_salary_am": "50,000,000",
+     "fyer_salary_totamt": "2,910,000,000",
+     "avrg_cnwk_sdytrn": "8.1"
+    },
+    {
+     "fo_bbm": "풍력사업단",
+     "sexdstn": "남",
+     "sm": "13",
+     "jan_salary_am": "102,000,000",
+     "fyer_salary_totamt": "1,320,000,000",
+     "avrg_cnwk_sdytrn": "15.8"
+    },
+    {
+     "fo_bbm": "풍력사업단",
+     "sexdstn": "여",
+     "sm": "2",
+     "jan_salary_am": "27,000,000",
+     "fyer_salary_totamt": "54,000,000",
+     "avrg_cnwk_sdytrn": "0.9"
+    },
+    {
+     "fo_bbm": "건설",
+     "sexdstn": "남",
+     "sm": "419",
+     "jan_salary_am": "95,000,000",
+     "fyer_salary_totamt": "39,872,000,000",
+     "avrg_cnwk_sdytrn": "10.4"
+    }
+   ]
+  },
+  "103590": {
+   "sec": 3.9,
+   "years": [
+    2025,
+    2024
+   ],
+   "keys": [
+    "avrg_cnwk_sdytrn",
+    "cnttk_abacpt_labrr_co",
+    "cnttk_co",
+    "corp_cls",
+    "corp_code",
+    "corp_name",
+    "fo_bbm",
+    "fyer_salary_totamt",
+    "jan_salary_am",
+    "rcept_no",
+    "reform_bfe_emp_co_cnttk",
+    "reform_bfe_emp_co_etc",
+    "reform_bfe_emp_co_rgllbr",
+    "rgllbr_abacpt_labrr_co",
+    "rgllbr_co",
+    "rm",
+    "sexdstn",
+    "sm",
+    "stlm_dt"
+   ],
+   "rows": [
+    {
+     "fo_bbm": "전선사업본부",
+     "sexdstn": "남",
+     "sm": "392",
+     "jan_salary_am": "66,000,000",
+     "fyer_salary_totamt": "26,221,000,000",
+     "avrg_cnwk_sdytrn": "9.8"
+    },
+    {
+     "fo_bbm": "전선사업본부",
+     "sexdstn": "여",
+     "sm": "22",
+     "jan_salary_am": "45,000,000",
+     "fyer_salary_totamt": "925,000,000",
+     "avrg_cnwk_sdytrn": "3.9"
+    },
+    {
+     "fo_bbm": "중전기사업본부",
+     "sexdstn": "남",
+     "sm": "449",
+     "jan_salary_am": "54,000,000",
+     "fyer_salary_totamt": "24,393,000,000",
+     "avrg_cnwk_sdytrn": "7.9"
+    },
+    {
+     "fo_bbm": "중전기사업본부",
+     "sexdstn": "여",
+     "sm": "27",
+     "jan_salary_am": "33,000,000",
+     "fyer_salary_totamt": "863,000,000",
+     "avrg_cnwk_sdytrn": "2.5"
+    },
+    {
+     "fo_bbm": "법인공통",
+     "sexdstn": "남",
+     "sm": "184",
+     "jan_salary_am": "64,000,000",
+     "fyer_salary_totamt": "11,671,000,000",
+     "avrg_cnwk_sdytrn": "8.3"
+    },
+    {
+     "fo_bbm": "법인공통",
+     "sexdstn": "여",
+     "sm": "17",
+     "jan_salary_am": "48,000,000",
+     "fyer_salary_totamt": "855,000,000",
+     "avrg_cnwk_sdytrn": "3.2"
+    }
+   ]
+  },
+  "402340": {
+   "sec": 3.8,
+   "years": [
+    2025,
+    2024
+   ],
+   "keys": [
+    "avrg_cnwk_sdytrn",
+    "cnttk_abacpt_labrr_co",
+    "cnttk_co",
+    "corp_cls",
+    "corp_code",
+    "corp_name",
+    "fo_bbm",
+    "fyer_salary_totamt",
+    "jan_salary_am",
+    "rcept_no",
+    "reform_bfe_emp_co_cnttk",
+    "reform_bfe_emp_co_etc",
+    "reform_bfe_emp_co_rgllbr",
+    "rgllbr_abacpt_labrr_co",
+    "rgllbr_co",
+    "rm",
+    "sexdstn",
+    "sm",
+    "stlm_dt"
+   ],
+   "rows": [
+    {
+     "fo_bbm": "-",
+     "sexdstn": "남",
+     "sm": "69",
+     "jan_salary_am": "285,000,000",
+     "fyer_salary_totamt": "19,831,000,000",
+     "avrg_cnwk_sdytrn": "3.4"
+    },
+    {
+     "fo_bbm": "-",
+     "sexdstn": "여",
+     "sm": "15",
+     "jan_salary_am": "180,000,000",
+     "fyer_salary_totamt": "2,915,000,000",
+     "avrg_cnwk_sdytrn": "3.3"
+    }
+   ]
+  },
+  "373220": {
+   "sec": 3.9,
+   "years": [
+    2025,
+    2024
+   ],
+   "keys": [
+    "avrg_cnwk_sdytrn",
+    "cnttk_abacpt_labrr_co",
+    "cnttk_co",
+    "corp_cls",
+    "corp_code",
+    "corp_name",
+    "fo_bbm",
+    "fyer_salary_totamt",
+    "jan_salary_am",
+    "rcept_no",
+    "reform_bfe_emp_co_cnttk",
+    "reform_bfe_emp_co_etc",
+    "reform_bfe_emp_co_rgllbr",
+    "rgllbr_abacpt_labrr_co",
+    "rgllbr_co",
+    "rm",
+    "sexdstn",
+    "sm",
+    "stlm_dt"
+   ],
+   "rows": [
+    {
+     "fo_bbm": "에너지솔루션",
+     "sexdstn": "남",
+     "sm": "10,507",
+     "jan_salary_am": "119,000,000",
+     "fyer_salary_totamt": "1,250,656,000,000",
+     "avrg_cnwk_sdytrn": "8년 7개월"
+    },
+    {
+     "fo_bbm": "에너지솔루션",
+     "sexdstn": "여",
+     "sm": "2,415",
+     "jan_salary_am": "80,000,000",
+     "fyer_salary_totamt": "192,495,000,000",
+     "avrg_cnwk_sdytrn": "6년 4개월"
+    }
+   ]
+  },
+  "207940": {
+   "sec": 4.1,
+   "years": [
+    2025,
+    2024
+   ],
+   "keys": [
+    "avrg_cnwk_sdytrn",
+    "cnttk_abacpt_labrr_co",
+    "cnttk_co",
+    "corp_cls",
+    "corp_code",
+    "corp_name",
+    "fo_bbm",
+    "fyer_salary_totamt",
+    "jan_salary_am",
+    "rcept_no",
+    "reform_bfe_emp_co_cnttk",
+    "reform_bfe_emp_co_etc",
+    "reform_bfe_emp_co_rgllbr",
+    "rgllbr_abacpt_labrr_co",
+    "rgllbr_co",
+    "rm",
+    "sexdstn",
+    "sm",
+    "stlm_dt"
+   ],
+   "rows": [
+    {
+     "fo_bbm": "공정직",
+     "sexdstn": "남",
+     "sm": "1,735",
+     "jan_salary_am": "-",
+     "fyer_salary_totamt": "-",
+     "avrg_cnwk_sdytrn": "5.2"
+    },
+    {
+     "fo_bbm": "공정직",
+     "sexdstn": "여",
+     "sm": "1,157",
+     "jan_salary_am": "-",
+     "fyer_salary_totamt": "-",
+     "avrg_cnwk_sdytrn": "3.9"
+    },
+    {
+     "fo_bbm": "연구직",
+     "sexdstn": "남",
+     "sm": "644",
+     "jan_salary_am": "-",
+     "fyer_salary_totamt": "-",
+     "avrg_cnwk_sdytrn": "5.1"
+    },
+    {
+     "fo_bbm": "연구직",
+     "sexdstn": "여",
+     "sm": "895",
+     "jan_salary_am": "-",
+     "fyer_salary_totamt": "-",
+     "avrg_cnwk_sdytrn": "6.0"
+    },
+    {
+     "fo_bbm": "지원직",
+     "sexdstn": "남",
+     "sm": "647",
+     "jan_salary_am": "-",
+     "fyer_salary_totamt": "-",
+     "avrg_cnwk_sdytrn": "6.2"
+    },
+    {
+     "fo_bbm": "지원직",
+     "sexdstn": "여",
+     "sm": "377",
+     "jan_salary_am": "-",
+     "fyer_salary_totamt": "-",
+     "avrg_cnwk_sdytrn": "6.0"
+    },
+    {
+     "fo_bbm": "성별합계",
+     "sexdstn": "남",
+     "sm": "3,026",
+     "jan_salary_am": "121,000,000",
+     "fyer_salary_totamt": "357,885,000,000",
+     "avrg_cnwk_sdytrn": "5.6"
+    },
+    {
+     "fo_bbm": "성별합계",
+     "sexdstn": "여",
+     "sm": "2,429",
+     "jan_salary_am": "106,000,000",
+     "fyer_salary_totamt": "251,701,000,000",
+     "avrg_cnwk_sdytrn": "4.1"
+    }
+   ]
+  },
+  "005380": {
+   "sec": 3.8,
+   "years": [
+    2025,
+    2024
+   ],
+   "keys": [
+    "avrg_cnwk_sdytrn",
+    "cnttk_abacpt_labrr_co",
+    "cnttk_co",
+    "corp_cls",
+    "corp_code",
+    "corp_name",
+    "fo_bbm",
+    "fyer_salary_totamt",
+    "jan_salary_am",
+    "rcept_no",
+    "reform_bfe_emp_co_cnttk",
+    "reform_bfe_emp_co_etc",
+    "reform_bfe_emp_co_rgllbr",
+    "rgllbr_abacpt_labrr_co",
+    "rgllbr_co",
+    "rm",
+    "sexdstn",
+    "sm",
+    "stlm_dt"
+   ],
+   "rows": [
+    {
+     "fo_bbm": "자동차부문",
+     "sexdstn": "남",
+     "sm": "66,681",
+     "jan_salary_am": "132,000,000",
+     "fyer_salary_totamt": "8,825,013,000,000",
+     "avrg_cnwk_sdytrn": "16.2"
+    },
+    {
+     "fo_bbm": "자동차부문",
+     "sexdstn": "여",
+     "sm": "5,917",
+     "jan_salary_am": "118,000,000",
+     "fyer_salary_totamt": "695,296,000,000",
+     "avrg_cnwk_sdytrn": "11.3"
+    }
+   ]
+  },
+  "105560": {
+   "sec": 4.0,
+   "years": [
+    2025,
+    2024
+   ],
+   "keys": [
+    "avrg_cnwk_sdytrn",
+    "cnttk_abacpt_labrr_co",
+    "cnttk_co",
+    "corp_cls",
+    "corp_code",
+    "corp_name",
+    "fo_bbm",
+    "fyer_salary_totamt",
+    "jan_salary_am",
+    "rcept_no",
+    "reform_bfe_emp_co_cnttk",
+    "reform_bfe_emp_co_etc",
+    "reform_bfe_emp_co_rgllbr",
+    "rgllbr_abacpt_labrr_co",
+    "rgllbr_co",
+    "rm",
+    "sexdstn",
+    "sm",
+    "stlm_dt"
+   ],
+   "rows": [
+    {
+     "fo_bbm": "-",
+     "sexdstn": "남",
+     "sm": "107",
+     "jan_salary_am": "209,000,000",
+     "fyer_salary_totamt": "21,766,000,000",
+     "avrg_cnwk_sdytrn": "3년10개월\n(18년2개월)"
+    },
+    {
+     "fo_bbm": "-",
+     "sexdstn": "여",
+     "sm": "37",
+     "jan_salary_am": "166,000,000",
+     "fyer_salary_totamt": "6,332,000,000",
+     "avrg_cnwk_sdytrn": "3년2개월\n(16년11개월)"
+    }
+   ]
+  },
+  "032830": {
+   "sec": 3.8,
+   "years": [
+    2025,
+    2024
+   ],
+   "keys": [
+    "avrg_cnwk_sdytrn",
+    "cnttk_abacpt_labrr_co",
+    "cnttk_co",
+    "corp_cls",
+    "corp_code",
+    "corp_name",
+    "fo_bbm",
+    "fyer_salary_totamt",
+    "jan_salary_am",
+    "rcept_no",
+    "reform_bfe_emp_co_cnttk",
+    "reform_bfe_emp_co_etc",
+    "reform_bfe_emp_co_rgllbr",
+    "rgllbr_abacpt_labrr_co",
+    "rgllbr_co",
+    "rm",
+    "sexdstn",
+    "sm",
+    "stlm_dt"
+   ],
+   "rows": [
+    {
+     "fo_bbm": "-",
+     "sexdstn": "남",
+     "sm": "2,673",
+     "jan_salary_am": "182,000,000",
+     "fyer_salary_totamt": "498,762,000,000",
+     "avrg_cnwk_sdytrn": "16.3"
+    },
+    {
+     "fo_bbm": "-",
+     "sexdstn": "여",
+     "sm": "2,451",
+     "jan_salary_am": "125,000,000",
+     "fyer_salary_totamt": "306,919,000,000",
+     "avrg_cnwk_sdytrn": "18.5"
+    }
+   ]
+  },
+  "028260": {
+   "sec": 4.5,
+   "years": [
+    2025,
+    2024
+   ],
+   "keys": [
+    "avrg_cnwk_sdytrn",
+    "cnttk_abacpt_labrr_co",
+    "cnttk_co",
+    "corp_cls",
+    "corp_code",
+    "corp_name",
+    "fo_bbm",
+    "fyer_salary_totamt",
+    "jan_salary_am",
+    "rcept_no",
+    "reform_bfe_emp_co_cnttk",
+    "reform_bfe_emp_co_etc",
+    "reform_bfe_emp_co_rgllbr",
+    "rgllbr_abacpt_labrr_co",
+    "rgllbr_co",
+    "rm",
+    "sexdstn",
+    "sm",
+    "stlm_dt"
+   ],
+   "rows": [
+    {
+     "fo_bbm": "건 설",
+     "sexdstn": "남",
+     "sm": "5,195",
+     "jan_salary_am": "-",
+     "fyer_salary_totamt": "-",
+     "avrg_cnwk_sdytrn": "15.8"
+    },
+    {
+     "fo_bbm": "성별합계",
+     "sexdstn": "여",
+     "sm": "2,081",
+     "jan_salary_am": "92,000,000",
+     "fyer_salary_totamt": "192,080,000,000",
+     "avrg_cnwk_sdytrn": "12.3"
+    },
+    {
+     "fo_bbm": "건 설",
+     "sexdstn": "여",
+     "sm": "633",
+     "jan_salary_am": "-",
+     "fyer_salary_totamt": "-",
+     "avrg_cnwk_sdytrn": "12.2"
+    },
+    {
+     "fo_bbm": "상 사",
+     "sexdstn": "남",
+     "sm": "504",
+     "jan_salary_am": "-",
+     "fyer_salary_totamt": "-",
+     "avrg_cnwk_sdytrn": "14.5"
+    },
+    {
+     "fo_bbm": "상 사",
+     "sexdstn": "여",
+     "sm": "259",
+     "jan_salary_am": "-",
+     "fyer_salary_totamt": "-",
+     "avrg_cnwk_sdytrn": "13.7"
+    },
+    {
+     "fo_bbm": "패 션",
+     "sexdstn": "남",
+     "sm": "562",
+     "jan_salary_am": "-",
+     "fyer_salary_totamt": "-",
+     "avrg_cnwk_sdytrn": "14.6"
+    },
+    {
+     "fo_bbm": "패 션",
+     "sexdstn": "여",
+     "sm": "806",
+     "jan_salary_am": "-",
+     "fyer_salary_totamt": "-",
+     "avrg_cnwk_sdytrn": "10.9"
+    },
+    {
+     "fo_bbm": "리조트",
+     "sexdstn": "남",
+     "sm": "919",
+     "jan_salary_am": "-",
+     "fyer_salary_totamt": "-",
+     "avrg_cnwk_sdytrn": "17.2"
+    },
+    {
+     "fo_bbm": "리조트",
+     "sexdstn": "여",
+     "sm": "383",
+     "jan_salary_am": "-",
+     "fyer_salary_totamt": "-",
+     "avrg_cnwk_sdytrn": "14.2"
+    },
+    {
+     "fo_bbm": "성별합계",
+     "sexdstn": "남",
+     "sm": "7,180",
+     "jan_salary_am": "132,000,000",
+     "fyer_salary_totamt": "947,684,000,000",
+     "avrg_cnwk_sdytrn": "15.8"
+    }
+   ]
+  },
+  "068270": {
+   "sec": 4.1,
+   "years": [
+    2025,
+    2024
+   ],
+   "keys": [
+    "avrg_cnwk_sdytrn",
+    "cnttk_abacpt_labrr_co",
+    "cnttk_co",
+    "corp_cls",
+    "corp_code",
+    "corp_name",
+    "fo_bbm",
+    "fyer_salary_totamt",
+    "jan_salary_am",
+    "rcept_no",
+    "reform_bfe_emp_co_cnttk",
+    "reform_bfe_emp_co_etc",
+    "reform_bfe_emp_co_rgllbr",
+    "rgllbr_abacpt_labrr_co",
+    "rgllbr_co",
+    "rm",
+    "sexdstn",
+    "sm",
+    "stlm_dt"
+   ],
+   "rows": [
+    {
+     "fo_bbm": "관리사무직",
+     "sexdstn": "남",
+     "sm": "467",
+     "jan_salary_am": "134,000,000",
+     "fyer_salary_totamt": "54,832,000,000",
+     "avrg_cnwk_sdytrn": "4.7"
+    },
+    {
+     "fo_bbm": "관리사무직",
+     "sexdstn": "여",
+     "sm": "316",
+     "jan_salary_am": "105,000,000",
+     "fyer_salary_totamt": "29,830,000,000",
+     "avrg_cnwk_sdytrn": "4.1"
+    },
+    {
+     "fo_bbm": "연구개발직",
+     "sexdstn": "남",
+     "sm": "328",
+     "jan_salary_am": "127,000,000",
+     "fyer_salary_totamt": "37,596,000,000",
+     "avrg_cnwk_sdytrn": "7.9"
+    },
+    {
+     "fo_bbm": "연구개발직",
+     "sexdstn": "여",
+     "sm": "477",
+     "jan_salary_am": "113,000,000",
+     "fyer_salary_totamt": "47,814,000,000",
+     "avrg_cnwk_sdytrn": "6.3"
+    },
+    {
+     "fo_bbm": "생산직",
+     "sexdstn": "남",
+     "sm": "1,044",
+     "jan_salary_am": "100,000,000",
+     "fyer_salary_totamt": "104,605,000,000",
+     "avrg_cnwk_sdytrn": "6.8"
+    },
+    {
+     "fo_bbm": "생산직",
+     "sexdstn": "여",
+     "sm": "521",
+     "jan_salary_am": "87,000,000",
+     "fyer_salary_totamt": "47,012,000,000",
+     "avrg_cnwk_sdytrn": "6.2"
+    }
+   ]
+  },
+  "000270": {
+   "sec": 3.8,
+   "years": [
+    2025,
+    2024
+   ],
+   "keys": [
+    "avrg_cnwk_sdytrn",
+    "cnttk_abacpt_labrr_co",
+    "cnttk_co",
+    "corp_cls",
+    "corp_code",
+    "corp_name",
+    "fo_bbm",
+    "fyer_salary_totamt",
+    "jan_salary_am",
+    "rcept_no",
+    "reform_bfe_emp_co_cnttk",
+    "reform_bfe_emp_co_etc",
+    "reform_bfe_emp_co_rgllbr",
+    "rgllbr_abacpt_labrr_co",
+    "rgllbr_co",
+    "rm",
+    "sexdstn",
+    "sm",
+    "stlm_dt"
+   ],
+   "rows": [
+    {
+     "fo_bbm": "자동차 제조 및 판매 등",
+     "sexdstn": "남",
+     "sm": "34,664",
+     "jan_salary_am": "135,000,000",
+     "fyer_salary_totamt": "4,667,906,000,000",
+     "avrg_cnwk_sdytrn": "21.1"
+    },
+    {
+     "fo_bbm": "자동차 제조 및 판매 등",
+     "sexdstn": "여",
+     "sm": "1,902",
+     "jan_salary_am": "116,000,000",
+     "fyer_salary_totamt": "221,549,000,000",
+     "avrg_cnwk_sdytrn": "14.5"
+    }
+   ]
+  },
+  "055550": {
+   "sec": 3.8,
+   "years": [
+    2025,
+    2024
+   ],
+   "keys": [
+    "avrg_cnwk_sdytrn",
+    "cnttk_abacpt_labrr_co",
+    "cnttk_co",
+    "corp_cls",
+    "corp_code",
+    "corp_name",
+    "fo_bbm",
+    "fyer_salary_totamt",
+    "jan_salary_am",
+    "rcept_no",
+    "reform_bfe_emp_co_cnttk",
+    "reform_bfe_emp_co_etc",
+    "reform_bfe_emp_co_rgllbr",
+    "rgllbr_abacpt_labrr_co",
+    "rgllbr_co",
+    "rm",
+    "sexdstn",
+    "sm",
+    "stlm_dt"
+   ],
+   "rows": [
+    {
+     "fo_bbm": "-",
+     "sexdstn": "남",
+     "sm": "145",
+     "jan_salary_am": "187,000,000",
+     "fyer_salary_totamt": "27,112,000,000",
+     "avrg_cnwk_sdytrn": "3년 1개월\n (16년 2개월)"
+    },
+    {
+     "fo_bbm": "-",
+     "sexdstn": "여",
+     "sm": "50",
+     "jan_salary_am": "152,000,000",
+     "fyer_salary_totamt": "7,499,000,000",
+     "avrg_cnwk_sdytrn": "4년 6개월\n (13년 4개월)"
+    }
+   ]
+  },
+  "012450": {
+   "sec": 4.1,
+   "years": [
+    2025,
+    2024
+   ],
+   "keys": [
+    "avrg_cnwk_sdytrn",
+    "cnttk_abacpt_labrr_co",
+    "cnttk_co",
+    "corp_cls",
+    "corp_code",
+    "corp_name",
+    "fo_bbm",
+    "fyer_salary_totamt",
+    "jan_salary_am",
+    "rcept_no",
+    "reform_bfe_emp_co_cnttk",
+    "reform_bfe_emp_co_etc",
+    "reform_bfe_emp_co_rgllbr",
+    "rgllbr_abacpt_labrr_co",
+    "rgllbr_co",
+    "rm",
+    "sexdstn",
+    "sm",
+    "stlm_dt"
+   ],
+   "rows": [
+    {
+     "fo_bbm": "항공",
+     "sexdstn": "남",
+     "sm": "2,252",
+     "jan_salary_am": "133,000,000",
+     "fyer_salary_totamt": "300,112,000,000",
+     "avrg_cnwk_sdytrn": "17"
+    },
+    {
+     "fo_bbm": "항공",
+     "sexdstn": "여",
+     "sm": "236",
+     "jan_salary_am": "104,000,000",
+     "fyer_salary_totamt": "24,659,000,000",
+     "avrg_cnwk_sdytrn": "8"
+    },
+    {
+     "fo_bbm": "방산",
+     "sexdstn": "남",
+     "sm": "5,143",
+     "jan_salary_am": "124,000,000",
+     "fyer_salary_totamt": "638,502,000,000",
+     "avrg_cnwk_sdytrn": "12"
+    },
+    {
+     "fo_bbm": "빙산",
+     "sexdstn": "여",
+     "sm": "537",
+     "jan_salary_am": "97,000,000",
+     "fyer_salary_totamt": "52,196,000,000",
+     "avrg_cnwk_sdytrn": "9"
+    }
+   ]
+  },
+  "006400": {
+   "sec": 4.1,
+   "years": [
+    2025,
+    2024
+   ],
+   "keys": [
+    "avrg_cnwk_sdytrn",
+    "cnttk_abacpt_labrr_co",
+    "cnttk_co",
+    "corp_cls",
+    "corp_code",
+    "corp_name",
+    "fo_bbm",
+    "fyer_salary_totamt",
+    "jan_salary_am",
+    "rcept_no",
+    "reform_bfe_emp_co_cnttk",
+    "reform_bfe_emp_co_etc",
+    "reform_bfe_emp_co_rgllbr",
+    "rgllbr_abacpt_labrr_co",
+    "rgllbr_co",
+    "rm",
+    "sexdstn",
+    "sm",
+    "stlm_dt"
+   ],
+   "rows": [
+    {
+     "fo_bbm": "에너지솔루션",
+     "sexdstn": "남",
+     "sm": "8,848",
+     "jan_salary_am": "98,000,000",
+     "fyer_salary_totamt": "844,099,000,000",
+     "avrg_cnwk_sdytrn": "13.0"
+    },
+    {
+     "fo_bbm": "에너지솔루션",
+     "sexdstn": "여",
+     "sm": "2,178",
+     "jan_salary_am": "78,000,000",
+     "fyer_salary_totamt": "164,354,000,000",
+     "avrg_cnwk_sdytrn": "8.5"
+    },
+    {
+     "fo_bbm": "전자재료",
+     "sexdstn": "남",
+     "sm": "1,449",
+     "jan_salary_am": "104,000,000",
+     "fyer_salary_totamt": "168,068,000,000",
+     "avrg_cnwk_sdytrn": "16.3"
+    },
+    {
+     "fo_bbm": "전자재료",
+     "sexdstn": "여",
+     "sm": "351",
+     "jan_salary_am": "87,000,000",
+     "fyer_salary_totamt": "32,218,000,000",
+     "avrg_cnwk_sdytrn": "12.4"
+    }
+   ]
+  },
+  "034020": {
+   "sec": 4.3,
+   "years": [
+    2025,
+    2024
+   ],
+   "keys": [
+    "avrg_cnwk_sdytrn",
+    "cnttk_abacpt_labrr_co",
+    "cnttk_co",
+    "corp_cls",
+    "corp_code",
+    "corp_name",
+    "fo_bbm",
+    "fyer_salary_totamt",
+    "jan_salary_am",
+    "rcept_no",
+    "reform_bfe_emp_co_cnttk",
+    "reform_bfe_emp_co_etc",
+    "reform_bfe_emp_co_rgllbr",
+    "rgllbr_abacpt_labrr_co",
+    "rgllbr_co",
+    "rm",
+    "sexdstn",
+    "sm",
+    "stlm_dt"
+   ],
+   "rows": [
+    {
+     "fo_bbm": "두산에너빌리티",
+     "sexdstn": "남",
+     "sm": "5,768",
+     "jan_salary_am": "104,000,000",
+     "fyer_salary_totamt": "637,524,000,000",
+     "avrg_cnwk_sdytrn": "14"
+    },
+    {
+     "fo_bbm": "두산에너빌리티",
+     "sexdstn": "여",
+     "sm": "465",
+     "jan_salary_am": "57,000,000",
+     "fyer_salary_totamt": "30,678,000,000",
+     "avrg_cnwk_sdytrn": "6"
+    }
+   ]
+  },
+  "034730": {
+   "sec": 3.8,
+   "years": [
+    2025,
+    2024
+   ],
+   "keys": [
+    "avrg_cnwk_sdytrn",
+    "cnttk_abacpt_labrr_co",
+    "cnttk_co",
+    "corp_cls",
+    "corp_code",
+    "corp_name",
+    "fo_bbm",
+    "fyer_salary_totamt",
+    "jan_salary_am",
+    "rcept_no",
+    "reform_bfe_emp_co_cnttk",
+    "reform_bfe_emp_co_etc",
+    "reform_bfe_emp_co_rgllbr",
+    "rgllbr_abacpt_labrr_co",
+    "rgllbr_co",
+    "rm",
+    "sexdstn",
+    "sm",
+    "stlm_dt"
+   ],
+   "rows": [
+    {
+     "fo_bbm": "SK(주)",
+     "sexdstn": "남",
+     "sm": "3,332",
+     "jan_salary_am": "129,000,000",
+     "fyer_salary_totamt": "416,214,000,000",
+     "avrg_cnwk_sdytrn": "12.2"
+    },
+    {
+     "fo_bbm": "SK(주)",
+     "sexdstn": "여",
+     "sm": "1,087",
+     "jan_salary_am": "95,000,000",
+     "fyer_salary_totamt": "97,593,000,000",
+     "avrg_cnwk_sdytrn": "10.0"
+    }
+   ]
+  },
+  "329180": {
+   "sec": 4.1,
+   "years": [
+    2025,
+    2024
+   ],
+   "keys": [
+    "avrg_cnwk_sdytrn",
+    "cnttk_abacpt_labrr_co",
+    "cnttk_co",
+    "corp_cls",
+    "corp_code",
+    "corp_name",
+    "fo_bbm",
+    "fyer_salary_totamt",
+    "jan_salary_am",
+    "rcept_no",
+    "reform_bfe_emp_co_cnttk",
+    "reform_bfe_emp_co_etc",
+    "reform_bfe_emp_co_rgllbr",
+    "rgllbr_abacpt_labrr_co",
+    "rgllbr_co",
+    "rm",
+    "sexdstn",
+    "sm",
+    "stlm_dt"
+   ],
+   "rows": [
+    {
+     "fo_bbm": "조선",
+     "sexdstn": "남",
+     "sm": "12,811",
+     "jan_salary_am": "-",
+     "fyer_salary_totamt": "1,116,546,484,000",
+     "avrg_cnwk_sdytrn": "3.6"
+    },
+    {
+     "fo_bbm": "조선",
+     "sexdstn": "여",
+     "sm": "508",
+     "jan_salary_am": "-",
+     "fyer_salary_totamt": "38,769,367,000",
+     "avrg_cnwk_sdytrn": "3.3"
+    },
+    {
+     "fo_bbm": "해양플랜트",
+     "sexdstn": "남",
+     "sm": "1,773",
+     "jan_salary_am": "-",
+     "fyer_salary_totamt": "204,120,082,000",
+     "avrg_cnwk_sdytrn": "5.5"
+    },
+    {
+     "fo_bbm": "해양플랜트",
+     "sexdstn": "여",
+     "sm": "99",
+     "jan_salary_am": "-",
+     "fyer_salary_totamt": "8,617,118,000",
+     "avrg_cnwk_sdytrn": "3.6"
+    },
+    {
+     "fo_bbm": "엔진기계",
+     "sexdstn": "남",
+     "sm": "1,752",
+     "jan_salary_am": "-",
+     "fyer_salary_totamt": "219,192,976,000",
+     "avrg_cnwk_sdytrn": "5.4"
+    },
+    {
+     "fo_bbm": "엔진기계",
+     "sexdstn": "여",
+     "sm": "97",
+     "jan_salary_am": "-",
+     "fyer_salary_totamt": "8,663,849,000",
+     "avrg_cnwk_sdytrn": "3.3"
+    },
+    {
+     "fo_bbm": "기타",
+     "sexdstn": "남",
+     "sm": "1,573",
+     "jan_salary_am": "-",
+     "fyer_salary_totamt": "174,320,146,000",
+     "avrg_cnwk_sdytrn": "4.2"
+    },
+    {
+     "fo_bbm": "기타",
+     "sexdstn": "여",
+     "sm": "267",
+     "jan_salary_am": "-",
+     "fyer_salary_totamt": "17,734,234,000",
+     "avrg_cnwk_sdytrn": "3.1"
+    }
+   ]
+  },
+  "086790": {
+   "sec": 3.8,
+   "years": [
+    2025,
+    2024
+   ],
+   "keys": [
+    "avrg_cnwk_sdytrn",
+    "cnttk_abacpt_labrr_co",
+    "cnttk_co",
+    "corp_cls",
+    "corp_code",
+    "corp_name",
+    "fo_bbm",
+    "fyer_salary_totamt",
+    "jan_salary_am",
+    "rcept_no",
+    "reform_bfe_emp_co_cnttk",
+    "reform_bfe_emp_co_etc",
+    "reform_bfe_emp_co_rgllbr",
+    "rgllbr_abacpt_labrr_co",
+    "rgllbr_co",
+    "rm",
+    "sexdstn",
+    "sm",
+    "stlm_dt"
+   ],
+   "rows": [
+    {
+     "fo_bbm": "-",
+     "sexdstn": "남",
+     "sm": "92",
+     "jan_salary_am": "183,000,000",
+     "fyer_salary_totamt": "17,376,000,000",
+     "avrg_cnwk_sdytrn": "3.5"
+    },
+    {
+     "fo_bbm": "-",
+     "sexdstn": "여",
+     "sm": "39",
+     "jan_salary_am": "134,000,000",
+     "fyer_salary_totamt": "5,107,000,000",
+     "avrg_cnwk_sdytrn": "3.1"
+    }
+   ]
+  }
+ }
+}
