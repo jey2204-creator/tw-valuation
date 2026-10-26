@@ -1,0 +1,49 @@
+name: 更新韓股員工薪資
+on:
+  schedule:
+    - cron: "10 10 * 3-5 1"   # 3～5 月年報季：每週一 台北 18:10
+    - cron: "10 10 1 * *"     # 其他時間：每月 1 日（補更正申報、新加入追蹤的股票）
+  push:
+    branches: [main]
+    paths:
+      - kr/fetch_salary.py
+      - .github/workflows/update_kr_salary.yml
+  workflow_dispatch:
+    inputs:
+      codes:
+        description: "指定代號（空白分隔，留空 = 全部）"
+        required: false
+        default: ""
+      force:
+        description: "忽略快取全部重抓（填 1）"
+        required: false
+        default: ""
+permissions:
+  contents: write
+concurrency:
+  group: push-data
+  cancel-in-progress: false
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: 抓員工現況／高管報酬（OpenDART 年報）
+        env:
+          DART_KEY: ${{ secrets.DART_KEY }}
+          FORCE: ${{ github.event.inputs.force }}
+        run: python kr/fetch_salary.py ${{ github.event.inputs.codes }}
+      - name: 有變動才提交
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add kr/data/salary.json kr/data/salary_raw.json kr/data/salary_diag.json 2>/dev/null || true
+          git diff --cached --quiet && exit 0
+          git commit -m "kr salary: $(TZ=Asia/Taipei date '+%F %H:%M')"
+          git pull --rebase -X theirs origin main
+          git push
