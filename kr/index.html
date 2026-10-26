@@ -340,6 +340,7 @@ html{scroll-behavior:smooth}
 .mrow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:10px}.segm{flex:none;display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:var(--card);max-width:100%;overflow-x:auto}.segm button{white-space:nowrap;font:inherit;font-size:12.5px;font-weight:700;border:0;background:none;color:var(--muted);padding:4px 11px;cursor:pointer}.segm button[aria-pressed=true]{background:var(--accent);color:#fff}
 #sTbl td:first-child{font-family:var(--f-num);color:var(--muted);font-size:12px;white-space:nowrap;min-width:0}#sTbl td.co{font-family:var(--f-body);color:var(--fg);white-space:normal;min-width:6.5em}#sTbl th:nth-child(2),#sTbl td:nth-child(2){text-align:left}#sTbl .ind{font-size:11px;color:var(--muted);display:block}
 #sHead{margin-top:8px;font-size:12.5px;color:var(--muted)}
+#sTbl th,#sTbl td{padding-inline:4px}#sTbl td.co{min-width:0}#sTbl .nmw{white-space:normal}#sTbl .cd{display:block;margin-left:0}#sTbl td:not(.co) .sub{white-space:nowrap}
 </style>
 </head>
 <body>
@@ -1146,9 +1147,10 @@ function renderSal(){
   const exC=r=>`<td><b>${r.ex?fmt(r.ex/r.avg,1)+'×':'—'}</b><span class="sub">${r.ex?bigTxt(r.ex).replace(' ',''):''}</span></td>`;
   const topC=r=>`<td><b>${r.top?fmt(r.top/r.avg,0)+'×':'—'}</b><span class="sub">${r.top?bigTxt(r.top).replace(' ',''):''}</span></td>`;
   const avgS=r=>`<td><b>${salK(r.avg)}</b></td>`;
-  const totC=r=>`<td>${r.tot!=null?totTxt(r.tot):'—'}</td>`;
+  const totK=v=>{const a=fxOn()?v/FX.rate:v;return (fxOn()?'≈':'')+(a>=1e4?fmt(a/1e4,a>=1e5?0:1)+'兆':fmt(a,0)+'億')};   // 表格精簡：單位寫在表頭
+  const totC=r=>`<td>${r.tot!=null?totK(r.tot):'—'}</td>`;
   if(SR.tab==='up'){rows=rows.filter(r=>r.chg!=null).sort((x,y)=>y.chg-x.chg);th='<th>平均薪資</th><th>年變化</th><th>本益比</th>';cell=r=>avgC(r)+chgC(r)+peC(r);$('sHead').innerHTML='平均薪資對前一年度的變化，由高到低。韓國績效獎金（PS／PI）跟獲利走，半導體景氣年份會大幅跳動'}
-  else if(SR.tab==='n'){rows=rows.filter(r=>r.n).sort((x,y)=>y.n-x.n);th='<th>員工數</th><th>平均薪資</th><th>薪資總額</th>';cell=r=>nC(r)+avgC(r)+totC(r);$('sHead').innerHTML='母公司年底員工數由多到少（含約聘），小字＝對前一年增減'}
+  else if(SR.tab==='n'){rows=rows.filter(r=>r.n).sort((x,y)=>y.n-x.n);th=`<th>員工數</th><th>平均薪資</th><th>總額<span class="sub">${fxOn()?'台幣':'韓元'}</span></th>`;cell=r=>nC(r)+avgC(r)+totC(r);$('sHead').innerHTML='母公司年底員工數由多到少（含約聘），小字＝對前一年增減'}
   else if(SR.tab==='ten'){rows=rows.filter(r=>r.ten!=null).sort((x,y)=>y.ten-x.ten);th='<th>平均年資</th><th>平均薪資</th><th>本益比</th>';cell=r=>tenC(r)+avgC(r)+peC(r);$('sHead').innerHTML='平均年資由長到短。韓國大企業年功序列明顯，年資長的公司平均薪資天生偏高'}
   else if(SR.tab==='ex'){rows=rows.filter(r=>r.ex||r.top).sort((x,y)=>(y.ex?y.ex/y.avg:0)-(x.ex?x.ex/x.avg:0));th='<th>高管倍數</th><th>最高個人</th><th>平均</th>';cell=r=>exC(r)+topC(r)+avgS(r);$('sHead').innerHTML='非登記高管（미등기임원）平均報酬 ÷ 員工平均，由高到低；最高個人＝年報揭露的 5 億韓元以上前 5 名中最高者'}
   else{rows.sort((x,y)=>y.avg-x.avg);th='<th>平均薪資</th><th>年變化</th><th>本益比</th>';cell=r=>avgC(r)+chgC(r)+peC(r);$('sHead').innerHTML='員工 1 人平均薪資由高到低'}
