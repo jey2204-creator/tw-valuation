@@ -1116,7 +1116,7 @@ function salLine(id){
   const tip=`${y} 年度「員工 1 人平均薪資」（OpenDART 年報 직원 현황，每年 3 月底公布）：母公司本身（不含子公司）全體員工，正職＋約聘，課稅所得口徑（含獎金、績效分紅、股票行權所得）。韓國只揭露平均、沒有中位數，對照台股請看「全體員工薪資平均」（對應台股代號旁的「均」），不要對非主管中位數。金控、控股公司母公司員工很少，數字不代表整個集團。`;
   el.innerHTML=`<span class="dtip" title="${esc(tip)}">💰 員工平均薪資<small>（${y}）</small></span> <b>${salTxt(m)}</b>${ch!=null?` <span class="${sgc(ch)}">${pct(ch,1)}</span>`:''}${salRank(id)}`+
     `<br>👥 員工 <b>${n?fmt(n):'—'}</b> 人${n&&np?` <span class="${sgc(n-np)}">${pct((n/np-1)*100,1)}</span>`:''}${ten!=null?`・年資 <b>${fmt(ten,1)}</b> 年`:''}${ctr!=null?`・約聘 <b>${fmt(ctr,ctr<10?1:0)}%</b>`:''}${mm&&ff?`・男女 <b>${fmt(mm/ff,2)}</b> 倍`:''}`+
-    (ex||top?`<br>👔 ${ex?`非登記高管平均 <b>${bigTxt(ex)}</b>（${fmt(ex/m,1)} 倍）`:''}${top?`${ex?'・':''}最高 <b>${bigTxt(top)}</b>${sal(id,'topPos')?`（${esc(sal(id,'topPos'))}）`:''}＝員工 <b>${fmt(top/m,0)}</b> 倍`:''}`:'')+
+    (ex||top?`<br>👔 ${ex?`非登記高管平均 <b>${bigTxt(ex)}</b>（${fmt(ex/m,1)} 倍）`:''}${top?`${ex?'・':''}最高 <b>${bigTxt(top)}</b>${sal(id,'topPos')?`（${esc(sal(id,'topPos').replace(/\s+/g,' '))}）`:''}＝員工 <b>${fmt(top/m,0)}</b> 倍`:''}`:'')+
     (sal(id,'url')?` <a href="${esc(sal(id,'url'))}" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none">原文 ↗</a>`:'');
   el.hidden=false;
 }
@@ -1134,7 +1134,7 @@ function renderSal(){
   if(!a.length){$('sTake').textContent='薪資資料尚未產生（等 Actions「更新韓股員工薪資」跑完）';$('sTabs').innerHTML='';$('sTbl').innerHTML='';$('sFoot').textContent='';return}
   const s=a.map(r=>r.avg).sort((x,y)=>x-y),q=p=>s[Math.floor(s.length*p)],yrs=[...new Set(a.map(r=>r.yr))].sort();
   const exr=a.filter(r=>r.ex).map(r=>r.ex/r.avg);YR0=yrs[yrs.length-1];
-  $('sTake').innerHTML=`追蹤清單 <strong>${a.length}</strong> 檔（${yrs.join('／')} 年度）：平均薪資中位 <strong>${salTxt(median(s))}</strong>（P25 ${salK(q(.25))}、P75 ${salK(q(.75))}）・≥ ₩1.2 億 <strong>${a.filter(r=>r.avg>=1.2e8).length}</strong> 檔、&lt; ₩0.7 億 <strong>${a.filter(r=>r.avg<7e7).length}</strong> 檔${exr.length?`・高管÷員工中位 <strong>${fmt(median(exr),1)} 倍</strong>`:''}`;
+  $('sTake').innerHTML=`追蹤清單 <strong>${a.length}</strong> 檔（${yrs.join('／')} 年度）：平均薪資中位 <strong>${salTxt(median(s))}</strong>（P25 ${salK(q(.25))}、P75 ${salK(q(.75))}）・≥ ${salK(1.2e8)} <strong>${a.filter(r=>r.avg>=1.2e8).length}</strong> 檔、&lt; ${salK(7e7)} <strong>${a.filter(r=>r.avg<7e7).length}</strong> 檔${exr.length?`・高管÷員工中位 <strong>${fmt(median(exr),1)} 倍</strong>`:''}`;
   $('sTabs').innerHTML=SR_TABS.map(([k,l])=>`<button type="button" data-tab="${k}" aria-pressed="${SR.tab===k}">${l}</button>`).join('');
   let rows=a.slice(),th,cell;
   const co=r=>{const st=stockOf(r.id);return `<td class="co"><span class="nmw"><span class="nm" style="font-family:var(--f-body)">${esc(st.name||r.id)}</span><span class="cd">${r.id}</span></span><span class="ind">${esc(r.th)}${ROLE[r.id]?'・'+esc(ROLE[r.id]):''}</span></td>`};
@@ -1143,13 +1143,14 @@ function renderSal(){
   const peC=r=>{const st=stockOf(r.id);return `<td>${st.pe?fmt(st.pe,1):'—'}<span class="sub">${capM(r.id)?ap()+capT(capM(r.id)):''}</span></td>`};
   const nC=r=>`<td><b>${r.n?fmt(r.n):'—'}</b><span class="sub ${r.n&&r.np?sgc(r.n-r.np):''}">${r.n&&r.np?pct((r.n/r.np-1)*100,1):''}</span></td>`;
   const tenC=r=>`<td><b>${r.ten!=null?fmt(r.ten,1)+' 年':'—'}</b></td>`;
-  const exC=r=>`<td><b>${r.ex?fmt(r.ex/r.avg,1)+'×':'—'}</b><span class="sub">${r.ex?bigTxt(r.ex):''}</span></td>`;
-  const topC=r=>`<td><b>${r.top?fmt(r.top/r.avg,0)+'×':'—'}</b><span class="sub">${r.top?bigTxt(r.top):''}</span></td>`;
+  const exC=r=>`<td><b>${r.ex?fmt(r.ex/r.avg,1)+'×':'—'}</b><span class="sub">${r.ex?bigTxt(r.ex).replace(' ',''):''}</span></td>`;
+  const topC=r=>`<td><b>${r.top?fmt(r.top/r.avg,0)+'×':'—'}</b><span class="sub">${r.top?bigTxt(r.top).replace(' ',''):''}</span></td>`;
+  const avgS=r=>`<td><b>${salK(r.avg)}</b></td>`;
   const totC=r=>`<td>${r.tot!=null?totTxt(r.tot):'—'}</td>`;
   if(SR.tab==='up'){rows=rows.filter(r=>r.chg!=null).sort((x,y)=>y.chg-x.chg);th='<th>平均薪資</th><th>年變化</th><th>本益比</th>';cell=r=>avgC(r)+chgC(r)+peC(r);$('sHead').innerHTML='平均薪資對前一年度的變化，由高到低。韓國績效獎金（PS／PI）跟獲利走，半導體景氣年份會大幅跳動'}
   else if(SR.tab==='n'){rows=rows.filter(r=>r.n).sort((x,y)=>y.n-x.n);th='<th>員工數</th><th>平均薪資</th><th>薪資總額</th>';cell=r=>nC(r)+avgC(r)+totC(r);$('sHead').innerHTML='母公司年底員工數由多到少（含約聘），小字＝對前一年增減'}
   else if(SR.tab==='ten'){rows=rows.filter(r=>r.ten!=null).sort((x,y)=>y.ten-x.ten);th='<th>平均年資</th><th>平均薪資</th><th>本益比</th>';cell=r=>tenC(r)+avgC(r)+peC(r);$('sHead').innerHTML='平均年資由長到短。韓國大企業年功序列明顯，年資長的公司平均薪資天生偏高'}
-  else if(SR.tab==='ex'){rows=rows.filter(r=>r.ex||r.top).sort((x,y)=>(y.ex?y.ex/y.avg:0)-(x.ex?x.ex/x.avg:0));th='<th>高管÷員工</th><th>最高個人÷員工</th><th>平均薪資</th>';cell=r=>exC(r)+topC(r)+avgC(r);$('sHead').innerHTML='非登記高管（미등기임원）平均報酬 ÷ 員工平均，由高到低；最高個人＝年報揭露的 5 億韓元以上前 5 名中最高者'}
+  else if(SR.tab==='ex'){rows=rows.filter(r=>r.ex||r.top).sort((x,y)=>(y.ex?y.ex/y.avg:0)-(x.ex?x.ex/x.avg:0));th='<th>高管倍數</th><th>最高個人</th><th>平均</th>';cell=r=>exC(r)+topC(r)+avgS(r);$('sHead').innerHTML='非登記高管（미등기임원）平均報酬 ÷ 員工平均，由高到低；最高個人＝年報揭露的 5 億韓元以上前 5 名中最高者'}
   else{rows.sort((x,y)=>y.avg-x.avg);th='<th>平均薪資</th><th>年變化</th><th>本益比</th>';cell=r=>avgC(r)+chgC(r)+peC(r);$('sHead').innerHTML='員工 1 人平均薪資由高到低'}
   $('sTbl').innerHTML=`<thead><tr><th>#</th><th>股票</th>${th}</tr></thead><tbody>`+rows.map((r,i)=>`<tr data-id="${r.id}"><td>${i+1}</td>${co(r)}${cell(r)}</tr>`).join('')+'</tbody>';
   $('sFoot').innerHTML=`平均薪資＝OpenDART 年報（사업보고서）「직원 현황」的員工 1 人平均薪資：母公司本身（個別，不含子公司）全體員工，正職＋約聘（含短時間），課稅所得口徑，含獎金、績效分紅（PS／PI）與股票行權所得；每年 3 月底公布前一年度。<b>韓國只揭露平均、沒有中位數</b>，所以要跟台股比，請對台股「全體員工薪資平均」（財報附註），不要對非主管中位數；個股頁對應台股代號旁的「均」就是這個數字。金控、控股公司（KB金融、新韓金融、韓亞金融、SK Square、SK、三星物產等）母公司只有少數員工，平均值不代表整個集團。年變化、人數增減＝對前一年度年報。非登記高管＝미등기임원（不在董事會的執行高管）；最高個人＝年報揭露的 5 億韓元以上前 5 名中最高者，常含退職金，倍數偶爾異常高。數字由程式從申報資料整理（單位與部門合計自動判斷），可能有誤，個股頁有「原文 ↗」可核對${fxOn()?`；台幣以 1 台幣 = ${FX.rate} 韓元固定匯率換算（≈）`:''}。`;
