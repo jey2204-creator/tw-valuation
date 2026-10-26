@@ -136,6 +136,36 @@ def build_inv(bs, fs, cf, q):
     return out
 
 
+def build_np(fs, q):
+    """淨利卡：[季別, 營業利益, 稅前淨利, 稅後淨利(合併), 歸屬母公司淨利]（億）；業外＝稅前−營業利益（網頁端計算）"""
+    import re
+
+    def g(types, pat):
+        d = _ser(fs, types)
+        if not d and pat:
+            rx = re.compile(pat)
+            d = {r["date"]: r["value"] for r in fs if r.get("value") is not None and rx.search((r.get("origin_name") or "").strip())}
+        return d
+    op = _ser(fs, ("OperatingIncome",))
+    pre = g(("PreTaxIncome", "IncomeBeforeIncomeTax", "ProfitLossBeforeTax"), r"^(繼續營業單位)?稅前(淨利|損益)")
+    nn = g(("TotalNonoperatingIncomeAndExpense", "NonoperatingIncomeAndExpense"), r"^營業外收入及支出(合計)?$")
+    na = _ser(fs, ("IncomeAfterTaxes", "NetIncome"))
+    pa = _ser(fs, ("EquityAttributableToOwnersOfParent",))
+    b = lambda v: None if v is None else round(v / 1e8, 2)
+    out = []
+    for lbl, *_ in q:
+        y, n = 2000 + int(lbl[:2]), int(lbl[3])
+        d = f"{y}-{('03-31', '06-30', '09-30', '12-31')[n - 1]}"
+        ni = pa.get(d) if pa.get(d) is not None else na.get(d)
+        if ni is None:
+            continue
+        P = pre.get(d)
+        if P is None and op.get(d) is not None and nn.get(d) is not None:
+            P = op[d] + nn[d]
+        out.append([lbl, b(op.get(d)), b(P), b(na.get(d)), b(ni)])
+    return out
+
+
 def build_cf(fs, cf, q):
     """現金流卡：[季別, 單季營業現金流, 稅後淨利(合併)]（億）；資本支出另取 capex"""
     ni = _ser(fs, ("IncomeAfterTaxes", "NetIncome"))
@@ -216,7 +246,7 @@ def build(sid, today=None, fetch=get):
     name = info[0].get("stock_name", "") if info else ""
     return dict(id=sid, name=name, cyclical=sid in CYCLICAL, updated=dt.datetime.utcnow().strftime("%Y-%m-%dT%H:%MZ"),
                 shares=round(shares, 4) if shares else None, last=last, rev=rev, q=q, riv=riv,
-                capex=build_capex(cf, q), inv=build_inv(bs, fs, cf, q), cf=build_cf(fs, cf, q))
+                capex=build_capex(cf, q), inv=build_inv(bs, fs, cf, q), cf=build_cf(fs, cf, q), np=build_np(fs, q))
 
 
 def build_list():
