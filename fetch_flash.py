@@ -12,7 +12,7 @@
 另收主旨含「每股盈餘」的自行公告（例：台積電法說當天 15:12「2026年第二季每股盈餘新台幣27.25元」）→ 只取 EPS
 
 原始明細存 data/flash/raw.json（同一則不重抓，保留 200 天），每次由 raw 重算 flash.json
-推播：設 Secret NTFY_TOPIC 才會送（ntfy.sh），只送追蹤股（fetch.py STOCKS＋themes.json 成份股＋data/flash_watch.json）
+推播：設 Secret TELEGRAM_TOKEN 才會送（Telegram 機器人；chat id 自動抓，存 data/flash/tg.json），只送追蹤股（fetch.py STOCKS＋themes.json 成份股＋data/flash_watch.json）
       且發言時間在 6 小時內的新公告，避免回補時洗版
 環境變數：BACKFILL_FROM=YYYY-MM-DD（回補起日）、BUDGET_MIN（時間預算，預設 12 分）、GAP（每次請求間隔秒，預設 0.9）
 """
@@ -398,10 +398,43 @@ def build(raw):
 
 
 # ---------------------------------------------------------------- 推播（選用）
-def notify(out, raw):
-    topic = os.environ.get("NTFY_TOPIC")
-    if not topic:
-        return
+SITE = "https://jey2204-creator.github.io/tw-valuation/"
+
+
+def tg(method, payload=None):
+    tok = os.environ.get("TELEGRAM_TOKEN")
+    r = urllib.request.Request(f"https://api.telegram.org/bot{tok}/{method}",
+                               data=json.dumps(payload or {}).encode(), headers={"Content-Type": "application/json"})
+    try:
+        with urllib.request.urlopen(r, timeout=20) as resp:
+            return json.loads(resp.read().decode())
+    except urllib.error.HTTPError as e:
+        try:
+            return json.loads(e.read().decode())
+        except Exception:
+            return {"ok": False, "description": f"HTTP {e.code}"}
+    except Exception as e:  # noqa: BLE001
+        return {"ok": False, "description": str(e)}
+
+
+def tg_chat():
+    """chat id：Secret TELEGRAM_CHAT_ID → data/flash/tg.json → getUpdates（使用者對機器人按「開始」後 24 小時內抓得到）"""
+    c = os.environ.get("TELEGRAM_CHAT_ID")
+    if c:
+        return c, False
+    saved = load(DATA / "flash" / "tg.json", {}).get("chat")
+    if saved:
+        return saved, False
+    j = tg("getUpdates", {"allowed_updates": ["message"]})
+    chats = [u["message"]["chat"]["id"] for u in (j.get("result") or []) if (u.get("message") or {}).get("chat", {}).get("type") == "private"]
+    if not chats:
+        DIAG["tg"] = "還沒有人對機器人按「開始」：" + str(j.get("description") or "getUpdates 空的")
+        return None, False
+    (DATA / "flash" / "tg.json").write_text(json.dumps({"chat": chats[-1]}))
+    return chats[-1], True
+
+
+def watch_codes():
     watch = set(load(DATA / "flash_watch.json", []))
     try:
         watch |= set(re.findall(r'"(\d{4})"', re.search(r"STOCKS\s*=\s*\[[^\]]*\]", (ROOT / "fetch.py").read_text()).group(0)))
@@ -409,8 +442,69 @@ def notify(out, raw):
         pass
     for t in (load(DATA / "themes.json", {}).get("themes") or []):
         watch |= {s[0] for s in t.get("stocks") or []}
-    sent = load(DATA / "flash" / "sent.json", [])
+    return watch
+
+
+def esc(x):
+    return str(x).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+
+def gtxt(v, t):
+    if t:
+        return t
+    return "—" if v is None else f"{v:+.0f}%"
+
+
+def card(i):
+    s = i.get("s") or {}
+    kind = "法說／自結" if i["k"] == "self" else "董事會財報"
+    e = s.get("eps")
+    arrow = "🔴" if (i.get("epsYoy") or 0) > 0 or i.get("epsYoyT") == "轉盈" or i.get("epsYoyT") == ">+300%" else \
+            "🟢" if (i.get("epsYoy") or 0) < 0 or i.get("epsYoyT") in ("轉虧", "虧損") else "⚪"
+    L = [f"{arrow} <b>{esc(i['c'])} {esc(i['n'])}</b>　{i['q'][2:]} {kind}",
+         f"EPS <b>{e if e is not None else '—'}</b> 元（年增 {gtxt(i.get('epsYoy'), i.get('epsYoyT'))}・去年 {(i.get('ly') or {}).get('eps', '—')}）"]
+    if s.get("ni") is not None:
+        L.append(f"淨利 {s['ni']:,.1f} 億（年增 {gtxt(i.get('yoy'), i.get('yoyT'))}・季增 {gtxt(i.get('qoq'), i.get('qoqT'))}）")
+    m = []
+    if i.get("gm") is not None:
+        m.append(f"毛 {i['gm']:.1f}%")
+    if i.get("om") is not None:
+        m.append(f"營 {i['om']:.1f}%")
+    if i.get("nonop") is not None:
+        m.append(("⚠️ " if i["nonop"] >= 30 else "") + f"業外 {i['nonop']:.0f}%")
+    if m:
+        L.append("・".join(m))
+    if i.get("ttm") is not None:
+        L.append(f"近四季 EPS {i['ttm']}" + (f" → 本益比 {i['pe']}" if i.get("pe") else ""))
+    L.append(f'<a href="{SITE}#{i["c"]}">個股頁</a>　<a href="{SITE}flash.html">快訊</a>')
+    return "\n".join(L)
+
+
+def notify(out, raw):
+    """Telegram 推播（設了 Secret TELEGRAM_TOKEN 才會送）：追蹤股的新公告＋追蹤股明天要開董事會"""
+    if not os.environ.get("TELEGRAM_TOKEN"):
+        return
+    chat, first = tg_chat()
+    if not chat:
+        return
+    watch = watch_codes()
+    sentp = DATA / "flash" / "sent.json"
+    sent = load(sentp, [])
+
+    def send(text):
+        j = tg("sendMessage", {"chat_id": chat, "text": text, "parse_mode": "HTML", "disable_web_page_preview": True})
+        if not j.get("ok"):
+            DIAG["fail"].append(f"telegram: {j.get('description')}")
+        else:
+            DIAG["notified"] += 1
+        return j.get("ok")
+
+    if first or os.environ.get("TG_TEST"):
+        mine = [i for i in out["items"] if i["c"] in watch][:1]
+        send(f"✅ 財報快訊已連上 Telegram\n追蹤 {len(watch)} 檔（主題成份股＋持股），公布後 30–40 分鐘內推播。"
+             + ("\n\n範例：\n" + card(mine[0]) if mine else ""))
     cutoff = NOW - dt.timedelta(hours=6)
+    new = []
     for i in out["items"]:
         k = f"{i['c']}_{i['q']}_{i['k']}"
         if k in sent or i["c"] not in watch:
@@ -420,27 +514,24 @@ def notify(out, raw):
             when = dt.datetime(y + 1911, mo, d, int(i["t"][10:12]), int(i["t"][13:15]), tzinfo=TZ)
         except Exception:
             continue
-        if when < cutoff:
-            sent.append(k)
-            continue
-        s = i.get("s") or {}
-        g = i.get("epsYoyT") or (f"{i['epsYoy']:+.0f}%" if i.get("epsYoy") is not None else "—")
-        msg = f"{i['q'][2:]} EPS {s.get('eps')}（年增 {g}）"
-        if s.get("ni") is not None:
-            msg += f"｜淨利 {s['ni']:.1f} 億"
-        if i.get("nonop") is not None and i["nonop"] >= 30:
-            msg += f"｜⚠️業外 {i['nonop']:.0f}%"
-        try:
-            req = urllib.request.Request(f"https://ntfy.sh/{urllib.parse.quote(topic)}", data=msg.encode(), headers={
-                "Title": f"{i['c']} {i['n']} 財報".encode("utf-8").decode("latin-1"),
-                "Click": f"https://jey2204-creator.github.io/tw-valuation/#{i['c']}", "Tags": "chart_with_upwards_trend"})
-            urllib.request.urlopen(req, timeout=20).read()
-            DIAG["notified"] += 1
-        except Exception as e:  # noqa: BLE001
-            DIAG["fail"].append(f"ntfy {i['c']}: {e}")
-            continue
-        sent.append(k)
-    (DATA / "flash" / "sent.json").write_text(json.dumps(sent[-3000:]))
+        if when >= cutoff:
+            new.append(i)
+        sent.append(k)                                  # 太舊的也記下，之後不會補推
+    if len(new) <= 4:
+        for i in new:
+            send(card(i))
+    else:                                              # 一次很多家 → 合併成一則，避免洗版
+        send(f"📢 {len(new)} 家追蹤股公布財報\n\n" + "\n\n".join(card(i) for i in new[:12])
+             + (f"\n\n…還有 {len(new) - 12} 家，看<a href=\"{SITE}flash.html\">快訊</a>" if len(new) > 12 else ""))
+    # 董事會日期提醒：每天第一次執行（13:00 後）提醒「明天」開董事會的追蹤股
+    tomorrow = (NOW.date() + dt.timedelta(days=1)).isoformat()
+    ck = f"cal_{tomorrow}"
+    if ck not in sent and NOW.hour >= 13:
+        due = [c for c in out["cal"] if c["d"] == tomorrow and c["c"] in watch]
+        if due:
+            send("📅 明天開董事會（財報）：" + "、".join(f"{c['c']} {esc(c['n'])}" for c in due))
+        sent.append(ck)
+    sentp.write_text(json.dumps(sent[-3000:]))
 
 
 def main():

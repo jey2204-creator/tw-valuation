@@ -9,6 +9,10 @@ on:
         description: "回補起日 YYYY-MM-DD（平常留空＝只查今天＋昨天）"
         required: false
         default: ""
+      tg_test:
+        description: "填 1 ＝ 送一則 Telegram 測試訊息"
+        required: false
+        default: ""
       budget:
         description: "時間預算（分鐘）"
         required: false
@@ -31,7 +35,9 @@ jobs:
         env:
           BACKFILL_FROM: ${{ github.event.inputs.backfill_from }}
           BUDGET_MIN: ${{ github.event.inputs.budget || '12' }}
-          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TG_TEST: ${{ github.event.inputs.tg_test }}
         run: python fetch_flash.py
       - name: 提交
         if: always()
