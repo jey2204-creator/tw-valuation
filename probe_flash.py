@@ -1,80 +1,37 @@
-"""探測：哪個重大訊息來源最快、內文有沒有財報數字 → data/flash_probe.json（一次性，確認後刪除）"""
-import json, re, time, datetime as dt, urllib.request, urllib.parse, sys
+"""探測 2：觀測站 t05st02 清單 + t05st02_detail（找財報重訊格式）→ data/flash_probe.json（一次性）"""
+import json, time, urllib.request
 
 UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15"
-NOW = dt.datetime.now(dt.timezone(dt.timedelta(hours=8)))
-D = NOW.date()
-ROC = D.year - 1911
-out = {"at": NOW.isoformat(timespec="seconds"), "tries": []}
+API = "https://mops.twse.com.tw/mops/api/"
+out = {"days": {}, "details": []}
 
 
-def get(url, data=None, js=False, ref=None):
-    h = {"User-Agent": UA, "Accept": "application/json, text/html, */*", "Accept-Language": "zh-TW,zh;q=0.9",
-         "Referer": ref or url}
-    body = None
-    if data is not None:
-        if js:
-            body = json.dumps(data).encode(); h["Content-Type"] = "application/json"
-        else:
-            body = urllib.parse.urlencode(data).encode(); h["Content-Type"] = "application/x-www-form-urlencoded"
-    t0 = time.time()
+def post(ep, body):
+    h = {"User-Agent": UA, "Content-Type": "application/json", "Referer": "https://mops.twse.com.tw/mops/",
+         "Accept": "application/json"}
+    r = urllib.request.Request(API + ep, data=json.dumps(body).encode(), headers=h)
     try:
-        with urllib.request.urlopen(urllib.request.Request(url, data=body, headers=h), timeout=90) as r:
-            raw, st = r.read(), r.status
-    except urllib.error.HTTPError as e:
-        raw, st = e.read(), e.code
+        with urllib.request.urlopen(r, timeout=60) as resp:
+            t = resp.read().decode("utf-8", "replace")
     except Exception as e:
-        raw, st = b"", f"ERR {e}"
-    for enc in ("utf-8", "cp950"):
-        try:
-            txt = raw.decode(enc); break
-        except Exception:
-            txt = raw.decode("utf-8", "replace")
-    rec = {"url": url, "data": data, "status": st, "len": len(txt), "sec": round(time.time() - t0, 1)}
-    out["tries"].append(rec)
-    time.sleep(2)
-    return rec, txt
-
-
-def fin(s):
-    return any(k in s for k in ("財務報告", "財務報表", "自結", "每股盈餘", "財報"))
-
-
-# 1) OpenAPI 上市／上櫃每日重大訊息
-for name, url in (("L", "https://openapi.twse.com.tw/v1/opendata/t187ap04_L"),
-                  ("O", "https://www.tpex.org.tw/openapi/v1/mopsfin_t187ap04_O")):
-    rec, txt = get(url)
+        t = json.dumps({"err": str(e)})
+    time.sleep(1.2)
     try:
-        j = json.loads(txt)
-        rec["n"] = len(j)
-        rec["keys"] = list(j[0].keys()) if j else []
-        rec["dates"] = sorted({str(next(iter(x.values()))) for x in j})[:5]
-        rec["first"] = j[0] if j else None
-        f = [x for x in j if fin(json.dumps(x, ensure_ascii=False))]
-        rec["nFin"] = len(f)
-        rec["finSamples"] = f[:4]
-    except Exception as e:
-        rec["parseErr"] = str(e); rec["head"] = txt[:600]
+        return json.loads(t)
+    except Exception:
+        return {"raw": t[:500]}
 
-# 2) 新版觀測站 JSON API（猜幾個端點）
-for ep, body in (("t05sr01_1", {}), ("t05sr01_1", {"marketKind": "all"}),
-                 ("t05st02", {"year": str(ROC), "month": f"{D.month:02d}", "day": f"{D.day:02d}"}),
-                 ("t05st02", {"year": str(ROC), "month": str(D.month), "day": str(D.day), "marketKind": "all"})):
-    rec, txt = get(f"https://mops.twse.com.tw/mops/api/{ep}", body, js=True, ref="https://mops.twse.com.tw/mops/")
-    rec["head"] = txt[:2500]
 
-# 3) 舊版 mopsov ajax（HTML）
-for ep, form in (("ajax_t05sr01_1", {"encodeURIComponent": 1, "step": 0, "TYPEK": "all"}),
-                 ("ajax_t05st02", {"encodeURIComponent": 1, "step": 1, "firstin": 1, "off": 1, "TYPEK": "all",
-                                   "year": str(ROC), "month": f"{D.month:02d}", "day": f"{D.day:02d}"})):
-    for host in ("https://mopsov.twse.com.tw", "https://mops.twse.com.tw"):
-        rec, txt = get(f"{host}/mops/web/{ep}", form, ref=f"{host}/mops/web/{ep[5:]}")
-        plain = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", txt))
-        rec["plain"] = plain[:1500]
-        i = txt.find("每股盈餘")
-        rec["epsCtx"] = txt[max(0, i - 3000): i + 1500] if i >= 0 else None
-        rec["nFinWord"] = txt.count("財務報告") + txt.count("自結")
-        rec["inputs"] = re.findall(r"<input[^>]{0,300}>", txt)[:12]
+for ymd in (("115", "08", "12"), ("115", "07", "16"), ("115", "08", "13")):
+    j = post("t05st02", {"year": ymd[0], "month": ymd[1], "day": ymd[2]})
+    rows = ((j.get("result") or {}).get("data")) or []
+    key = "/".join(ymd)
+    out["days"][key] = {"n": len(rows), "resultKeys": list((j.get("result") or {}).keys()),
+                        "fin": [[r[1], r[2], r[3], r[4]] for r in rows if "財" in r[4] or "盈餘" in r[4] or "自結" in r[4]][:120]}
+    picked = [r for r in rows if ("財務報告" in r[4] or "財務報表" in r[4] or "自結" in r[4])][:6]
+    for r in picked:
+        d = post(r[5]["apiName"], r[5]["parameters"])
+        out["details"].append({"day": key, "row": r[:5], "detail": d})
 
 json.dump(out, open("data/flash_probe.json", "w"), ensure_ascii=False, indent=1)
-print("ok", len(out["tries"]))
+print({k: v["n"] for k, v in out["days"].items()}, len(out["details"]))
