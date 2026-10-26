@@ -1,0 +1,213 @@
+{
+ "at": "2026-10-26T18:20:16+08:00",
+ "tries": [
+  {
+   "url": "https://openapi.twse.com.tw/v1/opendata/t187ap04_L",
+   "data": null,
+   "status": 200,
+   "len": 739,
+   "sec": 1.0,
+   "n": 1,
+   "keys": [
+    "出表日期",
+    "發言日期",
+    "發言時間",
+    "公司代號",
+    "公司名稱",
+    "主旨 ",
+    "符合條款",
+    "事實發生日",
+    "說明"
+   ],
+   "dates": [
+    "1151026"
+   ],
+   "first": {
+    "出表日期": "1151026",
+    "發言日期": "1151025",
+    "發言時間": "70004",
+    "公司代號": "6949",
+    "公司名稱": "沛爾生醫*-創",
+    "主旨 ": "公告本公司股票面額由「新台幣10元」變更為「新台幣0.5元」，\r\n公告期間：115年08月06日至115年11月05日。",
+    "符合條款": "第51款",
+    "事實發生日": "1150713",
+    "說明": "1.事實發生日：民國115年07月13日\r\n2.公司名稱：沛爾生技醫藥股份有限公司\r\n3.與公司關係(請輸入本公司或子公司)：本公司\r\n4.相互持股比例：不適用\r\n5.發生緣由：\r\n(1)公司面額變更核准日期/事實發生日：民國115年07月13日\r\n(2)公司面額變更核准文號：經授商字第經授商字第11530095510號號函\r\n(3)董事會決議通過換股計畫書日期：民國115年08月06日\r\n(4)變更前面額：新台幣10.00\r\n(5)變更後面額：新台幣0.50\r\n(6)新股票上市買賣日及舊股票終止上市買賣日：民國115年09月07日\r\n(7)換發股票時程重大訊息公告日期：民國115年08月06日重大訊息公告\r\n6.因應措施：無。\r\n7.其他應敘明事項：一、本公司係辦理變更股票面額，每股面額由新台幣10元變更為新台幣0.5元，業經臺灣\r\n證券交易所函核准在案。\r\n二、配合面額變更，新股票上市買賣日(115年09月07日)之參考價按比例調整為舊股票\r\n最後交易日(115年8月26日)收盤價之20分之1，請投資人注意。\r\n三、股票面額變更後，每股盈餘、每股淨值及每股股價等將有所變動，參閱資訊時須留\r\n意。"
+   },
+   "nFin": 1,
+   "finSamples": [
+    {
+     "出表日期": "1151026",
+     "發言日期": "1151025",
+     "發言時間": "70004",
+     "公司代號": "6949",
+     "公司名稱": "沛爾生醫*-創",
+     "主旨 ": "公告本公司股票面額由「新台幣10元」變更為「新台幣0.5元」，\r\n公告期間：115年08月06日至115年11月05日。",
+     "符合條款": "第51款",
+     "事實發生日": "1150713",
+     "說明": "1.事實發生日：民國115年07月13日\r\n2.公司名稱：沛爾生技醫藥股份有限公司\r\n3.與公司關係(請輸入本公司或子公司)：本公司\r\n4.相互持股比例：不適用\r\n5.發生緣由：\r\n(1)公司面額變更核准日期/事實發生日：民國115年07月13日\r\n(2)公司面額變更核准文號：經授商字第經授商字第11530095510號號函\r\n(3)董事會決議通過換股計畫書日期：民國115年08月06日\r\n(4)變更前面額：新台幣10.00\r\n(5)變更後面額：新台幣0.50\r\n(6)新股票上市買賣日及舊股票終止上市買賣日：民國115年09月07日\r\n(7)換發股票時程重大訊息公告日期：民國115年08月06日重大訊息公告\r\n6.因應措施：無。\r\n7.其他應敘明事項：一、本公司係辦理變更股票面額，每股面額由新台幣10元變更為新台幣0.5元，業經臺灣\r\n證券交易所函核准在案。\r\n二、配合面額變更，新股票上市買賣日(115年09月07日)之參考價按比例調整為舊股票\r\n最後交易日(115年8月26日)收盤價之20分之1，請投資人注意。\r\n三、股票面額變更後，每股盈餘、每股淨值及每股股價等將有所變動，參閱資訊時須留\r\n意。"
+    }
+   ]
+  },
+  {
+   "url": "https://www.tpex.org.tw/openapi/v1/mopsfin_t187ap04_O",
+   "data": null,
+   "status": 200,
+   "len": 496,
+   "sec": 3.8,
+   "n": 1,
+   "keys": [
+    "Date",
+    "發言日期",
+    "發言時間",
+    "SecuritiesCompanyCode",
+    "CompanyName",
+    "主旨",
+    "符合條款",
+    "事實發生日",
+    "說明"
+   ],
+   "dates": [
+    "1151026"
+   ],
+   "first": {
+    "Date": "1151026",
+    "發言日期": "1151025",
+    "發言時間": "191051",
+    "SecuritiesCompanyCode": "3680",
+    "CompanyName": "家登",
+    "主旨": "公告本公司調整現金股利配息率",
+    "符合條款": "第14款",
+    "事實發生日": "1151023",
+    "說明": "1.董事會或股東會決議日期:NA\n2.原發放股利種類及金額:\n(1)盈餘發放現金股利新台幣577,270,140元，每股配發新台幣6元。\n(2)資本公積發放現金新台幣384,846,760元，每股配發新台幣4元。\n3.變更後發放股利種類及金額:\n(1)盈餘發放現金股利新台幣577,270,140元，每股配發新台幣5.94884736元。\n(2)資本公積發放現金新台幣384,846,760元，每股配發新台幣3.96589824元。\n4.變更原因:茲因公司發行之國內第四次無擔保轉換公司債持有人辦理轉換，\n致流通在外股數增加，原現金股利配息率因此發生變動。\n5.其他應敘明事項:依本公司115年8月13日董事會之決議，授權董事長調整配息率。"
+   },
+   "nFin": 0,
+   "finSamples": []
+  },
+  {
+   "url": "https://mops.twse.com.tw/mops/api/t05sr01_1",
+   "data": {},
+   "status": 200,
+   "len": 77,
+   "sec": 0.7,
+   "head": "{\"code\":500,\"message\":\"傳入參數異常\",\"result\":null,\"datetime\":\"115/10/26 18:20:25\"}"
+  },
+  {
+   "url": "https://mops.twse.com.tw/mops/api/t05sr01_1",
+   "data": {
+    "marketKind": "all"
+   },
+   "status": 200,
+   "len": 77,
+   "sec": 0.7,
+   "head": "{\"code\":500,\"message\":\"傳入參數異常\",\"result\":null,\"datetime\":\"115/10/26 18:20:28\"}"
+  },
+  {
+   "url": "https://mops.twse.com.tw/mops/api/t05st02",
+   "data": {
+    "year": "115",
+    "month": "10",
+    "day": "26"
+   },
+   "status": 200,
+   "len": 3587,
+   "sec": 1.0,
+   "head": "{\"code\":200,\"message\":\"查詢成功\",\"result\":{\"data\":[[\"115/10/26\",\"07:00:04\",\"2072\",\"世紀能源\",\"公告本公司名稱由「世紀離岸風電設備股份有限公司」更名\\r\\n為「世紀能源設備股份有限公司」，公告期間：115年8月26日至\\r\\n115年11月25日。\",{\"apiName\":\"t05st02_detail\",\"parameters\":{\"companyId\":\"2072\",\"marketKind\":\"sii\",\"enterDate\":\"1151026\",\"serialNumber\":1}}],[\"115/10/26\",\"07:00:04\",\"6949\",\"沛爾生醫*-創\",\"公告本公司股票面額由「新台幣10元」變更為「新台幣0.5元」，\\r\\n公告期間：115年08月06日至115年11月05日。\",{\"apiName\":\"t05st02_detail\",\"parameters\":{\"companyId\":\"6949\",\"marketKind\":\"sii\",\"enterDate\":\"1151026\",\"serialNumber\":1}}],[\"115/10/26\",\"13:25:21\",\"5215\",\"科嘉-KY\",\"代子公司蘇州嘉吉/科德/嘉財/艾普來/百宏/嘉皇/嘉駿 \\r\\n公告一年內累積處分同一有價證券達實收資本額20%\",{\"apiName\":\"t05st02_detail\",\"parameters\":{\"companyId\":\"5215\",\"marketKind\":\"sii\",\"enterDate\":\"1151026\",\"serialNumber\":1}}],[\"115/10/26\",\"13:25:46\",\"5215\",\"科嘉-KY\",\"代子公司蘇州嘉吉/科德/嘉財/艾普來/百宏/嘉皇/嘉駿 \\r\\n公告一年內累積取得同一有價證券達實收資本額20%\",{\"apiName\":\"t05st02_detail\",\"parameters\":{\"companyId\":\"5215\",\"marketKind\":\"sii\",\"enterDate\":\"1151026\",\"serialNumber\":2}}],[\"115/10/26\",\"17:10:02\",\"8499\",\"鼎炫-KY\",\"代&#12070;公司隆揚電&#12070;(昆&#12077;)股份有限公司公告取得理財產品\",{\"apiName\":\"t05st02_detail\",\"parameters\":{\"companyId\":\"8499\",\"marketKind\":\"sii\",\"enterDate\":\"1151026\",\"serialNumber\":1}}],[\"115/10/26\",\"17:42:28\",\"9904\",\"寶成\",\"代重要子公司裕元工業(集團)有限公司公告盈利警告\",{\"apiName\":\"t05st02_detail\",\"parameters\":{\"companyId\":\"9904\",\"marketKind\":\"sii\",\"enterDate\":\"1151026\",\"serialNumber\":1}}],[\"115/10/25\",\"19:10:51\",\"3680\",\"家登\",\"公告本公司調整現金股利配息率\",{\"apiName\":\"t05st02_detail\",\"parameters\":{\"companyId\":\"3680\",\"marketKind\":\"otc\",\"enterDate\":\"1151021\",\"serialNumber\":1}}],[\"115/10/26\",\"10:20:41\",\"5013\",\"強新\",\"公告本公司副董事長逝世\",{\"apiName\":\"t05st02_detail\",\"parameters\":{\"companyId\":\"5013\",\"marketKind\":\"otc\",\"enterDate\":\"1151026\",\"serialNumber\":1}}],[\"115/10/26\",\"10:21:34\",\"5013\",\"強新\",\"公告本公司董事逝世\",{\"apiName\":\"t05st02_detail\",\"parameters\":{\"companyId\":\"5013\",\"marketKind\":\"otc\",\"enterDate\":\"1151026\",\"serialNumber\":2}}],[\"115/10/26\",\"11:10:24\",\"6244\",\"茂迪\",\"公告本公司董事逝世\",{\"apiName\":\"t05st02_detail\",\"parameters\":{\"companyId\":\"6244\",\"marketKind\":\"otc\",\"enterDate\":\"1151026\",\"serialNumber\":1}}],[\"115/10/26\",\"11:10:39\",\"6244\",\"茂迪\",\"代重要子公司Power Islands Limited公告法人董事\\r\\n代表人逝世\",{\"apiName\":\"t05st02_detail\",\"parameters\":{\"companyId\":\"6244\",\"marketKind\":\"otc\",\"enterDate\":\"1151026\",\"serialNumber\":2}}],[\"115/10/26\",\"11:10:52\",\"6244\",\"茂迪\",\"代重要子公司Cheer View Investment Limited公告法人董事\\r\\n代表人逝世\",{\"apiName\":\"t05st02_detail\",\"parameters\":{\"companyId\":\"6244\",\"marketKind\":\"otc\",\"enterDate\":\"1151026\",\"serialNumber\":4}}],[\"115/10/26\",\"11:12:37\",\"3625\",\"西勝\",\"公告本公司董事辭世\",{"
+  },
+  {
+   "url": "https://mops.twse.com.tw/mops/api/t05st02",
+   "data": {
+    "year": "115",
+    "month": "10",
+    "day": "26",
+    "marketKind": "all"
+   },
+   "status": 200,
+   "len": 3587,
+   "sec": 0.8,
+   "head": "{\"code\":200,\"message\":\"查詢成功\",\"result\":{\"data\":[[\"115/10/26\",\"07:00:04\",\"2072\",\"世紀能源\",\"公告本公司名稱由「世紀離岸風電設備股份有限公司」更名\\r\\n為「世紀能源設備股份有限公司」，公告期間：115年8月26日至\\r\\n115年11月25日。\",{\"apiName\":\"t05st02_detail\",\"parameters\":{\"companyId\":\"2072\",\"marketKind\":\"sii\",\"enterDate\":\"1151026\",\"serialNumber\":1}}],[\"115/10/26\",\"07:00:04\",\"6949\",\"沛爾生醫*-創\",\"公告本公司股票面額由「新台幣10元」變更為「新台幣0.5元」，\\r\\n公告期間：115年08月06日至115年11月05日。\",{\"apiName\":\"t05st02_detail\",\"parameters\":{\"companyId\":\"6949\",\"marketKind\":\"sii\",\"enterDate\":\"1151026\",\"serialNumber\":1}}],[\"115/10/26\",\"13:25:21\",\"5215\",\"科嘉-KY\",\"代子公司蘇州嘉吉/科德/嘉財/艾普來/百宏/嘉皇/嘉駿 \\r\\n公告一年內累積處分同一有價證券達實收資本額20%\",{\"apiName\":\"t05st02_detail\",\"parameters\":{\"companyId\":\"5215\",\"marketKind\":\"sii\",\"enterDate\":\"1151026\",\"serialNumber\":1}}],[\"115/10/26\",\"13:25:46\",\"5215\",\"科嘉-KY\",\"代子公司蘇州嘉吉/科德/嘉財/艾普來/百宏/嘉皇/嘉駿 \\r\\n公告一年內累積取得同一有價證券達實收資本額20%\",{\"apiName\":\"t05st02_detail\",\"parameters\":{\"companyId\":\"5215\",\"marketKind\":\"sii\",\"enterDate\":\"1151026\",\"serialNumber\":2}}],[\"115/10/26\",\"17:10:02\",\"8499\",\"鼎炫-KY\",\"代&#12070;公司隆揚電&#12070;(昆&#12077;)股份有限公司公告取得理財產品\",{\"apiName\":\"t05st02_detail\",\"parameters\":{\"companyId\":\"8499\",\"marketKind\":\"sii\",\"enterDate\":\"1151026\",\"serialNumber\":1}}],[\"115/10/26\",\"17:42:28\",\"9904\",\"寶成\",\"代重要子公司裕元工業(集團)有限公司公告盈利警告\",{\"apiName\":\"t05st02_detail\",\"parameters\":{\"companyId\":\"9904\",\"marketKind\":\"sii\",\"enterDate\":\"1151026\",\"serialNumber\":1}}],[\"115/10/25\",\"19:10:51\",\"3680\",\"家登\",\"公告本公司調整現金股利配息率\",{\"apiName\":\"t05st02_detail\",\"parameters\":{\"companyId\":\"3680\",\"marketKind\":\"otc\",\"enterDate\":\"1151021\",\"serialNumber\":1}}],[\"115/10/26\",\"10:20:41\",\"5013\",\"強新\",\"公告本公司副董事長逝世\",{\"apiName\":\"t05st02_detail\",\"parameters\":{\"companyId\":\"5013\",\"marketKind\":\"otc\",\"enterDate\":\"1151026\",\"serialNumber\":1}}],[\"115/10/26\",\"10:21:34\",\"5013\",\"強新\",\"公告本公司董事逝世\",{\"apiName\":\"t05st02_detail\",\"parameters\":{\"companyId\":\"5013\",\"marketKind\":\"otc\",\"enterDate\":\"1151026\",\"serialNumber\":2}}],[\"115/10/26\",\"11:10:24\",\"6244\",\"茂迪\",\"公告本公司董事逝世\",{\"apiName\":\"t05st02_detail\",\"parameters\":{\"companyId\":\"6244\",\"marketKind\":\"otc\",\"enterDate\":\"1151026\",\"serialNumber\":1}}],[\"115/10/26\",\"11:10:39\",\"6244\",\"茂迪\",\"代重要子公司Power Islands Limited公告法人董事\\r\\n代表人逝世\",{\"apiName\":\"t05st02_detail\",\"parameters\":{\"companyId\":\"6244\",\"marketKind\":\"otc\",\"enterDate\":\"1151026\",\"serialNumber\":2}}],[\"115/10/26\",\"11:10:52\",\"6244\",\"茂迪\",\"代重要子公司Cheer View Investment Limited公告法人董事\\r\\n代表人逝世\",{\"apiName\":\"t05st02_detail\",\"parameters\":{\"companyId\":\"6244\",\"marketKind\":\"otc\",\"enterDate\":\"1151026\",\"serialNumber\":4}}],[\"115/10/26\",\"11:12:37\",\"3625\",\"西勝\",\"公告本公司董事辭世\",{"
+  },
+  {
+   "url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1",
+   "data": {
+    "encodeURIComponent": 1,
+    "step": 0,
+    "TYPEK": "all"
+   },
+   "status": 200,
+   "len": 15035,
+   "sec": 0.9,
+   "plain": " 公開資訊觀測站 市場別：全體公司 公司代號 公司簡稱 發言日期 發言時間 主旨 &nbsp; 9904 寶成 115/10/26 17:42:28 代重要子公司裕元工業(集團)有限公司公告盈利警告 6618 永虹先進 115/10/26 17:14:08 公告本公司董事會委任總經理 6618 永虹先進 115/10/26 17:12:57 公告本公司董事會推選董事長 8499 鼎炫-KY 115/10/26 17:10:02 代&#12070;公司隆揚電&#12070;(昆&#12077;)股份有限公司公告取得理財產品 3272 東碩 115/10/26 14:12:42 公告本公司115年第三季合併財務報告董事會召開日期為 115年11月03日 5215 科嘉-KY 115/10/26 13:25:46 代子公司蘇州嘉吉/科德/嘉財/艾普來/百宏/嘉皇/嘉駿 公告一年內累積取得同一有價證券達實收資本額20% 5215 科嘉-KY 115/10/26 13:25:21 代子公司蘇州嘉吉/科德/嘉財/艾普來/百宏/嘉皇/嘉駿 公告一年內累積處分同一有價證券達實收資本額20% 3625 西勝 115/10/26 11:12:37 公告本公司董事辭世 6244 茂迪 115/10/26 11:10:52 代重要子公司Cheer View Investment Limited公告法人董事 代表人逝世 6244 茂迪 115/10/26 11:10:39 代重要子公司Power Islands Limited公告法人董事 代表人逝世 6244 茂迪 115/10/26 11:10:24 公告本公司董事逝世 5013 強新 115/10/26 10:21:34 公告本公司董事逝世 5013 強新 115/10/26 10:20:41 公告本公司副董事長逝世 2072 世紀能源 115/10/26 07:00:04 公告本公司名稱由「世紀離岸風電設備股份有限公司」更名 為「世紀能源設備股份有限公司」，公告期間：115年8月26日至 115年11月25日。 6696 仁新* 115/10/26 07:00:04 公告本公司股票面額由「新台幣10元」變更為「新台幣1元」， 公告期間：115年8月5日至115年11月4日。 6949 沛爾生醫*-創 115/10/26 07:00:04 公告本公司股票面額由「新台幣10元」變更為「新台幣0.5元」， 公告期間：115年08月06日至115年11月05日。 setInterval(\"ajax1(document.fm_t05sr01_1_1,'table01');\",180000); try { if(!document.querySelector('#table01')){ var table01 = document.createElement(\"div\"); table01.id = \"table01\"; document.body.appendChild(table01); if(document.querySelector(\"#div01\")){ table01.appendChild(div01); }; }; if (document.autoForm!=null && document.autoForm!=undefined && document.autoForm.run.value==''){ ajax1(document.autoForm,'div01'); document.querySele",
+   "epsCtx": null,
+   "nFinWord": 1,
+   "inputs": [
+    "<input type='hidden' name='TYPEK' value='all'>",
+    "<input type='hidden' name='step' value='0'>",
+    "<input type='button' value='全體公司' onclick=\"document.fm_t05sr01_1_1.TYPEK.value='all';ajax1(this.form,'table01');\">",
+    "<input type='button' value='上市公司' onclick=\"document.fm_t05sr01_1_1.TYPEK.value='sii';ajax1(this.form,'table01');\">",
+    "<input type='button' value='上櫃公司' onclick=\"document.fm_t05sr01_1_1.TYPEK.value='otc';ajax1(this.form,'table01');\">",
+    "<input type='button' value='興櫃公司' onclick=\"document.fm_t05sr01_1_1.TYPEK.value='rotc';ajax1(this.form,'table01');\">",
+    "<input type='button' value='公開發行公司' onclick=\"document.fm_t05sr01_1_1.TYPEK.value='pub';ajax1(this.form,'table01');\">",
+    "<input type='hidden' name='TYPEK' value='all'>",
+    "<input type='hidden' name='step' value='1'>",
+    "<input type='hidden' name='skey'>",
+    "<input type='hidden' name='hhc_co_name'>",
+    "<input type='hidden' name='firstin' value='true'>"
+   ]
+  },
+  {
+   "url": "https://mops.twse.com.tw/mops/web/ajax_t05sr01_1",
+   "data": {
+    "encodeURIComponent": 1,
+    "step": 0,
+    "TYPEK": "all"
+   },
+   "status": 200,
+   "len": 686,
+   "sec": 0.7,
+   "plain": " 因為安全性考量，您所執行的頁面無法呈現。 FOR SECURITY REASONS, THIS PAGE CAN NOT BE ACCESSED. 您可以 回上一頁 繼續其他動作，或撥打以下電話通報問題：(02)8101-5840, (02)8101-5834。 YOU COULD GO BACK TO PREVIOUS PAGE OR CALL US FOR FURTHER HELP：(02)8101-5840, (02)8101-5834。 錯誤代碼：7641438222940760273 function getIP(json) { document.write(\"您的IP：\", json.ip); } ",
+   "epsCtx": null,
+   "nFinWord": 0,
+   "inputs": []
+  },
+  {
+   "url": "https://mopsov.twse.com.tw/mops/web/ajax_t05st02",
+   "data": {
+    "encodeURIComponent": 1,
+    "step": 1,
+    "firstin": 1,
+    "off": 1,
+    "TYPEK": "all",
+    "year": "115",
+    "month": "10",
+    "day": "26"
+   },
+   "status": 200,
+   "len": 2619,
+   "sec": 0.9,
+   "plain": " 公開資訊觀測站 資料庫中查無需求資料 try { if(!document.querySelector('#table01')){ var table01 = document.createElement(\"div\"); table01.id = \"table01\"; document.body.appendChild(table01); if(document.querySelector(\"#div01\")){ table01.appendChild(div01); }; }; if (document.autoForm!=null && document.autoForm!=undefined && document.autoForm.run.value==''){ ajax1(document.autoForm,'div01'); document.querySelector('form[name=autoForm]').remove(); }; if (document.autoForm1!=null && document.autoForm1!=undefined && document.autoForm1.run.value==''){ ajax1(document.autoForm1,'div01'); document.querySelector('form[name=autoForm1]').remove(); }; if (document.autoRunScript!=null && document.autoRunScript!=undefined && document.autoRunScript.run!=null && document.autoRunScript.run.value!=''){ let s = document.autoRunScript.run.value; let script = document.createElement(\"script\"); script.innerText = s; document.body.appendChild(script); document.querySelector('form[name=autoRunScript] > input[name=run]').remove(); }; if (document.autoRunScript1!=null && document.autoRunScript1!=undefined){ if (document.autoRunScript1.count!=null && document.autoRunScript1.count!=undefined && document.autoRunScript1.count.value!=''){ var count = parseInt(document.autoRunScript1.count.value); for (var i=0;i input[name=run]').remove(); }; }; } catch (error) { console.error(\"Script Error:\", error); }; ",
+   "epsCtx": null,
+   "nFinWord": 0,
+   "inputs": []
+  },
+  {
+   "url": "https://mops.twse.com.tw/mops/web/ajax_t05st02",
+   "data": {
+    "encodeURIComponent": 1,
+    "step": 1,
+    "firstin": 1,
+    "off": 1,
+    "TYPEK": "all",
+    "year": "115",
+    "month": "10",
+    "day": "26"
+   },
+   "status": 200,
+   "len": 686,
+   "sec": 0.7,
+   "plain": " 因為安全性考量，您所執行的頁面無法呈現。 FOR SECURITY REASONS, THIS PAGE CAN NOT BE ACCESSED. 您可以 回上一頁 繼續其他動作，或撥打以下電話通報問題：(02)8101-5840, (02)8101-5834。 YOU COULD GO BACK TO PREVIOUS PAGE OR CALL US FOR FURTHER HELP：(02)8101-5840, (02)8101-5834。 錯誤代碼：7641438222940762822 function getIP(json) { document.write(\"您的IP：\", json.ip); } ",
+   "epsCtx": null,
+   "nFinWord": 0,
+   "inputs": []
+  }
+ ]
+}
