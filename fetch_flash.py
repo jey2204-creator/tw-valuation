@@ -190,7 +190,7 @@ def parse_self(subj, txt):
 
 # ---------------------------------------------------------------- 抓清單＋明細
 def fetch_day(d, raw):
-    old = d < NOW.date() - dt.timedelta(days=10)
+    old = d < NOW.date() - dt.timedelta(days=40)
     res = post("t05st02", {"year": str(d.year - 1911), "month": f"{d.month:02d}", "day": f"{d.day:02d}"})
     if res is None:
         return False
@@ -380,7 +380,10 @@ def build(raw):
     cal.sort(key=lambda v: (v["d"], v["c"]))
     items.sort(key=lambda i: i["t"], reverse=True)
     DIAG["parsed"] = len(items)
-    seasons = sorted({i["q"] for i in items}, reverse=True)
+    cnt = {}
+    for i in items:
+        cnt[i["q"]] = cnt.get(i["q"], 0) + 1
+    seasons = sorted((q for q, n in cnt.items() if n >= 5), reverse=True)
     return {"updated": NOW.isoformat(timespec="minutes"), "today": today, "seasons": seasons, "unit": "億元",
             "items": items, "cal": cal, "diag": DIAG}
 
