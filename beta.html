@@ -1,1 +1,222 @@
-<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=./"><title>台股估值看板</title><script>location.replace("./"+location.hash)</script><a href="./">已搬到正式版 →</a>
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>財報快訊</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="財報快訊">
+<meta name="theme-color" content="#f3f4f6" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0e1117" media="(prefers-color-scheme: dark)">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* 與 index.html／health.html 同一套色票；漲跌照台股慣例：紅＝成長、綠＝衰退 */
+:root{
+  --bg:#f3f4f6; --card:#ffffff; --fg:#151a23; --muted:#5d6675; --line:#e2e5ea;
+  --accent:#1f5fbf; --warm:#c46a12; --up:#d03b3b; --dn:#0b8f3c; --upBg:rgba(208,59,59,.08); --dnBg:rgba(11,143,60,.08);
+  --hi:rgba(31,95,191,.07);
+  --f-body:"Noto Sans TC",system-ui,-apple-system,"PingFang TC",sans-serif;
+  --f-num:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0e1117; --card:#171b23; --fg:#e8ebf0; --muted:#97a0ae; --line:#272d38;
+  --accent:#6aa1ff; --warm:#f0a04b; --up:#ff6b6b; --dn:#3ccf74; --upBg:rgba(255,107,107,.10); --dnBg:rgba(60,207,116,.10);
+  --hi:rgba(106,161,255,.09); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e1117; --card:#171b23; --fg:#e8ebf0; --muted:#97a0ae; --line:#272d38;
+  --accent:#6aa1ff; --warm:#f0a04b; --up:#ff6b6b; --dn:#3ccf74; --upBg:rgba(255,107,107,.10); --dnBg:rgba(60,207,116,.10);
+  --hi:rgba(106,161,255,.09); color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.5;-webkit-text-size-adjust:100%}
+.wrap{max-width:560px;margin:0 auto;padding-inline:16px;padding-block:0 40px}
+.hhead{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-top:14px}
+.hhead h1{font-size:22px;font-weight:900;margin:0}
+.hhead h1 sup{font-size:10px;font-weight:700;color:var(--warm);border:1px solid var(--warm);border-radius:4px;padding:0 4px;margin-left:6px;vertical-align:4px}
+.ghost{flex:none;font-size:13px;color:var(--accent);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:3px 11px;background:var(--card)}
+.asof{font-size:11.5px;color:var(--muted);margin:4px 0 0}
+.num{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+.bar{position:sticky;top:0;z-index:5;background:var(--bg);padding-block:8px 6px;border-bottom:1px solid var(--line);margin-top:6px}
+.row1{display:flex;gap:6px;align-items:center}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;flex:none}
+.seg button{font:inherit;font-size:12.5px;line-height:1.6;border:0;background:var(--card);color:var(--muted);padding:2px 11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--fg);color:var(--card);font-weight:700}
+select{margin-left:auto;font:inherit;font-size:12.5px;color:var(--fg);background:var(--card);border:1px solid var(--line);border-radius:999px;padding:2px 8px}
+.chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin-top:7px}
+.chips::-webkit-scrollbar{display:none}
+.chips button{flex:none;font:inherit;font-size:12.5px;border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:999px;padding:2px 10px;cursor:pointer}
+.chips button[aria-pressed="true"]{border-color:var(--accent);color:var(--accent);font-weight:700;background:var(--hi)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px}
+.st{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:6px 8px;min-width:0}
+.st b{display:block;font-family:var(--f-num);font-size:17px;line-height:1.3}
+.st span{font-size:11px;color:var(--muted)}
+details.cal{background:var(--card);border:1px solid var(--line);border-radius:12px;margin-top:10px}
+details.cal summary{list-style:none;cursor:pointer;padding:9px 12px;font-size:14px;font-weight:700;display:flex;justify-content:space-between;gap:8px}
+details.cal summary::-webkit-details-marker{display:none}
+details.cal summary small{font-weight:400;color:var(--muted);font-size:12px}
+details.cal[open] summary .tw{transform:rotate(90deg)}
+.tw{display:inline-block;transition:transform .15s;color:var(--muted)}
+.cday{padding:4px 12px 8px;border-top:1px solid var(--line);font-size:13px}
+.cday h3{font-size:12px;color:var(--muted);margin:4px 0 2px;font-weight:500}
+.cday a{display:inline-block;margin:2px 8px 2px 0;color:var(--fg);text-decoration:none}
+.cday a.w{color:var(--accent);font-weight:700}
+.list{margin-top:10px;display:flex;flex-direction:column;gap:6px}
+a.it{display:block;text-decoration:none;color:inherit;background:var(--card);border:1px solid var(--line);border-left:3px solid var(--line);border-radius:10px;padding:7px 10px 6px}
+a.it.u{border-left-color:var(--up)} a.it.d{border-left-color:var(--dn)}
+a.it.w{background:linear-gradient(var(--hi),var(--hi)),var(--card)}
+.l1{display:flex;align-items:baseline;gap:6px}
+.l1 .nm{font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.l1 .cd{font-family:var(--f-num);font-size:12px;color:var(--muted)}
+.tag{font-size:10.5px;border:1px solid var(--line);border-radius:4px;padding:0 4px;color:var(--muted);flex:none}
+.tag.self{color:var(--warm);border-color:var(--warm)}
+.l1 .tm{margin-left:auto;font-family:var(--f-num);font-size:11.5px;color:var(--muted);flex:none}
+.l2{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;margin-top:3px}
+.l2 div{min-width:0}
+.l2 small{display:block;font-size:10.5px;color:var(--muted);line-height:1.2}
+.l2 b{font-family:var(--f-num);font-size:16px;font-weight:600}
+.l2 i{font-style:normal;font-family:var(--f-num);font-size:12px;margin-left:3px}
+.up{color:var(--up)} .dn{color:var(--dn)} .mu{color:var(--muted)}
+.l3{font-size:11.5px;color:var(--muted);margin-top:3px;display:flex;flex-wrap:wrap;gap:2px 10px}
+.l3 .num{color:var(--fg)}
+.warn{color:var(--warm);font-weight:700}
+.empty{font-size:13px;color:var(--muted);border:1px dashed var(--line);border-radius:10px;padding:16px;text-align:center;margin-top:10px}
+.more{display:block;width:100%;margin-top:8px;font:inherit;font-size:13px;border:1px solid var(--line);border-radius:999px;background:var(--card);color:var(--accent);padding:6px}
+.foot{font-size:11.5px;color:var(--muted);margin-top:14px;line-height:1.6}
+a:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hhead"><h1>📢 財報快訊<sup>BETA</sup></h1><a class="ghost" href="./">← 首頁</a></div>
+  <p class="asof" id="asof">讀取中…</p>
+
+  <div class="bar">
+    <div class="row1">
+      <div class="seg" id="seas" role="group" aria-label="季別"></div>
+      <select id="sort" aria-label="排序">
+        <option value="t">最新公布</option>
+        <option value="eg">EPS 年增 ▼</option>
+        <option value="ni">單季淨利 ▼</option>
+        <option value="pe">本益比 ▲</option>
+      </select>
+    </div>
+    <div class="chips" id="chips" role="group" aria-label="篩選">
+      <button data-f="all" aria-pressed="true">全部</button>
+      <button data-f="w">⭐ 追蹤</button>
+      <button data-f="g">📈 年增</button>
+      <button data-f="b">📉 衰退／轉虧</button>
+      <button data-f="x">⚠️ 業外高</button>
+    </div>
+  </div>
+
+  <div class="stats" id="stats"></div>
+  <details class="cal" id="calBox"><summary><span><span class="tw">▸</span> 📅 即將公布</span><small id="calN"></small></summary><div id="cal"></div></details>
+  <div class="list" id="list"></div>
+  <button class="more" id="more" hidden>顯示更多</button>
+
+  <p class="foot">
+    數字來源：公開資訊觀測站「董事會通過財報」重大訊息（第 31 款標準格式，1 月 1 日累計數）。單季＝本期累計 − 上一季累計；去年同季、上一季用觀測站財報彙總。<br>
+    「法說」＝公司在董事會前自行公告的 EPS，董事會版出來後自動取代。<br>
+    業外占比＝(稅前 − 營業利益) ÷ 稅前，≥ 30% 標 ⚠️：淨利大增若來自業外，不宜直接推算未來 EPS。<br>
+    ⭐ 追蹤＝首頁自選、自訂主題與內建主題成份股。點一列開個股頁。
+  </p>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const store={get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+let D=null,WATCH=new Set(),SEA=null,F='all',SORT=store.get('flSort')||'t',SHOW=60;
+const fmt=(v,d=2)=>v==null?'—':v.toLocaleString('zh-TW',{minimumFractionDigits:d,maximumFractionDigits:d});
+const cls=v=>v==null?'mu':v>0?'up':v<0?'dn':'mu';
+function g(v,t){ // 成長率＋標籤
+  if(t&&t!=='>+300%')return `<i class="${t==='轉盈'?'up':t==='轉虧'||t==='虧損'?'dn':'mu'}">${t}</i>`;
+  if(v==null)return '<i class="mu">—</i>';
+  if(t==='>+300%')return '<i class="up">&gt;+300%</i>';
+  return `<i class="${cls(v)}">${v>0?'+':''}${v.toFixed(Math.abs(v)<10?1:0)}%</i>`;
+}
+const qlab=q=>q.slice(2);
+const dshort=t=>{const [d,h]=t.split(' ');const p=d.split('/');return `${+p[1]}/${+p[2]} ${h}`};
+function loadWatch(){
+  (store.get('fav')||[]).forEach(c=>WATCH.add(c));
+  const cfg=store.get('themeCfg');
+  if(cfg&&cfg.themes)Object.values(cfg.themes).forEach(t=>(t.stocks||[]).forEach(s=>WATCH.add(Array.isArray(s)?s[0]:s)));
+}
+function growthOf(i){return i.epsYoy!=null?i.epsYoy:i.epsYoyT==='轉盈'?9999:i.epsYoyT==='轉虧'?-9999:i.epsYoyT==='虧損'?-5000:null}
+function pass(i){
+  if(F==='w')return WATCH.has(i.c);
+  const e=growthOf(i);
+  if(F==='g')return e!=null&&e>0;
+  if(F==='b')return e!=null&&e<0;
+  if(F==='x')return i.nonop!=null&&i.nonop>=30;
+  return true;
+}
+function row(i){
+  const s=i.s||{},w=WATCH.has(i.c),e=growthOf(i);
+  const dir=e==null?'':e>0?' u':e<0?' d':'';
+  const self=i.k==='self';
+  let h=`<a class="it${dir}${w?' w':''}" href="./#${i.c}"><div class="l1"><span class="nm">${w?'⭐ ':''}${i.n}</span><span class="cd">${i.c}</span>`+
+    `${i.mk?'<span class="tag">櫃</span>':''}${self?'<span class="tag self">法說</span>':''}<span class="tm">${dshort(i.t)}</span></div>`;
+  h+=`<div class="l2"><div><small>${qlab(i.q)} EPS（元）</small><b class="${cls(s.eps)}">${fmt(s.eps)}</b></div>`+
+     `<div><small>EPS 年增 · 去年 ${fmt(i.ly&&i.ly.eps)}</small><b>${g(i.epsYoy,i.epsYoyT).replace('<i','<span').replace('</i>','</span>')}</b></div>`;
+  if(self){h+=`<div><small>公告</small><span style="font-size:11.5px">${i.subj}</span></div></div></a>`;return h}
+  h+=`<div><small>淨利（億）· 季增</small><b class="${cls(s.ni)}">${fmt(s.ni,s.ni!=null&&Math.abs(s.ni)>=100?0:1)}</b>${g(i.qoq,i.qoqT)}</div></div>`;
+  const bits=[];
+  if(i.gm!=null||i.om!=null)bits.push(`毛 <span class="num">${fmt(i.gm,1)}%</span> 營 <span class="num">${fmt(i.om,1)}%</span>${i.mSrc==='累計'?'<span class="mu">(累計)</span>':''}`);
+  if(i.nonop!=null)bits.push(i.nonop>=30?`<span class="warn">⚠️ 業外 ${fmt(i.nonop,0)}%</span>`:`業外 <span class="num">${fmt(i.nonop,0)}%</span>`);
+  if(i.ytd&&i.ytd.eps!=null)bits.push(`累計 EPS <span class="num">${fmt(i.ytd.eps)}</span>${g(i.ytdYoy,i.ytdYoyT)}`);
+  if(i.ttm!=null)bits.push(`近四季 <span class="num">${fmt(i.ttm)}</span>${i.pe!=null?` → 本益比 <span class="num">${fmt(i.pe,1)}</span>`:''}`);
+  h+=`<div class="l3">${bits.map(b=>`<span>${b}</span>`).join('')}</div></a>`;
+  return h;
+}
+function render(){
+  const all=D.items.filter(i=>i.q===SEA);
+  let L=all.filter(pass);
+  const key={t:i=>i.t,eg:i=>growthOf(i)??-1e9,ni:i=>(i.s&&i.s.ni)??-1e9,pe:i=>i.pe==null?1e9:-i.pe}[SORT];
+  L.sort((a,b)=>{const x=key(a),y=key(b);return x<y?1:x>y?-1:0});
+  $('list').innerHTML=L.slice(0,SHOW).map(row).join('')||`<div class="empty">${F==='w'?'追蹤的股票這一季還沒公布':'這個條件沒有公司'}</div>`;
+  $('more').hidden=L.length<=SHOW;$('more').textContent=`顯示更多（還有 ${L.length-SHOW} 家）`;
+  // 摘要
+  const b=all.filter(i=>i.k==='board'),eg=b.map(growthOf).filter(v=>v!=null);
+  const up=eg.filter(v=>v>0).length,lose=b.filter(i=>i.s&&i.s.ni<0).length,nx=b.filter(i=>i.nonop!=null&&i.nonop>=30).length;
+  const today=all.filter(i=>i.t.slice(0,9)===rocToday()).length;
+  $('stats').innerHTML=[[all.length,'已公布'],[today,'今天'],[eg.length?Math.round(up/eg.length*100)+'%':'—','EPS 年增 &gt;0'],[nx,'⚠️ 業外高']]
+    .map(([v,l])=>`<div class="st"><b>${v}</b><span>${l}</span></div>`).join('');
+  document.querySelectorAll('#chips button').forEach(x=>x.setAttribute('aria-pressed',x.dataset.f===F));
+}
+function rocToday(){const d=new Date(Date.now()+8*3600e3);return `${d.getUTCFullYear()-1911}/${String(d.getUTCMonth()+1).padStart(2,'0')}/${String(d.getUTCDate()).padStart(2,'0')}`}
+function renderCal(){
+  const C=D.cal||[];
+  $('calN').textContent=C.length?`${C.length} 家已排董事會`+(C.some(c=>WATCH.has(c.c))?` · ⭐${C.filter(c=>WATCH.has(c.c)).length}`:''):'目前沒有';
+  const wk='日一二三四五六',by={};
+  C.forEach(c=>(by[c.d]=by[c.d]||[]).push(c));
+  $('cal').innerHTML=Object.keys(by).sort().map(d=>{const dd=new Date(d+'T00:00:00+08:00');
+    const arr=by[d].sort((a,b)=>WATCH.has(b.c)-WATCH.has(a.c));
+    return `<div class="cday"><h3>${+d.slice(5,7)}/${+d.slice(8)}（${wk[dd.getDay()]}）· ${arr.length} 家</h3>`+
+      arr.map(c=>`<a href="./#${c.c}" class="${WATCH.has(c.c)?'w':''}">${WATCH.has(c.c)?'⭐':''}${c.n}<span class="num mu" style="font-size:11px"> ${c.c}</span></a>`).join('')+'</div>'}).join('')||'<div class="cday mu">還沒有公司公告董事會日期</div>';
+  $('calBox').open=C.some(c=>WATCH.has(c.c));
+}
+async function main(){
+  loadWatch();
+  try{
+    const [fl,th]=await Promise.all([fetch('data/flash.json?t='+Date.now()).then(r=>r.json()),fetch('data/themes.json').then(r=>r.json()).catch(()=>null)]);
+    D=fl;
+    if(th&&th.themes)th.themes.forEach(t=>(t.stocks||[]).forEach(s=>WATCH.add(s[0])));
+  }catch(e){$('asof').textContent='讀不到 data/flash.json：'+e.message;return}
+  const u=new Date(D.updated);
+  $('asof').innerHTML=`最後檢查 <span class="num">${u.getMonth()+1}/${u.getDate()} ${String(u.getHours()).padStart(2,'0')}:${String(u.getMinutes()).padStart(2,'0')}</span> · 平日 13:00–23:30 每 30 分 · 金額億元`;
+  const seas=D.seasons.slice(0,3);SEA=seas[0];
+  $('seas').innerHTML=seas.map(q=>`<button data-q="${q}" aria-pressed="${q===SEA}">${qlab(q)} <span class="num" style="font-size:11px">${D.items.filter(i=>i.q===q).length}</span></button>`).join('');
+  $('sort').value=SORT;
+  renderCal();render();
+}
+$('seas').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;SEA=b.dataset.q;SHOW=60;
+  document.querySelectorAll('#seas button').forEach(x=>x.setAttribute('aria-pressed',x===b));render()});
+$('chips').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;F=b.dataset.f;SHOW=60;render()});
+$('sort').addEventListener('change',e=>{SORT=e.target.value;store.set('flSort',SORT);render()});
+$('more').addEventListener('click',()=>{SHOW+=80;render()});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&D&&Date.now()-new Date(D.updated)>25*60e3)main()});
+main();
+</script>
+</body>
+</html>

@@ -287,6 +287,23 @@ def pct(a, b):
     return round(a / b * 100, 1) if a is not None and b not in (None, 0) else None
 
 
+def ttm_pe(code, y, n, ytd_eps, ann, sd):
+    """近四季 EPS＝今年累計＋(去年全年 − 去年同期累計)；本益比用 summary.json 收盤"""
+    close = (sd.get(code) or [None])[0]
+    if ytd_eps is None:
+        return None, None, close
+    if n == 4:
+        ttm = ytd_eps
+    else:
+        fy, ly = prev_ytd(code, y - 1, 4, ann), prev_ytd(code, y - 1, n, ann)
+        if not fy or not ly or fy.get("eps") is None or ly.get("eps") is None:
+            return None, None, close
+        ttm = ytd_eps + fy["eps"] - ly["eps"]
+    ttm = round(ttm, 2)
+    pe = round(close / ttm, 1) if close and ttm > 0.01 else None
+    return ttm, pe, close
+
+
 def build(raw):
     names = {r[0]: r[1] for r in load(DATA / "list.json", [])}
     summ = load(DATA / "summary.json", {})
@@ -333,17 +350,7 @@ def build(raw):
         gm = pct(base.get("gp"), base.get("rev"))
         om = pct(base.get("op"), base.get("rev"))
         nm = pct(s.get("ni"), rev_s) if rev_s else pct(a.get("ni"), a.get("rev"))
-        # 近四季 EPS 與本益比：summary 的近四季到上一季 → 加本季、扣去年同季
-        ttm = pe = None
-        e = se.get(code)
-        prevq = f"{str(y if n > 1 else y - 1)[2:]}Q{n - 1 if n > 1 else 4}"
-        if e and e[0] == prevq and e[5] is not None and s.get("eps") is not None and ly.get("eps") is not None:
-            ttm = round(e[5] + s["eps"] - ly["eps"], 2)
-        elif e and e[0] == f"{str(y)[2:]}Q{n}" and e[5] is not None:
-            ttm = e[5]
-        close = (sd.get(code) or [None])[0]
-        if ttm and ttm > 0.01 and close:
-            pe = round(close / ttm, 1)
+        ttm, pe, close = ttm_pe(code, y, n, a.get("eps"), ann, sd)
         items.append({
             "c": code, "n": names.get(code, r["nm"]), "mk": 0 if r["mk"] == "sii" else 1,
             "t": f"{r['d']} {r['tm'][:5]}", "q": f"{y}Q{n}", "k": "board", "subj": r["subj"][:60],
@@ -370,7 +377,9 @@ def build(raw):
             s["eps"] = round(s["eps"] - p["eps"], 2)
         ly = single(r["c"], s["y"] - 1, s["n"], ann) or {}
         g, t = growth(s["eps"], ly.get("eps"))
-        items.append({"c": r["c"], "n": names.get(r["c"], r["nm"]), "mk": 0 if r["mk"] == "sii" else 1,
+        p = prev_ytd(r["c"], s["y"], s["n"] - 1, ann)
+        ttm, pe, close = ttm_pe(r["c"], s["y"], s["n"], (p["eps"] + s["eps"]) if p and p.get("eps") is not None else None, ann, sd)
+        items.append({"c": r["c"], "ttm": ttm, "pe": pe, "close": close, "n": names.get(r["c"], r["nm"]), "mk": 0 if r["mk"] == "sii" else 1,
                       "t": f"{r['d']} {r['tm'][:5]}", "q": q, "k": "self", "subj": r["subj"][:60],
                       "s": {"eps": s["eps"]}, "ly": {"eps": ly.get("eps")}, "epsYoy": g, "epsYoyT": t})
     # 已公布的不再列在日曆
