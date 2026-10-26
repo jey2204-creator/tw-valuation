@@ -259,7 +259,11 @@ h2.sec small{font-weight:500;letter-spacing:0}
 #themePage .top .dns{margin-left:auto}#themePage .top .dns+.sp{margin-left:0}
 body.dense .lst td{padding-block:4px;line-height:1.3}body.dense .lst th{padding-block:4px}
 body.dense .lst .nm{font-size:13.5px}
-body.dense .lst td.sk .nmw{white-space:nowrap}body.dense .lst td.sk .cd{display:inline-block;margin-left:3px;font-size:10.5px;vertical-align:-2px}
+body.dense .lst td:not(.sk){font-size:12.5px}
+/* 緊湊股票欄：第一行只放中文名（太長就…），代號移到第二行跟市值同列，避免長名字把整張表撐寬、最右欄被切 */
+body.dense .lst td.sk{max-width:6.6em}
+body.dense .lst td.sk .nmw{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body.dense .lst .dl{overflow:hidden;text-overflow:ellipsis}body.dense .lst .dl .c{margin-right:4px}
 body.dense .lst .dl{display:block;font-size:10.5px;color:var(--muted);font-family:var(--f-num);white-space:nowrap}
 body.dense .lst .dl .pill{font-size:10px;padding:0 5px;margin-left:3px;vertical-align:1px;font-family:var(--f-body)}
 body.dense .lst .sub{font-size:10.5px}body.dense .lst .rk{margin-right:3px}
@@ -1022,7 +1026,7 @@ function tTable(t){const el=$('tList'),[k,dir]=TS.split(':');let rows=t.stocks.s
   if(k){const f=TSORT[k];rows.sort((a,b)=>{const x=f(a[0]),y=f(b[0]);if(x==null)return 1;if(y==null)return -1;return (x-y)*(+dir||-1)})}
   const lqs=rows.map(([id])=>(ST[id]||{}).lq).filter(Boolean).sort(),LQ=lqs[lqs.length-1];let RK=0;
   const th=(key,lb)=>{const on=key==='pe'?k in TPEL:key==='pb'?k in TPBL:k===key;return `<th data-k="${key}" class="${on?'on':''}">${key==='pe'&&on?TPEL[k]:key==='pb'&&on?TPBL[k]:lb}${on?(+dir>0?' ▲':' ▼'):''}</th>`};
-  el.innerHTML=`<thead><tr>${th('cap','股票')}${th('px','收盤')}${th('pe','本益比')}${th('pb','淨值比')}${th('ry','營收年增')}</tr></thead><tbody>`+rows.map(([id,note])=>{
+  el.innerHTML=`<thead><tr>${th('cap','股票')}${th('px','收盤')}${th('pe','本益比')}${th('pb','淨值比')}${th('ry',DENSE?'營收':'營收年增')}</tr></thead><tbody>`+rows.map(([id,note])=>{
     const s=stockOf(id),tr=tracked(id),o=ST[id]||{},cm=capM(id);
     const pills=(tr?'':'<span class="pill o">查無資料</span>')+(s.cyc?'<span class="pill">循環</span>':'');
     // EPS 年增＋PEG：規則同台股站 epsCell（虧損／轉盈、>300% 低基期不算 PEG）
@@ -1031,12 +1035,12 @@ function tTable(t){const el=$('tList'),[k,dir]=TS.split(':');let rows=t.stocks.s
     if(o.peg!=null)e+=`<span class="sub ${pegc(o.peg)}">PEG ${fmt(o.peg,o.peg<10?2:1)}</span>`;else if(o.ey>300)e+='<span class="sub">低基期</span>';
     if(DENSE){   // 緊湊：規則同台股／美股站 epsDense，一行「四季年增 P PEG」；淨值比欄外資縮成小字同格
       let d;if(o.ek)d=`<span class="${o.ek==='轉盈'?'vu':'vd'}">${o.ek}</span>`;else if(o.ey!=null)d=`<span class="${sgc(o.ey)}">${o.ey>300?'>300%':pct(o.ey,0)}</span>`;else d='EPS —';
-      if(o.peg!=null)d+=` <span class="${pegc(o.peg)}">P${fmt(o.peg,o.peg<10?2:1)}</span>`;else if(o.ey>300)d+=' 低基';
-      const pd=(tr?'':'<span class="pill o">查無</span>')+(s.cyc?'<span class="pill">循環</span>':''),cv=cm?capT(cm):'';
-      return `<tr data-id="${id}"><td class="sk">${k==='cap'&&cm!=null?`<span class="rk">#${++RK}</span>`:''}<span class="nmw"><span class="nm" style="font-family:var(--f-body)">${esc(s.name||id)}</span><span class="cd">${id}</span></span>${cv||pd?`<span class="dl">${cv}${pd}</span>`:''}</td>`+
+      if(o.peg!=null)d+=` <span class="${pegc(o.peg)}">P${fmt(o.peg,o.peg<10?2:1)}</span>`;
+      const pd=tr?'':'<span class="pill o">查無</span>',cv=cm?capT(cm):'';   // 循環籤只在完整模式顯示（省寬度）
+      return `<tr data-id="${id}"><td class="sk">${k==='cap'&&cm!=null?`<span class="rk">#${++RK}</span>`:''}<span class="nmw" title="${esc(s.name||id)} ${id}"><span class="nm" style="font-family:var(--f-body)">${esc(s.name||id)}</span></span><span class="dl"><span class="c">${id}</span>${cv}${pd}</span></td>`+
         (tr?`<td>${pxT(s.close)}<span class="sub ${sgc(s.chg)}">${s.chg==null?'—':pct(s.chg,2)}</span></td>`:'<td>—</td>')+
-        `<td>${s.pe?fmt(s.pe,1):'—'}<span class="sub" title="近四季 EPS 年增；P＝PEG（本益比÷EPS 年增）">${d}</span></td><td>${s.pb?fmt(s.pb,2):'—'}<span class="sub">外${s.fr!=null?fmt(s.fr,0)+'%':'—'}</span></td>`+
-        `<td class="${sgc(o.ry)}">${o.ry!=null?pct(o.ry,1):'—'}<span class="sub"${o.lq&&o.lq!==LQ?' style="color:var(--warm)" title="跟其他檔不同季"':''}>${o.lq||''}</span></td></tr>`}
+        `<td>${s.pe?fmt(s.pe,s.pe>=100?0:1):'—'}<span class="sub" title="近四季 EPS 年增；P＝PEG（本益比÷EPS 年增）">${d}</span></td><td>${s.pb?fmt(s.pb,2):'—'}<span class="sub">外${s.fr!=null?fmt(s.fr,0)+'%':'—'}</span></td>`+
+        `<td class="${sgc(o.ry)}">${o.ry!=null?pct(o.ry,0):'—'}<span class="sub"${o.lq&&o.lq!==LQ?' style="color:var(--warm)" title="跟其他檔不同季"':''}>${o.lq?o.lq.slice(2):''}</span></td></tr>`}
     return `<tr data-id="${id}"><td class="sk">${k==='cap'&&cm!=null?`<span class="rk">#${++RK}</span>`:''}<span class="nmw"><span class="nm" style="font-family:var(--f-body)">${esc(s.name||id)}</span><span class="cd">${id}</span></span>${cm?`<span class="cap">${capT(cm)}</span>`:''}${pills||note?`<div class="role">${pills}${esc(note||'')}</div>`:''}</td>`+
       (tr?`<td>${pxT(s.close)}<span class="sub ${sgc(s.chg)}">${s.chg==null?'—':pct(s.chg,2)}</span>${o.mtd!=null?`<span class="sub sm">本月 <span class="${sgc(o.mtd)}">${pct(o.mtd,1)}</span></span>`:''}</td>`:'<td>—</td>')+
       `<td>${s.pe?fmt(s.pe,1):'—'}${e}</td><td>${s.pb?fmt(s.pb,2):'—'}<span class="sub sm">外資${s.fr!=null?fmt(s.fr,1)+'%':'—'}</span></td>`+
