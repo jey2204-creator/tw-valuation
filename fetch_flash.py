@@ -1,0 +1,437 @@
+"""財報快訊 → data/flash.json（beta.html 用）
+
+來源：觀測站新版 API（GitHub Actions 連得到；雲端對話環境連不到）
+  POST https://mops.twse.com.tw/mops/api/t05st02          {"year":"115","month":"10","day":"26"} → 當日重大訊息清單
+  POST https://mops.twse.com.tw/mops/api/t05st02_detail   清單每列最後一格附的 parameters → 說明全文
+  ⚠️ 用日期查清單時，前一天傍晚的訊息也可能歸在隔天 → 每次查今天＋昨天，用 (代號, enterDate, serialNumber) 去重
+
+只抓兩種重訊（符合條款第 31 款的標準格式）：
+  ① 董事會通過財報：說明內有「報導期間 115/01/01~115/09/30」與 1 月 1 日累計的營收／毛利／營益／稅前／
+     本期淨利／歸母淨利／EPS（仟元、元）→ 用 data/health/q/ 的 MOPS 累計數換算單季、年增、季增
+  ② 財報董事會召開日期：說明內有「董事會預計召開日期:115/11/03」→ 公布日曆
+另收主旨含「每股盈餘」的自行公告（例：台積電法說當天 15:12「2026年第二季每股盈餘新台幣27.25元」）→ 只取 EPS
+
+原始明細存 data/flash/raw.json（同一則不重抓，保留 200 天），每次由 raw 重算 flash.json
+推播：設 Secret NTFY_TOPIC 才會送（ntfy.sh），只送追蹤股（fetch.py STOCKS＋themes.json 成份股＋data/flash_watch.json）
+      且發言時間在 6 小時內的新公告，避免回補時洗版
+環境變數：BACKFILL_FROM=YYYY-MM-DD（回補起日）、BUDGET_MIN（時間預算，預設 12 分）、GAP（每次請求間隔秒，預設 0.9）
+"""
+import json, os, re, time, datetime as dt, urllib.request, urllib.parse
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent
+DATA = ROOT / "data"
+RAW = DATA / "flash" / "raw.json"
+OUT = DATA / "flash.json"
+API = "https://mops.twse.com.tw/mops/api/"
+UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15"
+TZ = dt.timezone(dt.timedelta(hours=8))
+NOW = dt.datetime.now(TZ)
+T0 = time.time()
+BUDGET = float(os.environ.get("BUDGET_MIN") or 12) * 60
+GAP = float(os.environ.get("GAP") or 0.9)
+DIAG = {"req": 0, "fail": [], "days": {}, "newDetail": 0, "parsed": 0, "notified": 0, "stop": None}
+
+FIN = re.compile(r"財務報告|財務報表|財報|每股盈餘|自結")
+SKIP = re.compile(r"背書|資金貸與|主管|異動|注意交易|應收帳款|負債比率|淨值百分|淨值\d|盈餘分配|分派|除息|股利|iXBRL|附註|"
+                  r"代子公司|代重要子公司|更正|重新核閱|會計師|現金餘額|月份?自結|\d{1,2}月(份)?(自結|合併)|理財|取得|處分")
+CAL = re.compile(r"召開|預計")
+
+
+# ---------------------------------------------------------------- 請求
+def post(ep, body):
+    if time.time() - T0 > BUDGET:
+        DIAG["stop"] = DIAG["stop"] or f"超過時間預算 {BUDGET/60:.0f} 分"
+        return None
+    for i in range(3):
+        time.sleep(GAP)
+        DIAG["req"] += 1
+        r = urllib.request.Request(API + ep, data=json.dumps(body).encode(), headers={
+            "User-Agent": UA, "Content-Type": "application/json", "Accept": "application/json",
+            "Referer": "https://mops.twse.com.tw/mops/"})
+        try:
+            with urllib.request.urlopen(r, timeout=60) as resp:
+                j = json.loads(resp.read().decode("utf-8", "replace"))
+            if j.get("code") == 200:
+                return j.get("result") or {}
+            err = f"code {j.get('code')} {j.get('message')}"
+            if "頻繁" in str(j.get("message")):
+                time.sleep(20)
+        except Exception as e:  # noqa: BLE001
+            err = f"{type(e).__name__}: {e}"
+        time.sleep(3 * (i + 1))
+    DIAG["fail"].append(f"{ep} {json.dumps(body, ensure_ascii=False)[:90]} → {err}")
+    return None
+
+
+def load(p, default):
+    try:
+        return json.loads(Path(p).read_text())
+    except Exception:
+        return default
+
+
+# ---------------------------------------------------------------- 解析
+def num(s):
+    s = (s or "").strip().replace(",", "").replace(" ", "")
+    neg = s.startswith("(") and s.endswith(")") or s.startswith("-") or s.startswith("－")
+    s = s.strip("()-－")
+    try:
+        v = float(s)
+    except ValueError:
+        return None
+    return -v if neg else v
+
+
+VAL = re.compile(r"[:：]\s*(\(?[-－]?[\d,]+(?:\.\d+)?\)?)\s*(?:元|仟元)?\s*$")
+PERIOD = re.compile(r"(\d{2,4})/(\d{1,2})/(\d{1,2})\s*[~～\-至]\s*(\d{2,4})/(\d{1,2})/(\d{1,2})")
+
+
+def parse_report(txt):
+    """標準格式（第 31 款）→ {y, n, rev, gp, op, pre, np, ni, eps}；不是財報格式回傳 None"""
+    flat = re.sub(r"\s*\n\s*", "", txt)          # 有些公司把標籤斷成兩行
+    m = PERIOD.search(flat)
+    if not m:
+        return None
+    y1, mo1, y2, mo2 = int(m.group(1)), int(m.group(2)), int(m.group(4)), int(m.group(5))
+    y = y2 + 1911 if y2 < 1000 else y2
+    if mo1 != 1 or mo2 not in (3, 6, 9, 12):
+        return {"y": y, "n": None, "bad": f"期間 {m.group(0)}"}
+    out = {"y": y, "n": mo2 // 3}
+    lines = re.split(r"\n(?=\s*\d{1,2}\s*[.．、])", txt)
+    for ln in lines:
+        one = re.sub(r"\s+", "", ln)
+        v = VAL.search(one)
+        if not v:
+            continue
+        val = num(v.group(1))
+        lab = one[:v.start()]
+        if "總資產" in lab or "總負債" in lab or "權益" in lab and "淨利" not in lab:
+            continue
+        if "每股盈餘" in lab:
+            k = "eps"
+        elif "歸屬於母公司" in lab:
+            k = "ni"
+        elif "稅前" in lab:
+            k = "pre"
+        elif "本期淨利" in lab or "本期稅後淨利" in lab:
+            k = "np"
+        elif "營業利益" in lab:
+            k = "op"
+        elif "營業毛利" in lab:
+            k = "gp"
+        elif "營業收入" in lab or (lab.endswith("淨收益(仟元)") and "利息" not in lab):
+            k = "rev"
+        else:
+            continue
+        out.setdefault(k, val)
+    if out.get("ni") is None and out.get("np") is not None:
+        out["ni"] = out["np"]
+    return out if (out.get("ni") is not None or out.get("eps") is not None) else {"y": y, "n": out["n"], "bad": "找不到淨利"}
+
+
+ROCD = re.compile(r"(\d{3})\s*[/年]\s*(\d{1,2})\s*[/月]\s*(\d{1,2})")
+
+
+def parse_cal(subj, txt):
+    m = re.search(r"預計召開日期[^\d]{0,6}(\d{3})/(\d{1,2})/(\d{1,2})", re.sub(r"\s+", "", txt or ""))
+    if not m:
+        m = re.search(r"(?:召開|預計)[^\d]{0,12}(\d{3})\s*[/年]\s*(\d{1,2})\s*[/月]\s*(\d{1,2})", subj + (txt or ""))
+    if not m:
+        return None
+    try:
+        d = dt.date(int(m.group(1)) + 1911, int(m.group(2)), int(m.group(3)))
+    except ValueError:
+        return None
+    q = None
+    mq = re.search(r"(\d{3,4})年(?:度)?(?:第([一二三四1-4])季|(上半年)|(年度|全年))", subj + (txt or ""))
+    if mq:
+        yy = int(mq.group(1)); yy = yy + 1911 if yy < 1000 else yy
+        n = mq.group(2)
+        n = {"一": 1, "二": 2, "三": 3, "四": 4}.get(n, n) if n else (2 if mq.group(3) else 4)
+        q = f"{yy}Q{int(n)}"
+    return {"d": d.isoformat(), "q": q}
+
+
+CN = {"一": 1, "二": 2, "三": 3, "四": 4}
+
+
+def parse_self(subj, txt):
+    """自行公告（法說）的 EPS：主旨或內文出現「每股盈餘…元」且有第 X 季"""
+    s = subj + " " + re.sub(r"\s+", "", txt or "")[:600]
+    me = re.search(r"每股(?:稅後)?盈餘[^\d\-－(（]{0,10}([-－(（]?\d+\.\d+)", s)
+    mq = re.search(r"(\d{3,4})年(?:度)?第([一二三四1-4])季", s)
+    if not (me and mq) or re.search(r"累計|前三季|上半年", subj):
+        return None
+    yy = int(mq.group(1)); yy = yy + 1911 if yy < 1000 else yy
+    return {"y": yy, "n": int(CN.get(mq.group(2), mq.group(2))), "eps": num(me.group(1).replace("（", "(")), "single": True}
+
+
+# ---------------------------------------------------------------- 抓清單＋明細
+def fetch_day(d, raw):
+    res = post("t05st02", {"year": str(d.year - 1911), "month": f"{d.month:02d}", "day": f"{d.day:02d}"})
+    if res is None:
+        return False
+    rows = res.get("data") or []
+    hit = 0
+    for r in rows:
+        try:
+            date, tm, code, name, subj, link = r[0], r[1], r[2], r[3], re.sub(r"\s+", "", r[4]), r[5]
+        except Exception:
+            continue
+        p = (link or {}).get("parameters") or {}
+        if not re.fullmatch(r"\d{4}", str(code)) or not FIN.search(subj) or SKIP.search(subj):
+            continue
+        if p.get("marketKind") not in ("sii", "otc"):
+            continue
+        key = f"{code}_{p.get('enterDate')}_{p.get('serialNumber')}"
+        hit += 1
+        if key in raw:
+            continue
+        det = post((link or {}).get("apiName") or "t05st02_detail", p)
+        if det is None:
+            if DIAG["stop"]:
+                break
+            continue
+        rec = (det.get("data") or [[None] * 10])[0]
+        raw[key] = {"c": code, "nm": name, "mk": p.get("marketKind"), "d": date, "tm": tm, "subj": subj,
+                    "cl": str(rec[7]) if len(rec) > 7 else None, "txt": rec[9] if len(rec) > 9 else "",
+                    "got": NOW.isoformat(timespec="minutes")}
+        DIAG["newDetail"] += 1
+    DIAG["days"][d.isoformat()] = {"rows": len(rows), "fin": hit}
+    return True
+
+
+# ---------------------------------------------------------------- 計算
+QCACHE = {}
+
+
+def hq(y, n):
+    """MOPS 累計數：{代號: [市場, 歸母淨利千, 稅前千, 營收百萬, EPS]}"""
+    if n == 0:
+        y, n = y - 1, 4
+    k = (y, n)
+    if k not in QCACHE:
+        QCACHE[k] = (load(DATA / "health" / "q" / f"{y}Q{n}.json", {}) or {}).get("d") or {}
+    return QCACHE[k]
+
+
+def prev_ytd(code, y, n, ann):
+    """(y, n) 的累計數；優先用自己存的重訊（有毛利、營益），沒有再用 MOPS 彙總"""
+    if n == 0:
+        return {"ni": 0, "eps": 0, "rev": 0, "pre": 0, "gp": 0, "op": 0}   # 第 1 季前一期累計＝0
+    a = ann.get((code, y, n))
+    if a:
+        return a
+    h = hq(y, n).get(code)
+    if h:
+        return {"ni": h[1], "pre": h[2], "rev": h[3] * 1000 if h[3] is not None else None, "eps": h[4]}
+    return None
+
+
+def sub(a, b, k):
+    if a is None or b is None or a.get(k) is None or b.get(k) is None:
+        return None
+    return a[k] - b[k]
+
+
+def single(code, y, n, ann, cur=None):
+    """單季：累計(y,n) − 累計(y,n−1)"""
+    c = cur or prev_ytd(code, y, n, ann)
+    p = prev_ytd(code, y, n - 1, ann)
+    if c is None or p is None:
+        return None
+    o = {k: sub(c, p, k) for k in ("rev", "gp", "op", "pre", "ni", "eps")}
+    if o["eps"] is not None:
+        o["eps"] = round(o["eps"], 2)
+    return o
+
+
+def growth(cur, prev):
+    """回傳 (年增%, 標籤)"""
+    if cur is None or prev is None:
+        return None, None
+    if prev <= 0:
+        return None, ("轉盈" if cur > 0 else "虧損")
+    if cur <= 0:
+        return None, "轉虧"
+    g = (cur / prev - 1) * 100
+    return round(g, 1), (">+300%" if g > 300 else None)
+
+
+def pct(a, b):
+    return round(a / b * 100, 1) if a is not None and b not in (None, 0) else None
+
+
+def build(raw):
+    names = {r[0]: r[1] for r in load(DATA / "list.json", [])}
+    summ = load(DATA / "summary.json", {})
+    sd, se = summ.get("d") or {}, summ.get("eps") or {}
+    ann, items, cal, selfs = {}, [], {}, []
+    for key, r in sorted(raw.items(), key=lambda kv: (kv[1]["d"], kv[1]["tm"])):
+        rep = parse_report(r.get("txt") or "") if r.get("cl") in ("31", None) or "每股盈餘" in (r.get("txt") or "") else None
+        if rep and rep.get("n") and not rep.get("bad"):
+            rep["key"], rep["r"] = key, r
+            ann[(r["c"], rep["y"], rep["n"])] = rep          # 同季多則（例：更正）以最後一則為準
+            continue
+        if CAL.search(r["subj"]) and "董事會" in (r["subj"] + (r.get("txt") or ""))[:400]:
+            c = parse_cal(r["subj"], r.get("txt"))
+            if c:
+                cal[(r["c"], c["q"])] = {"c": r["c"], "n": names.get(r["c"], r["nm"]), "d": c["d"], "q": c["q"],
+                                         "mk": 0 if r["mk"] == "sii" else 1}
+            continue
+        s = parse_self(r["subj"], r.get("txt"))
+        if s:
+            s["r"], s["key"] = r, key
+            selfs.append(s)
+
+    for (code, y, n), a in ann.items():
+        r = a["r"]
+        s = single(code, y, n, ann, cur=a) or {}
+        ly = single(code, y - 1, n, ann) or {}
+        pq = single(code, y, n - 1, ann) if n > 1 else single(code, y - 1, 4, ann)
+        pq = pq or {}
+        lyy = prev_ytd(code, y - 1, n, ann) or {}
+        g_ni, t_ni = growth(s.get("ni"), ly.get("ni"))
+        g_eps, t_eps = growth(s.get("eps"), ly.get("eps"))
+        q_ni, tq_ni = growth(s.get("ni"), pq.get("ni"))
+        y_ni, ty_ni = growth(a.get("ni"), lyy.get("ni"))
+        # 業外占比：單季算得出來用單季，否則用累計
+        if s.get("op") is not None and s.get("pre") is not None and s["pre"] > 0:
+            nonop, nonop_src = pct(s["pre"] - s["op"], s["pre"]), "單季"
+        elif a.get("op") is not None and a.get("pre") is not None and a["pre"] > 0:
+            nonop, nonop_src = pct(a["pre"] - a["op"], a["pre"]), "累計"
+        else:
+            nonop, nonop_src = None, None
+        rev_s = s.get("rev")
+        margin_src = "單季" if s.get("gp") is not None and rev_s else "累計"
+        base = s if margin_src == "單季" else a
+        gm = pct(base.get("gp"), base.get("rev"))
+        om = pct(base.get("op"), base.get("rev"))
+        nm = pct(s.get("ni"), rev_s) if rev_s else pct(a.get("ni"), a.get("rev"))
+        # 近四季 EPS 與本益比：summary 的近四季到上一季 → 加本季、扣去年同季
+        ttm = pe = None
+        e = se.get(code)
+        prevq = f"{str(y if n > 1 else y - 1)[2:]}Q{n - 1 if n > 1 else 4}"
+        if e and e[0] == prevq and e[5] is not None and s.get("eps") is not None and ly.get("eps") is not None:
+            ttm = round(e[5] + s["eps"] - ly["eps"], 2)
+        elif e and e[0] == f"{str(y)[2:]}Q{n}" and e[5] is not None:
+            ttm = e[5]
+        close = (sd.get(code) or [None])[0]
+        if ttm and ttm > 0.01 and close:
+            pe = round(close / ttm, 1)
+        items.append({
+            "c": code, "n": names.get(code, r["nm"]), "mk": 0 if r["mk"] == "sii" else 1,
+            "t": f"{r['d']} {r['tm'][:5]}", "q": f"{y}Q{n}", "k": "board", "subj": r["subj"][:60],
+            "s": {k: (round(v / 1e5, 2) if k in ("rev", "gp", "op", "pre", "ni") and v is not None else v)
+                  for k, v in s.items()},                                # 金額單位：億元
+            "ly": {"ni": round(ly["ni"] / 1e5, 2) if ly.get("ni") is not None else None, "eps": ly.get("eps")},
+            "pq": {"ni": round(pq["ni"] / 1e5, 2) if pq.get("ni") is not None else None, "eps": pq.get("eps")},
+            "ytd": {"ni": round(a["ni"] / 1e5, 2) if a.get("ni") is not None else None, "eps": a.get("eps"),
+                    "rev": round(a["rev"] / 1e5, 2) if a.get("rev") is not None else None},
+            "yoy": g_ni, "yoyT": t_ni, "epsYoy": g_eps, "epsYoyT": t_eps, "qoq": q_ni, "qoqT": tq_ni,
+            "ytdYoy": y_ni, "ytdYoyT": ty_ni,
+            "gm": gm, "om": om, "nm": nm, "mSrc": margin_src, "nonop": nonop, "nonopSrc": nonop_src,
+            "ttm": ttm, "pe": pe, "close": close,
+        })
+    for s in selfs:
+        r = s["r"]
+        q = f"{s['y']}Q{s['n']}"
+        if (r["c"], s["y"], s["n"]) in ann:
+            continue                                                   # 董事會版已出，以董事會版為準
+        ly = single(r["c"], s["y"] - 1, s["n"], ann) or {}
+        g, t = growth(s["eps"], ly.get("eps"))
+        items.append({"c": r["c"], "n": names.get(r["c"], r["nm"]), "mk": 0 if r["mk"] == "sii" else 1,
+                      "t": f"{r['d']} {r['tm'][:5]}", "q": q, "k": "self", "subj": r["subj"][:60],
+                      "s": {"eps": s["eps"]}, "ly": {"eps": ly.get("eps")}, "epsYoy": g, "epsYoyT": t})
+    # 已公布的不再列在日曆
+    done = {(i["c"], i["q"]) for i in items}
+    today = NOW.date().isoformat()
+    cal = [v for v in cal.values() if (v["c"], v["q"]) not in done and v["d"] >= (NOW.date() - dt.timedelta(days=3)).isoformat()]
+    cal.sort(key=lambda v: (v["d"], v["c"]))
+    items.sort(key=lambda i: i["t"], reverse=True)
+    DIAG["parsed"] = len(items)
+    seasons = sorted({i["q"] for i in items}, reverse=True)
+    return {"updated": NOW.isoformat(timespec="minutes"), "today": today, "seasons": seasons, "unit": "億元",
+            "items": items, "cal": cal, "diag": DIAG}
+
+
+# ---------------------------------------------------------------- 推播（選用）
+def notify(out, raw):
+    topic = os.environ.get("NTFY_TOPIC")
+    if not topic:
+        return
+    watch = set(load(DATA / "flash_watch.json", []))
+    try:
+        watch |= set(re.findall(r'"(\d{4})"', re.search(r"STOCKS\s*=\s*\[[^\]]*\]", (ROOT / "fetch.py").read_text()).group(0)))
+    except Exception:
+        pass
+    for t in (load(DATA / "themes.json", {}).get("themes") or []):
+        watch |= {s[0] for s in t.get("stocks") or []}
+    sent = load(DATA / "flash" / "sent.json", [])
+    cutoff = NOW - dt.timedelta(hours=6)
+    for i in out["items"]:
+        k = f"{i['c']}_{i['q']}_{i['k']}"
+        if k in sent or i["c"] not in watch:
+            continue
+        try:
+            y, mo, d = [int(x) for x in i["t"][:9].split("/")]
+            when = dt.datetime(y + 1911, mo, d, int(i["t"][10:12]), int(i["t"][13:15]), tzinfo=TZ)
+        except Exception:
+            continue
+        if when < cutoff:
+            sent.append(k)
+            continue
+        s = i.get("s") or {}
+        g = i.get("epsYoyT") or (f"{i['epsYoy']:+.0f}%" if i.get("epsYoy") is not None else "—")
+        msg = f"{i['q'][2:]} EPS {s.get('eps')}（年增 {g}）"
+        if s.get("ni") is not None:
+            msg += f"｜淨利 {s['ni']:.1f} 億"
+        if i.get("nonop") is not None and i["nonop"] >= 30:
+            msg += f"｜⚠️業外 {i['nonop']:.0f}%"
+        try:
+            req = urllib.request.Request(f"https://ntfy.sh/{urllib.parse.quote(topic)}", data=msg.encode(), headers={
+                "Title": f"{i['c']} {i['n']} 財報".encode("utf-8").decode("latin-1"),
+                "Click": f"https://jey2204-creator.github.io/tw-valuation/#{i['c']}", "Tags": "chart_with_upwards_trend"})
+            urllib.request.urlopen(req, timeout=20).read()
+            DIAG["notified"] += 1
+        except Exception as e:  # noqa: BLE001
+            DIAG["fail"].append(f"ntfy {i['c']}: {e}")
+            continue
+        sent.append(k)
+    (DATA / "flash" / "sent.json").write_text(json.dumps(sent[-3000:]))
+
+
+def main():
+    raw = load(RAW, {})
+    start = os.environ.get("BACKFILL_FROM")
+    days = []
+    if start:
+        d = dt.date.fromisoformat(start)
+        while d <= NOW.date():
+            days.append(d)
+            d += dt.timedelta(days=1)
+    else:
+        days = [NOW.date() - dt.timedelta(days=1), NOW.date()]
+    for d in days:
+        fetch_day(d, raw)
+        if DIAG["stop"]:
+            break
+    keep = (NOW.date() - dt.timedelta(days=200)).isoformat()
+    def iso(roc):
+        try:
+            y, m, d = roc.split("/"); return f"{int(y) + 1911}-{m}-{d}"
+        except Exception:
+            return "9999"
+    raw = {k: v for k, v in raw.items() if iso(v["d"]) >= keep}
+    RAW.parent.mkdir(parents=True, exist_ok=True)
+    RAW.write_text(json.dumps(raw, ensure_ascii=False, separators=(",", ":")))
+    out = build(raw)
+    notify(out, raw)
+    OUT.write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")))
+    print(json.dumps({k: v for k, v in DIAG.items() if k != "days"}, ensure_ascii=False))
+    print("快訊", len(out["items"]), "日曆", len(out["cal"]), "季別", out["seasons"][:3])
+
+
+if __name__ == "__main__":
+    main()

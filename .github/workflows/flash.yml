@@ -1,0 +1,48 @@
+name: 財報快訊
+on:
+  schedule:
+    - cron: "*/30 5-15 * * 1-5"   # 台北時間 平日 13:00–23:30 每 30 分（GitHub 排程常延遲幾分鐘）
+    - cron: "15 9,13 * * 6"       # 週六 17:15、21:15 補抓（少數公司週末公告）
+  workflow_dispatch:
+    inputs:
+      backfill_from:
+        description: "回補起日 YYYY-MM-DD（平常留空＝只查今天＋昨天）"
+        required: false
+        default: ""
+      budget:
+        description: "時間預算（分鐘）"
+        required: false
+        default: "12"
+permissions:
+  contents: write
+concurrency:
+  group: flash
+  cancel-in-progress: false
+jobs:
+  flash:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: 抓重大訊息、解析財報
+        env:
+          BACKFILL_FROM: ${{ github.event.inputs.backfill_from }}
+          BUDGET_MIN: ${{ github.event.inputs.budget || '12' }}
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+        run: python fetch_flash.py
+      - name: 提交
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/flash.json data/flash
+          git diff --cached --quiet && exit 0
+          git commit -m "flash: $(TZ=Asia/Taipei date '+%F %H:%M')"
+          for i in 1 2 3; do
+            git pull --rebase -X theirs origin main && git push && exit 0
+            sleep 10
+          done
+          exit 1
