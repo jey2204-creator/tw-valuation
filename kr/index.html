@@ -137,6 +137,14 @@ body.pn .wrap{padding-bottom:calc(84px + env(safe-area-inset-bottom))}
 .pill.b{background:var(--b2)}
 /* 幣別切換（固定匯率換算，只動絕對金額；同美股站） */
 .fx{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px;font-size:12px;color:var(--muted)}
+/* 首頁頭區省高度（同美股站）：標題與站台連結同列；副標＋幣別同列（副標單行省略，完整說明在 title） */
+.htop .name{flex:0 1 auto;min-width:0}.htop .sp{flex:none}
+.hrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:4px}
+.hrow .meta{flex:1 1 0;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hrow .fx{margin-top:0;gap:6px;flex:none}.hrow .fx.open{flex-basis:100%}
+.hrow .fx label{gap:2px}.hrow .fx input{width:4.2em;padding:2px 5px}
+.fxi{font:inherit;font-size:14px;line-height:1;border:0;background:none;color:var(--muted);padding:4px 2px;cursor:pointer}.fx.open .fxi{color:var(--accent)}
+.fxn{flex-basis:100%}.fxn[hidden]{display:none}
 .fxseg{display:inline-flex}.fxseg button{font:inherit;font-size:12px;border:1px solid var(--line);background:var(--card);color:var(--muted);padding:3px 11px;cursor:pointer;margin-left:-1px}
 .fxseg button:first-child{border-radius:999px 0 0 999px;margin-left:0}.fxseg button:last-child{border-radius:0 999px 999px 0}.fxseg button.on{background:var(--accent);border-color:var(--accent);color:#fff}
 .fx label{display:inline-flex;align-items:center;gap:4px}.fx input{font-family:var(--f-num);font-size:13px;width:4.6em;padding:3px 6px;border:1px solid var(--line);border-radius:7px;background:var(--card);color:var(--fg)}
@@ -150,8 +158,9 @@ th:first-child,td:first-child{text-align:left}
 th{font-weight:500;color:var(--muted);font-size:12px}
 td{font-family:var(--f-num);font-variant-numeric:tabular-nums}
 tr.e td{color:var(--accent)}
-.search{position:relative;margin-top:10px}
-.search input{width:100%;font:inherit;font-size:16px;padding:9px 12px 9px 34px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--fg)}
+.search{position:relative;margin-top:8px}
+/* 省高度（同美股站）：上下 padding 9→6、行高固定；字級維持 16px（低於 16px iOS 點下去會自動放大頁面） */
+.search input{width:100%;font:inherit;font-size:16px;line-height:22px;padding:6px 12px 6px 34px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--fg)}
 .search svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);width:16px;height:16px;stroke:var(--muted)}
 /* 搜尋建議與狀態 */
 .sug{margin-top:6px;background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden}
@@ -210,6 +219,19 @@ h2.sec small{font-weight:500;letter-spacing:0}
 /* n/N：N 檔裡只有 n 檔有值（虧損、資料不足不算）。少於全部就標出來，避免 1 檔的數字被當成整個主題 */
 .cv{font-style:normal;font-family:var(--f-num);font-size:9.5px;color:var(--muted);margin-left:3px;padding:0 3px;border-radius:4px;background:var(--b1);vertical-align:1px}
 .cv.lo{background:var(--b4)}
+/* 首頁主題排行表（緊湊模式，同台股／美股站）：一個主題一列，點欄位排序；韓股多一欄「外資」 */
+.tpan{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:2px 8px 4px}
+.tpan .tbl{margin-top:0}
+.tlt td:first-child{white-space:normal;font-family:var(--f-body);max-width:96px}
+.tlt .tn{font-weight:700;font-size:13px;line-height:1.3}
+.tlt .tm{display:block;font-size:10.5px;color:var(--muted);font-family:var(--f-num);white-space:nowrap}
+.tlt td{padding:5px 3px;vertical-align:top;line-height:1.3}
+.tlt th{padding:4px 3px}
+.tlt td:not(:first-child),.tlt th:not(:first-child){padding-inline:2px}
+.tlt tr:last-child td{border-bottom:0}
+.tlt .few{color:var(--muted)!important;opacity:.75}.tlt .few::after{content:'*';font-size:10px;margin-left:1px}
+#hDense{margin-right:6px}
+.tgrid.tlist{display:block}.tlt tr.bkflash td{animation:bkFlash 1.8s ease-out}
 .tcard.bkflash{animation:bkFlash 1.8s ease-out}
 #themePage .top{padding-top:12px}
 #themePage h1{font-size:22px;font-weight:900;margin:6px 0 0;line-height:1.3}
@@ -224,14 +246,27 @@ h2.sec small{font-weight:500;letter-spacing:0}
 .ttw a.all{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 40%,var(--line))}
 .grp .it:first-child{border-top:0}
 /* 主題頁個股表：同台股站 .lst 五欄（股票／收盤／本益比／淨值比／營收年增） */
-.lst{font-size:13px}.lst tbody tr{cursor:pointer}.lst tbody tr:active{background:var(--bg)}
-.lst td{padding-block:8px;vertical-align:top}.lst td:first-child{white-space:normal;font-family:var(--f-body)}
-.lst .nm{font-weight:700;font-size:14px;font-family:var(--f-num)}.lst .cd{font-size:11.5px;color:var(--muted);margin-left:4px}
+.lst{font-size:13px}.lst th,.lst td{padding-inline:3px}.lst th:first-child,.lst td:first-child{padding-left:2px}.lst th:last-child,.lst td:last-child{padding-right:2px}.lst tbody tr{cursor:pointer}.lst tbody tr:active{background:var(--bg)}
+.lst td{padding-block:8px;vertical-align:top}.lst td:first-child{white-space:normal;font-family:var(--f-body)}.lst .nmw{white-space:nowrap}
+.lst .nm{font-weight:700;font-size:14px;font-family:var(--f-num)}.lst .cd{font-size:11.5px;color:var(--muted);margin-left:3px;display:inline-block;white-space:nowrap;vertical-align:-3px}
 .lst .role{font-size:11.5px;color:var(--muted);line-height:1.35}.lst .role .pill{font-size:10.5px;padding:0 6px;margin-right:3px;vertical-align:1px}
 .lst .sub{display:block;font-size:11px;color:var(--muted)}.lst .sub.sm{font-size:10.5px}
 .lst .cap{display:block;font-size:11px;color:var(--muted);font-family:var(--f-num)}
 .lst .rk{font-family:var(--f-num);font-size:11px;font-weight:700;color:var(--muted);margin-right:5px}
 .lst th[data-k]{cursor:pointer;user-select:none}.lst th.on{color:var(--fg);font-weight:700}
+/* 緊湊模式（同台股／美股站 body.dense）：每列 2 行。股票欄＝中文名／代號＋市值＋小籤；本益比欄＝一行「+74% P0.45」；備註、本月漲跌看完整模式 */
+.dns{flex:none;font:inherit;font-size:12px;font-weight:700;border:1px solid var(--line);border-radius:999px;background:var(--card);color:var(--muted);padding:3px 9px;cursor:pointer;white-space:nowrap}
+#themePage .top .dns{margin-left:auto}#themePage .top .dns+.sp{margin-left:0}
+body.dense .lst td{padding-block:4px;line-height:1.3}body.dense .lst th{padding-block:4px}
+body.dense .lst .nm{font-size:13.5px}
+body.dense .lst td.sk .nmw{white-space:nowrap}body.dense .lst td.sk .cd{display:inline-block;margin-left:3px;font-size:10.5px;vertical-align:-2px}
+body.dense .lst .dl{display:block;font-size:10.5px;color:var(--muted);font-family:var(--f-num);white-space:nowrap}
+body.dense .lst .dl .pill{font-size:10px;padding:0 5px;margin-left:3px;vertical-align:1px;font-family:var(--f-body)}
+body.dense .lst .sub{font-size:10.5px}body.dense .lst .rk{margin-right:3px}
+/* 主題表股票欄：中文名／代號分行（完整模式），讓收盤往左、營收年增不被切 */
+.lst td.sk .nmw{white-space:normal}.lst td.sk .cd{display:block;margin-left:0;vertical-align:baseline}
+.nfo{font:inherit;font-size:14px;line-height:1;border:0;background:none;color:var(--muted);padding:2px 4px;cursor:pointer}.nfo[aria-expanded=true]{color:var(--accent)}
+#tLeg{margin-top:6px}
 .it .x{grid-column:1/-1;font-size:11.5px;color:var(--muted);line-height:1.5;margin-top:-2px}
 .it .x em{font-style:normal;color:var(--fg);background:var(--b1);border-radius:4px;padding:0 5px;margin-right:2px}
 .it .x b{font-family:var(--f-num);font-weight:600;color:var(--fg)}
@@ -301,21 +336,19 @@ html{scroll-behavior:smooth}
 <!-- ===== 首頁：主題清單 ===== -->
 <div id="home">
   <header class="quote">
-    <div class="top"><span class="code">KR</span><a class="sp" href="../">← 台股</a><a href="../us/">美股</a><a href="../jp/">日股</a></div>
-    <div class="name">韓股估值看板</div>
-    <div class="meta" id="hMeta">供應鏈韓股分 6 個產業主題（與台股站對應），點卡片看個股；點台股代號開台股看板</div>
-    <div class="fx" data-fx></div>
+    <div class="top htop"><div class="name">韓股估值看板</div><a class="sp" href="../">← 台股</a><a href="../us/">美股</a><a href="../jp/">日股</a></div>
+    <div class="hrow"><div class="meta" id="hMeta">6 主題｜點台股代號開台股看板</div><div class="fx" data-fx></div></div>
     <div class="search" role="search">
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-      <input id="q" type="search" inputmode="search" autocomplete="off" placeholder="搜尋代號、公司或台股代號，例如 005930、三星、2344" aria-label="搜尋" role="combobox" aria-expanded="false" aria-controls="sug" aria-autocomplete="list">
+      <input id="q" type="search" inputmode="search" autocomplete="off" placeholder="代號、公司或台股代號（005930、三星、2344）" aria-label="搜尋" role="combobox" aria-expanded="false" aria-controls="sug" aria-autocomplete="list">
     </div>
     <div class="qs" id="qs" aria-live="polite"></div>
     <div class="sug" id="sug" role="listbox" hidden></div>
   </header>
   <div id="tsec">
-    <h2 class="sec"><span>產業主題 <small id="tAsof"></small></span><a class="act" id="hEdit" href="#edit">✏️ 編輯</a></h2>
+    <h2 class="sec"><span>產業主題 <small id="tAsof"></small></span><span><button type="button" class="act nfo" id="tLegI" aria-expanded="false" aria-controls="tLeg" aria-label="欄位說明">ⓘ</button><button type="button" class="dns" id="hDense"></button><a class="act" id="hEdit" href="#edit">✏️ 編輯</a></span></h2>
     <div class="tgrid" id="tgrid"></div>
-    <p class="legend">各主題中位數。<i class="cv">5/7</i>＝7 檔裡只有 5 檔有值（虧損、資料不足不算），檔數少時別當成整個主題。營收年增＝最新一季對比去年同季；EPS 年增＝近四季合計對比前四季；PEG＝本益比 ÷ EPS 年增，<span class="cheap">&lt;1</span>、<span class="pricey">&gt;2</span>；本月至今＝收盤對比上月底；外資持股＝主題內中位數，外資是韓股主力，持股比轉折常領先股價。</p>
+    <p class="legend" id="tLeg" hidden>各主題中位數。<span id="tLegC"><i class="cv">5/7</i>＝7 檔裡只有 5 檔有值（虧損、資料不足不算），檔數少時別當成整個主題。</span>營收年增＝最新一季對比去年同季；EPS 年增＝近四季合計對比前四季；PEG＝本益比 ÷ EPS 年增，<span class="cheap">&lt;1</span>、<span class="pricey">&gt;2</span>；本月至今＝收盤對比上月底；外資持股＝主題內中位數，外資是韓股主力，持股比轉折常領先股價。</p>
   </div>
   <div id="groups"></div>
   <p class="legend" id="gLegend" hidden>清單欄位：收盤價（日漲跌，台幣模式為固定匯率換算）　本益比／淨值比。<span class="pill">循環</span> 循環股以淨值比為主；外資持股比在主題頁與個股頁</p>
@@ -335,7 +368,7 @@ html{scroll-behavior:smooth}
 
 <!-- ===== 主題頁：#t/主題代號（與台股站相同） ===== -->
 <div id="themePage" hidden>
-  <div class="top"><a href="#">← 全部主題</a><a class="sp" id="tEdit" href="#edit">✏️ 編輯這個主題</a></div>
+  <div class="top"><a href="#">← 全部主題</a><button type="button" class="dns" id="tDense"></button><a class="sp" id="tEdit" href="#edit">✏️ 編輯這個主題</a></div>
   <h1 id="tName"></h1>
   <p class="tsum" id="tSum"></p>
   <div class="ttw" id="tTw"></div>
@@ -528,7 +561,13 @@ const amt=(m,d)=>{if(m==null)return '—';if(fxOn()){const a=m/FX.rate;return a>
 // 首頁 [data-fx]：完整版（切換＋匯率框＋說明）；個股頁 [data-fx="mini"]：只留切換鈕，台幣鈕上標目前匯率（要改匯率回首頁）
 function fxRender(){document.querySelectorAll('[data-fx]').forEach(el=>{const seg=`<span class="fxseg"><button type="button" data-c="0"${fxOn()?'':' class="on"'}>韓元</button><button type="button" data-c="1"${fxOn()?' class="on"':''}>台幣${el.dataset.fx==='mini'&&fxOn()?`<small>÷${FX.rate}</small>`:''}</button></span>`;
   if(el.dataset.fx==='mini'){el.innerHTML=seg;el.title=fxOn()?`台幣 = 韓元 ÷ ${FX.rate}（自設固定匯率，比率不變；匯率在首頁改）`:'改用台幣顯示絕對金額（固定匯率，比率不變）';return}
-  el.innerHTML=seg+(fxOn()?`<label>1 台幣 = <input type="number" step="0.1" min="30" max="60" inputmode="decimal" value="${FX.rate}" data-rate> 韓元</label><span>≈ 金額 = 韓元 ÷ ${FX.rate}（非即時匯率）；比率、分位、年增不受影響</span>`:'<span>比率不分幣別；台幣模式只換股價／EPS／營收等絕對金額</span>')})}
+  // 首頁版面省高度（同美股站）：匯率框縮成「≈÷」、說明收進 ⓘ（點開才顯示，展開時整組換到自己一行）
+  el.classList.toggle('open',FXI);
+  el.innerHTML=seg+(fxOn()?`<label title="1 台幣 = ${FX.rate} 韓元（自設固定匯率，非即時）">≈÷ <input type="number" step="0.1" min="30" max="60" inputmode="decimal" value="${FX.rate}" data-rate aria-label="固定匯率（1 台幣 = 幾韓元）"></label>`:'')+
+    `<button type="button" class="fxi" data-fxi aria-label="幣別說明" aria-expanded="${FXI}">ⓘ</button>`+
+    `<span class="fxn"${FXI?'':' hidden'}>${fxOn()?`≈ 金額 = 韓元 ÷ ${FX.rate}（1 台幣 = ${FX.rate} 韓元，自設固定匯率，非即時）；比率、分位、年增不受影響`:'比率不分幣別；台幣模式只換股價／EPS／營收等絕對金額'}</span>`})}
+document.addEventListener('click',e=>{const b=e.target.closest('#tLegI');if(!b)return;const n=$(b.getAttribute('aria-controls'));n.hidden=!n.hidden;b.setAttribute('aria-expanded',String(!n.hidden))});
+let FXI=false;document.addEventListener('click',e=>{if(!e.target.closest('[data-fxi]'))return;FXI=!FXI;fxRender()});
 function fxApply(){fxSave();fxRender();if(D&&!$('stock').hidden){header();render()}if(!$('themePage').hidden&&CUR_T)themeRender(CUR_T);if(!$('home').hidden)homeRender();if(!$('rankPage').hidden)rkRender()}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-fx] button[data-c]');if(!b)return;const on=b.dataset.c==='1';if(on===FX.on)return;FX.on=on;fxApply()});
 document.addEventListener('change',e=>{if(!e.target.matches('[data-fx] input[data-rate]'))return;const r=+e.target.value;if(!(r>=30&&r<=60)){e.target.value=FX.rate;return}FX.rate=Math.round(r*10)/10;fxApply()});
@@ -913,12 +952,35 @@ const cvT=a=>a.v!=null&&a.n<a.N?`<i class="cv${a.n*2<a.N?' lo':''}" title="${a.N
 function cardsRender(){
   const kv=(lb,a,f,c)=>`<span class="k"><span>${lb}</span><span class="num ${a.v==null?'':c||''}">${a.v==null?(ST_OK?'—':'…'):f(a.v)}${cvT(a)}</span></span>`;
   const d=dv();$('tAsof').textContent=d?`收盤 ${+d.slice(5,7)}/${+d.slice(8)}・中位數`:'';
-  $('hMeta').textContent=`韓股 ${IDX.length} 檔分 ${THEMES.length} 個產業主題（與台股站對應），點卡片看個股；點台股代號開台股看板`;
+  $('hMeta').textContent=`${THEMES.length} 主題｜${IDX.length} 檔韓股`;$('hMeta').title=`韓股 ${IDX.length} 檔分 ${THEMES.length} 個產業主題（與台股站對應），點卡片看個股；點台股代號開台股看板`;
+  $('tgrid').classList.toggle('tlist',DENSE&&THEMES.length>0);
+  $('tLegC').innerHTML=DENSE?'<span class="few" style="color:var(--muted)">灰字*</span>＝不到一半檔數有值（虧損、資料不足不算），別當成整個主題；<span style="color:var(--warm)">橘色 N檔</span>＝少於 5 檔。點欄位標題排序。':'<i class="cv">5/7</i>＝7 檔裡只有 5 檔有值（虧損、資料不足不算），檔數少時別當成整個主題。';
+  if(DENSE&&THEMES.length){themeList($('tgrid'));return}
+  $('tgrid').onclick=null;
   $('tgrid').innerHTML=THEMES.length?THEMES.map(t=>{const it=itemsOf(t),ry=agg(it,'ry'),ey=agg(it,'ey'),pe=agg(it,'pe'),pg=agg(it,'peg'),mt=agg(it,'mtd'),fr=agg(it,'fr');
     return `<a class="tcard" href="#t/${t.id}"><b>${esc(t.name)}<small>${it.length} 檔</small></b>`+
       kv('營收年增',ry,v=>pct(v),sgc(ry.v))+kv('EPS 年增',ey,v=>pct(v),sgc(ey.v))+kv('本益比',pe,v=>fmt(v,1))+
       kv('PEG',pg,v=>fmt(v,2),pegc(pg.v))+kv('本月至今',mt,v=>pct(v,1),sgc(mt.v))+kv('外資持股',fr,v=>fmt(v,1)+'%')+`</a>`}).join('')
     :'<p class="meta" style="grid-column:1/-1;margin:4px 0">主題都隱藏了。按右上「✏️ 編輯」把要看的顯示回來。</p>'}
+// ---- 首頁主題排行表（緊湊模式，同台股／美股站 themeList）：本益比、PEG 第一下由低到高，其他由高到低；第三下回預設。韓股多「外資」欄 ----
+let TLS='';
+const TLC=[['ry','營收'],['ey','EPS'],['pe','本益比'],['peg','PEG'],['mtd','月漲'],['fr','外資']];
+function themeList(el){
+  let rows=THEMES.map(t=>{const it=itemsOf(t),r={t,n:it.length};TLC.forEach(([k])=>r[k]=agg(it,k));return r});
+  const [k,d]=TLS.split(':');
+  if(k)rows.sort((a,b)=>a[k].v==null?1:b[k].v==null?-1:(a[k].v-b[k].v)*(+d));
+  const th=([key,lb])=>{const on=k===key;return `<th data-tk="${key}" class="${on?'on':''}">${lb}${on?(+d>0?'▲':'▼'):''}</th>`};
+  // 不到一半檔數有值 → 灰字加 *（點不了 hover，手機上用顏色提醒）
+  const td=(a,f,c)=>{if(a.v==null)return `<td>${ST_OK?'—':'…'}</td>`;const few=a.n*2<a.N;return `<td class="${few?'few':c||''}" title="${a.N} 檔裡 ${a.n} 檔有值">${f(a.v)}</td>`};
+  el.innerHTML=`<div class="tpan"><div class="tbl"><table class="lst tlt"><thead><tr><th data-tk="">主題</th>${TLC.map(th).join('')}</tr></thead><tbody>`+rows.map(r=>{
+    const {t,n,ry,ey,pe,peg,mtd,fr}=r;
+    const meta=`<span style="${n<5?'color:var(--warm)':''}" title="${n} 檔的中位數${n<5?'；檔數少，中位數容易被單一股票帶動':''}">${n}檔</span>`;
+    return `<tr data-t="${t.id}"><td><span class="tn">${esc(t.name.replace(/^\p{Extended_Pictographic}️?\s*/u,''))}</span><span class="tm">${meta}</span></td>`+
+      td(ry,v=>pct(v),sgc(ry.v))+td(ey,v=>pct(v),sgc(ey.v))+td(pe,v=>fmt(v,1))+td(peg,v=>fmt(v,2),pegc(peg.v))+td(mtd,v=>pct(v,1),sgc(mtd.v))+td(fr,v=>fmt(v,0)+'%')+'</tr>'}).join('')+'</tbody></table></div></div>';
+  el.onclick=e=>{const h=e.target.closest('th[data-tk]');if(h){const nk=h.dataset.tk,[ck,cd]=TLS.split(':'),first=(nk==='pe'||nk==='peg')?'1':'-1';
+      TLS=!nk?'':ck!==nk?nk+':'+first:cd===first?nk+':'+(-first):'';themeList(el);return}
+    const r=e.target.closest('tr[data-t]');if(r)location.hash='#t/'+r.dataset.t};
+}
 let CUR_T=null,LAST_T=null,LAST_TS=null;try{LAST_T=sessionStorage.getItem('lastTheme')}catch(e){}
 function themeRender(tid){
   const t=THEMES.find(x=>x.id===tid);if(!t){location.replace('#');return}
@@ -932,7 +994,7 @@ function themeRender(tid){
   $('tTw').innerHTML=t.tw.length?'<span class="lb">對應台股</span>'+t.tw.map(([c,n])=>`<a href="../#${c}"><b>${c}</b>${esc(n)}</a>`).join('')+(!t.custom?`<a class="all" href="../#t/${t.id}">台股同主題 →</a><a class="all" href="../us/#t/${t.id}">美股同主題 →</a>`:''):'';
   if(LAST_TS!==tid){TS=tsGet(tid);LAST_TS=tid}
   tTable(t);
-  $('tFoot').innerHTML=`營收＝最新一季對比去年同季；EPS＝近四季合計對比前四季（「虧損」＝近四季合計 ≤ 0，「轉盈」＝前四季是虧損）；PEG＝本益比 ÷ EPS 年增，年增 &gt;300% 低基期不算${it.some(s=>s.cyc)?'；<span class="pill">循環</span> 股 PEG 參考性低，以淨值比河流為主':''}；本月＝最新收盤對比上月底；外資＝外資持股比（%），外資是韓股主力，持股比轉折常領先股價。收盤${fxOn()?`以 1 台幣 = ${FX.rate} 韓元固定匯率換成台幣（≈）`:'為韓元'}；市值＝Naver 市值${fxOn()?'，同樣換算':''}。點欄位標題可排序，每個主題會記住上次的排序（本益比連點：本益比 → EPS年增 → PEG；淨值比連點：淨值比 → 外資持股）。`}
+  $('tFoot').innerHTML=`營收＝最新一季對比去年同季；EPS＝近四季合計對比前四季（「虧損」＝近四季合計 ≤ 0，「轉盈」＝前四季是虧損）；PEG＝本益比 ÷ EPS 年增，年增 &gt;300% 低基期不算${it.some(s=>s.cyc)?'；<span class="pill">循環</span> 股 PEG 參考性低，以淨值比河流為主':''}；本月＝最新收盤對比上月底；外資＝外資持股比（%），外資是韓股主力，持股比轉折常領先股價。收盤${fxOn()?`以 1 台幣 = ${FX.rate} 韓元固定匯率換成台幣`:'為韓元'}；市值＝Naver 市值${fxOn()?'，同樣換算':''}。${DENSE?'緊湊模式：本益比下方一行＝近四季 EPS 年增與 P＝PEG；本月漲跌、備註看完整模式。':''}點欄位標題可排序，每個主題會記住上次的排序（本益比連點：本益比 → EPS年增 → PEG；淨值比連點：淨值比 → 外資持股）。`}
 // ---------- 主題頁個股表（排版同台股站）----------
 // 市值＝Naver 市值（億韓元），存在個股檔 last.mcap
 const capM=id=>(ST[id]||{}).mcap||null;
@@ -941,6 +1003,13 @@ const TSORT={cap:capM,px:id=>stockOf(id).chg,pe:id=>stockOf(id).pe||null,eps:id=
 const TPE=['pe:-1','pe:1','eps:-1','peg:1',''],TPEL={pe:'本益比',eps:'EPS年增',peg:'PEG'};
 const TPB=['pb:-1','pb:1','fr:-1',''],TPBL={pb:'淨值比',fr:'外資持股'};   // 「淨值比」欄連點：淨值比 → 外資持股 → 預設
 let TS='';
+// 主題表緊湊模式：預設開，存這台 localStorage krDense（跟台股站 tDense、美股站 usDense 分開，各站各自記）
+let DENSE=(()=>{try{return localStorage.getItem('krDense')!=='false'}catch(e){return true}})();
+function paintDense(){document.body.classList.toggle('dense',DENSE);const h=$('hDense');if(h){h.textContent='⇕ '+(DENSE?'緊湊':'完整');h.setAttribute('aria-pressed',DENSE);h.title=DENSE?'目前緊湊：主題一列一行。點一下改回卡片':'目前完整（卡片）。點一下改成主題排行表'}const b=$('tDense');if(!b)return;b.textContent='⇕ '+(DENSE?'緊湊':'完整');b.setAttribute('aria-pressed',DENSE);
+  b.title=DENSE?'目前緊湊：每列 2 行。點一下顯示完整資訊（備註、本月漲跌）':'目前完整。點一下改成緊湊（每列 2 行）'}
+$('tDense').addEventListener('click',()=>{DENSE=!DENSE;try{localStorage.setItem('krDense',DENSE)}catch(e){}paintDense();if(CUR_T&&!$('themePage').hidden)themeRender(CUR_T)});   // 整頁重畫，腳註的緊湊說明才會跟著換
+paintDense();
+$('hDense').addEventListener('click',()=>{DENSE=!DENSE;try{localStorage.setItem('krDense',DENSE)}catch(e){}paintDense();$('tgrid').onclick=null;cardsRender()});
 // 每個主題記住自己的排序：自訂主題存進主題設定（雲端同步）；內建主題存這台（寫進設定會被當成「改過」而凍結成份股）
 const TSKEY='krThemeSort';
 function tsGet(tid){const c=cfgGet();if(c.themes[tid]&&!BASE.some(b=>b.id===tid))return c.themes[tid].sort||'';
@@ -960,8 +1029,16 @@ function tTable(t){const el=$('tList'),[k,dir]=TS.split(':');let rows=t.stocks.s
     let e;if(o.ek)e=`<span class="sub ${o.ek==='轉盈'?'vu':'vd'}">四季 ${o.ek}</span>`;
     else if(o.ey!=null)e=`<span class="sub ${sgc(o.ey)}">四季 ${o.ey>300?'>+300%':pct(o.ey)}</span>`;else e='<span class="sub">EPS —</span>';
     if(o.peg!=null)e+=`<span class="sub ${pegc(o.peg)}">PEG ${fmt(o.peg,o.peg<10?2:1)}</span>`;else if(o.ey>300)e+='<span class="sub">低基期</span>';
-    return `<tr data-id="${id}"><td>${k==='cap'&&cm!=null?`<span class="rk">#${++RK}</span>`:''}<span class="nm" style="font-family:var(--f-body)">${esc(s.name||id)}</span><span class="cd">${id}</span>${cm?`<span class="cap">${ap()}${capT(cm)}</span>`:''}${pills||note?`<div class="role">${pills}${esc(note||'')}</div>`:''}</td>`+
-      (tr?`<td>${ap()}${pxT(s.close)}<span class="sub ${sgc(s.chg)}">${s.chg==null?'—':pct(s.chg,2)}</span>${o.mtd!=null?`<span class="sub sm">本月 <span class="${sgc(o.mtd)}">${pct(o.mtd,1)}</span></span>`:''}</td>`:'<td>—</td>')+
+    if(DENSE){   // 緊湊：規則同台股／美股站 epsDense，一行「四季年增 P PEG」；淨值比欄外資縮成小字同格
+      let d;if(o.ek)d=`<span class="${o.ek==='轉盈'?'vu':'vd'}">${o.ek}</span>`;else if(o.ey!=null)d=`<span class="${sgc(o.ey)}">${o.ey>300?'>300%':pct(o.ey,0)}</span>`;else d='EPS —';
+      if(o.peg!=null)d+=` <span class="${pegc(o.peg)}">P${fmt(o.peg,o.peg<10?2:1)}</span>`;else if(o.ey>300)d+=' 低基';
+      const pd=(tr?'':'<span class="pill o">查無</span>')+(s.cyc?'<span class="pill">循環</span>':''),cv=cm?capT(cm):'';
+      return `<tr data-id="${id}"><td class="sk">${k==='cap'&&cm!=null?`<span class="rk">#${++RK}</span>`:''}<span class="nmw"><span class="nm" style="font-family:var(--f-body)">${esc(s.name||id)}</span><span class="cd">${id}</span></span>${cv||pd?`<span class="dl">${cv}${pd}</span>`:''}</td>`+
+        (tr?`<td>${pxT(s.close)}<span class="sub ${sgc(s.chg)}">${s.chg==null?'—':pct(s.chg,2)}</span></td>`:'<td>—</td>')+
+        `<td>${s.pe?fmt(s.pe,1):'—'}<span class="sub" title="近四季 EPS 年增；P＝PEG（本益比÷EPS 年增）">${d}</span></td><td>${s.pb?fmt(s.pb,2):'—'}<span class="sub">外${s.fr!=null?fmt(s.fr,0)+'%':'—'}</span></td>`+
+        `<td class="${sgc(o.ry)}">${o.ry!=null?pct(o.ry,1):'—'}<span class="sub"${o.lq&&o.lq!==LQ?' style="color:var(--warm)" title="跟其他檔不同季"':''}>${o.lq||''}</span></td></tr>`}
+    return `<tr data-id="${id}"><td class="sk">${k==='cap'&&cm!=null?`<span class="rk">#${++RK}</span>`:''}<span class="nmw"><span class="nm" style="font-family:var(--f-body)">${esc(s.name||id)}</span><span class="cd">${id}</span></span>${cm?`<span class="cap">${capT(cm)}</span>`:''}${pills||note?`<div class="role">${pills}${esc(note||'')}</div>`:''}</td>`+
+      (tr?`<td>${pxT(s.close)}<span class="sub ${sgc(s.chg)}">${s.chg==null?'—':pct(s.chg,2)}</span>${o.mtd!=null?`<span class="sub sm">本月 <span class="${sgc(o.mtd)}">${pct(o.mtd,1)}</span></span>`:''}</td>`:'<td>—</td>')+
       `<td>${s.pe?fmt(s.pe,1):'—'}${e}</td><td>${s.pb?fmt(s.pb,2):'—'}<span class="sub sm">外資${s.fr!=null?fmt(s.fr,1)+'%':'—'}</span></td>`+
       `<td class="${sgc(o.ry)}">${o.ry!=null?pct(o.ry,1):'—'}<span class="sub"${o.lq&&o.lq!==LQ?' style="color:var(--warm)" title="跟其他檔不同季"':''}>${o.lq||''}</span></td></tr>`}).join('')+'</tbody>';
   el.onclick=e=>{const h=e.target.closest('th[data-k]');if(h){const nk=h.dataset.k,cur=TS.split(':');
@@ -987,7 +1064,7 @@ function route(){
   else{$('stock').hidden=true;$('home').hidden=false;document.title='韓股估值看板';if(!$('q').value.trim())cardsRender();Object.values(charts).forEach(c=>c.resize());
     if(id==='EXP')requestAnimationFrame(()=>{if(!$('exp').hidden)$('exp').scrollIntoView()});   // 個股頁「看趨勢 →」：回首頁捲到出口卡
     if(VPREV==='edit')requestAnimationFrame(()=>scrollTo(0,$('tsec').getBoundingClientRect().top+scrollY-8));   // 編輯完回首頁：停在主題卡
-    if(VPREV==='theme'){const y=HOMEY,pt=HPREV;requestAnimationFrame(()=>{scrollTo(0,y);const c=document.querySelector(`a.tcard[href="#${pt}"]`);if(c){c.classList.remove('bkflash');void c.offsetWidth;c.classList.add('bkflash')}})}}
+    if(VPREV==='theme'){const y=HOMEY,pt=HPREV;requestAnimationFrame(()=>{scrollTo(0,y);const c=document.querySelector(`a.tcard[href="#${pt}"]`)||document.querySelector(`.tlt tr[data-t="${pt.replace(/^t\//,'')}"]`);if(c){c.classList.remove('bkflash');void c.offsetWidth;c.classList.add('bkflash')}})}}
   bkRestore(h);VPREV=stk?'stock':em?'edit':tid||rk?'theme':'home';HPREV=h;
 }
 // ---------- 🏆 市值排行 #rank：rows 欄位 0代號 1中文名 2韓文名 3市場 4市值(億韓元) 5收盤 6日漲跌% 7本益比 8淨值比 9殖利率% 10外資持股% ----------
