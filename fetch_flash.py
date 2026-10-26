@@ -33,9 +33,9 @@ GAP = float(os.environ.get("GAP") or 0.9)
 DIAG = {"req": 0, "fail": [], "days": {}, "newDetail": 0, "parsed": 0, "notified": 0, "stop": None}
 
 FIN = re.compile(r"財務報告|財務報表|財報|每股盈餘|自結")
-SKIP = re.compile(r"背書|資金貸與|主管|異動|注意交易|應收帳款|負債比率|淨值百分|淨值\d|盈餘分配|分派|除息|股利|iXBRL|附註|"
+SKIP = re.compile(r"法人說明會|法說會|補正|背書|資金貸與|主管|異動|注意交易|應收帳款|負債比率|淨值百分|淨值\d|盈餘分配|分派|除息|股利|iXBRL|附註|"
                   r"代子公司|代重要子公司|更正|重新核閱|會計師|現金餘額|月份?自結|\d{1,2}月(份)?(自結|合併)|理財|取得|處分")
-CAL = re.compile(r"召開|預計")
+CAL = re.compile(r"召開|預計|召集|提報董事會|提請董事會|將提|董事會(決議)?日期")
 
 
 # ---------------------------------------------------------------- 請求
@@ -83,7 +83,7 @@ def num(s):
     return -v if neg else v
 
 
-VAL = re.compile(r"[:：]\s*(\(?[-－]?[\d,]+(?:\.\d+)?\)?)\s*(?:元|仟元)?\s*$")
+VAL = re.compile(r"[:：]\s*(?:NT\$|新[台臺]幣)?\s*(\(?[-－]?[\d,]+(?:\.\d+)?\)?)\s*(?:元|仟元|千元)?\s*$")
 PERIOD = re.compile(r"(\d{2,4})/(\d{1,2})/(\d{1,2})\s*[~～\-至]\s*(\d{2,4})/(\d{1,2})/(\d{1,2})")
 
 
@@ -157,18 +157,40 @@ CN = {"一": 1, "二": 2, "三": 3, "四": 4}
 
 
 def parse_self(subj, txt):
-    """自行公告（法說）的 EPS：主旨或內文出現「每股盈餘…元」且有第 X 季"""
-    s = subj + " " + re.sub(r"\s+", "", txt or "")[:600]
-    me = re.search(r"每股(?:稅後)?盈餘[^\d\-－(（]{0,10}([-－(（]?\d+\.\d+)", s)
-    mq = re.search(r"(\d{3,4})年(?:度)?第([一二三四1-4])季", s)
-    if not (me and mq) or re.search(r"累計|前三季|上半年", subj):
+    """董事會前的自行公告：法說 EPS（台積電）、季度自結損益（台塑四寶等）。只收單季（主旨要有第 X 季）"""
+    mq = re.search(r"(\d{3,4})年(?:度)?(?:第([一二三四1-4])季|Q([1-4]))", subj)
+    if not mq or re.search(r"\d{1,2}月份?(?:及|自結|合併)", subj) and "季" not in subj:
+        return None
+    if not re.search(r"每股盈餘|EPS|自結|損益|營運|財務", subj):
         return None
     yy = int(mq.group(1)); yy = yy + 1911 if yy < 1000 else yy
-    return {"y": yy, "n": int(CN.get(mq.group(2), mq.group(2))), "eps": num(me.group(1).replace("（", "(")), "single": True}
+    n = int(CN.get(mq.group(2), mq.group(2) or mq.group(3)))
+    body = subj + "。" + re.sub(r"\s+", " ", txt or "")      # 保留空白：表格欄位才分得開
+    if "人民幣" in body or "美元" in body:                 # KY 公司常先列外幣表、再列新台幣表 → 只看新台幣段
+        i = max(body.rfind("(新台幣)"), body.rfind("(新臺幣)"), body.rfind("新台幣表"), body.rfind("（新台幣）"))
+        if i > 0:
+            body = subj + "。" + body[i:]
+    eps = None
+    N = r"([-－(（]?\d+\.\d+)"
+    G = r"[為約:：\s]{0,4}(?:新[台臺]幣\s?)?"
+    for pat in (r"單季\s?(?:稅後)?\s?(?:EPS|每股(?:稅後)?盈餘)[^\d\-－(（]{0,8}" + N,
+                r"(?<!稅前)(?:每股稅後盈餘|稅後每股盈餘|稅後\s?EPS|EPS|每股盈餘)" + G + N + r"\s?元",
+                r"(?:每股稅後盈餘|稅後每股盈餘|稅後\s?EPS|每股盈餘\(?稅後\)?)" + G + N,
+                r"(?<!稅前)(?:基本)?(?:EPS|每股盈餘)(?:\(虧損\))?(?:\(元\))?" + G + N):
+        m = re.search(pat, body)
+        if m:
+            eps = num(m.group(1).replace("（", "(").replace("－", "-"))
+            break
+    if eps is None:
+        return None
+    ytd = ("累計" in subj or (re.search(r"上半年|前三季", subj) and not re.search(r"第[一二三四1-4]季", subj))) \
+        and not re.search(r"單季", body)
+    return {"y": yy, "n": n, "eps": eps, "single": not ytd}
 
 
 # ---------------------------------------------------------------- 抓清單＋明細
 def fetch_day(d, raw):
+    old = d < NOW.date() - dt.timedelta(days=10)
     res = post("t05st02", {"year": str(d.year - 1911), "month": f"{d.month:02d}", "day": f"{d.day:02d}"})
     if res is None:
         return False
@@ -185,6 +207,8 @@ def fetch_day(d, raw):
         if p.get("marketKind") not in ("sii", "otc"):
             continue
         key = f"{code}_{p.get('enterDate')}_{p.get('serialNumber')}"
+        if old and CAL.search(subj) and "通過" not in subj:
+            continue                                   # 回補時過期的董事會日期不必抓
         hit += 1
         if key in raw:
             continue
@@ -274,7 +298,7 @@ def build(raw):
             rep["key"], rep["r"] = key, r
             ann[(r["c"], rep["y"], rep["n"])] = rep          # 同季多則（例：更正）以最後一則為準
             continue
-        if CAL.search(r["subj"]) and "董事會" in (r["subj"] + (r.get("txt") or ""))[:400]:
+        if (CAL.search(r["subj"]) or "預計召開日期" in (r.get("txt") or "")) and "董事會" in (r["subj"] + (r.get("txt") or ""))[:400]:
             c = parse_cal(r["subj"], r.get("txt"))
             if c:
                 cal[(r["c"], c["q"])] = {"c": r["c"], "n": names.get(r["c"], r["nm"]), "d": c["d"], "q": c["q"],
@@ -339,6 +363,11 @@ def build(raw):
         q = f"{s['y']}Q{s['n']}"
         if (r["c"], s["y"], s["n"]) in ann:
             continue                                                   # 董事會版已出，以董事會版為準
+        if not s["single"]:                                            # 累計數 → 扣掉上一季累計
+            p = prev_ytd(r["c"], s["y"], s["n"] - 1, ann)
+            if p is None or p.get("eps") is None:
+                continue
+            s["eps"] = round(s["eps"] - p["eps"], 2)
         ly = single(r["c"], s["y"] - 1, s["n"], ann) or {}
         g, t = growth(s["eps"], ly.get("eps"))
         items.append({"c": r["c"], "n": names.get(r["c"], r["nm"]), "mk": 0 if r["mk"] == "sii" else 1,
