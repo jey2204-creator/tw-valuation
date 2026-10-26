@@ -899,7 +899,10 @@ function allThemes(){
   const c=cfgGet(),bm=Object.fromEntries(BASE.map(t=>[t.id,t]));
   const ids=[...c.order,...BASE.map(t=>t.id),...Object.keys(c.themes)].filter((v,i,a)=>a.indexOf(v)===i&&(bm[v]||c.themes[v]));
   return ids.map(i=>{const b=bm[i],o=c.themes[i];
-    return {tw:[],dem:false,...(b||{}),...(o?{name:o.name,stocks:o.stocks}:{}),id:i,hidden:c.hidden.includes(i),edited:!!(o&&b),custom:!b}})}
+    return {tw:[],dem:false,...(b||{}),...(o?{name:o.name,stocks:rkAuto(o)||o.stocks}:{}),id:i,hidden:c.hidden.includes(i),edited:!!(o&&b),custom:!b}})}
+// 自訂主題名稱含「市值排行」：成份股自動＝每日市值排行（data/rank.json）裡有追蹤的股票，依市值排序；排行沒載到就用存的清單
+function rkAuto(o){if(!/市值排行/.test(o.name)||!RK||!RK.rows)return null;const tr=new Set(IDX.map(s=>s.id));
+  const a=RK.rows.filter(r=>tr.has(r[0])).map(r=>[r[0],ROLE[r[0]]||'']);return a.length?a:null}
 function applyCfg(){const A=allThemes();ORDER_IDS=A.map(t=>t.id);THEMES=A.filter(t=>!t.hidden)}
 const themeName=tid=>{const t=THEMES.find(x=>x.id===tid);return t?t.name:''};
 const loadExtra=()=>Promise.resolve();   // 韓股沒有全市場資料：主題裡只會有每日追蹤的股票
@@ -1252,6 +1255,7 @@ addEventListener('hashchange',route);
 (async()=>{
   const [a,b]=await Promise.all(['data/index.json','data/exp.json'].map(u=>fetch(u+'?t='+Date.now()).then(r=>r.ok?r.json():null).catch(()=>null)));
   IDX=a||[];EXP=b;$('eN').textContent=IDX.length;
+  await rkLoad();   // 「市值排行」自訂主題要用
   BASE=baseThemes();applyCfg();syStat();syncRun();
   homeRender();try{expRender()}catch(e){console.error(e)}route();
   // 主題卡的年增／PEG／本月至今／市值要讀各個股檔（各約 30KB）；讀完重畫卡片與主題頁
