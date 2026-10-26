@@ -332,6 +332,14 @@ html{scroll-behavior:smooth}
 #rkList td:first-child{min-width:7.5em}.lst .mk{font-size:10px;padding:0 5px;border-radius:4px;border:1px solid var(--line);color:var(--muted);margin-left:4px;vertical-align:1px}
 .lst .bar{display:block;height:3px;border-radius:2px;background:var(--accent);opacity:.55;margin-top:3px;max-width:100%}
 .lst .trk{font-size:10.5px;color:var(--accent);margin-left:3px}
+/* ---- 💰 員工薪資排行 #salary（同台股／美股站）：首頁入口、個股頁一列、主題表小字 ---- */
+.meta.sal{margin-top:6px;font-size:12px;color:var(--muted);line-height:1.7}.meta.sal b{color:var(--fg);font-family:var(--f-num);font-size:13px}.meta.sal .dtip{border-bottom:1px dotted currentColor}.meta.sal small{font-size:11px}
+.lst .cap.sal{display:block;font-size:10.5px;color:var(--muted);font-family:var(--f-num)}
+.tw a small{font-size:10.5px;color:var(--muted);margin-left:4px}
+#srank .top{padding-top:12px}#srank h1{font-size:22px;font-weight:900;margin:6px 0 0;line-height:1.3}#srank .fx{margin-top:8px}
+.mrow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:10px}.segm{flex:none;display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:var(--card);max-width:100%;overflow-x:auto}.segm button{white-space:nowrap;font:inherit;font-size:12.5px;font-weight:700;border:0;background:none;color:var(--muted);padding:4px 11px;cursor:pointer}.segm button[aria-pressed=true]{background:var(--accent);color:#fff}
+#sTbl td:first-child{font-family:var(--f-num);color:var(--muted);font-size:12px;white-space:nowrap;min-width:0}#sTbl td.co{font-family:var(--f-body);color:var(--fg);white-space:normal;min-width:6.5em}#sTbl th:nth-child(2),#sTbl td:nth-child(2){text-align:left}#sTbl .ind{font-size:11px;color:var(--muted);display:block}
+#sHead{margin-top:8px;font-size:12.5px;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -354,6 +362,7 @@ html{scroll-behavior:smooth}
     <div class="tgrid" id="tgrid"></div>
     <p class="legend" id="tLeg" hidden>各主題中位數。<span id="tLegC"><i class="cv">5/7</i>＝7 檔裡只有 5 檔有值（虧損、資料不足不算），檔數少時別當成整個主題。</span>營收年增＝最新一季對比去年同季；EPS 年增＝近四季合計對比前四季；PEG＝本益比 ÷ EPS 年增，<span class="cheap">&lt;1</span>、<span class="pricey">&gt;2</span>；本月至今＝收盤對比上月底；外資持股＝主題內中位數，外資是韓股主力，持股比轉折常領先股價。</p>
   </div>
+  <a class="srlink" id="srLink" href="#salary" hidden><b>💰 薪資排行</b><span id="srSub"></span></a>
   <div id="groups"></div>
   <p class="legend" id="gLegend" hidden>清單欄位：收盤價（日漲跌，台幣模式為固定匯率換算）　本益比／淨值比。<span class="pill">循環</span> 循環股以淨值比為主；外資持股比在主題頁與個股頁</p>
   <section class="card" id="exp" hidden>
@@ -388,6 +397,18 @@ html{scroll-behavior:smooth}
   <div class="fx" data-fx="mini"></div>
   <div class="panel"><div class="tbl"><table class="lst" id="rkList"></table></div></div>
   <p class="legend" id="rkFoot"></p>
+</div>
+
+<!-- ===== 員工薪資排行：#salary（資料 data/salary.json，kr/fetch_salary.py 從 OpenDART 年報抓） ===== -->
+<div id="srank" hidden>
+  <div class="top"><a href="#">← 全部主題</a><span class="meta" id="sYr" style="margin-left:auto"></span></div>
+  <h1>💰 員工薪資排行</h1>
+  <p class="tsum" id="sTake">載入中…</p>
+  <div class="fx" data-fx="mini"></div>
+  <div class="mrow"><span class="segm" id="sTabs"></span></div>
+  <p id="sHead"></p>
+  <div class="panel"><div class="tbl"><table class="lst" id="sTbl"></table></div></div>
+  <p class="legend" id="sFoot"></p>
 </div>
 
 <!-- ===== 編輯主題：#edit 清單（排序／隱藏／新增）、#edit/{id} 單一主題（名稱、成份股、細分）。只存在這支手機 ===== -->
@@ -464,6 +485,7 @@ html{scroll-behavior:smooth}
   </div></div>
   <div class="tw" id="tw"></div>
   <div class="notes" id="notes"></div>
+  <p class="meta sal" id="sal" hidden></p>
 </header>
 <nav class="chips" aria-label="圖表" id="chips"></nav>
 <p class="err" id="err" hidden></p>
@@ -572,7 +594,7 @@ function fxRender(){document.querySelectorAll('[data-fx]').forEach(el=>{const se
     `<span class="fxn"${FXI?'':' hidden'}>${fxOn()?`≈ 金額 = 韓元 ÷ ${FX.rate}（1 台幣 = ${FX.rate} 韓元，自設固定匯率，非即時）；比率、分位、年增不受影響`:'比率不分幣別；台幣模式只換股價／EPS／營收等絕對金額'}</span>`})}
 document.addEventListener('click',e=>{const b=e.target.closest('#tLegI');if(!b)return;const n=$(b.getAttribute('aria-controls'));n.hidden=!n.hidden;b.setAttribute('aria-expanded',String(!n.hidden))});
 let FXI=false;document.addEventListener('click',e=>{if(!e.target.closest('[data-fxi]'))return;FXI=!FXI;fxRender()});
-function fxApply(){fxSave();fxRender();if(D&&!$('stock').hidden){header();render()}if(!$('themePage').hidden&&CUR_T)themeRender(CUR_T);if(!$('home').hidden)homeRender();if(!$('rankPage').hidden)rkRender()}
+function fxApply(){fxSave();fxRender();if(D&&!$('stock').hidden){header();render()}if(!$('themePage').hidden&&CUR_T)themeRender(CUR_T);if(!$('home').hidden)homeRender();if(!$('rankPage').hidden)rkRender();if(!$('srank').hidden)renderSal();srHome();if(D&&!$('stock').hidden)salLine(D.id)}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-fx] button[data-c]');if(!b)return;const on=b.dataset.c==='1';if(on===FX.on)return;FX.on=on;fxApply()});
 document.addEventListener('change',e=>{if(!e.target.matches('[data-fx] input[data-rate]'))return;const r=+e.target.value;if(!(r>=30&&r<=60)){e.target.value=FX.rate;return}FX.rate=Math.round(r*10)/10;fxApply()});
 fxRender();
@@ -610,7 +632,7 @@ function header(){
   $('sEPS').textContent=won(L.ttm);$('sBV').textContent=won(L.bvps);
   backPaint(D.id);
   $('tw').innerHTML=D.tw.length?'<span class="lb">對應台股</span>'+D.tw.map(([c,n])=>`<a href="../#${c}"><b>${c}</b>${esc(n)}</a>`).join(''):'';
-  $('tw').scrollLeft=0;twFade();
+  $('tw').scrollLeft=0;twFade();salLine(D.id);
   // 說明小籤：會改變讀法的（循環股、虧損）排前面、暖色；其餘為一般資訊
   const notes=[];
   if(D.cyclical)notes.push(['循環股：EPS 高峰時 PE 偏低，以 PB 為主','w']);
@@ -1041,7 +1063,7 @@ function tTable(t){const el=$('tList'),[k,dir]=TS.split(':');let rows=t.stocks.s
         (tr?`<td>${pxT(s.close)}<span class="sub ${sgc(s.chg)}">${s.chg==null?'—':pct(s.chg,2)}</span></td>`:'<td>—</td>')+
         `<td>${s.pe?fmt(s.pe,s.pe>=100?0:1):'—'}<span class="sub" title="近四季 EPS 年增；P＝PEG（本益比÷EPS 年增）">${d}</span></td><td>${s.pb?fmt(s.pb,2):'—'}<span class="sub">外${s.fr!=null?fmt(s.fr,0)+'%':'—'}</span></td>`+
         `<td class="${sgc(o.ry)}">${o.ry!=null?pct(o.ry,0):'—'}<span class="sub"${o.lq&&o.lq!==LQ?' style="color:var(--warm)" title="跟其他檔不同季"':''}>${o.lq?o.lq.slice(2):''}</span></td></tr>`}
-    return `<tr data-id="${id}"><td class="sk">${k==='cap'&&cm!=null?`<span class="rk">#${++RK}</span>`:''}<span class="nmw"><span class="nm" style="font-family:var(--f-body)">${esc(s.name||id)}</span><span class="cd">${id}</span></span>${cm?`<span class="cap">${capT(cm)}</span>`:''}${pills||note?`<div class="role">${pills}${esc(note||'')}</div>`:''}</td>`+
+    return `<tr data-id="${id}"><td class="sk">${k==='cap'&&cm!=null?`<span class="rk">#${++RK}</span>`:''}<span class="nmw"><span class="nm" style="font-family:var(--f-body)">${esc(s.name||id)}</span><span class="cd">${id}</span></span>${cm?`<span class="cap">${capT(cm)}</span>`:''}${salCell(id)}${pills||note?`<div class="role">${pills}${esc(note||'')}</div>`:''}</td>`+
       (tr?`<td>${pxT(s.close)}<span class="sub ${sgc(s.chg)}">${s.chg==null?'—':pct(s.chg,2)}</span>${o.mtd!=null?`<span class="sub sm">本月 <span class="${sgc(o.mtd)}">${pct(o.mtd,1)}</span></span>`:''}</td>`:'<td>—</td>')+
       `<td>${s.pe?fmt(s.pe,1):'—'}${e}</td><td>${s.pb?fmt(s.pb,2):'—'}<span class="sub sm">外資${s.fr!=null?fmt(s.fr,1)+'%':'—'}</span></td>`+
       `<td class="${sgc(o.ry)}">${o.ry!=null?pct(o.ry,1):'—'}<span class="sub"${o.lq&&o.lq!==LQ?' style="color:var(--warm)" title="跟其他檔不同季"':''}>${o.lq||''}</span></td></tr>`}).join('')+'</tbody>';
@@ -1054,23 +1076,86 @@ function backPaint(id){const t=themeOfStock(id);$('back').href=t?'#t/'+t.id:'#';
 let HOMEY=0;
 function route(){
   const raw=decodeURIComponent(location.hash.slice(1)),id=raw.toUpperCase();
-  const em=/^edit(?:\/([a-z0-9_-]+))?$/.exec(raw),rk=raw.toLowerCase()==='rank';   // 編輯頁 #edit、#edit/{主題}（小寫，跟代號 EDIT 分開）
-  if(!em&&!rk&&ALIAS[id]&&!IDX.some(s=>s.id===id)){location.replace('#'+ALIAS[id]);return}   // #FB → #META
-  const tm=/^t\/([a-z0-9_-]+)$/i.exec(raw),tid=tm?tm[1].toLowerCase():null,h=em?raw:rk?'rank':tid?'t/'+tid:id;   // 主題頁 #t/pcb
+  const em=/^edit(?:\/([a-z0-9_-]+))?$/.exec(raw),rk=raw.toLowerCase()==='rank',sr=raw.toLowerCase()==='salary';   // 編輯頁 #edit、#edit/{主題}（小寫，跟代號 EDIT 分開）
+  if(!em&&!rk&&!sr&&ALIAS[id]&&!IDX.some(s=>s.id===id)){location.replace('#'+ALIAS[id]);return}   // #FB → #META
+  const tm=/^t\/([a-z0-9_-]+)$/i.exec(raw),tid=tm?tm[1].toLowerCase():null,h=em?raw:rk?'rank':sr?'salary':tid?'t/'+tid:id;   // 主題頁 #t/pcb
   bkTrack(h);
-  $('themePage').hidden=!tid;$('rankPage').hidden=!rk;$('editList').hidden=!em||!!em[1];$('editTheme').hidden=!em||!em[1];const stk=!tid&&!em&&!rk&&isStk(id);
+  $('themePage').hidden=!tid;$('rankPage').hidden=!rk;$('srank').hidden=!sr;$('editList').hidden=!em||!!em[1];$('editTheme').hidden=!em||!em[1];const stk=!tid&&!em&&!rk&&!sr&&isStk(id);
   if(!stk){$('pnav').hidden=true;document.body.classList.remove('pn');pnShut();qToggle(false)}
-  if((tid||rk)&&VPREV==='home')HOMEY=scrollY;   // 從首頁點卡片進主題：記住首頁捲到哪
+  if((tid||rk||sr)&&VPREV==='home')HOMEY=scrollY;   // 從首頁點卡片進主題：記住首頁捲到哪
   if(em){$('stock').hidden=true;$('home').hidden=true;document.title='編輯主題';if(em[1])openEditor(em[1],HPREV);else renderOrder();scrollTo(0,0)}
   else if(tid){$('stock').hidden=true;$('home').hidden=true;themeRender(tid);scrollTo(0,0)}
+  else if(sr){$('stock').hidden=true;$('home').hidden=true;document.title='韓股員工薪資排行';renderSal();scrollTo(0,0)}
   else if(rk){$('stock').hidden=true;$('home').hidden=true;document.title='韓股市值排行';rkLoad().then(rkRender);scrollTo(0,0)}
   else if(stk){const k=KEEP;KEEP=null;if(!D||D.id!==id){if(!k)scrollTo(0,0);load(id).then(()=>{if(k)requestAnimationFrame(()=>goSec(k))})}else{$('home').hidden=true;$('stock').hidden=false;pnPaint(id);setTimeout(()=>Object.values(charts).forEach(c=>c.resize()),0);k?goSec(k):scrollTo(0,0)}}
   else{$('stock').hidden=true;$('home').hidden=false;document.title='韓股估值看板';if(!$('q').value.trim())cardsRender();Object.values(charts).forEach(c=>c.resize());
     if(id==='EXP')requestAnimationFrame(()=>{if(!$('exp').hidden)$('exp').scrollIntoView()});   // 個股頁「看趨勢 →」：回首頁捲到出口卡
     if(VPREV==='edit')requestAnimationFrame(()=>scrollTo(0,$('tsec').getBoundingClientRect().top+scrollY-8));   // 編輯完回首頁：停在主題卡
     if(VPREV==='theme'){const y=HOMEY,pt=HPREV;requestAnimationFrame(()=>{scrollTo(0,y);const c=document.querySelector(`a.tcard[href="#${pt}"]`)||document.querySelector(`.tlt tr[data-t="${pt.replace(/^t\//,'')}"]`);if(c){c.classList.remove('bkflash');void c.offsetWidth;c.classList.add('bkflash')}})}}
-  bkRestore(h);VPREV=stk?'stock':em?'edit':tid||rk?'theme':'home';HPREV=h;
+  bkRestore(h);VPREV=stk?'stock':em?'edit':tid||rk||sr?'theme':'home';HPREV=h;
 }
+// ---------- 💰 員工薪資（data/salary.json，kr/fetch_salary.py 從 OpenDART 年報「직원 현황」等抓）----------
+// d[代號] = {avg 平均薪資(韓元), avgPrev, avgChg %, emp 員工數, empPrev, ten 平均年資, tot 薪資總額(億韓元), ctr 約聘%, m 男平均, f 女平均,
+//            exAvg 非登記高管平均, exN, top 最高個人報酬, topNm, topPos, yr 年度, filed, url}
+// 口徑：母公司（個別）全體員工平均，含約聘；韓國不揭露中位數 → 對台股的「全體員工薪資平均」（salary.json 第 6 欄），不對非主管中位數
+let SA=null,TWSA=null;
+const sal=(id,k)=>SA&&SA.d&&SA.d[id]?SA.d[id][k]:null;
+const salTxt=v=>v==null?'—':fxOn()?`≈${fmt(v/FX.rate/1e4,v/FX.rate/1e4<100?1:0)} 萬`:`₩${fmt(v/1e8,2)} 億`;   // 台幣：萬；韓元：億
+const salK=v=>v==null?'—':fxOn()?`${fmt(v/FX.rate/1e4,0)}萬`:`₩${fmt(v/1e8,2)}億`;                         // 表格小字
+const bigTxt=v=>v==null?'—':fxOn()?(v/FX.rate>=1e8?`≈${fmt(v/FX.rate/1e8,2)} 億`:`≈${fmt(v/FX.rate/1e4,0)} 萬`):`₩${fmt(v/1e8,1)} 億`;   // 高管、個人報酬
+const totTxt=v=>v==null?'—':fxOn()?(v/FX.rate>=1e4?`≈${fmt(v/FX.rate/1e4,2)} 兆台幣`:`≈${fmt(v/FX.rate,0)} 億台幣`):v>=1e4?`${fmt(v/1e4,2)} 兆韓元`:`${fmt(v,0)} 億韓元`;   // 薪資總額（億韓元）
+const twAvg=c=>TWSA&&TWSA.d&&TWSA.d[c]?TWSA.d[c][5]??null:null;   // 台股 salary.json 第 6 欄：全體員工薪資平均（萬台幣）
+const salCell=id=>{const m=sal(id,'avg');if(m==null||DENSE)return '';const ch=sal(id,'avgChg');
+  return `<span class="cap sal" title="${sal(id,'yr')} 年員工平均薪資（母公司全體）">薪${salK(m)}${ch!=null?` <span class="${sgc(ch)}">${pct(ch,0)}</span>`:''}</span>`};
+function salRank(id){const t=themeOfStock(id);if(!t)return '';const ids=t.stocks.map(x=>x[0]).filter(i=>sal(i,'avg')!=null).sort((a,b)=>sal(b,'avg')-sal(a,'avg'));const i=ids.indexOf(id);return i>=0&&ids.length>1?`・${esc(t.name.replace(/^\S+\s/,''))}內第 <b>${i+1}</b>／${ids.length}`:''}
+function salLine(id){
+  const el=$('sal');if(!el)return;const m=sal(id,'avg');
+  if(TWSA&&D&&D.tw&&D.tw.length)$('tw').querySelectorAll('a[href^="../#"]').forEach(a=>{const c=a.getAttribute('href').slice(4),v=twAvg(c);if(v!=null&&!a.querySelector('small'))a.insertAdjacentHTML('beforeend',`<small title="台股全體員工薪資平均（財報附註）">均${fmt(v,0)}萬</small>`)});
+  if(m==null){el.hidden=true;el.innerHTML='';return}
+  const ch=sal(id,'avgChg'),y=sal(id,'yr'),n=sal(id,'emp'),np=sal(id,'empPrev'),ten=sal(id,'ten'),ctr=sal(id,'ctr'),mm=sal(id,'m'),ff=sal(id,'f'),ex=sal(id,'exAvg'),top=sal(id,'top');
+  const tip=`${y} 年度「員工 1 人平均薪資」（OpenDART 年報 직원 현황，每年 3 月底公布）：母公司本身（不含子公司）全體員工，正職＋約聘，課稅所得口徑（含獎金、績效分紅、股票行權所得）。韓國只揭露平均、沒有中位數，對照台股請看「全體員工薪資平均」（對應台股代號旁的「均」），不要對非主管中位數。金控、控股公司母公司員工很少，數字不代表整個集團。`;
+  el.innerHTML=`<span class="dtip" title="${esc(tip)}">💰 員工平均薪資<small>（${y}）</small></span> <b>${salTxt(m)}</b>${ch!=null?` <span class="${sgc(ch)}">${pct(ch,1)}</span>`:''}${salRank(id)}`+
+    `<br>👥 員工 <b>${n?fmt(n):'—'}</b> 人${n&&np?` <span class="${sgc(n-np)}">${pct((n/np-1)*100,1)}</span>`:''}${ten!=null?`・年資 <b>${fmt(ten,1)}</b> 年`:''}${ctr!=null?`・約聘 <b>${fmt(ctr,ctr<10?1:0)}%</b>`:''}${mm&&ff?`・男女 <b>${fmt(mm/ff,2)}</b> 倍`:''}`+
+    (ex||top?`<br>👔 ${ex?`非登記高管平均 <b>${bigTxt(ex)}</b>（${fmt(ex/m,1)} 倍）`:''}${top?`${ex?'・':''}最高 <b>${bigTxt(top)}</b>${sal(id,'topPos')?`（${esc(sal(id,'topPos'))}）`:''}＝員工 <b>${fmt(top/m,0)}</b> 倍`:''}`:'')+
+    (sal(id,'url')?` <a href="${esc(sal(id,'url'))}" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none">原文 ↗</a>`:'');
+  el.hidden=false;
+}
+// 首頁入口列
+function srHome(){const el=$('srLink');if(!el)return;const a=srAll();if(!a.length){el.hidden=true;return}
+  const top=a.reduce((p,r)=>r.avg>p.avg?r:p,a[0]);$('srSub').innerHTML=`${a.length}檔・中位 ${salK(median(a.map(r=>r.avg)))}・最高 ${esc(stockOf(top.id).name||top.id)} ${salK(top.avg)} →`;el.hidden=false}
+// 排行頁 #salary：追蹤清單有資料的
+const SR={tab:'top'};let YR0=null;   // 多數年度：表內只標跟它不同的
+const SR_TABS=[['top','平均薪資'],['up','調薪'],['n','人數'],['ten','年資'],['ex','高管倍數']];
+const srTheme=id=>{const t=THEMES.find(t=>t.stocks.some(x=>x[0]===id))||BASE.find(t=>t.stocks.some(x=>x[0]===id));return t?t.name.replace(/^\S+\s/,''):(stockOf(id).theme||'').replace(/^\S+\s/,'')};
+function srAll(){if(!SA||!SA.d)return [];return Object.keys(SA.d).filter(id=>sal(id,'avg')!=null).map(id=>({id,avg:sal(id,'avg'),chg:sal(id,'avgChg'),n:sal(id,'emp'),np:sal(id,'empPrev'),ten:sal(id,'ten'),ctr:sal(id,'ctr'),ex:sal(id,'exAvg'),top:sal(id,'top'),tot:sal(id,'tot'),yr:sal(id,'yr'),th:srTheme(id)}))}
+function renderSal(){
+  const a=srAll();
+  $('sYr').textContent=SA&&SA.updated?`更新 ${SA.updated.slice(0,10)}`:'';
+  if(!a.length){$('sTake').textContent='薪資資料尚未產生（等 Actions「更新韓股員工薪資」跑完）';$('sTabs').innerHTML='';$('sTbl').innerHTML='';$('sFoot').textContent='';return}
+  const s=a.map(r=>r.avg).sort((x,y)=>x-y),q=p=>s[Math.floor(s.length*p)],yrs=[...new Set(a.map(r=>r.yr))].sort();
+  const exr=a.filter(r=>r.ex).map(r=>r.ex/r.avg);YR0=yrs[yrs.length-1];
+  $('sTake').innerHTML=`追蹤清單 <strong>${a.length}</strong> 檔（${yrs.join('／')} 年度）：平均薪資中位 <strong>${salTxt(median(s))}</strong>（P25 ${salK(q(.25))}、P75 ${salK(q(.75))}）・≥ ₩1.2 億 <strong>${a.filter(r=>r.avg>=1.2e8).length}</strong> 檔、&lt; ₩0.7 億 <strong>${a.filter(r=>r.avg<7e7).length}</strong> 檔${exr.length?`・高管÷員工中位 <strong>${fmt(median(exr),1)} 倍</strong>`:''}`;
+  $('sTabs').innerHTML=SR_TABS.map(([k,l])=>`<button type="button" data-tab="${k}" aria-pressed="${SR.tab===k}">${l}</button>`).join('');
+  let rows=a.slice(),th,cell;
+  const co=r=>{const st=stockOf(r.id);return `<td class="co"><span class="nmw"><span class="nm" style="font-family:var(--f-body)">${esc(st.name||r.id)}</span><span class="cd">${r.id}</span></span><span class="ind">${esc(r.th)}${ROLE[r.id]?'・'+esc(ROLE[r.id]):''}</span></td>`};
+  const avgC=r=>`<td><b>${salK(r.avg)}</b><span class="sub">${r.yr!==YR0?r.yr+' ':''}${r.ctr!=null&&r.ctr>=10?`約聘${fmt(r.ctr,0)}%`:''}</span></td>`;
+  const chgC=r=>`<td class="${sgc(r.chg)}">${r.chg==null?'—':pct(r.chg,1)}${r.chg!=null?`<span class="sub">去年${salK(r.avg/(1+r.chg/100))}</span>`:''}</td>`;
+  const peC=r=>{const st=stockOf(r.id);return `<td>${st.pe?fmt(st.pe,1):'—'}<span class="sub">${capM(r.id)?ap()+capT(capM(r.id)):''}</span></td>`};
+  const nC=r=>`<td><b>${r.n?fmt(r.n):'—'}</b><span class="sub ${r.n&&r.np?sgc(r.n-r.np):''}">${r.n&&r.np?pct((r.n/r.np-1)*100,1):''}</span></td>`;
+  const tenC=r=>`<td><b>${r.ten!=null?fmt(r.ten,1)+' 年':'—'}</b></td>`;
+  const exC=r=>`<td><b>${r.ex?fmt(r.ex/r.avg,1)+'×':'—'}</b><span class="sub">${r.ex?bigTxt(r.ex):''}</span></td>`;
+  const topC=r=>`<td><b>${r.top?fmt(r.top/r.avg,0)+'×':'—'}</b><span class="sub">${r.top?bigTxt(r.top):''}</span></td>`;
+  const totC=r=>`<td>${r.tot!=null?totTxt(r.tot):'—'}</td>`;
+  if(SR.tab==='up'){rows=rows.filter(r=>r.chg!=null).sort((x,y)=>y.chg-x.chg);th='<th>平均薪資</th><th>年變化</th><th>本益比</th>';cell=r=>avgC(r)+chgC(r)+peC(r);$('sHead').innerHTML='平均薪資對前一年度的變化，由高到低。韓國績效獎金（PS／PI）跟獲利走，半導體景氣年份會大幅跳動'}
+  else if(SR.tab==='n'){rows=rows.filter(r=>r.n).sort((x,y)=>y.n-x.n);th='<th>員工數</th><th>平均薪資</th><th>薪資總額</th>';cell=r=>nC(r)+avgC(r)+totC(r);$('sHead').innerHTML='母公司年底員工數由多到少（含約聘），小字＝對前一年增減'}
+  else if(SR.tab==='ten'){rows=rows.filter(r=>r.ten!=null).sort((x,y)=>y.ten-x.ten);th='<th>平均年資</th><th>平均薪資</th><th>本益比</th>';cell=r=>tenC(r)+avgC(r)+peC(r);$('sHead').innerHTML='平均年資由長到短。韓國大企業年功序列明顯，年資長的公司平均薪資天生偏高'}
+  else if(SR.tab==='ex'){rows=rows.filter(r=>r.ex||r.top).sort((x,y)=>(y.ex?y.ex/y.avg:0)-(x.ex?x.ex/x.avg:0));th='<th>高管÷員工</th><th>最高個人÷員工</th><th>平均薪資</th>';cell=r=>exC(r)+topC(r)+avgC(r);$('sHead').innerHTML='非登記高管（미등기임원）平均報酬 ÷ 員工平均，由高到低；最高個人＝年報揭露的 5 億韓元以上前 5 名中最高者'}
+  else{rows.sort((x,y)=>y.avg-x.avg);th='<th>平均薪資</th><th>年變化</th><th>本益比</th>';cell=r=>avgC(r)+chgC(r)+peC(r);$('sHead').innerHTML='員工 1 人平均薪資由高到低'}
+  $('sTbl').innerHTML=`<thead><tr><th>#</th><th>股票</th>${th}</tr></thead><tbody>`+rows.map((r,i)=>`<tr data-id="${r.id}"><td>${i+1}</td>${co(r)}${cell(r)}</tr>`).join('')+'</tbody>';
+  $('sFoot').innerHTML=`平均薪資＝OpenDART 年報（사업보고서）「직원 현황」的員工 1 人平均薪資：母公司本身（個別，不含子公司）全體員工，正職＋約聘（含短時間），課稅所得口徑，含獎金、績效分紅（PS／PI）與股票行權所得；每年 3 月底公布前一年度。<b>韓國只揭露平均、沒有中位數</b>，所以要跟台股比，請對台股「全體員工薪資平均」（財報附註），不要對非主管中位數；個股頁對應台股代號旁的「均」就是這個數字。金控、控股公司（KB金融、新韓金融、韓亞金融、SK Square、SK、三星物產等）母公司只有少數員工，平均值不代表整個集團。年變化、人數增減＝對前一年度年報。非登記高管＝미등기임원（不在董事會的執行高管）；最高個人＝年報揭露的 5 億韓元以上前 5 名中最高者，常含退職金，倍數偶爾異常高。數字由程式從申報資料整理（單位與部門合計自動判斷），可能有誤，個股頁有「原文 ↗」可核對${fxOn()?`；台幣以 1 台幣 = ${FX.rate} 韓元固定匯率換算（≈）`:''}。`;
+}
+document.addEventListener('click',e=>{const b=e.target.closest('#sTabs button[data-tab]');if(b){SR.tab=b.dataset.tab;renderSal();return}
+  const r=e.target.closest('#sTbl tr[data-id]');if(r)location.hash=r.dataset.id});
 // ---------- 🏆 市值排行 #rank：rows 欄位 0代號 1中文名 2韓文名 3市場 4市值(億韓元) 5收盤 6日漲跌% 7本益比 8淨值比 9殖利率% 10外資持股% ----------
 let RK=null,RK_P=null,RKS='cap:-1';
 const rkLoad=()=>RK_P||(RK_P=fetch(`data/rank.json?t=${Date.now()}`).then(r=>r.ok?r.json():null).catch(()=>null).then(j=>{RK=j;rkLink();return j}));
@@ -1096,7 +1181,7 @@ function rkRender(){const el=$('rkList');if(!RK||!RK.rows){$('rkSum').textConten
   el.onclick=e=>{const h=e.target.closest('th[data-k]');if(h){const nk=h.dataset.k,cur=RKS.split(':');RKS=cur[0]===nk?nk+':'+(-cur[1]):nk+':'+(nk==='cap'||nk==='chg'||nk==='dy'?-1:1);rkRender();return}
     const r=e.target.closest('tr[data-id]');if(!r)return;if(r.dataset.t==='1')location.hash=r.dataset.id;else window.open(`https://m.stock.naver.com/domestic/stock/${r.dataset.id}/total`,'_blank','noopener')}}
 // ---------- 底部導覽列：依目前主題（剛看的主題頁，或首頁順序第一個有它的主題）的成份股順序上下檔切換，並停在同一張圖；不在任何主題的只剩 ↩ ----------
-const isStk=h=>/^[0-9A-Z]{6}$/.test(h);   // 韓股代號 6 碼
+const isStk=h=>/^[0-9A-Z]{6}$/.test(h)&&h!=='SALARY';   // 韓股代號 6 碼
 const nameOf=id=>{const s=IDX.find(x=>x.id===id);if(s)return s.name||id;if(D&&D.id===id)return D.name||id;return id};
 let PN=null,KEEP=null,SHEET_SEC=null;
 function pnPaint(id){
@@ -1337,8 +1422,10 @@ addEventListener('hashchange',route);
   const [a,b]=await Promise.all(['data/index.json','data/exp.json'].map(u=>fetch(u+'?t='+Date.now()).then(r=>r.ok?r.json():null).catch(()=>null)));
   IDX=a||[];EXP=b;$('eN').textContent=IDX.length;
   await rkLoad();   // 「市值排行」自訂主題要用
+  try{const r=await fetch('data/salary.json?t='+Date.now());if(r.ok)SA=await r.json()}catch(e){}
+  fetch('../data/salary.json?t='+Date.now()).then(r=>r.ok?r.json():null).then(j=>{if(j){TWSA=j;if(D&&!$('stock').hidden)salLine(D.id)}}).catch(()=>{});   // 台股薪資：對應台股旁小字
   BASE=baseThemes();applyCfg();syStat();syncRun();
-  homeRender();try{expRender()}catch(e){console.error(e)}route();
+  homeRender();srHome();try{expRender()}catch(e){console.error(e)}route();
   // 主題卡的年增／PEG／本月至今／市值要讀各個股檔（各約 30KB）；讀完重畫卡片與主題頁
   loadStats().then(statsRefresh);
 })();

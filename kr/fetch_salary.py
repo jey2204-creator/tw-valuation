@@ -32,6 +32,8 @@ KST = dt.timezone(dt.timedelta(hours=9))
 TODAY = dt.datetime.now(KST).date()
 API = "https://opendart.fss.or.kr/api"
 CALLS = []
+CACHE_V = 2   # 快取格式改版就 +1（舊快取重抓）
+EMP_KEYS = ("fo_bbm", "sexdstn", "sm", "rgllbr_co", "cnttk_co", "jan_salary_am", "fyer_salary_totamt", "avrg_cnwk_sdytrn", "rcept_no")
 
 
 def num(v):
@@ -84,54 +86,70 @@ def unit_fix(avg, tot, n):
     return a, t
 
 
+def tenure(v):
+    """平均年資：'14.0'／'8년 7개월'／'3년10개월\n(18년2개월)'（括號＝含集團年資，取第一個）→ 年"""
+    if v is None:
+        return None
+    t = str(v).strip()
+    m = re.search(r"(\d+(?:\.\d+)?)\s*년(?:\s*(\d+)\s*개월)?", t)
+    if m:
+        return float(m.group(1)) + (int(m.group(2)) / 12 if m.group(2) else 0)
+    m = re.search(r"^(\d+)\s*개월", t)
+    if m:
+        return int(m.group(1)) / 12
+    return num(t.split("\n")[0].split("(")[0])
+
+
 def emp_summary(rows):
-    """직원 현황：部門 × 性別分列 → 公司合計。有「합계」列就用它，否則加總明細列。
-    平均薪資＝Σ薪資總額 ÷ Σ(薪資總額 ÷ 1人平均)（＝年平均人數，跟公司自己算的口徑一樣），不行才用年底人數"""
+    """직원 현황：部門 × 性別分列 → 公司合計。各公司寫法不同：
+      全公司合計列（합계／합계）、全公司分性別（성별합계 남／여，或部門欄寫 -）、分部門合計、部門 × 性別明細。
+    每個指標各自取「第一組欄位齊全」的：合計列 → 全公司分性別 → 分部門 → 明細。
+    平均薪資＝Σ薪資總額 ÷ Σ(薪資總額 ÷ 1人平均)（＝公司自己用的年平均人數）；只有平均就用人數加權；只有總額就 ÷ 年底人數"""
     R = []
     for x in rows:
         n = num(x.get("sm"))
         if n is None:
             n = sum(num(x.get(k)) or 0 for k in ("rgllbr_co", "cnttk_co")) or None
         avg, tot = unit_fix(num(x.get("jan_salary_am")), num(x.get("fyer_salary_totamt")), n)
-        R.append(dict(seg=(x.get("fo_bbm") or "").strip(), sex=(x.get("sexdstn") or "").strip(), n=n, avg=avg, tot=tot,
-                      ten=num(x.get("avrg_cnwk_sdytrn")), ctr=num(x.get("cnttk_co")), rcept=(x.get("rcept_no") or "")))
+        seg, sex = (x.get("fo_bbm") or "").strip(), (x.get("sexdstn") or "").strip()
+        R.append(dict(seg=seg, sex=sex, n=n, avg=avg, tot=tot, ten=tenure(x.get("avrg_cnwk_sdytrn")),
+                      ctr=num(x.get("cnttk_co")), rcept=(x.get("rcept_no") or ""),
+                      st=bool(TOTAL.search(seg)) or seg in ("", "-"), xt=bool(TOTAL.search(sex)) or sex in ("", "-")))
+    R = [r for r in R if r["n"]]
     if not R:
         return None
-    seg_tot = lambda r: bool(TOTAL.search(r["seg"])) or r["seg"] in ("", "-")
-    sex_tot = lambda r: bool(TOTAL.search(r["sex"])) or r["sex"] in ("", "-")
-    grand = [r for r in R if seg_tot(r) and sex_tot(r) and r["n"]]
-    detail = [r for r in R if not TOTAL.search(r["seg"]) and not TOTAL.search(r["sex"]) and r["n"]]
-    if not detail:
-        detail = [r for r in R if r["n"] and not (seg_tot(r) and sex_tot(r))] or [r for r in R if r["n"]]
+    sets = [[r for r in R if r["st"] and r["xt"]][:1],          # 全公司合計
+            [r for r in R if r["st"] and not r["xt"]],          # 全公司分性別
+            [r for r in R if not r["st"] and r["xt"]],          # 分部門合計
+            [r for r in R if not r["st"] and not r["xt"]]]      # 明細
+    sets = [x for x in sets if x]
 
-    def agg(rs):
-        n = sum(r["n"] for r in rs)
-        if not n:
-            return None
-        tw = [(r["tot"], r["tot"] / r["avg"]) for r in rs if r["tot"] and r["avg"]]
-        if tw and len(tw) == len(rs):
-            avg = sum(t for t, _ in tw) / sum(w for _, w in tw)
-        else:
-            ws = [(r["avg"], r["n"]) for r in rs if r["avg"]]
-            avg = sum(a * w for a, w in ws) / sum(w for _, w in ws) if ws else None
-        tot = sum(r["tot"] for r in rs if r["tot"]) or None
-        tn = [(r["ten"], r["n"]) for r in rs if r["ten"] is not None]
-        ten = sum(a * w for a, w in tn) / sum(w for _, w in tn) if tn else None
-        ctr = sum(r["ctr"] or 0 for r in rs)
-        return dict(n=n, avg=avg, tot=tot, ten=ten, ctr=ctr)
+    def avg_of(rs):
+        if all(r["tot"] and r["avg"] for r in rs):
+            return sum(r["tot"] for r in rs) / sum(r["tot"] / r["avg"] for r in rs)
+        if all(r["avg"] for r in rs):
+            return sum(r["avg"] * r["n"] for r in rs) / sum(r["n"] for r in rs)
+        if all(r["tot"] for r in rs):
+            return sum(r["tot"] for r in rs) / sum(r["n"] for r in rs)
+        return None
 
-    out = agg(grand[:1]) if grand else agg(detail)
-    if grand and detail:   # 合計列偶爾缺平均：用明細補
-        d = agg(detail)
-        for k in ("avg", "tot", "ten"):
-            if out.get(k) is None and d:
-                out[k] = d[k]
-    # 男女平均：性別欄寫 남／여（或 男／女）
-    for key, pat in (("m", r"^(남|男|남자|남성)"), ("f", r"^(여|女|여자|여성)")):
-        rs = [r for r in R if re.match(pat, r["sex"]) and not TOTAL.search(r["seg"])] or \
-             [r for r in R if re.match(pat, r["sex"])]
-        g = agg(rs) if rs else None
-        out[key] = g["avg"] if g else None
+    base = sets[0]
+    out = dict(n=sum(r["n"] for r in base), ctr=sum(r["ctr"] or 0 for r in base), avg=None, tot=None, ten=None)
+    for rs in sets:
+        if out["avg"] is None:
+            out["avg"] = avg_of(rs)
+        if out["tot"] is None and all(r["tot"] for r in rs):
+            out["tot"] = sum(r["tot"] for r in rs)
+        if out["ten"] is None and all(r["ten"] is not None for r in rs):
+            out["ten"] = sum(r["ten"] * r["n"] for r in rs) / sum(r["n"] for r in rs)
+    # 男女平均：全公司分性別有薪資就用它，否則明細依性別加總
+    for key, pat in (("m", r"^(남|男)"), ("f", r"^(여|女)")):
+        out[key] = None
+        for rs in ([r for r in R if r["st"] and not r["xt"]], [r for r in R if not r["st"] and not r["xt"]]):
+            g = [r for r in rs if re.match(pat, r["sex"])]
+            if g and avg_of(g):
+                out[key] = avg_of(g)
+                break
     out["rcept"] = next((r["rcept"] for r in R if r["rcept"]), "")
     return out
 
@@ -168,13 +186,10 @@ def top_summary(rows):
 
 def year_data(corp, year, full):
     e = dart("empSttus", corp, year)
-    d = dict(emp=emp_summary(e), at=TODAY.isoformat())
+    d = dict(rows=[{k: x.get(k) for k in EMP_KEYS} for x in e], at=TODAY.isoformat(), v=CACHE_V)
     if full:
         d["ex"] = exec_summary(dart("unrstExctvMendngSttus", corp, year))
         d["top"] = top_summary(dart("indvdlByPay", corp, year))
-    d["_keys"] = sorted(e[0].keys()) if e else []
-    d["_rows"] = [{k: x.get(k) for k in ("fo_bbm", "sexdstn", "sm", "jan_salary_am", "fyer_salary_totamt", "avrg_cnwk_sdytrn")}
-                  for x in e[:12]]
     return d
 
 
@@ -200,15 +215,14 @@ def main():
                 k = str(y)
                 have = r.get(k)
                 need_full = not got   # 最新一年才抓高管與個人報酬
-                if FORCE or not have or not have.get("emp") or (need_full and "ex" not in have):
+                if FORCE or not have or have.get("v") != CACHE_V or not have.get("rows") or (need_full and "ex" not in have):
                     r[k] = year_data(cc, y, need_full)
-                if r[k].get("emp"):
+                if r[k].get("rows"):
                     got.append(y)
                 if len(got) == 2:
                     break
             diag[code] = dict(sec=round(time.time() - t0, 1), years=got,
-                              keys=r[str(got[0])]["_keys"] if got else None,
-                              rows=r[str(got[0])]["_rows"] if got else r.get(str(y_try[0]), {}).get("_rows"))
+                              emp=emp_summary(r[str(got[0])]["rows"]) if got else None)
             print(f"{code} {CFG[code]['zh']}: 年度 {got} {time.time() - t0:.0f}s")
         except Exception as e:
             bad.append(code)
@@ -219,11 +233,11 @@ def main():
     d = {}
     for code in STOCKS:
         r = raw.get(code) or {}
-        ys = sorted((y for y in r if (r[y] or {}).get("emp")), reverse=True)
+        ys = sorted((y for y in r if (r[y] or {}).get("rows") and emp_summary(r[y]["rows"])), reverse=True)
         if not ys:
             continue
         cur, prev = r[ys[0]], (r[ys[1]] if len(ys) > 1 and int(ys[1]) == int(ys[0]) - 1 else None)
-        e, p = cur["emp"], (prev or {}).get("emp") or {}
+        e, p = emp_summary(cur["rows"]), (emp_summary(prev["rows"]) if prev else None) or {}
         rd = lambda v, n=0: None if v is None else (round(v, n) if n else int(round(v)))
         o = dict(avg=rd(e.get("avg")), avgPrev=rd(p.get("avg")), emp=rd(e.get("n")), empPrev=rd(p.get("n")),
                  ten=rd(e.get("ten"), 1), tot=rd(e["tot"] / 1e8, 1) if e.get("tot") else None,
