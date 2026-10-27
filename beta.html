@@ -879,7 +879,7 @@ function klDraw(){
     const o=r[8]??r[0],h=r[9]??r[0],lo=r[10]??r[0];cs.push({time:tm,open:o,high:h,low:lo,close:r[0]});
     vs.push({time:tm,value:r[1]||0,color:(r[0]>=o?up:dn)+'99'});
     if(m5[i]!=null)l5.push({time:tm,value:m5[i]});if(m20[i]!=null)l20.push({time:tm,value:m20[i]});if(m60[i]!=null)l60.push({time:tm,value:m60[i]});if(m120[i]!=null)l120.push({time:tm,value:m120[i]})}
-  const opt={layout:{background:{type:'solid',color:'transparent'},textColor:mu,fontFamily:getComputedStyle(document.body).fontFamily,fontSize:10},grid:{vertLines:{color:line},horzLines:{color:line}},
+  const opt={layout:{background:{type:'solid',color:'transparent'},attributionLogo:false,textColor:mu,fontFamily:getComputedStyle(document.body).fontFamily,fontSize:10},grid:{vertLines:{color:line},horzLines:{color:line}},
     rightPriceScale:{borderColor:line,scaleMargins:{top:.08,bottom:.05}},timeScale:{borderColor:line,rightOffset:2,barSpacing:Math.max(3,Math.floor(($('klBox').clientWidth-60)/n)),fixLeftEdge:true,fixRightEdge:true,timeVisible:false,tickMarkFormatter:(tt)=>tt.month+'/'+tt.day},
     crosshair:{mode:L.CrosshairMode.Normal,vertLine:{labelBackgroundColor:css('--accent')},horzLine:{labelBackgroundColor:css('--accent')}},handleScroll:{vertTouchDrag:false},handleScale:{axisPressedMouseMove:false}};
   if(KL.c){KL.c.remove();KL.v.remove()}
