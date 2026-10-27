@@ -40,7 +40,7 @@ rep('''  <div class="chart" id="cNp"></div>
   <details class="ind" id="y10More"><summary>年度明細表 <span>▾</span></summary><div class="tbl"><table id="tbY10"></table></div></details>
 </section>
 <style>
-#y10Per button{padding:4px 9px}#y10 h2 small{overflow:hidden;text-overflow:ellipsis}
+#y10Per button{padding:4px 9px}#y10 h2 small{overflow:hidden;text-overflow:ellipsis;font-size:11px;letter-spacing:-.2px}
 .y10k{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:8px 0 4px}
 .y10k{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .y10k div{border:1px solid var(--line);border-radius:9px;padding:3px 7px 4px;min-width:0}
@@ -185,7 +185,7 @@ function renderY10(){
   else V=['','⚪ 接近 10 年常態',`${lastL} EPS ${f(now,2)}，${F.length} 年平均 ${f(mE,2)}`];
   $('tY10').innerHTML=`<span class="pill">${kind}</span> <span class="pill ${V[0]}">${V[1]}</span> ${V[2]} <span class="y10tip" data-y10t>${$('y10').classList.contains('open')?'收起 ▴':'依據 ▾'}</span>`+`<span class="y10why"><br>分類依據：虧損 ${loss} 年、EPS 年減超過 2 成 ${drops} 次${cv!=null?`、EPS 波動度（標準差÷平均）${fmt(cv,2)}`:''}</span>`;
   // 圖
-  const Q=Y10P==='q',R=Q?Y10.Q:A;$('y10U').textContent=Q?`${R.length}季`:`${F.length}年${T?'+TTM':''}`;
+  const Q=Y10P==='q',R=Q?Y10.Q:A;$('y10U').textContent=Q?`${R.length}季`:`${F.length}年${T?'+近4季':''}`;
   $('y10Per').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.p===Y10P));
   $('y10Tab').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.t===Y10T));
   $('cY10').hidden=false;const ch=mk('cY10'),o=base();o.xAxis.data=R.map(x=>Q?x.l:(x.ttm?'近4季':"'"+x.l.slice(2)));o.yAxis.scale=false;
