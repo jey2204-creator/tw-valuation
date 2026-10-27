@@ -189,6 +189,9 @@ body.shopen{overflow:hidden}
 .sh-grid b em{font-style:normal}.sh-grid b em.up{color:var(--buy)}.sh-grid b em.dn{color:var(--dn)}
 .sh-grid b.up{color:var(--buy)}.sh-grid b.dn{color:var(--dn)}
 .sh-n{display:flex;align-items:center;gap:6px;margin-top:5px;font-size:12px;color:var(--muted)}
+/* 投信估計持股（2026-10-27）：<1.5% 標綠＝投信還沒什麼部位 */
+.km-p .tsh{font:600 10.5px var(--font-num);color:var(--muted);letter-spacing:-.03em}.km-p .tsh.lo,.sh-n .tshn b.lo{color:var(--dn)}
+.km-p .tsh.lo{font-weight:700}.sh-n .tshn{white-space:nowrap}.sh-n .tshn b{color:var(--fg)}.sh-n .tshn em{font-style:normal;font:600 11px var(--font-num)}.sh-n .tshn em.up{color:var(--buy)}.sh-n .tshn em.dn{color:var(--dn)}
 .sh-n .seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;margin-left:auto}
 .sh-n .seg button{border:0;background:var(--surface);color:var(--muted);font:600 12px var(--font-num);padding:3px 10px;cursor:pointer}
 .sh-n .seg button+button{border-left:1px solid var(--line)}
@@ -335,6 +338,17 @@ const SELL_VIEW={its:1,fis:1,boths:1};
 // 另一邊法人（名單日當天）：投信看 days 的 v，外資看 fdays 的 fv（不在全行列時取 tf；上櫃不在 tf 裡＝不知道）
 function other(c){const t=tMap.get(c),f=fMap.get(c);const fv=f?f.fv:(c in TF?TF[c]:null);
   return {tl:t?Math.round(t.v/1000):0,fl:fv==null?null:Math.round(fv/1000)}}
+// 投信估計持股（2026-10-27）：MoneyDJ 估計值（每日投信買賣超累加＋基金季報校正，交易所不公布），佔股本％＝張×1000÷掛牌股數
+const TSH=(SD&&SD.tsh&&SD.tsh.t)||{},TSH_LO=1.5;
+function sharesOf(c){const t=tMap.get(c),f=fMap.get(c);if(t&&t.s)return t.s;if(f&&f.s)return f.s;
+  for(const d of DATES){const x=((days[d]||{}).rows||[]).find(y=>y.c===c)||((fdays[d]||{}).rows||[]).find(y=>y.c===c);if(x&&x.s)return x.s}return null}
+function tshOf(c){const a=TSH[c],s=sharesOf(c);if(!a||!a.length||!s)return null;let i=a.length-1;while(i>=0&&a[i][0]>L)i--;if(i<0)return null;
+  const j=Math.max(0,i-5),pct=a[i][1]*1000/s*100;return {d:a[i][0],lots:a[i][1],pct,dp:i>j?(a[i][1]-a[j][1])*1000/s*100:null,n:i-j,lo:pct<TSH_LO}}
+const tshPct=o=>o.pct.toFixed(o.pct<10?2:1)+'%';
+function tshTag(c){const o=tshOf(c);if(!o)return '';return `<span class="tsh${o.lo?' lo':''}" title="投信估計持股 ${fmt(o.lots)}張（${md(o.d)}，MoneyDJ 估計值）${o.lo?'；低於 1.5%':''}">投${tshPct(o)}</span>`}
+function tshLine(c){const o=tshOf(c);if(!o)return '<span class="tshn">投持 <b>—</b></span>';
+  const z=o.dp==null||Math.abs(o.dp)<0.005;const dp=o.dp==null?'':` <em class="${z?'':o.dp>0?'up':'dn'}" title="近 ${o.n} 筆變化（佔股本百分點）">${o.n}日${z?'±':o.dp>0?'+':'−'}${Math.abs(o.dp).toFixed(2)}</em>`;
+  return `<span class="tshn" title="投信估計持股 ${fmt(o.lots)}張（${md(o.d)}，MoneyDJ 估計值：每日買賣超累加＋基金季報校正）">投持 <b class="${o.lo?'lo':''}">${tshPct(o)}</b>${dp}</span>`}
 // 徽章：買超分頁只警示「另一邊在賣」；賣超分頁兩邊都標（也賣＝雙賣 ⚠、反向買＝分歧）
 function oppBadge(r,full){const o=other(r.c);const who=(view==='fi'||view==='fis')?'投信':'外資';const n=who==='投信'?o.tl:o.fl;
   if(n==null||n===0)return '';const lots=fmt(Math.abs(n))+'張';
@@ -568,7 +582,7 @@ function render(){
     const tm=S&&S.live&&S.q&&S.q.t?S.q.t.slice(0,5):(S&&S.state==='done'?'收':md(S?S.bars[S.bars.length-1][0]:L));
     return `<article class="km${S&&S.live&&S.brk?' brk':''}${S&&S.retro?' retro':''}" data-c="${esc(r.c)}" role="button" tabindex="0" aria-label="${esc(r.n)} 放大">
       <div class="km-h"><span>${r.rank}</span><b>${esc(r.n)}</b>${tg}${oppBadge(r,false)}${S&&S.exIn?'<span title="近20日有除權息，20日高未還原">⚠</span>':''}<span class="ovl">${(()=>{const o=other(r.c);const f=n=>n==null?'—':(n>0?'+':n<0?'−':'')+(Math.abs(n)>=1000?(Math.abs(n)/1000).toFixed(1)+'k':String(Math.abs(n)));return `${f(o.tl)}/${f(o.fl)}`})()}</span>${nxTag}<span class="ovx ${cls(S&&S.chg)}">${S&&S.chg!=null?(S.chg>0?'▲':S.chg<0?'▼':'')+Math.abs(S.chg*100).toFixed(1)+'%':''}${S&&S.live&&(S.vProj??S.vNow)!=null?' 量'+(S.vProj??S.vNow).toFixed(1)+'×':''}${S&&S.retro?'':frB(r.k)}</span>${S&&S.retro?'':`<span class="tm">${frB(r.k)}${tm}</span>`}</div>
-      <div class="km-p">${S&&S.retro?`<span class="lcl">${pxFmt(S.lcl)}→</span>`:''}<b class="${cls(S&&S.chg)}">${pxFmt(S?S.px:r.cl)}</b><span class="${cls(S&&S.chg)}" title="${S&&S.retro?'現價相對名單日收':''}">${S&&S.chg!=null?(S.chg>0?'▲':S.chg<0?'▼':'')+Math.abs(S.chg*100).toFixed(2)+'%':'—'}</span></div>
+      <div class="km-p">${S&&S.retro?`<span class="lcl">${pxFmt(S.lcl)}→</span>`:''}<b class="${cls(S&&S.chg)}">${pxFmt(S?S.px:r.cl)}</b><span class="${cls(S&&S.chg)}" title="${S&&S.retro?'現價相對名單日收':''}">${S&&S.chg!=null?(S.chg>0?'▲':S.chg<0?'▼':'')+Math.abs(S.chg*100).toFixed(2)+'%':'—'}</span>${tshTag(r.c)}</div>
       ${S?'<canvas class="km-cv"></canvas>':''}
       <div class="km-f">${footHtml(S)}</div></article>`}).join('');
   const map=new Map(R.map(o=>[o.r.c,o]));
@@ -606,12 +620,12 @@ function fillSheet(){
     <div class="sh-px">${S&&S.retro?`<span class="lcl" title="名單日收">${md(L)}收 ${pxFmt(S.lcl)} →</span>`:''}<span class="px ${cls(S&&S.chg)}">${pxFmt(S?S.px:r.cl)}</span><span class="chg ${cls(S&&S.chg)}" title="${S&&S.retro?'相對名單日收':''}">${S&&S.chg!=null?(S.chg>0?'▲':S.chg<0?'▼':'')+Math.abs(S.chg*100).toFixed(2)+'%':''}</span><span class="tm">${tm}</span></div>
     ${tags.length?`<div class="sh-tags">${tags.join('')}</div>`:''}
     ${S?`<div class="sh-grid">${grid}</div>
-    <div class="sh-n"><span>${r.lab} <b>${r.p!=null?r.p.toFixed(3)+'%':'—'}</b></span><span class="seg" role="group" aria-label="根數">${[40,60,90].map(n=>`<button type="button" data-n="${n}" aria-pressed="${n===nBars}">${n}</button>`).join('')}</span></div>
+    <div class="sh-n"><span>${r.lab} <b>${r.p!=null?r.p.toFixed(3)+'%':'—'}</b></span>${tshLine(r.c)}<span class="seg" role="group" aria-label="根數">${[40,60,90].map(n=>`<button type="button" data-n="${n}" aria-pressed="${n===nBars}">${n}</button>`).join('')}</span></div>
     <div class="sh-leg">${[5,10,20,60].map(w=>`<span><i style="background:var(--ma${w})"></i>${w}MA</span>`).join('')}<span><i style="background:var(--buy)"></i>前20日高（虛線）</span></div>
     <div class="sh-cur" id="shCur"></div>
     <canvas class="sh-cv" aria-label="${esc(r.n)} 日K與今天盤中K棒"></canvas>`:'<p class="sh-note">還沒有這檔的日K資料。</p>'}
     <div class="sh-links"><a href="${yahoo}" target="_blank" rel="noopener noreferrer">Yahoo 技術分析 ↗</a></div>
-    <p class="sh-note">虛線框＝今天盤中到目前為止的K棒；量的虛線框＝推估全天量，點線＝前 5 日均量。價格未還原權息。看盤工具，不是買賣建議；下單以券商報價為準。</p>`;
+    <p class="sh-note">虛線框＝今天盤中到目前為止的K棒；量的虛線框＝推估全天量，點線＝前 5 日均量。價格未還原權息。投持＝投信估計持股佔股本（MoneyDJ 估計值，季末可能跳動），低於 1.5% 標綠。看盤工具，不是買賣建議；下單以券商報價為準。</p>`;
   box.querySelector('.x').onclick=closeSheet;
   box.querySelectorAll('.seg button').forEach(b=>b.onclick=()=>{nBars=+b.dataset.n;store.set(N_KEY,String(nBars));const keep=curI;fillSheet();if(keep!=null)setCur(keep)});
   sheetS=S;curI=null;const cv=box.querySelector('.sh-cv');if(cv&&S){drawSheetK();

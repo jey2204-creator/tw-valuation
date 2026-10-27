@@ -84,6 +84,9 @@ tr.hot td{background:var(--hot)}
 /* 市值徽章（2026-10-22）：掛牌股數×收盤價；低於目前市值門檻（門檻設不限時低於 100 億）標黃 */
 .tag.cap{background:var(--chip);color:var(--fg);font-family:var(--font-num);font-weight:600}
 .tag.cap.sm{background:var(--warn-soft);color:var(--warn)}
+/* 投信估計持股（2026-10-27）：<1.5% 標綠＝投信還沒什麼部位 */
+.tag.tsh{background:var(--chip);color:var(--muted);font-family:var(--font-num);font-weight:600}
+.tag.tsh.lo{background:color-mix(in srgb,var(--dn) 16%,transparent);color:var(--dn);font-weight:700}
 /* 產業標籤（2026-10-21）：排行列上點一下只看同族群；表格上方的產業列可切換 */
 .tag.ind{background:var(--otc-soft);color:var(--otc);cursor:pointer;font-weight:600}
 .tag.ind[aria-pressed="true"]{background:var(--otc);color:var(--surface)}
@@ -548,6 +551,12 @@ const capTxt=r=>{const c=capOf(r);return c==null?'—':c>=1000?fmt(Math.round(c)
 try{const v=localStorage.getItem('itrust.minCap');if(v!=null&&['0','50','100','300'].includes(v))$('minCap').value=v}catch(e){}
 const minCap=()=>+$('minCap').value;
 const capOk=r=>!minCap()||(capOf(r)??0)>=minCap();
+// 投信估計持股（2026-10-27）：MoneyDJ 估計值（每日投信買賣超累加＋基金季報校正；交易所不公布），佔股本％＝張×1000÷掛牌股數
+const tshT=()=>(window.SHARE_DATA&&window.SHARE_DATA.tsh&&window.SHARE_DATA.tsh.t)||{};
+function tshOf(r){const a=tshT()[r.c],s=r.s||(r.frow&&r.frow.s);if(!a||!a.length||!s)return null;let i=a.length-1;while(i>=0&&a[i][0]>cur)i--;if(i<0)return null;
+  const j=Math.max(0,i-5),pct=a[i][1]*1000/s*100;return {d:a[i][0],lots:a[i][1],pct,dp:i>j?(a[i][1]-a[j][1])*1000/s*100:null,n:i-j,lo:pct<1.5}}
+const tshPct=o=>o.pct.toFixed(o.pct<10?2:1)+'%';
+const tshTag=r=>{const o=tshOf(r);if(!o)return '';return `<span class="tag tsh${o.lo?' lo':''}" title="投信估計持股 ${fmt(o.lots)} 張（${o.d.slice(4,6)}/${o.d.slice(6)}，MoneyDJ 估計值）${o.lo?'；低於 1.5%':''}">投持 ${tshPct(o)}</span>`};
 const capTag=r=>{const c=capOf(r);if(c==null)return '';const sm=c<(minCap()||100);return `<span class="tag cap${sm?' sm':''}" title="市值 ＝ 掛牌股數 × 收盤價${sm?'；低於 '+(minCap()||100)+' 億':''}">市值 ${capTxt(r)}億</span>`};
 const mkt=r=>filter==='all'||r.m===filter;
 const passTd=(r,s)=>r.v*s>0&&Math.abs(lotsOf(r))>=minLots()&&r.amt*s>=minAmt()&&mkt(r)&&capOk(r);
@@ -762,6 +771,9 @@ function detail(r,ctx){
     notes.push([dir==='buy'?'雙買連續':'雙賣連續','投信、外資兩邊都'+(dir==='buy'?'淨買超 ':'淨賣超 ')+(r.dopen?'≥':'')+r.dstreak+' 個交易日（外資資料從 9/24 起）。']);
     if(!r.frow)notes.push(['外資金額','外資'+W()+'未達 0.5 億，金額以外資張數 × 收盤價估算。']);
   }
+  {const o=tshOf(r);if(o){items.push(['投信持股（估）',tshPct(o)+'・'+fmt(o.lots)+'張']);
+    if(o.dp!=null)items.push(['投持近'+o.n+'筆',(Math.abs(o.dp)<0.005?'±0.00':(o.dp>0?'+':'−')+Math.abs(o.dp).toFixed(2))+' 百分點']);
+    notes.push(['投持','投信估計持股，MoneyDJ 每日買賣超累加並以基金季報校正（'+o.d.slice(4,6)+'/'+o.d.slice(6)+'），季末可能跳動；低於 1.5% 標綠＝投信部位還輕。'])}}
   if(r.dp)notes.push(['處置','這天在處置期間內，撮合變慢且需預收款券。']);
   if(r.fd)notes.push(['全額交割','列在變更交易方法名單，買賣要先收足款券。']);
   if(r.par)notes.push(['面額非10元','名稱後的「*」代表面額不是 10 元，跟處置或全額交割無關。']);
@@ -848,7 +860,7 @@ function render(){
   sorted.forEach(r=>{
     const open=expanded.has(view+dir+r.c);const hot=r[hotK]>=3;
     const tr=document.createElement('tr');tr.className='row '+(r.rank<=3?'top3 ':'')+(hot?'hot ':'')+(open?'open':'');
-    const extra=(view==='it'&&r.fx?`<span class="tag ${s>0?'fx':'sx'}">外資同${s>0?'買':'賣'}</span>`:view==='fi'&&r.both?`<span class="tag ${s>0?'both':'sx'}">投信同${s>0?'買':'賣'}</span>`:'')+capTag(r)+`<span class="tag ind" role="button" aria-pressed="${indFilter===indOf(r.c)}" title="只看同產業"></span><span class="tag sub${subMapped(r.c)?'':' um'}" role="button" aria-pressed="${subFilter===subName(r.c)}" title="${subMapped(r.c)?'只看同細產業':'尚未細分，暫以證交所產業顯示'}"></span>`;
+    const extra=(view==='it'&&r.fx?`<span class="tag ${s>0?'fx':'sx'}">外資同${s>0?'買':'賣'}</span>`:view==='fi'&&r.both?`<span class="tag ${s>0?'both':'sx'}">投信同${s>0?'買':'賣'}</span>`:'')+capTag(r)+tshTag(r)+`<span class="tag ind" role="button" aria-pressed="${indFilter===indOf(r.c)}" title="只看同產業"></span><span class="tag sub${subMapped(r.c)?'':' um'}" role="button" aria-pressed="${subFilter===subName(r.c)}" title="${subMapped(r.c)?'只看同細產業':'尚未細分，暫以證交所產業顯示'}"></span>`;
     tr.innerHTML=`<td class="rk">${r.rank}</td><td class="l nmc"><button class="exp" aria-expanded="${open}" aria-label="展開明細"><span class="chev">${open?'▾':'▸'}</span><span class="rkm">${r.rank}</span><span class="cd"></span><span class="nm"></span></button>${hot?'<span class="fire">🔥</span>':''}${tagsHtml(r,extra)}${pxLine(r)}</td><td class="l x"><span class="mk ${r.m==='上櫃'?'otc':''}"></span></td>`+cols.map(c=>`<td class="${c.x?'x ':''}${c.cls||''}">${c.cell(r,max,ctx)}</td>`).join('');
     tr.querySelector('.cd').textContent=r.c;tr.querySelector('.nm').textContent=r.n;tr.querySelector('.mk').textContent=r.m;
     {const it=tr.querySelector('.tag.ind'),ik=indOf(r.c);it.textContent=indName(ik);it.onclick=e=>{e.stopPropagation();indFilter=indFilter===ik?null:ik;render()}}
