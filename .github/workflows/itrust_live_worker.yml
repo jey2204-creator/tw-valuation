@@ -16,20 +16,33 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    env:
+      HAS_FG: ${{ secrets.FUGLE_API_KEY != '' && '1' || '0' }}
     steps:
       - uses: actions/checkout@v4
       - name: 檢查 Secret
         run: |
           if [ -z "${{ secrets.CLOUDFLARE_API_TOKEN }}" ]; then
             echo "::error::少了 GitHub Secret CLOUDFLARE_API_TOKEN（Settings → Secrets and variables → Actions）"; exit 1; fi
+          if [ -z "${{ secrets.FUGLE_API_KEY }}" ]; then
+            echo "::warning::少了 GitHub Secret FUGLE_API_KEY：Worker 仍可部署，但不會用富果即時行情"; fi
       - name: 部署到 Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           workingDirectory: itrust/live
           command: deploy
+          secrets: |
+            FUGLE_API_KEY
+        env:
+          FUGLE_API_KEY: ${{ secrets.FUGLE_API_KEY }}
       - name: 煙霧測試（台積電＋加權指數）
         run: |
           sleep 5
           curl -sS --max-time 30 "https://twse-live.jey2204.workers.dev/?s=tse_2330,tse_t00" | tee /tmp/q.json
           python3 -c "import json;j=json.load(open('/tmp/q.json'));assert j['ok'],j;print('ok n=%s src=%s err=%s'%(j['n'],j.get('src'),j.get('err')))"
+      - name: 煙霧測試（只用富果）
+        if: ${{ env.HAS_FG == '1' }}
+        run: |
+          curl -sS --max-time 30 "https://twse-live.jey2204.workers.dev/?s=tse_2330,otc_6488,tse_t00&src=fugle&p=1" | tee /tmp/f.json
+          python3 -c "import json;j=json.load(open('/tmp/f.json'));assert j['ok'] and j['src']['fugle']>=2,j;[print(q['k'],q['n'],q['d'],q['t'],'價',q['z'],'昨',q['y'],'量',q['v']) for q in j['q']]"

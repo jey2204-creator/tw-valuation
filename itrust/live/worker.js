@@ -1,20 +1,31 @@
 // Cloudflare Worker：即時行情轉接（給 GitHub Pages「即時看線」itrust/live/ 用）
-// 來源：證交所 MIS（即時）為主；證交所擋掉 Cloudflare 時（盤中常見，依機房不同）改用 Yahoo Finance 備援（約延遲 20 分鐘）。
+// 來源（依序）：證交所 MIS（即時）→ 富果 Fugle 行情 API（即時，免費 60 次／分）→ Yahoo Finance（約延遲 20 分鐘）。
+//   證交所盤中常擋 Cloudflare 機房：MIS 失敗後 3 分鐘內直接跳過，不再每次白等 5～15 秒。
+//   富果：每檔 1 次請求，結果快取 50 秒（多人／多分頁共用）；每分鐘自己限 54 次，頁面目前分頁（&p=1）優先用，
+//   其他分頁只在額度還剩 >24 次時才用富果，超過就改 Yahoo；收到 429 停用富果 60 秒。
+//   富果金鑰放在 Worker secret FUGLE_API_KEY（GitHub Secret 同名，由 itrust_live_worker.yml 部署時寫入）。
 // 用法：GET https://<你的 worker>.workers.dev/?s=tse_2330,otc_6510,tse_t00
 //   tse_＝上市、otc_＝上櫃；tse_t00＝加權指數。一次最多 40 檔（頁面每 20 檔發一次）。
-//   選填 &src=mis 或 &src=yahoo：只用指定來源（測試用）。
-// 回傳：{ok, t, n, q:[{k,c,n,d,t,ms,z,pz,o,h,l,y,v,u,w,a1,b1,src}], err, src:{mis,yahoo}}
+//   選填 &src=mis／fugle／yahoo：只用指定來源（測試用）；&p=1：目前分頁（富果優先）。
+// 回傳：{ok, t, n, q:[{k,c,n,d,t,ms,z,pz,o,h,l,y,v,u,w,a1,b1,src}], err, src:{mis,fugle,yahoo}, fb:{left,off}}
 //   d＝資料日期 YYYYMMDD、t＝資料時間；z＝最新成交價（沒有就 null，頁面會改用買賣價），v＝累計成交量（張）；src＝每檔的來源
-// 只轉接公開行情，不需要任何金鑰。部署：Cloudflare 後台 → Workers & Pages → 建立 → Hello World → 編輯程式碼 → 貼上本檔 → Deploy。
-// 目前部署在 https://twse-live.jey2204.workers.dev（2026/10/21；後台貼的是本檔去掉註解的單行版本，功能相同）。
-// 免費方案每次請求最多 50 個對外連線：MIS 最多 3 次＋Yahoo 每檔 1 次，所以一次最多 40 檔。
+// 部署：push 到 main 後由 .github/workflows/itrust_live_worker.yml 自動部署到 https://twse-live.jey2204.workers.dev
+// 免費方案每次請求最多 50 個對外連線：MIS 最多 3 次＋富果／Yahoo 每檔 1 次，程式自己算著用，超過 48 次就不再發。
 
 const ALLOW_ORIGINS = ["https://jey2204-creator.github.io"];   // 只讓自己的 GitHub Pages 頁面在瀏覽器裡呼叫
 const MAX_SYMBOLS = 40;
 const MEMO_MS = 4000;          // 同一組代號 4 秒內重複查詢就直接回上一次的結果，減少打證交所
 const MIS_MS = 5000;           // 證交所每次連線最多等 5 秒：盤後它常常掛住 20 秒才回，超時就改用 Yahoo
 const YH_MS = 8000;
+const FG_MS = 6000;
+const SUB_MAX = 48;            // 每次請求最多對外連線數（免費方案上限 50，留 2 次餘裕）
+const MIS_COOL_MS = 180000;    // MIS 失敗後跳過 3 分鐘
+const FG_TTL_MS = 50000;       // 富果每檔結果快取 50 秒
+const FG_PER_MIN = 54;         // 富果免費 60 次／分，自己限 54
+const FG_RESERVE = 24;         // 非目前分頁的請求，額度要剩 >24 才用富果
 const memo = new Map();
+const fgCache = new Map();     // k → {at, row}
+let misOffUntil = 0, fgOffUntil = 0, fgWin = 0, fgUsed = 0;
 
 const UA = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1";
 const BASE_HEADERS = {
@@ -25,7 +36,7 @@ const BASE_HEADERS = {
 };
 
 export default {
-  async fetch(request) {
+  async fetch(request, env) {
     const url = new URL(request.url);
     const cors = corsHeaders(request.headers.get("Origin") || "");
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
@@ -36,46 +47,125 @@ export default {
     if (!syms.length) {
       return json({ ok: false, err: "no symbols", usage: "?s=tse_2330,otc_6510,tse_t00" }, 400, cors);
     }
-    const src = url.searchParams.get("src") || "";   // "mis" | "yahoo" | ""（自動：MIS 失敗才用 Yahoo）
+    const src = url.searchParams.get("src") || "";   // "mis" | "fugle" | "yahoo" | ""（自動）
+    const pri = url.searchParams.get("p") === "1";
+    const key = (env && env.FUGLE_API_KEY) || "";
 
-    const key = src + "|" + [...syms].sort().join(",");
-    const hit = memo.get(key);
+    const mk = src + "|" + [...syms].sort().join(",");
+    const hit = memo.get(mk);
     if (hit && Date.now() - hit.at < MEMO_MS) return json(hit.body, 200, { ...cors, "X-Memo": "hit" });
 
-    const q = [], err = [];
-    if (src !== "yahoo") {
+    const q = [], err = [], ctx = { sub: 0 };
+    const pend = () => { const got = new Set(q.map((x) => x.k)); return syms.filter((s) => !got.has(s)); };
+
+    // 1) 證交所 MIS（最近失敗過就先跳過）
+    if (src === "mis" || (!src && Date.now() >= misOffUntil)) {
       try {
-        q.push(...(await mis(syms)));
+        q.push(...(await mis(syms, ctx)));
+        misOffUntil = 0;
       } catch (e) {
         err.push("MIS: " + String((e && e.message) || e));
+        misOffUntil = Date.now() + MIS_COOL_MS;
       }
     }
-    const got = new Set(q.map((x) => x.k));
-    const pending = syms.filter((s) => !got.has(s));
-    if (pending.length && src !== "mis") {
-      const rows = await Promise.all(pending.map((s) => yahoo(s).catch((e) => { err.push("Yahoo " + s + ": " + String((e && e.message) || e)); return null; })));
+    // 2) 富果
+    if ((src === "fugle" || !src) && pend().length) {
+      if (!key) err.push("Fugle: 沒有設定 FUGLE_API_KEY");
+      else q.push(...(await fugleMany(pend(), key, pri || src === "fugle", ctx, err)));
+    }
+    // 3) Yahoo
+    if ((src === "yahoo" || !src) && pend().length) {
+      const left = pend().slice(0, Math.max(0, SUB_MAX - ctx.sub));
+      if (left.length < pend().length) err.push("連線數上限：" + (pend().length - left.length) + " 檔這次沒查");
+      ctx.sub += left.length;
+      const rows = await Promise.all(left.map((s) => yahoo(s).catch((e) => { err.push("Yahoo " + s + ": " + String((e && e.message) || e)); return null; })));
       q.push(...rows.filter(Boolean));
     }
+    const cnt = (n) => q.filter((x) => x.src === n).length;
     const body = { ok: q.length > 0, t: Date.now(), n: q.length, q, err,
-      src: { mis: q.filter((x) => x.src === "mis").length, yahoo: q.filter((x) => x.src === "yahoo").length } };
+      src: { mis: cnt("mis"), fugle: cnt("fugle"), yahoo: cnt("yahoo") },
+      fb: { left: Math.max(0, FG_PER_MIN - fgUsedNow()), off: fgOffUntil > Date.now(), mis_off: misOffUntil > Date.now() } };
     if (q.length) {
-      memo.set(key, { at: Date.now(), body });
+      memo.set(mk, { at: Date.now(), body });
       if (memo.size > 200) memo.delete(memo.keys().next().value);
     }
     return json(body, q.length ? 200 : 502, cors);
   },
 };
 
+// ---- 富果 Fugle（即時，每檔 1 次請求）----
+function fgUsedNow() {
+  const w = Math.floor(Date.now() / 60000);
+  if (w !== fgWin) { fgWin = w; fgUsed = 0; }
+  return fgUsed;
+}
+
+async function fugleMany(list, key, pri, ctx, err) {
+  const out = [], need = [], now = Date.now();
+  for (const k of list) {
+    const c = fgCache.get(k);
+    if (c && now - c.at < FG_TTL_MS) out.push(c.row); else need.push(k);
+  }
+  if (!need.length) return out;
+  if (fgOffUntil > now) { err.push("Fugle: 額度用完，暫停到 " + tpe(Math.floor(fgOffUntil / 1000)).t); return out; }
+  const room = Math.max(0, FG_PER_MIN - fgUsedNow() - (pri ? 0 : FG_RESERVE));
+  const take = need.slice(0, Math.min(room, Math.max(0, SUB_MAX - ctx.sub)));
+  if (take.length < need.length) err.push("Fugle: 本分鐘額度留給目前分頁，" + (need.length - take.length) + " 檔改用 Yahoo");
+  fgUsed += take.length; ctx.sub += take.length;
+  const rows = await Promise.all(take.map((k) => fugle(k, key).catch((e) => {
+    const m = String((e && e.message) || e);
+    if (/^429/.test(m)) fgOffUntil = Date.now() + 60000;
+    err.push("Fugle " + k + ": " + m);
+    return null;
+  })));
+  for (const r of rows) if (r) { fgCache.set(r.k, { at: Date.now(), row: r }); out.push(r); }
+  if (fgCache.size > 600) for (const [k, v] of fgCache) if (Date.now() - v.at > FG_TTL_MS) fgCache.delete(k);
+  return out;
+}
+
+async function fugle(k, key) {
+  const [, c] = k.split("_");
+  const sym = c === "t00" ? "IX0001" : c.toUpperCase();
+  const r = await fetch("https://api.fugle.tw/marketdata/v1.0/stock/intraday/quote/" + encodeURIComponent(sym),
+    { headers: { "X-API-KEY": key, "Accept": "application/json" }, signal: AbortSignal.timeout(FG_MS) });
+  const js = await safeJson(r);
+  if (r.status !== 200 || !js || !js.symbol) throw new Error(r.status + (js && js.message ? " " + js.message : ""));
+  return fugleRow(k, c, js);
+}
+
+// 富果 intraday/quote → 頁面用的欄位（時間欄位是微秒；成交量：個股為張、指數為金額不用）
+function fugleRow(k, c, j) {
+  const us = j.lastUpdated || (j.lastTrade && j.lastTrade.time) || j.closeTime || null;
+  const sec = us ? Math.floor(epochMs(us) / 1000) : null;
+  const ts = sec ? tpe(sec) : { d: j.date ? String(j.date).replace(/-/g, "") : null, t: null };
+  const last = num(j.lastPrice != null ? j.lastPrice : j.closePrice);
+  const trial = !!j.isTrial;
+  const b1 = j.bids && j.bids[0] ? num(j.bids[0].price) : null;
+  const a1 = j.asks && j.asks[0] ? num(j.asks[0].price) : null;
+  const tv = j.total && j.total.tradeVolume != null ? Number(j.total.tradeVolume) : null;
+  return {
+    k, c, n: j.name || c, d: ts.d, t: ts.t, ms: sec ? sec * 1000 : null,
+    z: trial ? null : last, pz: trial ? last : null,
+    o: num(j.openPrice), h: num(j.highPrice), l: num(j.lowPrice),
+    y: num(j.previousClose != null ? j.previousClose : j.referencePrice),
+    v: c === "t00" ? null : Number.isFinite(tv) ? Math.round(tv) : null,
+    u: num(j.priceHighLimit), w: num(j.priceLowLimit), a1, b1, src: "fugle",
+  };
+}
+const epochMs = (x) => { const n = Number(x); return n > 1e14 ? n / 1000 : n > 1e11 ? n : n * 1000; };
+
 // 證交所 MIS：一次查全部（最多 40 檔）；沒資料時先到首頁拿 session cookie 再試一次
-async function mis(part) {
+async function mis(part, ctx) {
   const exch = part.map((s) => s + ".tw").join("|");
   const u = "https://mis.twse.com.tw/stock/api/getStockInfo.jsp?ex_ch=" + encodeURIComponent(exch) + "&json=1&delay=0&_=" + Date.now();
   let r = null, js = null;
   try {
+    ctx.sub++;
     r = await fetch(u, { headers: BASE_HEADERS, signal: AbortSignal.timeout(MIS_MS) });
     js = await safeJson(r);
   } catch (e) { /* 連線被切斷或超時，下面用 cookie 再試一次 */ }
   if (!js || !Array.isArray(js.msgArray) || js.msgArray.length === 0) {
+    ctx.sub += 2;
     const s = await fetch("https://mis.twse.com.tw/stock/index.jsp?lang=zh_tw", { headers: BASE_HEADERS, signal: AbortSignal.timeout(MIS_MS) });
     const all = typeof s.headers.getSetCookie === "function" ? s.headers.getSetCookie() : [s.headers.get("set-cookie") || ""];
     const cookie = all.map((c) => String(c).split(";")[0]).filter(Boolean).join("; ");
