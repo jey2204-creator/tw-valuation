@@ -1,8 +1,14 @@
 name: 更新股票資料
 on:
   schedule:
-    - cron: "40 10 * * 1-5"   # 台北時間 平日 18:40（收盤後第一次）
-    - cron: "30 14 * * 1-5"   # 台北時間 平日 22:30（補抓 FinMind 晚間才進來的資料）
+    # GitHub 免費排程常延遲 4～6 小時（2026/10 實測 18:40 的排程 23:30～01:00 才跑）
+    # → 改在非整點、非半點的 :47 多排幾次，提高早點跑到的機率；之後再加 cron-job.org 準時觸發
+    - cron: "47 7 * * 1-5"    # 台北 15:47（收盤價已出）
+    - cron: "47 8 * * 1-5"    # 台北 16:47（三大法人已出）
+    - cron: "47 9 * * 1-5"    # 台北 17:47（備援）
+    - cron: "40 10 * * 1-5"   # 台北 18:40（原本的第一次，留著當備援）
+    - cron: "47 13 * * 1-5"   # 台北 21:47（融資券約 21:00 公布）
+    - cron: "30 14 * * 1-5"   # 台北 22:30（補抓 FinMind 晚間才進來的資料）
   workflow_dispatch:           # 可在 Actions 頁面手動執行
     inputs:
       force_headcount:
@@ -11,6 +17,9 @@ on:
         default: ""
 permissions:
   contents: write
+concurrency:                   # 排程延遲時可能好幾次擠在一起 → 排隊一次跑一個，避免 git push 互撞
+  group: update-data
+  cancel-in-progress: false
 jobs:
   update:
     runs-on: ubuntu-latest

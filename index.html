@@ -959,8 +959,8 @@ async function chipAsof(dI,dM){
   let el=$('chipAsof');if(!el){el=document.createElement('p');el.id='chipAsof';el.className='asofN';$('tChip').before(el)}
   const fi=await daySt(dI,PX_CUT,PX_END),fm=await daySt(dM,MG_CUT,MG_END);
   const L=[];
-  if(fi&&fi.st==='wait')L.push('法人約 19:00 後更新');else if(isBad(fi))L.push(`法人應有 ${md(fi.exp)}${fi.st==='miss'?'，排程可能漏跑':'，22:35 會再跑一次'}`);
-  if(fm&&fm.st==='wait')L.push('融資券約 22:35 後更新');else if(isBad(fm))L.push(`融資券應有 ${md(fm.exp)}${fm.st==='miss'?'，排程可能漏跑':'，今晚排程可能延遲'}`);
+  if(fi&&fi.st==='wait')L.push('法人約 16:00～18:00 後更新');else if(isBad(fi))L.push(`法人應有 ${md(fi.exp)}${fi.st==='miss'?'，排程可能漏跑':'，晚上排程會再補'}`);
+  if(fm&&fm.st==='wait')L.push('融資券約 22:00 後更新');else if(isBad(fm))L.push(`融資券應有 ${md(fm.exp)}${fm.st==='miss'?'，排程可能漏跑':'，今晚排程可能延遲'}`);
   el.innerHTML='📅 '+tag('法人',fi,dI)+'・'+tag('融資券',fm,dM)+(L.length?`<br><span class="${isBad(fi)||isBad(fm)?'stale':''}">${L.join('；')}</span>`:'');
   el.hidden=false;
 }
@@ -1890,8 +1890,8 @@ function frTags(){
 }
 function frNote(){
   const L=[],p=MODE==='m'&&MO?FR.mo:FR.px,nm=MODE==='m'&&MO?'動能（價量）':'收盤';
-  if(p&&p.st==='wait')L.push(['','⏳ 今日收盤約 19:00 後更新（排程 18:45 開始跑）']);
-  else if(p&&p.st==='late')L.push(['s',`⏳ 今日 ${md(p.exp)} ${nm}還沒進來：排程可能延遲，22:35 會再跑一次`]);
+  if(p&&p.st==='wait')L.push(['','⏳ 今日收盤約 16:00～18:00 後更新（排程 15:47 起每小時跑一次）']);
+  else if(p&&p.st==='late')L.push(['s',`⏳ 今日 ${md(p.exp)} ${nm}還沒進來：排程可能延遲，晚上排程會再補`]);
   else if(p&&p.st==='miss')L.push(['s',`⚠️ 應該要有 ${md(p.exp)} ${nm}，資料還停在 ${md(p.d)}：排程可能漏跑，可請 Claude 手動更新`]);
   if(MODE==='m'&&MO){
     const f=FR.inst;
