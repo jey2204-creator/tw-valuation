@@ -458,12 +458,12 @@ details.ind.hot summary b{color:var(--up)}
   <h2 style="display:flex;align-items:center;gap:8px">K線 <small>日K・均線・量・法人</small><span class="segm" id="klSeg" style="margin-left:auto"><button aria-pressed="false" data-n="40">2月</button><button aria-pressed="true" data-n="80">4月</button><button aria-pressed="false" data-n="130">6月</button></span></h2>
   <p class="take tight" id="tKl"></p>
   <div id="klLeg" style="font-family:var(--f-num);font-size:11px;color:var(--muted);line-height:1.5;min-height:34px;margin-bottom:2px"></div>
-  <div id="klBox" style="height:300px;position:relative"></div>
+  <div id="klBox" style="height:280px;position:relative"></div>
   <div id="klVol" style="height:70px;position:relative"></div>
   <div style="display:flex;gap:8px;font-size:10.5px;color:var(--muted);margin:2px 0 0 2px"><span>外資買賣超（張）</span></div>
   <div id="klF" style="height:64px;position:relative"></div>
   <div style="display:flex;gap:8px;font-size:10.5px;color:var(--muted);margin:2px 0 0 2px"><span>投信買賣超（張）</span><span id="klTn"></span></div>
-  <div id="klT" style="height:64px;position:relative"></div>
+  <div id="klT" style="height:88px;position:relative"></div>
   <div class="tbl"><table id="tbKl"></table></div>
   <p class="foot" id="fKl"></p>
 </section>
@@ -888,9 +888,9 @@ function klDraw(){
     rightPriceScale:{borderColor:line,scaleMargins:{top:.08,bottom:.05}},timeScale:{borderColor:line,rightOffset:2,barSpacing:Math.max(3,Math.floor(($('klBox').clientWidth-60)/n)),fixLeftEdge:true,fixRightEdge:true,timeVisible:false,tickMarkFormatter:(tt)=>tt.month+'/'+tt.day},
     crosshair:{mode:L.CrosshairMode.Normal,vertLine:{labelBackgroundColor:css('--accent'),style:2,color:mu},horzLine:{labelBackgroundColor:css('--accent'),style:2,color:mu}},handleScroll:{vertTouchDrag:false},handleScale:{axisPressedMouseMove:false}};
   if(KL.c){KL.c.remove();KL.v.remove();KL.f.remove();KL.t.remove()}
-  const c=KL.c=L.createChart($('klBox'),{...opt,width:$('klBox').clientWidth,height:300});
-  const sub=(id,h,m)=>L.createChart($(id),{...opt,width:$(id).clientWidth,height:h,timeScale:{...opt.timeScale,visible:false},rightPriceScale:{...opt.rightPriceScale,scaleMargins:m},crosshair:{...opt.crosshair,horzLine:{visible:false,labelVisible:false}}});
-  const v=KL.v=sub('klVol',70,{top:.1,bottom:0}),f=KL.f=sub('klF',64,{top:.1,bottom:.1}),tc=KL.t=sub('klT',64,{top:.1,bottom:.1});
+  const c=KL.c=L.createChart($('klBox'),{...opt,width:$('klBox').clientWidth,height:280,timeScale:{...opt.timeScale,visible:false}});   // 日期軸移到最下面投信圖
+  const sub=(id,h,m,ax)=>L.createChart($(id),{...opt,width:$(id).clientWidth,height:h,timeScale:{...opt.timeScale,visible:!!ax},rightPriceScale:{...opt.rightPriceScale,scaleMargins:m},crosshair:{...opt.crosshair,horzLine:{visible:false,labelVisible:false}}});
+  const v=KL.v=sub('klVol',70,{top:.1,bottom:0}),f=KL.f=sub('klF',64,{top:.1,bottom:.1}),tc=KL.t=sub('klT',88,{top:.1,bottom:.1},1);
   const FS=f.addHistogramSeries({priceFormat:{type:'volume'},priceLineVisible:false,lastValueVisible:false,base:0});FS.setData(fs);
   const TS=tc.addHistogramSeries({priceFormat:{type:'volume'},priceLineVisible:false,lastValueVisible:false,base:0});TS.setData(ts);
   $('klTn').textContent=ts.some(x=>x.value)?'':'— 近 60 日投信無進出';
