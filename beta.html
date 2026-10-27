@@ -462,8 +462,7 @@ details.ind.hot summary b{color:var(--up)}
   <div class="kp" id="klF" style="height:54px"><span class="klab">外資</span></div>
   <div class="kp" id="klT" style="height:78px"><span class="klab">投信<span id="klTn"></span></span></div>
   <p class="take tight" id="tKl" style="margin-top:6px"></p>
-  <div class="tbl"><table id="tbKl"></table></div>
-  <p class="foot" id="fKl"></p>
+  <details class="ind" id="klMore"><summary>近 10 日明細・說明 <span>▾</span></summary><div class="tbl"><table id="tbKl"></table></div><p class="foot" id="fKl" style="padding:0 12px 8px"></p></details>
 </section>
 <style>
 .kleg{font-family:var(--f-num);font-size:10.5px;color:var(--muted);line-height:1.45;min-height:46px;margin:2px 0 2px;white-space:nowrap;overflow:hidden}
@@ -944,10 +943,12 @@ function klDraw(){
   const f5=sm(2,5),f20=sm(2,20),t5=sm(3,5),t20=sm(3,20);
   $('tKl').innerHTML=`均線 <strong>${bull?'多頭排列（5＞20＞60）':bear?'空頭排列（5＜20＜60）':'糾結／轉折中'}</strong>・價在 ${abv||'—'} 線${r[0]>=(a20??Infinity)?'上':'下'}<br>60 日區間 ${fmt(lo,2)}～${fmt(hi,2)}（現價位於 ${((r[0]-lo)/(hi-lo||1)*100).toFixed(0)}% 處）・今量 ${vr?(vr>=1.5?'<strong class="up">放大 '+vr.toFixed(1)+'×</strong>':vr<=.6?'<strong>萎縮 '+vr.toFixed(1)+'×</strong>':vr.toFixed(1)+'×'):'—'} 5 日均量<br>外資 5 日 <strong class="${cl(f5)}">${sg(f5)}</strong>／20 日 <strong class="${cl(f20)}">${sg(f20)}</strong>・投信 5 日 <strong class="${cl(t5)}">${sg(t5)}</strong>／20 日 <strong class="${cl(t20)}">${sg(t20)}</strong> 張`;
   // 近 10 日表
-  $('tbKl').innerHTML='<tr><th>日期</th><th>開</th><th>高</th><th>低</th><th>收</th><th>漲跌%</th><th>量</th></tr>'+all.slice(-10).reverse().map((x,j)=>{const i=last-j,pv=i>0?all[i-1][0]:null,pc=pv?((x[0]/pv-1)*100):null,cl=pc>0?'up':pc<0?'dn':'';
-    return `<tr><td>${dd[i].slice(4,6)}/${dd[i].slice(6)}</td><td>${fmt(x[8]??x[0],2)}</td><td>${fmt(x[9]??x[0],2)}</td><td>${fmt(x[10]??x[0],2)}</td><td class="${cl}">${fmt(x[0],2)}</td><td class="${cl}">${pc==null?'—':(pc>0?'+':'')+pc.toFixed(2)}</td><td>${fmt(x[1])}</td></tr>`}).join('');
+  const pz=x=>x==null?'—':fmt(x,x>=1000?0:x>=100?1:2),sz=x=>x==null?'—':(x>0?'+':'')+fmt(x),cz=x=>x>0?'up':x<0?'dn':'';
+  $('tbKl').innerHTML='<tr><th>日期</th><th>收</th><th>漲跌%</th><th>量</th><th>外資</th><th>投信</th></tr>'+all.slice(-10).reverse().map((x,j)=>{const i=last-j,pv=i>0?all[i-1][0]:null,pc=pv?((x[0]/pv-1)*100):null,cl=cz(pc);
+    return `<tr><td>${dd[i].slice(4,6)}/${dd[i].slice(6)}</td><td class="${cl}">${pz(x[0])}</td><td class="${cl}">${pc==null?'—':(pc>0?'+':'')+pc.toFixed(2)}</td><td>${fmt(x[1])}</td><td class="${cz(x[2])}">${sz(x[2])}</td><td class="${cz(x[3])}">${sz(x[3])}</td></tr>`}).join('');
   const miss=all.filter(x=>x[8]==null).length;
-  $('fKl').textContent='紅漲綠跌；量柱顏色跟當天 K 棒、量圖細線為 5 日均量；下方外資、投信買賣超與 K 棒同一日期軸（紅買綠賣，近 60 日）。均線 5／20／60／120 日'+(l120.length?'':'（120 日線要再累積資料才會出現）')+'。可左右拖曳、雙指縮放。線型不自動判讀：看均線排列＋價在線上／線下＋量價是否同步即可。'+(miss?`　⚠️ 尚有 ${miss} 天只有收盤、沒有開高低（當天 K 棒顯示為一字線），今晚排程補齊。`:'');
+  $('fKl').textContent='紅漲綠跌；量圖細線＝5 日均量；外資、投信紅買綠賣（近 60 日）。按住看當天數字，左右拖曳、雙指縮放。'+(l120.length?'':'120 日線資料累積中。')+(miss?`　⚠️ 尚有 ${miss} 天只有收盤、沒有開高低（當天 K 棒顯示為一字線），今晚排程補齊。`:'');
+  {const sm=$('klMore').querySelector('summary span');sm.textContent=miss?`⚠️ ${miss} 天缺開高低`:'▾'}
 }
 document.addEventListener('click',e=>{const b=e.target.closest('#klSeg button');if(!b)return;KL.n=+b.dataset.n;
   document.querySelectorAll('#klSeg button').forEach(x=>x.setAttribute('aria-pressed',x===b));klDraw()});
