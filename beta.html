@@ -918,7 +918,9 @@ function klDraw(){
   [c,v,f,tc].forEach(x=>x.timeScale().fitContent());
   // 四張圖右邊價格軸寬度不同（2600.00 vs 80K vs 0）→ 繪圖區寬度不同、虛線會錯位；量出最寬的那張，全部設成一樣寬
   const eqW=()=>{const w=Math.max(36,...[c,v,f,tc].map(x=>x.priceScale('right').width()));[c,v,f,tc].forEach(x=>x.applyOptions({rightPriceScale:{minimumWidth:w}}))};
-  requestAnimationFrame(()=>{eqW();requestAnimationFrame(eqW)});
+  // 統一軸寬後繪圖區變寬／變窄，要重新 fitContent，否則最右邊一兩根 K 棒會被切掉
+  const refit=()=>{eqW();[c,v,f,tc].forEach(x=>x.timeScale().fitContent())};
+  requestAnimationFrame(()=>{refit();requestAnimationFrame(refit)});
   // 兩張圖同步 + 圖例
   let lock=false;const sync=(a,b)=>a.timeScale().subscribeVisibleLogicalRangeChange(r=>{if(lock||!r)return;lock=true;b.timeScale().setVisibleLogicalRange(r);lock=false});[[c,v],[v,c],[c,f],[f,c],[c,tc],[tc,c]].forEach(([a,b])=>sync(a,b));
   const leg=(i)=>{const r=all[i],pv=i>0?all[i-1][0]:null,ch=pv?r[0]-pv:null,pc=pv?(ch/pv*100):null,cl=ch>0?'up':ch<0?'dn':'';
