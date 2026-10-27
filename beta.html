@@ -507,10 +507,16 @@ details.ind.hot summary b{color:var(--up)}
 <style>
 #y10Per button{padding:4px 9px}#y10 h2 small{overflow:hidden;text-overflow:ellipsis}
 .y10k{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:8px 0 4px}
-.y10k div{border:1px solid var(--line);border-radius:10px;padding:5px 7px;min-width:0}
-.y10k span{display:block;font-size:10.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.y10k b{display:block;font-family:var(--f-num);font-size:15px;font-weight:600;line-height:1.25}
-.y10k i{display:block;font-style:normal;font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.y10k{cursor:pointer;-webkit-tap-highlight-color:transparent}
+.y10k div{border:1px solid var(--line);border-radius:9px;padding:3px 7px 4px;min-width:0}
+.y10k span{display:block;font-size:10.5px;line-height:1.35;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.y10k b{display:block;font-family:var(--f-num);font-size:15px;font-weight:600;line-height:1.2}
+.y10k i{display:none;font-style:normal;font-size:10px;line-height:1.35;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#y10.open .y10k i{display:block}
+.y10why{display:none;color:var(--muted);font-size:12px}
+#y10.open .y10why{display:inline}
+.y10tip{font-size:11px;color:var(--accent);cursor:pointer;white-space:nowrap}
+#tY10 .pill{cursor:pointer}
 .y10tab{display:flex;gap:5px;overflow-x:auto;scrollbar-width:none;margin:8px 0 2px}
 .y10tab::-webkit-scrollbar{display:none}
 .y10tab button{flex:none;font:inherit;font-size:12px;border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:999px;padding:3px 9px;cursor:pointer}
@@ -1544,19 +1550,19 @@ function renderY10(){
   const f=(v,d)=>v==null?'—':fmt(v,d==null?(Math.abs(v)<10?2:Math.abs(v)<100?1:0):d),sg=v=>v==null?'':v>0?'up':v<0?'dn':'';
   const cagr=(k)=>{const a=F.find(x=>x[k]!=null),z=[...F].reverse().find(x=>x[k]!=null);if(!a||!z||a===z)return {t:'—',s:''};
     const n=z.y-a.y;if(!(a[k]>0))return {t:'—',s:`${a.l} 為虧損`};if(!(z[k]>0))return {t:'轉虧',s:`${a.l}→${z.l}`,v:-1};
-    const v=(Math.pow(z[k]/a[k],1/n)-1)*100;return {t:pct(v,1),s:`${a.l.slice(2)}→${z.l.slice(2)}・${n}年`,n,v}};
+    const v=(Math.pow(z[k]/a[k],1/n)-1)*100;return {t:pct(v,1),s:`${a.l}→${z.l}`,n,v}};
   const cr=cagr('rev'),ce=cagr('eps'),roes=F.map(x=>x.roe).filter(v=>v!=null),avgR=roes.length?roes.reduce((a,b)=>a+b,0)/roes.length:null;
   const loss=F.filter(x=>x.eps!=null&&x.eps<0).length;
   let streak=0;for(const x of [...F].reverse()){if(x.div>0)streak++;else break}
   const pos=F.filter(x=>x.po!=null),avgPo=pos.length?pos.reduce((a,x)=>a+x.po,0)/pos.length:null;
   const fc=F.filter(x=>x.fcf!=null&&x.ni!=null),sF=fc.reduce((a,x)=>a+x.fcf,0),sN=fc.reduce((a,x)=>a+x.ni,0),conv=fc.length>=3&&sN>0?sF/sN*100:null;
   $('y10K').innerHTML=[
-    ['營收年複合成長',`<b class="${sg(cr.v)}">${cr.t}</b>`,cr.s],
-    ['EPS 年複合成長',`<b class="${sg(ce.v)}">${ce.t}</b>`,ce.s],
+    [`營收CAGR${cr.n?'・'+cr.n+'年':''}`,`<b class="${sg(cr.v)}">${cr.t}</b>`,cr.s],
+    [`EPS CAGR${ce.n?'・'+ce.n+'年':''}`,`<b class="${sg(ce.v)}">${ce.t}</b>`,ce.s],
     ['平均 ROE',`<b>${avgR==null?'—':fmt(avgR,1)+'%'}</b>`,roes.length?`最低 ${fmt(Math.min(...roes),1)}%・${roes.length} 年`:''],
-    ['虧損年數',`<b class="${loss?'dn':''}">${loss} 年</b>`,`共 ${F.length} 個完整年度`],
+    [`虧損年數・共${F.length}年`,`<b class="${loss?'dn':''}">${loss} 年</b>`,loss?'虧損：'+F.filter(x=>x.eps<0).map(x=>x.l).join('、'):'沒有虧損年度'],
     ['連續配息',`<b>${streak} 年</b>`,avgPo==null?'無配息資料':`平均配息率 ${fmt(avgPo,0)}%`],
-    ['自由現金流／淨利',`<b class="${conv==null?'':conv>=80?'up':conv<40?'dn':''}">${conv==null?'—':fmt(conv,0)+'%'}</b>`,fc.length?`${fc.length} 年累計`:'無現金流資料']
+    ['FCF／淨利',`<b class="${conv==null?'':conv>=80?'up':conv<40?'dn':''}">${conv==null?'—':fmt(conv,0)+'%'}</b>`,fc.length?`${fc.length}年累計`:'無現金流資料']
   ].map(([a,b,c])=>`<div><span>${a}</span>${b}<i>${c||'&nbsp;'}</i></div>`).join('');
   // 判讀：近四季 EPS 跟 10 年常態比（降低近因偏誤）
   const E=F.map(x=>x.eps).filter(v=>v!=null),mE=E.length?E.reduce((a,b)=>a+b,0)/E.length:null,sd=E.length>2?Math.sqrt(E.reduce((a,v)=>a+(v-mE)**2,0)/E.length):null;
@@ -1570,9 +1576,9 @@ function renderY10(){
   else if(ratio>=1.3)V=['mid','🟠 高於 10 年常態',`${lastL} EPS ${f(now,2)} 是平均的 ${fmt(ratio,1)} 倍，評價時別直接用高峰 EPS 外推`];
   else if(ratio<=.6&&mE>0)V=['ok','🟢 位在獲利低檔',`${lastL} EPS ${f(now,2)} 只有平均 ${f(mE,2)} 的 ${fmt(ratio,1)} 倍；若體質沒變，可能是循環谷底（要確認不是結構性衰退）`];
   else V=['','⚪ 接近 10 年常態',`${lastL} EPS ${f(now,2)}，${F.length} 年平均 ${f(mE,2)}`];
-  $('tY10').innerHTML=`<span class="pill">${kind}</span> <span class="pill ${V[0]}">${V[1]}</span> ${V[2]}`+`<br><span style="color:var(--muted);font-size:12px">分類依據：虧損 ${loss} 年、EPS 年減超過 2 成 ${drops} 次${cv!=null?`、EPS 波動度（標準差÷平均）${fmt(cv,2)}`:''}</span>`;
+  $('tY10').innerHTML=`<span class="pill">${kind}</span> <span class="pill ${V[0]}">${V[1]}</span> ${V[2]} <span class="y10tip" data-y10t>${$('y10').classList.contains('open')?'收起 ▴':'依據 ▾'}</span>`+`<span class="y10why"><br>分類依據：虧損 ${loss} 年、EPS 年減超過 2 成 ${drops} 次${cv!=null?`、EPS 波動度（標準差÷平均）${fmt(cv,2)}`:''}</span>`;
   // 圖
-  const Q=Y10P==='q',R=Q?Y10.Q:A;$('y10U').textContent=Q?`單季｜${R.length}季`:`年度｜${F.length}年${T?'＋近4季':''}`;
+  const Q=Y10P==='q',R=Q?Y10.Q:A;$('y10U').textContent=Q?`${R.length}季`:`${F.length}年${T?'+TTM':''}`;
   $('y10Per').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.p===Y10P));
   $('y10Tab').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.t===Y10T));
   $('cY10').hidden=false;const ch=mk('cY10'),o=base();o.xAxis.data=R.map(x=>Q?x.l:(x.ttm?'近4季':"'"+x.l.slice(2)));o.yAxis.scale=false;
@@ -1620,6 +1626,7 @@ function renderY10(){
   $('tbY10').innerHTML='<thead><tr><th>年度</th><th>營收億</th><th>年增</th><th>毛利率</th><th>營益率</th><th>淨利率</th><th>EPS</th><th>EPS年增</th><th>現金股利</th><th>配息率</th><th>ROE</th><th>負債比</th><th>自由現金流</th><th>年均PE</th></tr></thead><tbody>'+
     [...A].reverse().map(x=>`<tr class="${x.ttm?'ttm':''}"><td>${x.ttm?'近四季':x.l}</td><td>${c(x.rev,0)}</td><td>${cp(x.ry)}</td><td>${c(x.gm,1)}</td><td>${c(x.om,1)}</td><td>${c(x.nm,1)}</td><td>${c(x.eps,2)}</td><td>${x.et?`<span class="${x.et==='轉盈'?'up':'dn'}">${x.et}</span>`:cp(x.ey)}</td><td>${c(x.div,2)}${x.sdiv?`<sup title="另配股票股利 ${x.sdiv} 元">+股</sup>`:''}</td><td>${c(x.po,0)}${x.po!=null?'%':''}</td><td>${c(x.roe,1)}</td><td>${c(x.debt,1)}</td><td>${c(x.fcf,0)}</td><td>${c(x.pe,1)}</td></tr>`).join('')+'</tbody>';
 }
+$('y10').addEventListener('click',e=>{if(!Y10||!e.target.closest('#y10K,[data-y10t],#tY10 .pill'))return;const o=$('y10').classList.toggle('open');const t=$('y10').querySelector('[data-y10t]');if(t)t.textContent=o?'收起 ▴':'依據 ▾'});
 $('y10Per').addEventListener('click',e=>{const b=e.target.closest('button[data-p]');if(!b)return;Y10P=b.dataset.p;try{localStorage.setItem('y10P',Y10P)}catch(_){}renderY10()});
 $('y10Tab').addEventListener('click',e=>{const b=e.target.closest('button[data-t]');if(!b)return;Y10T=b.dataset.t;try{localStorage.setItem('y10T',Y10T)}catch(_){}renderY10()});
 // 與 fetch.py 的 build_cf() 相同邏輯
