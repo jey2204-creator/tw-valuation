@@ -6,7 +6,8 @@
   上櫃收盤＋成交量  www.tpex.org.tw/www/zh-tw/afterTrading/dailyQuotes（舊版 php 備援）
   上櫃三大法人      www.tpex.org.tw/www/zh-tw/insti/dailyTrade（舊版 php 備援）
 
-每個交易日存一個檔 data/hist/YYYYMMDD.json = {"src":[已完成來源], "p":{代號:[收盤,成交股數]}, "i":{代號:[外資買賣超股數,投信買賣超股數]}}
+每個交易日存一個檔 data/hist/YYYYMMDD.json = {"src":[已完成來源], "ohlc":[有開高低的來源], "p":{代號:[收盤,成交股數,開,高,低]}, "i":{代號:[外資買賣超股數,投信買賣超股數]}}
+2026/10/27 起 p 多存開高低（K 線用）、價格保留 130 個交易日；舊檔沒有開高低的會逐次補抓
 休市日存 {"closed":1}。第一次執行會往回補約 65 個交易日（約 10 分鐘，證交所有頻率限制），之後每天只抓新的一天。
 
 輸出 d[代號] = [週%, 月%, 季%, 量比, 外資5日(張), 投信5日(張), 外資20日(張), 投信20日(張), 投信連買天數, 外資連買天數, 🔥]
@@ -22,8 +23,8 @@ import urllib.request, urllib.parse
 ROOT = Path(__file__).resolve().parent
 OUT = ROOT / "data"
 HIST = OUT / "hist"
-NEED_PX, NEED_INST = 61, 20          # 季%要 60 個交易日前的收盤
-KEEP = 70                            # 保留最近幾個交易日的檔案
+NEED_PX, NEED_INST = 130, 20         # 季%要 60 個交易日前的收盤；K 線＋120 日均線要 130 天
+KEEP = 135                           # 保留最近幾個交易日的檔案（K 線要 120 日均線）
 MAX_REQ = 220                        # 單次執行請求上限（避免被證交所封鎖）
 BUDGET = 15 * 60                     # 單次執行最多抓 15 分鐘，沒抓完的下次繼續
 T0 = time.time()
@@ -110,13 +111,14 @@ def twse_px(d):
     js = get(f"https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX?date={d:%Y%m%d}&type=ALLBUT0999&response=json", "twse")
     for fields, rows in tables_of(js):
         ic, ip, iv = col(fields, "證券代號"), col(fields, "收盤價"), col(fields, "成交股數")
+        io, ih, il = col(fields, "開盤價"), col(fields, "最高價"), col(fields, "最低價")
         if ic is None or ip is None or iv is None:
             continue
         out = {}
         for r in rows:
             c = ok_code(r[ic])
             if c:
-                out[c] = [num(r[ip]), num(r[iv])]
+                out[c] = [num(r[ip]), num(r[iv])] + ([num(r[io]), num(r[ih]), num(r[il])] if None not in (io, ih, il) else [])
         note("pL", js, fields, len(out))
         return out or None
     note("pL", js, [], 0)
@@ -159,15 +161,16 @@ def tpex_px(d):
         for fields, rows in tables_of(js):
             if fields:
                 ic, ip, iv = col(fields, "代號"), col(fields, "收盤"), col(fields, "成交股數")
+                io, ih, il = col(fields, "開盤"), col(fields, "最高"), col(fields, "最低")
             else:                                     # 舊版 aaData：代號,名稱,收盤,漲跌,開,高,低,均價,成交股數
-                ic, ip, iv = 0, 2, 8
+                ic, ip, iv, io, ih, il = 0, 2, 8, 4, 5, 6
             if ic is None or ip is None or iv is None:
                 continue
             out = {}
             for r in rows:
                 c = ok_code(r[ic])
                 if c:
-                    out[c] = [num(r[ip]), num(r[iv])]
+                    out[c] = [num(r[ip]), num(r[iv])] + ([num(r[io]), num(r[ih]), num(r[il])] if None not in (io, ih, il) else [])
             if out:
                 note("pO", js, fields, len(out))
                 diag["pO"]["url"] = u.split("?")[0][-40:]
@@ -267,7 +270,7 @@ def collect():
     have = {k: 0 for k in need}
     errs = []
     d = today
-    for _ in range(130):                      # 最多往回看 130 天
+    for _ in range(200):                      # 最多往回看 200 個日曆天
         if all(have[k] >= need[k] for k in need):
             break
         if d.weekday() >= 5:
@@ -281,7 +284,10 @@ def collect():
             d -= dt.timedelta(days=1)
             continue
         src = set(rec.get("src", []))
-        want = [k for k in ("pL", "pO", "iL", "iO") if k not in src and have[k] < need[k]]
+        ohlc = set(rec.get("ohlc", []))
+        # 舊檔只有收盤沒開高低 → 重抓一次（K 線用）；一次最多補 60 天，其餘下次繼續
+        redo = [k for k in ("pL", "pO") if k in src and k not in ohlc and have[k] < 60 and nreq < MAX_REQ - 20]
+        want = [k for k in ("pL", "pO", "iL", "iO") if (k not in src or k in redo) and have[k] < need[k]]
         changed = False
         for k in want:
             if nreq >= MAX_REQ or time.time() - T0 > BUDGET or fails.get(k, 0) >= 3:
@@ -308,6 +314,9 @@ def collect():
             rec.pop("miss", None)
             src.add(k)
             rec["src"] = sorted(src)
+            if k in ("pL", "pO") and any(len(v) >= 5 for v in r.values()):
+                ohlc.add(k)
+                rec["ohlc"] = sorted(ohlc)
             changed = True
         if changed:
             save_day(d, rec)

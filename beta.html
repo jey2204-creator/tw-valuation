@@ -455,10 +455,13 @@ details.ind.hot summary b{color:var(--up)}
   <div class="chart" id="cRev"></div>
 </section>
 <section class="card" id="kl">
-  <h2 style="display:flex;align-items:center;gap:8px">K線 <small>日K｜均線 5／20／60／120｜量</small><a id="klOpen" href="#" target="_blank" rel="noopener" style="margin-left:auto;font-size:12px;font-weight:500;color:var(--accent);text-decoration:none;white-space:nowrap">TradingView ↗</a></h2>
+  <h2 style="display:flex;align-items:center;gap:8px">K線 <small>日K｜均線 5／20／60／120｜量</small><span class="segm" id="klSeg" style="margin-left:auto"><button aria-pressed="false" data-n="40">2月</button><button aria-pressed="true" data-n="80">4月</button><button aria-pressed="false" data-n="130">6月</button></span></h2>
   <p class="take tight" id="tKl"></p>
-  <div id="klBox" style="height:470px;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--card)"></div>
-  <p class="foot" id="fKl">紅漲綠跌。頂端工具列可切 日／週／月、拖曳與縮放；線型自己看均線排列（多頭：5 日＞20 日＞60 日、價在線上）＋量價是否同步。試做版用 TradingView 免費圖表，之後改成自繪並與下方籌碼對齊日期。</p>
+  <div id="klLeg" style="font-family:var(--f-num);font-size:11px;color:var(--muted);line-height:1.5;min-height:34px;margin-bottom:2px"></div>
+  <div id="klBox" style="height:300px;position:relative"></div>
+  <div id="klVol" style="height:80px;position:relative"></div>
+  <div class="tbl"><table id="tbKl"></table></div>
+  <p class="foot" id="fKl"></p>
 </section>
 <section class="card" id="chip">
   <h2 style="display:flex;align-items:center;gap:8px">逐日籌碼 <small>張｜近 60 個交易日</small><span class="segm" id="chipSeg" style="margin-left:auto"><button aria-pressed="true" data-m="i">法人</button><button aria-pressed="false" data-m="m">融資券</button></span></h2>
@@ -801,7 +804,7 @@ let CH=null,chipMode='i';
 async function renderChip(){
   if(CH===null){CH=false;try{const r=await fetch('data/chip.json?t='+Date.now());if(r.ok)CH=await r.json()}catch(e){}}
   let rows=CH&&CH.d&&CH.d[D.id],sec=$('chip'),days0=CH&&CH.days;
-  if(!rows){const sh=await chipShard(D.id);if(sh){rows=sh.d[D.id];days0=sh.days}}
+  if(!rows){const sh=await chipShard(D.id);if(sh){rows=sh.d[D.id].slice(-60);days0=sh.days.slice(-60)}}
   if(!rows){$('tChip').innerHTML=CH?'這檔還沒有逐日籌碼資料（通常是剛上市或資料回補中）。':'籌碼資料載入失敗';$('cChip').hidden=true;$('tbChip').innerHTML='';$('fChip').textContent='';return}
   const CHD={days:days0};
   $('cChip').hidden=false;
@@ -847,30 +850,76 @@ const SHARD={};
 async function chipShard(id){const g=String(id).slice(0,2);if(!/^\d\d$/.test(g))return null;
   if(SHARD[g]===undefined){SHARD[g]=null;try{const r=await fetch('data/chip_s/'+g+'.json?t='+Date.now());if(r.ok)SHARD[g]=await r.json()}catch(e){}}
   const s=SHARD[g];return s&&s.d&&s.d[id]?s:null}
-// ---- K 線（TradingView 免費 Advanced Chart；只在卡片快滾到時才載入）----
-let KL={id:null,dark:null,ob:null};
+// ---- K 線（自繪，lightweight-charts）：資料來自 data/chip_s 分片，每列 [收盤, 成交張, 外資, 投信, 自營, 資增減, 券增減, 資餘額, 開, 高, 低] ----
+let KL={c:null,v:null,id:null,n:80,lib:null,rows:null,days:null};
 const isDark=()=>{const t=document.documentElement.getAttribute('data-theme');return t?t==='dark':matchMedia('(prefers-color-scheme: dark)').matches};
-function klSym(){const it=LIST.find(s=>s[0]===D.id);return (it&&it[2]==='上櫃'?'TPEX:':'TWSE:')+D.id}
-function renderKl(){
-  const sym=klSym();$('klOpen').href='https://tw.tradingview.com/chart/?symbol='+encodeURIComponent(sym);
-  $('tKl').textContent='';
-  if(!KL.ob){KL.ob=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting))klBuild()},{rootMargin:'300px 0px'});KL.ob.observe($('klBox'))}
-  if(KL.id!==D.id||KL.dark!==isDark()){KL.id=null;$('klBox').innerHTML='';klBuild()}
+function klLib(){if(window.LightweightCharts)return Promise.resolve();if(KL.lib)return KL.lib;
+  return KL.lib=new Promise((ok,no)=>{const sc=document.createElement('script');sc.src='https://cdn.jsdelivr.net/npm/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js';sc.onload=ok;sc.onerror=()=>no(new Error('lib'));document.head.appendChild(sc)})}
+const ma=(a,n)=>a.map((_,i)=>{if(i<n-1)return null;let t=0;for(let j=i-n+1;j<=i;j++){if(a[j]==null)return null;t+=a[j]}return +(t/n).toFixed(2)});
+async function renderKl(){
+  const id=D.id;$('tKl').textContent='';$('klLeg').textContent='';$('tbKl').innerHTML='';
+  const sh=await chipShard(id);
+  if(id!==D.id)return;
+  if(!sh){$('tKl').textContent='這檔還沒有 K 線資料（剛上市或資料回補中）';$('klBox').style.display=$('klVol').style.display='none';$('fKl').textContent='';return}
+  const all=sh.d[id],dd=sh.days,ok=all.filter(r=>r[8]!=null).length;
+  if(ok<5){$('tKl').innerHTML='開高低資料回補中（今晚排程跑完就會有 K 線），先看收盤：'+fmt(all[all.length-1][0],2);$('klBox').style.display=$('klVol').style.display='none';$('fKl').textContent='';return}
+  try{await klLib()}catch(e){$('tKl').textContent='K 線繪圖程式載入失敗';return}
+  if(id!==D.id)return;
+  $('klBox').style.display=$('klVol').style.display='';
+  KL.rows=all;KL.days=dd;KL.id=id;klDraw();
 }
-function klBuild(){
-  const box=$('klBox'),dk=isDark();if(!D||(KL.id===D.id&&KL.dark===dk))return;
-  const r=box.getBoundingClientRect();if(r.bottom<-300||r.top>innerHeight+300)return;   // 還沒滾到就先不載
-  KL.id=D.id;KL.dark=dk;box.innerHTML='';
-  const sym=klSym(),up=dk?'#ff5b5b':'#d32f2f',dn=dk?'#35c27a':'#138a4b';
-  const go=()=>{try{new TradingView.widget({container_id:'klBox',autosize:true,symbol:sym,interval:'D',range:'6M',timezone:'Asia/Taipei',theme:dk?'dark':'light',style:'1',locale:'zh_TW',
-    toolbar_bg:dk?'#161b22':'#ffffff',hide_side_toolbar:true,hide_top_toolbar:false,allow_symbol_change:false,save_image:false,withdateranges:true,details:false,hotlist:false,calendar:false,
-    studies:[{id:'MASimple@tv-basicstudies',inputs:{length:5}},{id:'MASimple@tv-basicstudies',inputs:{length:20}},{id:'MASimple@tv-basicstudies',inputs:{length:60}},{id:'MASimple@tv-basicstudies',inputs:{length:120}}],
-    overrides:{'mainSeriesProperties.candleStyle.upColor':up,'mainSeriesProperties.candleStyle.downColor':dn,'mainSeriesProperties.candleStyle.borderUpColor':up,'mainSeriesProperties.candleStyle.borderDownColor':dn,'mainSeriesProperties.candleStyle.wickUpColor':up,'mainSeriesProperties.candleStyle.wickDownColor':dn,
-      'paneProperties.background':dk?'#161b22':'#ffffff','paneProperties.backgroundType':'solid','paneProperties.vertGridProperties.color':dk?'#2a313c':'#eef0f3','paneProperties.horzGridProperties.color':dk?'#2a313c':'#eef0f3','scalesProperties.textColor':dk?'#9aa4b2':'#6b7280'},
-    studies_overrides:{'volume.volume.color.0':dn,'volume.volume.color.1':up,'volume.volume.transparency':35,'volume.volume ma.visible':false}})}
-    catch(e){$('tKl').textContent='K 線載入失敗：'+e.message}};
-  if(window.TradingView)go();else{const sc=document.createElement('script');sc.src='https://s3.tradingview.com/tv.js';sc.onload=go;sc.onerror=()=>{$('tKl').innerHTML='TradingView 載入失敗（可能被網路擋住）。<a href="'+$('klOpen').href+'" target="_blank" rel="noopener">改在 TradingView 開啟 ↗</a>'};document.head.appendChild(sc)}
+function klDraw(){
+  const all=KL.rows,dd=KL.days;if(!all)return;
+  const L=LightweightCharts,dk=isDark(),up=css('--up'),dn=css('--down'),fg=css('--fg'),mu=css('--muted'),line=css('--line'),card=css('--card');
+  const close=all.map(r=>r[0]),m5=ma(close,5),m20=ma(close,20),m60=ma(close,60),m120=ma(close,120);
+  const n=Math.min(KL.n,all.length),from=all.length-n;
+  const t=i=>({year:+dd[i].slice(0,4),month:+dd[i].slice(4,6),day:+dd[i].slice(6)});
+  const cs=[],vs=[],l5=[],l20=[],l60=[],l120=[];
+  for(let i=from;i<all.length;i++){const r=all[i],tm=t(i);if(r[0]==null)continue;
+    const o=r[8]??r[0],h=r[9]??r[0],lo=r[10]??r[0];cs.push({time:tm,open:o,high:h,low:lo,close:r[0]});
+    vs.push({time:tm,value:r[1]||0,color:(r[0]>=o?up:dn)+'99'});
+    if(m5[i]!=null)l5.push({time:tm,value:m5[i]});if(m20[i]!=null)l20.push({time:tm,value:m20[i]});if(m60[i]!=null)l60.push({time:tm,value:m60[i]});if(m120[i]!=null)l120.push({time:tm,value:m120[i]})}
+  const opt={layout:{background:{type:'solid',color:'transparent'},textColor:mu,fontFamily:getComputedStyle(document.body).fontFamily,fontSize:10},grid:{vertLines:{color:line},horzLines:{color:line}},
+    rightPriceScale:{borderColor:line,scaleMargins:{top:.08,bottom:.05}},timeScale:{borderColor:line,rightOffset:2,barSpacing:Math.max(3,Math.floor(($('klBox').clientWidth-60)/n)),fixLeftEdge:true,fixRightEdge:true,timeVisible:false,tickMarkFormatter:(tt)=>tt.month+'/'+tt.day},
+    crosshair:{mode:L.CrosshairMode.Normal,vertLine:{labelBackgroundColor:css('--accent')},horzLine:{labelBackgroundColor:css('--accent')}},handleScroll:{vertTouchDrag:false},handleScale:{axisPressedMouseMove:false}};
+  if(KL.c){KL.c.remove();KL.v.remove()}
+  const c=KL.c=L.createChart($('klBox'),{...opt,width:$('klBox').clientWidth,height:300});
+  const v=KL.v=L.createChart($('klVol'),{...opt,width:$('klVol').clientWidth,height:80,timeScale:{...opt.timeScale,visible:false},rightPriceScale:{...opt.rightPriceScale,scaleMargins:{top:.1,bottom:0}}});
+  const CS=c.addCandlestickSeries({upColor:up,downColor:dn,borderUpColor:up,borderDownColor:dn,wickUpColor:up,wickDownColor:dn,priceLineVisible:false,lastValueVisible:true,priceFormat:{type:'price',precision:2,minMove:.01}});
+  CS.setData(cs);
+  const MAC={5:css('--accent'),20:css('--warm'),60:css('--accent2'),120:dk?'#c78bff':'#8a4dd6'};
+  const S5=c.addLineSeries({color:MAC[5],lineWidth:1,priceLineVisible:false,lastValueVisible:false,crosshairMarkerVisible:false});S5.setData(l5);
+  const S20=c.addLineSeries({color:MAC[20],lineWidth:1,priceLineVisible:false,lastValueVisible:false,crosshairMarkerVisible:false});S20.setData(l20);
+  const S60=c.addLineSeries({color:MAC[60],lineWidth:1.5,priceLineVisible:false,lastValueVisible:false,crosshairMarkerVisible:false});S60.setData(l60);
+  const S120=c.addLineSeries({color:MAC[120],lineWidth:1.5,priceLineVisible:false,lastValueVisible:false,crosshairMarkerVisible:false});S120.setData(l120);
+  const VS=v.addHistogramSeries({priceFormat:{type:'volume'},priceLineVisible:false,lastValueVisible:false});VS.setData(vs);
+  const V5=v.addLineSeries({color:MAC[5],lineWidth:1,priceLineVisible:false,lastValueVisible:false,crosshairMarkerVisible:false});
+  const vol=all.map(r=>r[1]),vm5=ma(vol,5);V5.setData(all.map((r,i)=>vm5[i]==null||i<from?null:{time:t(i),value:vm5[i]}).filter(Boolean));
+  c.timeScale().fitContent();v.timeScale().fitContent();
+  // 兩張圖同步 + 圖例
+  let lock=false;const sync=(a,b)=>a.timeScale().subscribeVisibleLogicalRangeChange(r=>{if(lock||!r)return;lock=true;b.timeScale().setVisibleLogicalRange(r);lock=false});sync(c,v);sync(v,c);
+  const leg=(i)=>{const r=all[i],pv=i>0?all[i-1][0]:null,ch=pv?r[0]-pv:null,pc=pv?(ch/pv*100):null,cl=ch>0?'up':ch<0?'dn':'';
+    const sp=(k,val)=>`<span style="color:${MAC[k]}">MA${k} ${val==null?'—':fmt(val,2)}</span>`;
+    $('klLeg').innerHTML=`<b style="color:${fg}">${dd[i].slice(4,6)}/${dd[i].slice(6)}</b>　開 ${fmt(r[8]??r[0],2)}　高 ${fmt(r[9]??r[0],2)}　低 ${fmt(r[10]??r[0],2)}　收 <b class="${cl}">${fmt(r[0],2)}</b> <span class="${cl}">${ch==null?'':(ch>0?'+':'')+fmt(ch,2)+' ('+(pc>0?'+':'')+pc.toFixed(2)+'%)'}</span>　量 ${fmt(r[1])} 張<br>${sp(5,m5[i])}　${sp(20,m20[i])}　${sp(60,m60[i])}　${sp(120,m120[i])}`};
+  const last=all.length-1;leg(last);
+  const onX=p=>{if(!p.time){leg(last);return}const i=dd.findIndex(d=>+d.slice(0,4)===p.time.year&&+d.slice(4,6)===p.time.month&&+d.slice(6)===p.time.day);if(i>=0)leg(i)};
+  c.subscribeCrosshairMove(onX);v.subscribeCrosshairMove(onX);
+  // 摘要：均線排列、位置、量
+  const r=all[last],a5=m5[last],a20=m20[last],a60=m60[last],a120=m120[last],vv=vm5[last];
+  const bull=a5!=null&&a20!=null&&a60!=null&&a5>a20&&a20>a60,bear=a5!=null&&a20!=null&&a60!=null&&a5<a20&&a20<a60;
+  const abv=[[5,a5],[20,a20],[60,a60],[120,a120]].filter(x=>x[1]!=null).map(x=>`${r[0]>=x[1]?'🔺':'🔻'}${x[0]}日`).join(' ');
+  const hi=Math.max(...all.slice(-60).map(x=>x[9]??x[0])),lo=Math.min(...all.slice(-60).map(x=>x[10]??x[0]));
+  const vr=vv?(r[1]/vv):null;
+  $('tKl').innerHTML=`均線 <strong>${bull?'多頭排列（5＞20＞60）':bear?'空頭排列（5＜20＜60）':'糾結／轉折中'}</strong>・價在 ${abv||'—'} 線${r[0]>=(a20??Infinity)?'上':'下'}<br>60 日區間 ${fmt(lo,2)}～${fmt(hi,2)}（現價位於 ${((r[0]-lo)/(hi-lo||1)*100).toFixed(0)}% 處）・今量 ${vr?(vr>=1.5?'<strong class="up">放大 '+vr.toFixed(1)+'×</strong>':vr<=.6?'<strong>萎縮 '+vr.toFixed(1)+'×</strong>':vr.toFixed(1)+'×'):'—'} 5 日均量`;
+  // 近 10 日表
+  $('tbKl').innerHTML='<tr><th>日期</th><th>開</th><th>高</th><th>低</th><th>收</th><th>漲跌%</th><th>量</th></tr>'+all.slice(-10).reverse().map((x,j)=>{const i=last-j,pv=i>0?all[i-1][0]:null,pc=pv?((x[0]/pv-1)*100):null,cl=pc>0?'up':pc<0?'dn':'';
+    return `<tr><td>${dd[i].slice(4,6)}/${dd[i].slice(6)}</td><td>${fmt(x[8]??x[0],2)}</td><td>${fmt(x[9]??x[0],2)}</td><td>${fmt(x[10]??x[0],2)}</td><td class="${cl}">${fmt(x[0],2)}</td><td class="${cl}">${pc==null?'—':(pc>0?'+':'')+pc.toFixed(2)}</td><td>${fmt(x[1])}</td></tr>`}).join('');
+  const miss=all.filter(x=>x[8]==null).length;
+  $('fKl').textContent='紅漲綠跌；量柱顏色跟當天 K 棒、量圖細線為 5 日均量。均線 5／20／60／120 日'+(l120.length?'':'（120 日線要再累積資料才會出現）')+'。可左右拖曳、雙指縮放。線型不自動判讀：看均線排列＋價在線上／線下＋量價是否同步即可。'+(miss?`　⚠️ 尚有 ${miss} 天只有收盤、沒有開高低（當天 K 棒顯示為一字線），今晚排程補齊。`:'');
 }
+document.addEventListener('click',e=>{const b=e.target.closest('#klSeg button');if(!b)return;KL.n=+b.dataset.n;
+  document.querySelectorAll('#klSeg button').forEach(x=>x.setAttribute('aria-pressed',x===b));klDraw()});
+addEventListener('resize',()=>{if(KL.c&&D){clearTimeout(KL.rt);KL.rt=setTimeout(klDraw,150)}});
 async function chipAsof(dI,dM){
   let el=$('chipAsof');if(!el){el=document.createElement('p');el.id='chipAsof';el.className='asofN';$('tChip').before(el)}
   const fi=await daySt(dI,PX_CUT,PX_END),fm=await daySt(dM,MG_CUT,MG_END);

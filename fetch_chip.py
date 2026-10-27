@@ -12,7 +12,7 @@
 輸出 data/chip.json：只放 themes.json 成份股＋EXTRA（全市場每天約 2,000 檔，全放會太大）
   days = [YYYYMMDD…]（舊→新）
   d[代號] = 每天一列 [收盤, 成交張數, 外資張, 投信張, 自營張, 融資增減張, 融券增減張, 融資餘額張]，缺資料為 null
-另輸出全市場分片 data/chip_s/NN.json（NN = 代號前兩碼，約 70 個檔、每檔 30～120KB）：{days, d:{代號:[同上列]}}
+另輸出全市場分片 data/chip_s/NN.json（NN = 代號前兩碼，約 70 個檔）：{days, d:{代號:[同上列 + 開, 高, 低]}}，價格 130 天、籌碼 60 天
   個股頁先查 chip.json，沒有再抓對應分片 → 任何上市櫃股票都看得到逐日籌碼（2026/10/27 起）
 用法：python fetch_chip.py
 """
@@ -25,7 +25,8 @@ ROOT = Path(__file__).resolve().parent
 OUT = ROOT / "data"
 HIST = OUT / "hist"
 CHIP = OUT / "chip"
-NDAYS = 60                                      # 圖上顯示幾個交易日
+NDAYS = 60                                      # 籌碼圖顯示幾個交易日
+KDAYS = 130                                     # K 線分片保留幾個交易日（120 日均線）
 EXTRA = ["2467"]                                # 主題以外也想看的股票（志聖）
 MAX_REQ = 200
 BUDGET = 13 * 60
@@ -179,7 +180,7 @@ def tpex_margin(d):
 SOURCES = {"iL": (twse_inst, "i"), "iO": (tpex_inst, "i"), "mL": (twse_margin, "m"), "mO": (tpex_margin, "m")}
 
 
-def trade_days():
+def trade_days(n=NDAYS):
     """data/hist 裡有上市收盤的交易日（舊→新）"""
     out = []
     for f in sorted(HIST.glob("*.json")):
@@ -189,7 +190,7 @@ def trade_days():
             continue
         if not rec.get("closed") and "pL" in rec.get("src", []):
             out.append((f.stem, rec))
-    return out[-NDAYS:]
+    return out[-n:]
 
 
 def load(day):
@@ -269,12 +270,15 @@ def rows_of(c, recs):
             iv = [0, 0, 0]
         rows.append([p[0], k(p[1]),
                      *(k(x) for x in (iv or [None] * 3)),
-                     *((round(x) if x is not None else None) for x in (mv or [None] * 3))])
+                     *((round(x) if x is not None else None) for x in (mv or [None] * 3)),
+                     *(p[2:5] if len(p) >= 5 else [])])          # 開高低（有才附，K 線用）
     return rows
 
 
 def build_shards(days):
-    """全市場逐日籌碼，依代號前兩碼分片存 data/chip_s/NN.json（檔案只在內容有變時改寫）"""
+    """全市場逐日籌碼＋K 線，依代號前兩碼分片存 data/chip_s/NN.json（檔案只在內容有變時改寫）
+    價格取最近 KDAYS 個交易日（K 線＋均線用），籌碼只有最近 NDAYS 天有值"""
+    days = trade_days(KDAYS)
     recs = [(day, px, load(day)) for day, px in days]
     codes = set()
     for _, px, _ in recs:
