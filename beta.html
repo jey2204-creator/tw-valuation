@@ -1501,17 +1501,17 @@ function buildY10(fs,bs,cf,dv,px){
   A.forEach(x=>{let pr=null;
     if(!x.ttm)pr=A.find(z=>!z.ttm&&z.y===x.y-1)||null;
     else{const pt=Qa.filter(q=>(q.y*4+q.n)<=(lq.y*4+lq.n)-4).slice(-4);if(pt.length===4)pr={rev:S(pt,'rev'),eps:S(pt,'eps')}}
-    x.ry=pr&&pr.rev?(x.rev/pr.rev-1)*100:null;x.ey=pr&&pr.eps>0&&x.eps!=null?(x.eps/pr.eps-1)*100:null});
+    x.ry=pr&&pr.rev?(x.rev/pr.rev-1)*100:null;x.ey=pr&&pr.eps>0&&x.eps!=null?(x.eps/pr.eps-1)*100:null;x.et=pr&&pr.eps!=null&&x.eps!=null?(pr.eps<=0&&x.eps>0?'轉盈':pr.eps>0&&x.eps<0?'轉虧':pr.eps<=0?'虧損':null):null});
   // 單季序列（季模式）：ROE 用近四季淨利 ÷ 平均權益
   const Qr=Qa.map((x,i)=>{const ly=Qa.find(z=>z.y===x.y-1&&z.n===x.n),l4=i>=3?Qa.slice(i-3,i+1):null,c4=l4&&(x.y*4+x.n)-(l4[0].y*4+l4[0].n)===3?l4:null;
     const ni4=c4?S(c4,'ni'):null,eqA=x.eq!=null?(c4&&c4[0]&&ly&&ly.eq!=null?(x.eq+ly.eq)/2:x.eq):null;
     return {l:x.l,rev:x.rev,gm:P(x.gp,x.rev),om:P(x.op,x.rev),nm:P(x.ni,x.rev),ni:x.ni,eps:x.eps,ocf:x.ocf,fcf:x.ocf!=null&&x.cx!=null?x.ocf-x.cx:null,
       roe:ni4!=null&&eqA>0?ni4/eqA*100:null,debt:x.tl!=null&&x.ta?x.tl/x.ta*100:null,ry:ly&&ly.rev?(x.rev/ly.rev-1)*100:null,ey:ly&&ly.eps>0&&x.eps!=null?(x.eps/ly.eps-1)*100:null}});
-  const rr=o=>{const k={};for(const [a,v] of Object.entries(o))k[a]=typeof v==='number'?(['eps','div','sdiv'].includes(a)?r2(v):r1(v)):v;return k};
+  const rr=o=>{const k={et:o.et};for(const [a,v] of Object.entries(o))k[a]=typeof v==='number'?(['eps','div','sdiv'].includes(a)?r2(v):r1(v)):v;return k};
   return {A:A.slice(-12).map(rr),Q:Qr.slice(-40).map(rr),asof:lq.l};
 }
 async function loadY10(id){
-  const k='y10v1_'+id,c=store.get(k);
+  const k='y10v2_'+id,c=store.get(k);
   if(c&&Date.now()-c.t<12*3600e3&&c.v){Y10=c.v;Y10L=null;renderY10();return}
   if(Y10L===id)return;Y10L=id;
   $('cY10').hidden=true;$('tY10').innerHTML='<div class="y10msg">⏳ 正在向 FinMind 抓 11 年財報（約 5–10 秒）…</div>';
@@ -1523,7 +1523,7 @@ async function loadY10(id){
     const v=buildY10(fs,bs,cf,dv,px);Y10L=null;
     if(!v){$('tY10').innerHTML='<div class="y10msg">歷史財報不足 4 季，無法顯示</div>';return}
     Y10=v;try{store.set(k,{t:Date.now(),v})}catch(e){}
-    if(!localStorage.getItem(k))try{Object.keys(localStorage).filter(x=>x.startsWith('y10v1_')).forEach(x=>localStorage.removeItem(x));store.set(k,{t:Date.now(),v})}catch(e){}
+    if(!localStorage.getItem(k))try{Object.keys(localStorage).filter(x=>x.startsWith('y10v2_')).forEach(x=>localStorage.removeItem(x));store.set(k,{t:Date.now(),v})}catch(e){}
     renderY10();
   }catch(e){Y10L=null;if(Y10ID!==id)return;
     $('tY10').innerHTML=`<div class="y10msg">⚠️ ${e.message}<br><button type="button" id="y10Re">重試</button></div>`;
@@ -1610,7 +1610,7 @@ function renderY10(){
   }
   o.tooltip.formatter=ps=>{const x=R[ps[0].dataIndex],L=[`<b>${x.ttm?'近四季（'+Y10.asof+' 止）':x.l}</b>`];
     L.push(`營收 ${f(x.rev,0)} 億（年增 ${pct(x.ry,1)}）`);L.push(`毛利率 ${f(x.gm,1)}%・營益率 ${f(x.om,1)}%・淨利率 ${f(x.nm,1)}%`);
-    L.push(`EPS ${f(x.eps,2)} 元（年增 ${x.ey==null?'—':pct(x.ey,0)}）`+(x.div!=null?`・現金股利 ${f(x.div,2)}${x.po!=null?`（配息率 ${fmt(x.po,0)}%）`:''}`:''));
+    L.push(`EPS ${f(x.eps,2)} 元（年增 ${x.et||(x.ey==null?'—':pct(x.ey,0))}）`+(x.div!=null?`・現金股利 ${f(x.div,2)}${x.po!=null?`（配息率 ${fmt(x.po,0)}%）`:''}`:''));
     L.push(`ROE ${f(x.roe,1)}%・負債比 ${f(x.debt,1)}%`);if(x.ocf!=null)L.push(`營業現金流 ${f(x.ocf)}・自由現金流 ${f(x.fcf)}・淨利 ${f(x.ni)} 億`);
     if(x.pe!=null)L.push(`${x.ttm?'目前':'年均'}本益比 ${fmt(x.pe,1)} 倍`);return L.join('<br>')};
   ch.setOption(o,true);ch.resize();
@@ -1618,7 +1618,7 @@ function renderY10(){
   // 明細表（年度）
   const c=(v,d)=>v==null?'—':fmt(v,d),cp=v=>v==null?'—':`<span class="${sg(v)}">${pct(v,0)}</span>`;
   $('tbY10').innerHTML='<thead><tr><th>年度</th><th>營收億</th><th>年增</th><th>毛利率</th><th>營益率</th><th>淨利率</th><th>EPS</th><th>EPS年增</th><th>現金股利</th><th>配息率</th><th>ROE</th><th>負債比</th><th>自由現金流</th><th>年均PE</th></tr></thead><tbody>'+
-    [...A].reverse().map(x=>`<tr class="${x.ttm?'ttm':''}"><td>${x.ttm?'近四季':x.l}</td><td>${c(x.rev,0)}</td><td>${cp(x.ry)}</td><td>${c(x.gm,1)}</td><td>${c(x.om,1)}</td><td>${c(x.nm,1)}</td><td>${c(x.eps,2)}</td><td>${cp(x.ey)}</td><td>${c(x.div,2)}${x.sdiv?`<sup title="另配股票股利 ${x.sdiv} 元">+股</sup>`:''}</td><td>${c(x.po,0)}${x.po!=null?'%':''}</td><td>${c(x.roe,1)}</td><td>${c(x.debt,1)}</td><td>${c(x.fcf,0)}</td><td>${c(x.pe,1)}</td></tr>`).join('')+'</tbody>';
+    [...A].reverse().map(x=>`<tr class="${x.ttm?'ttm':''}"><td>${x.ttm?'近四季':x.l}</td><td>${c(x.rev,0)}</td><td>${cp(x.ry)}</td><td>${c(x.gm,1)}</td><td>${c(x.om,1)}</td><td>${c(x.nm,1)}</td><td>${c(x.eps,2)}</td><td>${x.et?`<span class="${x.et==='轉盈'?'up':'dn'}">${x.et}</span>`:cp(x.ey)}</td><td>${c(x.div,2)}${x.sdiv?`<sup title="另配股票股利 ${x.sdiv} 元">+股</sup>`:''}</td><td>${c(x.po,0)}${x.po!=null?'%':''}</td><td>${c(x.roe,1)}</td><td>${c(x.debt,1)}</td><td>${c(x.fcf,0)}</td><td>${c(x.pe,1)}</td></tr>`).join('')+'</tbody>';
 }
 $('y10Per').addEventListener('click',e=>{const b=e.target.closest('button[data-p]');if(!b)return;Y10P=b.dataset.p;try{localStorage.setItem('y10P',Y10P)}catch(_){}renderY10()});
 $('y10Tab').addEventListener('click',e=>{const b=e.target.closest('button[data-t]');if(!b)return;Y10T=b.dataset.t;try{localStorage.setItem('y10T',Y10T)}catch(_){}renderY10()});
