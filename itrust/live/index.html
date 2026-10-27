@@ -128,7 +128,9 @@ body.ov .km-cv{margin-top:0;min-height:48px}
 @media (max-width:1000px) and (orientation:landscape){body.ov .grid{grid-template-columns:repeat(5,1fr)}body.ov .km-cv{height:calc((100dvh - 62px)/4 - 22px)}
 body.ov .km-h .ovl{display:inline;margin-left:auto;font:500 9px var(--font-num);color:var(--muted);letter-spacing:-.02em}body.ov .km-h b{flex:none}body.ov .km-h .ovx{margin-left:0}body.ov .km-h .tg{display:none}}
 @media (max-width:1000px) and (orientation:portrait){body.ov .grid{grid-template-columns:repeat(3,1fr)}body.ov .km-cv{height:calc((100dvh - 62px)/7 - 22px)}
-body.ov .tabs button{padding:0 1px;font-size:11.5px}body.ov .tabs button.sell{font-size:10.5px}body.ov .rf{padding:0 6px}body.ov .ovb{padding:0 6px}body.ov .ovdb{padding:0 6px;font-size:12px;min-height:28px}body.ov .ctl{gap:4px}body.ov .km-h .tg{display:none}}
+body.ov .tabs button{padding:0 1px;font-size:11.5px}body.ov .tabs button.sell{font-size:10.5px}body.ov .rf{padding:0 6px}body.ov .ovb{padding:0 6px}body.ov .ovdb{padding:0 6px;font-size:12px;min-height:28px}body.ov .ctl{gap:4px}body.ov .km-h .tg{display:none}
+/* 直向總覽標題兩行（2026-10-27）：第1行 排名＋完整名稱，第2行 漲跌％＋量比，名稱不再被截成「玉…」 */
+body.ov .km-h{flex-wrap:wrap;row-gap:0;line-height:13px;padding-top:1px}body.ov .km-h b{flex:0 1 auto;font-size:12px;letter-spacing:-.03em}body.ov .km-h .ovx{flex:0 0 100%;order:9;margin-left:0;font-size:10px;line-height:12px}}
 }
 @media (min-width:1000px){.grid{grid-template-columns:repeat(4,1fr)}}
 .km{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:4px 6px 3px;display:grid;gap:0;min-width:0;cursor:pointer}
