@@ -1382,8 +1382,11 @@ function renderNp(){
     // 柱子壓在下方約 6 成、年增率線放上方，避免數字互相蓋住
     const bmax=Math.max(...S.map(x=>x.ni||0)),bmin=Math.min(0,...S.map(x=>x.ni||0)),ys=S.map(x=>x.y.v==null||x.y.v>300?null:x.y.v).filter(v=>v!=null);
     const lo=ys.length?Math.min(...ys):0,hi=ys.length?Math.max(...ys):10,sp=Math.max(hi-lo,10);
-    o.yAxis.max=bmax>0?bmax*1.65:null;o.yAxis.min=bmin<0?bmin*1.2:0;o.grid.right=10;
-    o.yAxis=[o.yAxis,{...o.yAxis,scale:false,min:lo-sp*1.75,max:hi+sp*.25,splitLine:{show:false},axisLabel:{show:false}}];
+    const span=Math.max(bmax*1.65,0)-Math.min(bmin*1.2,0),st=(r=>{const e=Math.pow(10,Math.floor(Math.log10(r)));return [1,2,2.5,5,10].map(k=>k*e).find(k=>k>=r)})(span/5||1),nice=v=>v?Math.sign(v)*Math.ceil(Math.abs(v)/st)*st:0;o.yAxis.interval=st; // 軸上限取整數刻度，避免 containLabel 預留長小數標籤而把圖擠到右邊
+    o.yAxis.max=bmax>0?nice(bmax*1.65):null;o.yAxis.min=bmin<0?-nice(-bmin*1.2):0;
+    // 隱藏的右軸在 containLabel 下仍會被預留寬度 → 改用左軸最長標籤估算邊界
+    {let w=1;for(let v=o.yAxis.min;v<=(o.yAxis.max||0)+st/2;v+=st)w=Math.max(w,(+v.toFixed(6)).toLocaleString('zh-TW').length);o.grid={...o.grid,containLabel:false,left:Math.round(w*6.2+12),right:8,bottom:24}}
+    o.yAxis=[o.yAxis,{type:'value',show:false,scale:false,min:Math.floor(lo-sp*1.75),max:Math.ceil(hi+sp*.25)}];
     o.series=[{name:'母公司淨利',type:'bar',barCategoryGap:'28%',itemStyle:{color:up,borderRadius:[2,2,0,0]},label:lab(4),
         data:S.map(x=>({value:x.ni,itemStyle:{color:colOf(x),opacity:x.fl?.45:1,borderColor:colOf(x),borderWidth:x.fl?1.5:0,borderType:'dashed'}}))},
       {name:'年增率',type:'line',yAxisIndex:1,data:S.map((x,i)=>({value:x.y.v==null||x.y.v>300?null:+x.y.v.toFixed(1),label:{position:(S.length-1-i)%2?'bottom':'top'}})),symbol:'circle',symbolSize:4,lineStyle:{width:2,color:warm},itemStyle:{color:warm},labelLayout:{hideOverlap:true},
