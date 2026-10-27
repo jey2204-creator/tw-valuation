@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>台股估值看板</title>
+<style>body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;font:16px -apple-system,BlinkMacSystemFont,"PingFang TC",sans-serif;color:#555;background:#fff}@media (prefers-color-scheme:dark){body{background:#111;color:#aaa}}</style>
+<script>
+// 分享專用入口：go.html?from=代號 → Cloudflare 記成 /tw-valuation/f/代號 → 轉到首頁
+(function(){
+  var p=new URLSearchParams(location.search);
+  var f=(p.get('from')||p.get('f')||'').replace(/[^A-Za-z0-9_-]/g,'').slice(0,24)||'unknown';
+  var base=location.pathname.replace(/go(\.html)?$/,'');
+  window.__goBase=base;
+  try{history.replaceState(null,'',base+'f/'+f)}catch(e){}
+})();
+</script>
+</head>
+<body>
+<p>載入中…</p>
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "1d5b7d7f9e9b4171b25487fae2dfeea9"}'></script><!-- End Cloudflare Web Analytics -->
+<script type="module">
+// 等統計碼載入後再跳轉（模組腳本依序執行）；跳轉時 beacon 會送出這次造訪
+setTimeout(function(){location.replace((window.__goBase||'./')+'index.html')},400);
+</script>
+<script>
+// 保險：統計碼被擋或載入失敗時，2 秒後照樣跳轉
+setTimeout(function(){location.replace((window.__goBase||'./')+'index.html')},2000);
+</script>
+</body>
+</html>
