@@ -455,18 +455,23 @@ details.ind.hot summary b{color:var(--up)}
   <div class="chart" id="cRev"></div>
 </section>
 <section class="card" id="kl">
-  <h2 style="display:flex;align-items:center;gap:8px">K線 <small>日K・均線・量・法人</small><span class="segm" id="klSeg" style="margin-left:auto"><button aria-pressed="false" data-n="40">2月</button><button aria-pressed="true" data-n="80">4月</button><button aria-pressed="false" data-n="130">6月</button></span></h2>
-  <p class="take tight" id="tKl"></p>
-  <div id="klLeg" style="font-family:var(--f-num);font-size:11px;color:var(--muted);line-height:1.5;min-height:34px;margin-bottom:2px"></div>
-  <div id="klBox" style="height:280px;position:relative"></div>
-  <div id="klVol" style="height:70px;position:relative"></div>
-  <div style="display:flex;gap:8px;font-size:10.5px;color:var(--muted);margin:2px 0 0 2px"><span>外資買賣超（張）</span></div>
-  <div id="klF" style="height:64px;position:relative"></div>
-  <div style="display:flex;gap:8px;font-size:10.5px;color:var(--muted);margin:2px 0 0 2px"><span>投信買賣超（張）</span><span id="klTn"></span></div>
-  <div id="klT" style="height:88px;position:relative"></div>
+  <h2 style="display:flex;align-items:center;gap:8px;white-space:nowrap">K線<span class="segm" id="klSeg" style="margin-left:auto"><button aria-pressed="false" data-n="40">2月</button><button aria-pressed="true" data-n="80">4月</button><button aria-pressed="false" data-n="130">6月</button></span></h2>
+  <div id="klLeg" class="kleg"></div>
+  <div class="kp" id="klBox" style="height:226px"></div>
+  <div class="kp" id="klVol" style="height:54px"><span class="klab">成交量</span></div>
+  <div class="kp" id="klF" style="height:54px"><span class="klab">外資</span></div>
+  <div class="kp" id="klT" style="height:78px"><span class="klab">投信<span id="klTn"></span></span></div>
+  <p class="take tight" id="tKl" style="margin-top:6px"></p>
   <div class="tbl"><table id="tbKl"></table></div>
   <p class="foot" id="fKl"></p>
 </section>
+<style>
+.kleg{font-family:var(--f-num);font-size:10.5px;color:var(--muted);line-height:1.45;min-height:46px;margin:2px 0 2px;white-space:nowrap;overflow:hidden}
+.kleg b{font-weight:600}
+.kp{position:relative}
+.kp+.kp{border-top:1px solid var(--line)}
+.klab{position:absolute;left:4px;top:2px;z-index:3;font-size:10px;color:var(--muted);pointer-events:none;background:color-mix(in srgb,var(--card) 75%,transparent);padding:0 3px;border-radius:3px}
+</style>
 <section class="card" id="chip">
   <h2 style="display:flex;align-items:center;gap:8px">逐日籌碼 <small>張｜近 60 個交易日</small><span class="segm" id="chipSeg" style="margin-left:auto"><button aria-pressed="true" data-m="i">法人</button><button aria-pressed="false" data-m="m">融資券</button></span></h2>
   <p class="take" id="tChip"></p>
@@ -888,12 +893,12 @@ function klDraw(){
     rightPriceScale:{borderColor:line,minimumWidth:66,scaleMargins:{top:.08,bottom:.05}},timeScale:{borderColor:line,rightOffset:2,barSpacing:Math.max(3,Math.floor(($('klBox').clientWidth-60)/n)),fixLeftEdge:true,fixRightEdge:true,timeVisible:false,tickMarkFormatter:(tt)=>tt.month+'/'+tt.day},
     crosshair:{mode:L.CrosshairMode.Normal,vertLine:{labelBackgroundColor:css('--accent'),style:2,color:mu},horzLine:{labelBackgroundColor:css('--accent'),style:2,color:mu}},handleScroll:{vertTouchDrag:false},handleScale:{axisPressedMouseMove:false}};
   if(KL.c){KL.c.remove();KL.v.remove();KL.f.remove();KL.t.remove()}
-  const c=KL.c=L.createChart($('klBox'),{...opt,width:$('klBox').clientWidth,height:280,timeScale:{...opt.timeScale,visible:false}});   // 日期軸移到最下面投信圖
+  const c=KL.c=L.createChart($('klBox'),{...opt,width:$('klBox').clientWidth,height:226,timeScale:{...opt.timeScale,visible:false}});   // 日期軸移到最下面投信圖
   const sub=(id,h,m,ax)=>L.createChart($(id),{...opt,width:$(id).clientWidth,height:h,timeScale:{...opt.timeScale,visible:!!ax},rightPriceScale:{...opt.rightPriceScale,scaleMargins:m},crosshair:{...opt.crosshair,horzLine:{visible:false,labelVisible:false}}});
-  const v=KL.v=sub('klVol',70,{top:.1,bottom:0}),f=KL.f=sub('klF',64,{top:.1,bottom:.1}),tc=KL.t=sub('klT',88,{top:.1,bottom:.1},1);
+  const v=KL.v=sub('klVol',54,{top:.18,bottom:0}),f=KL.f=sub('klF',54,{top:.18,bottom:.06}),tc=KL.t=sub('klT',78,{top:.18,bottom:.06},1);
   const FS=f.addHistogramSeries({priceFormat:{type:'volume'},priceLineVisible:false,lastValueVisible:false,base:0});FS.setData(fs);
   const TS=tc.addHistogramSeries({priceFormat:{type:'volume'},priceLineVisible:false,lastValueVisible:false,base:0});TS.setData(ts);
-  $('klTn').textContent=ts.some(x=>x.value)?'':'— 近 60 日投信無進出';
+  $('klTn').textContent=ts.some(x=>x.value)?'':'（近 60 日無進出）';
   if(!ts.some(x=>x.value))TS.applyOptions({autoscaleInfoProvider:()=>({priceRange:{minValue:-100,maxValue:100}})});   // 投信完全沒進出時軸不要顯示 0.05
   FS.createPriceLine({price:0,color:line,lineWidth:1,lineStyle:0,axisLabelVisible:false});TS.createPriceLine({price:0,color:line,lineWidth:1,lineStyle:0,axisLabelVisible:false});
   const CS=c.addCandlestickSeries({upColor:up,downColor:dn,borderUpColor:up,borderDownColor:dn,wickUpColor:up,wickDownColor:dn,priceLineVisible:false,lastValueVisible:true,priceFormat:{type:'price',precision:2,minMove:.01}});
@@ -914,7 +919,8 @@ function klDraw(){
   let lock=false;const sync=(a,b)=>a.timeScale().subscribeVisibleLogicalRangeChange(r=>{if(lock||!r)return;lock=true;b.timeScale().setVisibleLogicalRange(r);lock=false});[[c,v],[v,c],[c,f],[f,c],[c,tc],[tc,c]].forEach(([a,b])=>sync(a,b));
   const leg=(i)=>{const r=all[i],pv=i>0?all[i-1][0]:null,ch=pv?r[0]-pv:null,pc=pv?(ch/pv*100):null,cl=ch>0?'up':ch<0?'dn':'';
     const sp=(k,val)=>`<span style="color:${MAC[k]}">MA${k} ${val==null?'—':fmt(val,2)}</span>`;
-    $('klLeg').innerHTML=`<b style="color:${fg}">${dd[i].slice(4,6)}/${dd[i].slice(6)}</b>　開 ${fmt(r[8]??r[0],2)}　高 ${fmt(r[9]??r[0],2)}　低 ${fmt(r[10]??r[0],2)}　收 <b class="${cl}">${fmt(r[0],2)}</b> <span class="${cl}">${ch==null?'':(ch>0?'+':'')+fmt(ch,2)+' ('+(pc>0?'+':'')+pc.toFixed(2)+'%)'}</span>　量 ${fmt(r[1])} 張　外資 <span class="${r[2]>0?'up':r[2]<0?'dn':''}">${r[2]==null?'—':(r[2]>0?'+':'')+fmt(r[2])}</span>　投信 <span class="${r[3]>0?'up':r[3]<0?'dn':''}">${r[3]==null?'—':(r[3]>0?'+':'')+fmt(r[3])}</span><br>${sp(5,m5[i])}　${sp(20,m20[i])}　${sp(60,m60[i])}　${sp(120,m120[i])}`};
+    const px=x=>x==null?'—':fmt(x,x>=1000?0:x>=100?1:2),sgn=x=>x==null?'—':(x>0?'+':'')+fmt(x),cc=x=>x>0?'up':x<0?'dn':'';
+    $('klLeg').innerHTML=`<b style="color:${fg}">${dd[i].slice(4,6)}/${dd[i].slice(6)}</b> 開${px(r[8]??r[0])} 高${px(r[9]??r[0])} 低${px(r[10]??r[0])} 收<b class="${cl}">${px(r[0])}</b> <span class="${cl}">${pc==null?'':(pc>0?'+':'')+pc.toFixed(2)+'%'}</span><br>量 ${fmt(r[1])}　外資 <b class="${cc(r[2])}">${sgn(r[2])}</b>　投信 <b class="${cc(r[3])}">${sgn(r[3])}</b><br><span style="color:${MAC[5]}">5日 ${px(m5[i])}</span> <span style="color:${MAC[20]}">20日 ${px(m20[i])}</span> <span style="color:${MAC[60]}">60日 ${px(m60[i])}</span> <span style="color:${MAC[120]}">120日 ${px(m120[i])}</span>`};
   const last=all.length-1;leg(last);
   const onX=p=>{if(!p.time){leg(last);return}const i=dd.findIndex(d=>+d.slice(0,4)===p.time.year&&+d.slice(4,6)===p.time.month&&+d.slice(6)===p.time.day);if(i>=0)leg(i)};
   // 十字線垂直虛線四張圖同步：在哪張圖按住，其他三張用 setCrosshairPosition 對到同一天
