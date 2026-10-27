@@ -23,8 +23,9 @@ import urllib.request, urllib.parse
 ROOT = Path(__file__).resolve().parent
 OUT = ROOT / "data"
 HIST = OUT / "hist"
-NEED_PX, NEED_INST = 130, 20         # 季%要 60 個交易日前的收盤；K 線＋120 日均線要 130 天
-KEEP = 135                           # 保留最近幾個交易日的檔案（K 線要 120 日均線）
+NEED_PX, NEED_INST = 375, 20         # 季%要 60 天；K 線＋120 日均線 130 天；240 日均線再往前 240 天
+KEEP = 135                           # 完整保留最近幾個交易日的檔案（K 線＋120 日均線）
+KEEP_CLOSE = 380                     # 再往前只留收盤（瘦身檔），給 240 日均線（年線）用：130 天顯示 + 240 天回推
 MAX_REQ = 220                        # 單次執行請求上限（避免被證交所封鎖）
 BUDGET = 15 * 60                     # 單次執行最多抓 15 分鐘，沒抓完的下次繼續
 T0 = time.time()
@@ -270,7 +271,7 @@ def collect():
     have = {k: 0 for k in need}
     errs = []
     d = today
-    for _ in range(200):                      # 最多往回看 200 個日曆天
+    for _ in range(570):                      # 最多往回看 570 個日曆天（約 380 個交易日）
         if all(have[k] >= need[k] for k in need):
             break
         if d.weekday() >= 5:
@@ -337,11 +338,22 @@ def collect():
 def prune():
     files = sorted(HIST.glob("*.json"))
     trade = [f for f in files if '"closed"' not in f.read_text("utf-8")[:20]]
-    keep = set(trade[-KEEP:])
-    cut = (dt.date.today() - dt.timedelta(days=150)).strftime("%Y%m%d")
+    full = set(trade[-KEEP:])
+    keep = set(trade[-KEEP_CLOSE:])
+    cut = (dt.date.today() - dt.timedelta(days=570)).strftime("%Y%m%d")
     for f in files:
         if f not in keep and (f in trade or f.stem < cut):
             f.unlink()
+        elif f in keep and f not in full:                       # 舊的交易日只留收盤 → 每檔約 25KB
+            try:
+                rec = json.loads(f.read_text("utf-8"))
+            except Exception:
+                continue
+            if rec.get("slim"):
+                continue
+            p = {c: [v[0]] for c, v in rec.get("p", {}).items() if v and v[0] is not None}
+            src = [k for k in rec.get("src", []) if k in ("pL", "pO")]
+            f.write_text(json.dumps({"slim": 1, "src": src, "p": p}, ensure_ascii=False, separators=(",", ":")), "utf-8")
 
 
 def compute():

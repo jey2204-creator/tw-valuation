@@ -257,7 +257,7 @@ def targets():
     return sorted(ids)
 
 
-def rows_of(c, recs):
+def rows_of(c, recs, ma=None):
     k = lambda x: None if x is None else round(x / 1000)          # 股 → 張
     rows = []
     for day, px, rec in recs:
@@ -271,14 +271,30 @@ def rows_of(c, recs):
         rows.append([p[0], k(p[1]),
                      *(k(x) for x in (iv or [None] * 3)),
                      *((round(x) if x is not None else None) for x in (mv or [None] * 3)),
-                     *(p[2:5] if len(p) >= 5 else [])])          # 開高低（有才附，K 線用）
+                     *(p[2:5] if len(p) >= 5 else [None] * 3)])  # 開高低（K 線用）
+    if ma is not None:                                             # 第 12 欄：240 日均線（年線）
+        for r, m in zip(rows, ma):
+            r.append(m)
     return rows
+
+
+def ma240(c, closes, n_out):
+    """closes = 全部交易日 {代號: 收盤} 列表（舊→新）；回傳最後 n_out 天的 240 日均線"""
+    xs = [d.get(c) for d in closes]
+    out = []
+    for i in range(len(xs) - n_out, len(xs)):
+        w = xs[max(0, i - 239):i + 1]
+        w = [x for x in w if x is not None]
+        out.append(round(sum(w) / 240, 2) if i >= 239 and len(w) >= 228 else None)   # 停牌少於 5% 才算
+    return out
 
 
 def build_shards(days):
     """全市場逐日籌碼＋K 線，依代號前兩碼分片存 data/chip_s/NN.json（檔案只在內容有變時改寫）
     價格取最近 KDAYS 個交易日（K 線＋均線用），籌碼只有最近 NDAYS 天有值"""
-    days = trade_days(KDAYS)
+    allp = trade_days(10 ** 6)                                     # 含瘦身的舊收盤
+    closes = [{c: v[0] for c, v in px.get("p", {}).items() if v} for _, px in allp]
+    days = allp[-KDAYS:]
     recs = [(day, px, load(day)) for day, px in days]
     codes = set()
     for _, px, _ in recs:
@@ -291,7 +307,7 @@ def build_shards(days):
             groups.setdefault(c[:2], []).append(c)
     n = 0
     for g, cs in groups.items():
-        d = {c: rows_of(c, recs) for c in sorted(cs)}
+        d = {c: rows_of(c, recs, ma240(c, closes, len(days))) for c in sorted(cs)}
         d = {c: r for c, r in d.items() if any(x[0] for x in r)}
         if not d:
             continue
