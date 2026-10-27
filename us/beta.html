@@ -212,5 +212,6 @@ fetch('data/index_px.json?v='+Date.now()).then(r=>r.json()).then(j=>{D=j.s||{};D
   stats();chips();draw();table();
 }).catch(e=>{document.getElementById('upd').textContent='資料尚未產生（Actions 還沒跑完）';console.error(e)});
 </script>
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "1d5b7d7f9e9b4171b25487fae2dfeea9"}'></script><!-- End Cloudflare Web Analytics -->
 </body>
 </html>
