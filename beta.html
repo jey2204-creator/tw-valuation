@@ -468,7 +468,7 @@ details.ind.hot summary b{color:var(--up)}
 <style>
 .kleg{font-family:var(--f-num);font-size:10.5px;color:var(--muted);line-height:1.45;min-height:46px;margin:2px 0 2px;white-space:nowrap;overflow:hidden}
 .kleg b{font-weight:600}
-.kp{position:relative}
+.kp{position:relative;margin-right:-10px}   /* 價格軸內建右側留白約 10px → 往卡片內距延伸，讓刻度數字貼齊卡片內緣 */
 .kp+.kp{border-top:1px solid var(--line)}
 .klab{position:absolute;left:4px;top:2px;z-index:3;font-size:10px;color:var(--muted);pointer-events:none;background:color-mix(in srgb,var(--card) 75%,transparent);padding:0 3px;border-radius:3px}
 </style>
@@ -894,10 +894,12 @@ function klDraw(){
     crosshair:{mode:L.CrosshairMode.Normal,vertLine:{labelBackgroundColor:css('--accent'),style:2,color:mu},horzLine:{labelBackgroundColor:css('--accent'),style:2,color:mu}},handleScroll:{vertTouchDrag:false},handleScale:{axisPressedMouseMove:false}};
   if(KL.c){KL.c.remove();KL.v.remove();KL.f.remove();KL.t.remove()}
   const c=KL.c=L.createChart($('klBox'),{...opt,width:$('klBox').clientWidth,height:226,timeScale:{...opt.timeScale,visible:false}});   // 日期軸移到最下面投信圖
+  // 子圖刻度精簡（1.2K、-500）→ 寬度不超過 K 線主圖，四張圖統一後不會被撐寬
+  const KF={type:'custom',minMove:1,formatter:x=>{const a=Math.abs(x);return a>=1000?(x/1000).toFixed(a>=10000?0:1).replace(/\.0$/,'')+'K':String(Math.round(x))}};
   const sub=(id,h,m,ax)=>L.createChart($(id),{...opt,width:$(id).clientWidth,height:h,timeScale:{...opt.timeScale,visible:!!ax},rightPriceScale:{...opt.rightPriceScale,scaleMargins:m},crosshair:{...opt.crosshair,horzLine:{visible:false,labelVisible:false}}});
   const v=KL.v=sub('klVol',54,{top:.18,bottom:0}),f=KL.f=sub('klF',54,{top:.18,bottom:.06}),tc=KL.t=sub('klT',78,{top:.18,bottom:.06},1);
-  const FS=f.addHistogramSeries({priceFormat:{type:'volume'},priceLineVisible:false,lastValueVisible:false,base:0});FS.setData(fs);
-  const TS=tc.addHistogramSeries({priceFormat:{type:'volume'},priceLineVisible:false,lastValueVisible:false,base:0});TS.setData(ts);
+  const FS=f.addHistogramSeries({priceFormat:KF,priceLineVisible:false,lastValueVisible:false,base:0});FS.setData(fs);
+  const TS=tc.addHistogramSeries({priceFormat:KF,priceLineVisible:false,lastValueVisible:false,base:0});TS.setData(ts);
   $('klTn').textContent=ts.some(x=>x.value)?'':'（近 60 日無進出）';
   if(!ts.some(x=>x.value))TS.applyOptions({autoscaleInfoProvider:()=>({priceRange:{minValue:-100,maxValue:100}})});   // 投信完全沒進出時軸不要顯示 0.05
   FS.createPriceLine({price:0,color:line,lineWidth:1,lineStyle:0,axisLabelVisible:false});TS.createPriceLine({price:0,color:line,lineWidth:1,lineStyle:0,axisLabelVisible:false});
@@ -910,8 +912,8 @@ function klDraw(){
   const S20=c.addLineSeries({color:MAC[20],lineWidth:1,priceLineVisible:false,lastValueVisible:false,crosshairMarkerVisible:false,priceFormat:PF});S20.setData(l20);
   const S60=c.addLineSeries({color:MAC[60],lineWidth:1.5,priceLineVisible:false,lastValueVisible:false,crosshairMarkerVisible:false,priceFormat:PF});S60.setData(l60);
   const S120=c.addLineSeries({color:MAC[120],lineWidth:1.5,priceLineVisible:false,lastValueVisible:false,crosshairMarkerVisible:false,priceFormat:PF});S120.setData(l120);
-  const VS=v.addHistogramSeries({priceFormat:{type:'volume'},priceLineVisible:false,lastValueVisible:false});VS.setData(vs);
-  const V5=v.addLineSeries({color:MAC[5],lineWidth:1,priceLineVisible:false,lastValueVisible:false,crosshairMarkerVisible:false});
+  const VS=v.addHistogramSeries({priceFormat:KF,priceLineVisible:false,lastValueVisible:false});VS.setData(vs);
+  const V5=v.addLineSeries({color:MAC[5],lineWidth:1,priceLineVisible:false,lastValueVisible:false,crosshairMarkerVisible:false,priceFormat:KF});
   const vol=all.map(r=>r[1]),vm5=ma(vol,5);V5.setData(all.map((r,i)=>vm5[i]==null||i<from?null:{time:t(i),value:vm5[i]}).filter(Boolean));
   [c,v,f,tc].forEach(x=>x.timeScale().fitContent());
   // 四張圖右邊價格軸寬度不同（2600.00 vs 80K vs 0）→ 繪圖區寬度不同、虛線會錯位；量出最寬的那張，全部設成一樣寬
