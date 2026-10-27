@@ -445,7 +445,7 @@ details.ind.hot summary b{color:var(--up)}
   </div>
 </header>
   <nav class="chips" aria-label="圖表">
-    <a href="#rev">營收</a><a href="#chip">籌碼</a><a href="#margin">三率</a><a href="#eps">EPS</a><a href="#np" id="chipNp">淨利</a><a href="#capex" id="chipCx">資本支出</a><a href="#cf" id="chipCf">現金流</a><a href="#inv" id="chipInv">存貨</a><a href="#guide" id="chipGd" hidden>財測</a><a href="#fwd">預估EPS</a><a href="#pe">本益比河流</a><a href="#pegh" id="chipPG">PEG位階</a><a href="#pb">淨值比河流</a>
+    <a href="#rev">營收</a><a href="#kl">K線</a><a href="#chip">籌碼</a><a href="#margin">三率</a><a href="#eps">EPS</a><a href="#np" id="chipNp">淨利</a><a href="#capex" id="chipCx">資本支出</a><a href="#cf" id="chipCf">現金流</a><a href="#inv" id="chipInv">存貨</a><a href="#guide" id="chipGd" hidden>財測</a><a href="#fwd">預估EPS</a><a href="#pe">本益比河流</a><a href="#pegh" id="chipPG">PEG位階</a><a href="#pb">淨值比河流</a>
   </nav>
 <p class="err" id="err" hidden></p>
 
@@ -454,6 +454,23 @@ details.ind.hot summary b{color:var(--up)}
   <p class="take tight" id="tRev"></p>
   <div class="chart" id="cRev"></div>
 </section>
+<section class="card" id="kl">
+  <h2 style="display:flex;align-items:center;gap:8px;white-space:nowrap">K線<span class="segm" id="klSeg" style="margin-left:auto"><button aria-pressed="false" data-n="40">2月</button><button aria-pressed="true" data-n="80">4月</button><button aria-pressed="false" data-n="130">6月</button></span></h2>
+  <div id="klLeg" class="kleg"></div>
+  <div class="kp" id="klBox" style="height:226px"></div>
+  <div class="kp" id="klVol" style="height:54px"><span class="klab">成交量</span></div>
+  <div class="kp" id="klF" style="height:54px"><span class="klab">外資</span></div>
+  <div class="kp" id="klT" style="height:78px"><span class="klab">投信<span id="klTn"></span></span></div>
+  <p class="take tight" id="tKl" style="margin-top:6px"></p>
+  <details class="ind" id="klMore"><summary>近 10 日明細・說明 <span>▾</span></summary><div class="tbl"><table id="tbKl"></table></div><p class="foot" id="fKl" style="padding:0 12px 8px"></p></details>
+</section>
+<style>
+.kleg{font-family:var(--f-num);font-size:10.5px;color:var(--muted);line-height:1.45;min-height:46px;margin:2px 0 2px;white-space:nowrap;overflow:hidden}
+.kleg b{font-weight:600}
+.kp{position:relative;margin-right:-10px}   /* 價格軸內建右側留白約 10px → 往卡片內距延伸，讓刻度數字貼齊卡片內緣 */
+.kp+.kp{border-top:1px solid var(--line)}
+.klab{position:absolute;left:4px;top:2px;z-index:3;font-size:10px;color:var(--muted);pointer-events:none;background:color-mix(in srgb,var(--card) 75%,transparent);padding:0 3px;border-radius:3px}
+</style>
 <section class="card" id="chip">
   <h2 style="display:flex;align-items:center;gap:8px">逐日籌碼 <small>張｜近 60 個交易日</small><span class="segm" id="chipSeg" style="margin-left:auto"><button aria-pressed="true" data-m="i">法人</button><button aria-pressed="false" data-m="m">融資券</button></span></h2>
   <p class="take" id="tChip"></p>
@@ -641,7 +658,7 @@ function render(){
    o.series=[{name:'單季EPS',type:'bar',data:Q.map(x=>x[5]),itemStyle:{color:acc2,borderRadius:[2,2,0,0]},label:{show:true,position:'top',fontSize:9,color:css('--muted'),fontFamily:'IBM Plex Mono',formatter:p=>p.dataIndex>=Q.length-4?p.value:''}},
      {name:'近四季',type:'line',yAxisIndex:1,data:ttm,symbol:'none',lineStyle:{width:2,color:warm},itemStyle:{color:warm}}];
    c.setOption(o,true)}
-  renderNp();loadFlashNp(D.id);renderCx();renderCf();renderInv();renderChip();renderGuide();
+  renderNp();loadFlashNp(D.id);renderCx();renderCf();renderInv();renderKl();renderChip();renderGuide();
   renderFwd();river('cPE',PEM,2,'倍 PE');renderPegH();river('cPB',PBM,3,'倍 PB');
 }
 // ---- 存貨健康度：D.inv 每季 [季別, 存貨, 營業成本, 應收帳款, 合約負債|null, 稅後淨利, 單季營業現金流|null]（億） ----
@@ -794,11 +811,13 @@ function renderCx(){
 let CH=null,chipMode='i';
 async function renderChip(){
   if(CH===null){CH=false;try{const r=await fetch('data/chip.json?t='+Date.now());if(r.ok)CH=await r.json()}catch(e){}}
-  const rows=CH&&CH.d&&CH.d[D.id],sec=$('chip');
-  if(!rows){$('tChip').innerHTML=CH?'這檔還沒有逐日籌碼資料。<br>試做階段只涵蓋 <strong>主題成份股＋志聖 2467</strong>。':'籌碼資料載入失敗';$('cChip').hidden=true;$('tbChip').innerHTML='';$('fChip').textContent='';return}
+  let rows=CH&&CH.d&&CH.d[D.id],sec=$('chip'),days0=CH&&CH.days;
+  if(!rows){const sh=await chipShard(D.id);if(sh){rows=sh.d[D.id].slice(-60);days0=sh.days.slice(-60)}}
+  if(!rows){$('tChip').innerHTML=CH?'這檔還沒有逐日籌碼資料（通常是剛上市或資料回補中）。':'籌碼資料載入失敗';$('cChip').hidden=true;$('tbChip').innerHTML='';$('fChip').textContent='';return}
+  const CHD={days:days0};
   $('cChip').hidden=false;
-  const days=CH.days.map(x=>x.slice(4,6)+'/'+x.slice(6)),n=rows.length;
-  const lastOf=k=>{for(let i=n-1;i>=0;i--)if(rows[i][k]!=null)return CH.days[CH.days.length-n+i];return null};
+  const days=CHD.days.map(x=>x.slice(4,6)+'/'+x.slice(6)),n=rows.length;
+  const lastOf=k=>{for(let i=n-1;i>=0;i--)if(rows[i][k]!=null)return CHD.days[CHD.days.length-n+i];return null};
   const dI=lastOf(2),dM=lastOf(5);
   const tot=r=>r[2]==null?null:r[2]+r[3]+r[4];
   const S=(i,k,f)=>{const a=rows.slice(-k).map(f).filter(x=>x!=null);return a.length?sum(a):null};
@@ -835,6 +854,107 @@ async function renderChip(){
   $('tbChip').innerHTML=tb;c.setOption(o,true);c.resize();
   chipAsof(dI,dM);
 }
+const SHARD={};
+async function chipShard(id){const g=String(id).slice(0,2);if(!/^\d\d$/.test(g))return null;
+  if(SHARD[g]===undefined){SHARD[g]=null;try{const r=await fetch('data/chip_s/'+g+'.json?t='+Date.now());if(r.ok)SHARD[g]=await r.json()}catch(e){}}
+  const s=SHARD[g];return s&&s.d&&s.d[id]?s:null}
+// ---- K 線（自繪，lightweight-charts）：資料來自 data/chip_s 分片，每列 [收盤, 成交張, 外資, 投信, 自營, 資增減, 券增減, 資餘額, 開, 高, 低] ----
+let KL={c:null,v:null,f:null,t:null,id:null,n:80,lib:null,rows:null,days:null};
+const isDark=()=>{const t=document.documentElement.getAttribute('data-theme');return t?t==='dark':matchMedia('(prefers-color-scheme: dark)').matches};
+function klLib(){if(window.LightweightCharts)return Promise.resolve();if(KL.lib)return KL.lib;
+  return KL.lib=new Promise((ok,no)=>{const sc=document.createElement('script');sc.src='https://cdn.jsdelivr.net/npm/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js';sc.onload=ok;sc.onerror=()=>no(new Error('lib'));document.head.appendChild(sc)})}
+const ma=(a,n)=>a.map((_,i)=>{if(i<n-1)return null;let t=0;for(let j=i-n+1;j<=i;j++){if(a[j]==null)return null;t+=a[j]}return +(t/n).toFixed(2)});
+async function renderKl(){
+  const id=D.id;$('tKl').textContent='';$('klLeg').textContent='';$('tbKl').innerHTML='';
+  const sh=await chipShard(id);
+  if(id!==D.id)return;
+  if(!sh){$('tKl').textContent='這檔還沒有 K 線資料（剛上市或資料回補中）';$('klBox').style.display=$('klVol').style.display=$('klF').style.display=$('klT').style.display='none';$('fKl').textContent='';return}
+  const all=sh.d[id],dd=sh.days,ok=all.filter(r=>r[8]!=null).length;
+  if(ok<5){$('tKl').innerHTML='開高低資料回補中（今晚排程跑完就會有 K 線），先看收盤：'+fmt(all[all.length-1][0],2);$('klBox').style.display=$('klVol').style.display=$('klF').style.display=$('klT').style.display='none';$('fKl').textContent='';return}
+  try{await klLib()}catch(e){$('tKl').textContent='K 線繪圖程式載入失敗';return}
+  if(id!==D.id)return;
+  $('klBox').style.display=$('klVol').style.display=$('klF').style.display=$('klT').style.display='';
+  KL.rows=all;KL.days=dd;KL.id=id;klDraw();
+}
+function klDraw(){
+  const all=KL.rows,dd=KL.days;if(!all)return;
+  const L=LightweightCharts,dk=isDark(),up=css('--up'),dn=css('--down'),fg=css('--fg'),mu=css('--muted'),line=css('--line'),card=css('--card');
+  const close=all.map(r=>r[0]),m5=ma(close,5),m20=ma(close,20),m60=ma(close,60),m120=ma(close,120),m240=all.map(r=>r[11]??null);   // 年線由後端用 380 天收盤算好
+  const n=Math.min(KL.n,all.length),from=all.length-n;
+  const t=i=>({year:+dd[i].slice(0,4),month:+dd[i].slice(4,6),day:+dd[i].slice(6)});
+  const cs=[],vs=[],fs=[],ts=[],l5=[],l20=[],l60=[],l120=[],l240=[];
+  for(let i=from;i<all.length;i++){const r=all[i],tm=t(i);if(r[0]==null)continue;
+    const o=r[8]??r[0],h=r[9]??r[0],lo=r[10]??r[0];cs.push({time:tm,open:o,high:h,low:lo,close:r[0]});
+    vs.push({time:tm,value:r[1]||0,color:(r[0]>=o?up:dn)+'99'});
+    fs.push(r[2]!=null?{time:tm,value:r[2],color:r[2]>=0?up:dn}:{time:tm});ts.push(r[3]!=null?{time:tm,value:r[3],color:r[3]>=0?up:dn}:{time:tm});   // 沒籌碼的日子放空白點，讓四張圖的時間軸一樣長
+    if(m5[i]!=null)l5.push({time:tm,value:m5[i]});if(m20[i]!=null)l20.push({time:tm,value:m20[i]});if(m60[i]!=null)l60.push({time:tm,value:m60[i]});if(m120[i]!=null)l120.push({time:tm,value:m120[i]});if(m240[i]!=null)l240.push({time:tm,value:m240[i]})}
+  const opt={layout:{background:{type:'solid',color:'transparent'},attributionLogo:false,textColor:mu,fontFamily:getComputedStyle(document.body).fontFamily,fontSize:10},grid:{vertLines:{color:line},horzLines:{color:line}},
+    rightPriceScale:{borderColor:line,scaleMargins:{top:.08,bottom:.05}},timeScale:{borderColor:line,rightOffset:1,barSpacing:Math.max(3,Math.floor(($('klBox').clientWidth-60)/n)),fixLeftEdge:true,fixRightEdge:true,timeVisible:false,tickMarkFormatter:(tt)=>tt.month+'/'+tt.day},
+    crosshair:{mode:L.CrosshairMode.Normal,vertLine:{labelBackgroundColor:css('--accent'),style:2,color:mu},horzLine:{labelBackgroundColor:css('--accent'),style:2,color:mu}},handleScroll:{vertTouchDrag:false},handleScale:{axisPressedMouseMove:false}};
+  if(KL.c){KL.c.remove();KL.v.remove();KL.f.remove();KL.t.remove()}
+  const c=KL.c=L.createChart($('klBox'),{...opt,width:$('klBox').clientWidth,height:226,timeScale:{...opt.timeScale,visible:false}});   // 日期軸移到最下面投信圖
+  // 子圖刻度精簡（1.2K、-500）→ 寬度不超過 K 線主圖，四張圖統一後不會被撐寬
+  const KF={type:'custom',minMove:1,formatter:x=>{const a=Math.abs(x);return a>=1000?(x/1000).toFixed(a>=10000?0:1).replace(/\.0$/,'')+'K':String(Math.round(x))}};
+  const sub=(id,h,m,ax)=>L.createChart($(id),{...opt,width:$(id).clientWidth,height:h,timeScale:{...opt.timeScale,visible:!!ax},rightPriceScale:{...opt.rightPriceScale,scaleMargins:m},crosshair:{...opt.crosshair,horzLine:{visible:false,labelVisible:false}}});
+  const v=KL.v=sub('klVol',54,{top:.18,bottom:0}),f=KL.f=sub('klF',54,{top:.18,bottom:.06}),tc=KL.t=sub('klT',78,{top:.18,bottom:.06},1);
+  const FS=f.addHistogramSeries({priceFormat:KF,priceLineVisible:false,lastValueVisible:false,base:0});FS.setData(fs);
+  const TS=tc.addHistogramSeries({priceFormat:KF,priceLineVisible:false,lastValueVisible:false,base:0});TS.setData(ts);
+  $('klTn').textContent=ts.some(x=>x.value)?'':'（近 60 日無進出）';
+  if(!ts.some(x=>x.value))TS.applyOptions({autoscaleInfoProvider:()=>({priceRange:{minValue:-100,maxValue:100}})});   // 投信完全沒進出時軸不要顯示 0.05
+  FS.createPriceLine({price:0,color:line,lineWidth:1,lineStyle:0,axisLabelVisible:false});TS.createPriceLine({price:0,color:line,lineWidth:1,lineStyle:0,axisLabelVisible:false});
+  // 價格軸小數位數依股價：50 元以下 2 位、500 元以下 1 位、以上不顯示（台股升降單位），右邊軸才不會被 22000.00 撐寬
+  const lp=all[all.length-1][0]||0,PF=lp<50?{type:'price',precision:2,minMove:.01}:lp<500?{type:'price',precision:1,minMove:.1}:{type:'price',precision:0,minMove:1};
+  const CS=c.addCandlestickSeries({upColor:up,downColor:dn,borderUpColor:up,borderDownColor:dn,wickUpColor:up,wickDownColor:dn,priceLineVisible:false,lastValueVisible:true,priceFormat:PF});
+  CS.setData(cs);
+  const MAC={5:css('--accent'),20:css('--warm'),60:css('--accent2'),120:dk?'#c78bff':'#8a4dd6',240:dk?'#e0e3e8':'#3b3f46'};
+  const S5=c.addLineSeries({color:MAC[5],lineWidth:1,priceLineVisible:false,lastValueVisible:false,crosshairMarkerVisible:false,priceFormat:PF});S5.setData(l5);
+  const S20=c.addLineSeries({color:MAC[20],lineWidth:1,priceLineVisible:false,lastValueVisible:false,crosshairMarkerVisible:false,priceFormat:PF});S20.setData(l20);
+  const S60=c.addLineSeries({color:MAC[60],lineWidth:1.5,priceLineVisible:false,lastValueVisible:false,crosshairMarkerVisible:false,priceFormat:PF});S60.setData(l60);
+  const S120=c.addLineSeries({color:MAC[120],lineWidth:1.5,priceLineVisible:false,lastValueVisible:false,crosshairMarkerVisible:false,priceFormat:PF});S120.setData(l120);
+  // 年線離股價很遠時不撐開座標（否則 K 棒被壓扁）：不參與自動縮放，超出範圍就只在圖例／摘要顯示
+  const S240=c.addLineSeries({color:MAC[240],lineWidth:2,lineStyle:2,priceLineVisible:false,lastValueVisible:false,crosshairMarkerVisible:false,priceFormat:PF,autoscaleInfoProvider:()=>null});S240.setData(l240);
+  const VS=v.addHistogramSeries({priceFormat:KF,priceLineVisible:false,lastValueVisible:false});VS.setData(vs);
+  const V5=v.addLineSeries({color:MAC[5],lineWidth:1,priceLineVisible:false,lastValueVisible:false,crosshairMarkerVisible:false,priceFormat:KF});
+  const vol=all.map(r=>r[1]),vm5=ma(vol,5);V5.setData(all.map((r,i)=>vm5[i]==null||i<from?null:{time:t(i),value:vm5[i]}).filter(Boolean));
+  [c,v,f,tc].forEach(x=>x.timeScale().fitContent());
+  // 四張圖右邊價格軸寬度不同（2600.00 vs 80K vs 0）→ 繪圖區寬度不同、虛線會錯位；量出最寬的那張，全部設成一樣寬
+  const eqW=()=>{const w=Math.max(36,...[c,v,f,tc].map(x=>x.priceScale('right').width()));[c,v,f,tc].forEach(x=>x.applyOptions({rightPriceScale:{minimumWidth:w}}))};
+  // 統一軸寬後繪圖區變寬／變窄，要重新 fitContent，否則最右邊一兩根 K 棒會被切掉
+  const refit=()=>{eqW();[c,v,f,tc].forEach(x=>x.timeScale().fitContent())};
+  requestAnimationFrame(()=>{refit();requestAnimationFrame(refit)});
+  // 兩張圖同步 + 圖例
+  let lock=false;const sync=(a,b)=>a.timeScale().subscribeVisibleLogicalRangeChange(r=>{if(lock||!r)return;lock=true;b.timeScale().setVisibleLogicalRange(r);lock=false});[[c,v],[v,c],[c,f],[f,c],[c,tc],[tc,c]].forEach(([a,b])=>sync(a,b));
+  const leg=(i)=>{const r=all[i],pv=i>0?all[i-1][0]:null,ch=pv?r[0]-pv:null,pc=pv?(ch/pv*100):null,cl=ch>0?'up':ch<0?'dn':'';
+    const sp=(k,val)=>`<span style="color:${MAC[k]}">MA${k} ${val==null?'—':fmt(val,2)}</span>`;
+    const px=x=>x==null?'—':fmt(x,x>=1000?0:x>=100?1:2),sgn=x=>x==null?'—':(x>0?'+':'')+fmt(x),cc=x=>x>0?'up':x<0?'dn':'';
+    $('klLeg').innerHTML=`<b style="color:${fg}">${dd[i].slice(4,6)}/${dd[i].slice(6)}</b> 開${px(r[8]??r[0])} 高${px(r[9]??r[0])} 低${px(r[10]??r[0])} 收<b class="${cl}">${px(r[0])}</b> <span class="${cl}">${pc==null?'':(pc>0?'+':'')+pc.toFixed(2)+'%'}</span><br>量 ${fmt(r[1])}　外資 <b class="${cc(r[2])}">${sgn(r[2])}</b>　投信 <b class="${cc(r[3])}">${sgn(r[3])}</b><br>${[5,20,60,120,240].map(k=>`<span style="color:${MAC[k]}">${k}日${px({5:m5,20:m20,60:m60,120:m120,240:m240}[k][i])}</span>`).join(' ')}`};
+  const last=all.length-1;leg(last);
+  const onX=p=>{if(!p.time){leg(last);return}const i=dd.findIndex(d=>+d.slice(0,4)===p.time.year&&+d.slice(4,6)===p.time.month&&+d.slice(6)===p.time.day);if(i>=0)leg(i)};
+  // 十字線垂直虛線四張圖同步：在哪張圖按住，其他三張用 setCrosshairPosition 對到同一天
+  const CH4=[[c,CS],[v,VS],[f,FS],[tc,TS]];
+  CH4.forEach(([ch,se])=>ch.subscribeCrosshairMove(p=>{onX(p);
+    CH4.forEach(([o,os])=>{if(o===ch)return;if(!p.time){o.clearCrosshairPosition();return}
+      o.setCrosshairPosition(NaN,p.time,os)})}));
+  // 摘要：均線排列、位置、量
+  const r=all[last],a5=m5[last],a20=m20[last],a60=m60[last],a120=m120[last],a240=m240[last],vv=vm5[last];
+  const bull=a5!=null&&a20!=null&&a60!=null&&a5>a20&&a20>a60,bear=a5!=null&&a20!=null&&a60!=null&&a5<a20&&a20<a60;
+  const abv=[[5,a5],[20,a20],[60,a60],[120,a120],[240,a240]].filter(x=>x[1]!=null).map(x=>`<span class="${r[0]>=x[1]?'up':'dn'}">${r[0]>=x[1]?'▲':'▼'}${x[0]===240?'年線':x[0]+'日'}</span>`).join(' ');
+  const hi=Math.max(...all.slice(-60).map(x=>x[9]??x[0])),lo=Math.min(...all.slice(-60).map(x=>x[10]??x[0]));
+  const vr=vv?(r[1]/vv):null;
+  const sm=(k,n)=>{const a=all.slice(-n).map(x=>x[k]).filter(x=>x!=null);return a.length?a.reduce((p,q)=>p+q,0):null},sg=x=>x==null?'—':(x>0?'+':'')+fmt(x),cl=x=>x>0?'up':x<0?'dn':'';
+  const f5=sm(2,5),f20=sm(2,20),t5=sm(3,5),t20=sm(3,20);
+  $('tKl').innerHTML=`均線 <strong>${bull?'多頭排列（5＞20＞60）':bear?'空頭排列（5＜20＜60）':'糾結／轉折中'}</strong><br>價位 ${abv||'—'}（▲線上 ▼線下）${a240?`・距年線 <strong class="${r[0]>=a240?'up':'dn'}">${r[0]>=a240?'+':''}${((r[0]/a240-1)*100).toFixed(1)}%</strong>`:''}<br>60 日區間 ${lo>=1000?fmt(lo):fmt(lo,lo>=100?1:2)}～${hi>=1000?fmt(hi):fmt(hi,hi>=100?1:2)}（現價位於 ${((r[0]-lo)/(hi-lo||1)*100).toFixed(0)}% 處）・今量 ${vr?(vr>=1.5?'<strong class="up">放大 '+vr.toFixed(1)+'×</strong>':vr<=.6?'<strong>萎縮 '+vr.toFixed(1)+'×</strong>':vr.toFixed(1)+'×'):'—'} 5 日均量<br>外資 5 日 <strong class="${cl(f5)}">${sg(f5)}</strong>／20 日 <strong class="${cl(f20)}">${sg(f20)}</strong>・投信 5 日 <strong class="${cl(t5)}">${sg(t5)}</strong>／20 日 <strong class="${cl(t20)}">${sg(t20)}</strong> 張`;
+  // 近 10 日表
+  const pz=x=>x==null?'—':fmt(x,x>=1000?0:x>=100?1:2),sz=x=>x==null?'—':(x>0?'+':'')+fmt(x),cz=x=>x>0?'up':x<0?'dn':'';
+  $('tbKl').innerHTML='<tr><th>日期</th><th>收</th><th>漲跌%</th><th>量</th><th>外資</th><th>投信</th></tr>'+all.slice(-10).reverse().map((x,j)=>{const i=last-j,pv=i>0?all[i-1][0]:null,pc=pv?((x[0]/pv-1)*100):null,cl=cz(pc);
+    return `<tr><td>${dd[i].slice(4,6)}/${dd[i].slice(6)}</td><td class="${cl}">${pz(x[0])}</td><td class="${cl}">${pc==null?'—':(pc>0?'+':'')+pc.toFixed(2)}</td><td>${fmt(x[1])}</td><td class="${cz(x[2])}">${sz(x[2])}</td><td class="${cz(x[3])}">${sz(x[3])}</td></tr>`}).join('');
+  const miss=all.filter(x=>x[8]==null).length;
+  $('fKl').textContent='紅漲綠跌；量圖細線＝5 日均量；外資、投信紅買綠賣（近 60 日）。按住看當天數字，左右拖曳、雙指縮放。'+(l240.length?'灰色虛線＝240 日均線（年線）。':'240 日均線（年線）資料回補中，約 1～2 天補齊。')+(miss?`　⚠️ 尚有 ${miss} 天只有收盤、沒有開高低（當天 K 棒顯示為一字線），今晚排程補齊。`:'');
+  {const sm=$('klMore').querySelector('summary span');sm.textContent=miss?`⚠️ ${miss} 天缺開高低`:'▾'}
+}
+document.addEventListener('click',e=>{const b=e.target.closest('#klSeg button');if(!b)return;KL.n=+b.dataset.n;
+  document.querySelectorAll('#klSeg button').forEach(x=>x.setAttribute('aria-pressed',x===b));klDraw()});
+addEventListener('resize',()=>{if(KL.c&&D){clearTimeout(KL.rt);KL.rt=setTimeout(klDraw,150)}});
 async function chipAsof(dI,dM){
   let el=$('chipAsof');if(!el){el=document.createElement('p');el.id='chipAsof';el.className='asofN';$('tChip').before(el)}
   const fi=await daySt(dI,PX_CUT,PX_END),fm=await daySt(dM,MG_CUT,MG_END);

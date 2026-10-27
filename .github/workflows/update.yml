@@ -38,7 +38,7 @@ jobs:
         continue-on-error: true
         timeout-minutes: 20
         run: python fetch_momentum.py
-      - name: 逐日籌碼（法人＋融資券，個股頁 beta）
+      - name: 逐日籌碼＋K 線分片（法人、融資券、開高低、年線）
         continue-on-error: true
         timeout-minutes: 15
         run: python fetch_chip.py
