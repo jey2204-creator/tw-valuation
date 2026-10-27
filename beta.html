@@ -462,7 +462,7 @@ details.ind.hot summary b{color:var(--up)}
   <div id="klVol" style="height:70px;position:relative"></div>
   <div style="display:flex;gap:8px;font-size:10.5px;color:var(--muted);margin:2px 0 0 2px"><span>外資買賣超（張）</span></div>
   <div id="klF" style="height:64px;position:relative"></div>
-  <div style="display:flex;gap:8px;font-size:10.5px;color:var(--muted);margin:2px 0 0 2px"><span>投信買賣超（張）</span></div>
+  <div style="display:flex;gap:8px;font-size:10.5px;color:var(--muted);margin:2px 0 0 2px"><span>投信買賣超（張）</span><span id="klTn"></span></div>
   <div id="klT" style="height:64px;position:relative"></div>
   <div class="tbl"><table id="tbKl"></table></div>
   <p class="foot" id="fKl"></p>
@@ -893,6 +893,8 @@ function klDraw(){
   const v=KL.v=sub('klVol',70,{top:.1,bottom:0}),f=KL.f=sub('klF',64,{top:.1,bottom:.1}),tc=KL.t=sub('klT',64,{top:.1,bottom:.1});
   const FS=f.addHistogramSeries({priceFormat:{type:'volume'},priceLineVisible:false,lastValueVisible:false,base:0});FS.setData(fs);
   const TS=tc.addHistogramSeries({priceFormat:{type:'volume'},priceLineVisible:false,lastValueVisible:false,base:0});TS.setData(ts);
+  $('klTn').textContent=ts.some(x=>x.value)?'':'— 近 60 日投信無進出';
+  if(!ts.some(x=>x.value))TS.applyOptions({autoscaleInfoProvider:()=>({priceRange:{minValue:-100,maxValue:100}})});   // 投信完全沒進出時軸不要顯示 0.05
   FS.createPriceLine({price:0,color:line,lineWidth:1,lineStyle:0,axisLabelVisible:false});TS.createPriceLine({price:0,color:line,lineWidth:1,lineStyle:0,axisLabelVisible:false});
   const CS=c.addCandlestickSeries({upColor:up,downColor:dn,borderUpColor:up,borderDownColor:dn,wickUpColor:up,wickDownColor:dn,priceLineVisible:false,lastValueVisible:true,priceFormat:{type:'price',precision:2,minMove:.01}});
   CS.setData(cs);
