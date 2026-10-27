@@ -455,7 +455,7 @@ details.ind.hot summary b{color:var(--up)}
   <div class="chart" id="cRev"></div>
 </section>
 <section class="card" id="kl">
-  <h2 style="display:flex;align-items:center;gap:8px">K線 <small>日K｜均線｜量｜外資・投信</small><span class="segm" id="klSeg" style="margin-left:auto"><button aria-pressed="false" data-n="40">2月</button><button aria-pressed="true" data-n="80">4月</button><button aria-pressed="false" data-n="130">6月</button></span></h2>
+  <h2 style="display:flex;align-items:center;gap:8px">K線 <small>日K・均線・量・法人</small><span class="segm" id="klSeg" style="margin-left:auto"><button aria-pressed="false" data-n="40">2月</button><button aria-pressed="true" data-n="80">4月</button><button aria-pressed="false" data-n="130">6月</button></span></h2>
   <p class="take tight" id="tKl"></p>
   <div id="klLeg" style="font-family:var(--f-num);font-size:11px;color:var(--muted);line-height:1.5;min-height:34px;margin-bottom:2px"></div>
   <div id="klBox" style="height:300px;position:relative"></div>
@@ -882,7 +882,7 @@ function klDraw(){
   for(let i=from;i<all.length;i++){const r=all[i],tm=t(i);if(r[0]==null)continue;
     const o=r[8]??r[0],h=r[9]??r[0],lo=r[10]??r[0];cs.push({time:tm,open:o,high:h,low:lo,close:r[0]});
     vs.push({time:tm,value:r[1]||0,color:(r[0]>=o?up:dn)+'99'});
-    if(r[2]!=null)fs.push({time:tm,value:r[2],color:r[2]>=0?up:dn});if(r[3]!=null)ts.push({time:tm,value:r[3],color:r[3]>=0?up:dn});
+    fs.push(r[2]!=null?{time:tm,value:r[2],color:r[2]>=0?up:dn}:{time:tm});ts.push(r[3]!=null?{time:tm,value:r[3],color:r[3]>=0?up:dn}:{time:tm});   // 沒籌碼的日子放空白點，讓四張圖的時間軸一樣長
     if(m5[i]!=null)l5.push({time:tm,value:m5[i]});if(m20[i]!=null)l20.push({time:tm,value:m20[i]});if(m60[i]!=null)l60.push({time:tm,value:m60[i]});if(m120[i]!=null)l120.push({time:tm,value:m120[i]})}
   const opt={layout:{background:{type:'solid',color:'transparent'},attributionLogo:false,textColor:mu,fontFamily:getComputedStyle(document.body).fontFamily,fontSize:10},grid:{vertLines:{color:line},horzLines:{color:line}},
     rightPriceScale:{borderColor:line,scaleMargins:{top:.08,bottom:.05}},timeScale:{borderColor:line,rightOffset:2,barSpacing:Math.max(3,Math.floor(($('klBox').clientWidth-60)/n)),fixLeftEdge:true,fixRightEdge:true,timeVisible:false,tickMarkFormatter:(tt)=>tt.month+'/'+tt.day},
