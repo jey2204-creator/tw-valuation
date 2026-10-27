@@ -450,7 +450,7 @@ html{scroll-behavior:smooth}
 </div>
 <!-- ===== 員工薪酬排行：#SALARY（6 碼，不會跟代號撞） ===== -->
 <div id="srank" hidden>
-  <div class="top"><a href="#">← 全部主題</a><span class="meta" id="sYr"></span></div>
+  <div class="top"><a href="#">← 全部主題</a><span class="meta" id="sYr"></span><span class="fxm" data-fx="mini"></span></div>
   <h1 style="font-size:22px;margin:6px 0 2px">💰 員工薪酬排行</h1>
   <p class="take" id="sTake"></p>
   <div class="mrow"><span class="segm" id="sTabs"></span></div>
@@ -1139,7 +1139,7 @@ function renderSal(){
   $('sYr').textContent=SA?`更新 ${(SA.updated||'').slice(0,10)}`:'';
   if(!a.length){$('sTake').textContent='薪酬資料尚未產生（等 Actions 跑過 fetch_salary.py）';$('sTbl').innerHTML='';return}
   const s=a.map(r=>r.med).sort((x,y)=>x-y),q=p=>s[Math.floor(s.length*p)],rs=a.filter(r=>r.ratio).map(r=>r.ratio);
-  $('sTake').innerHTML=`追蹤清單 <strong>${a.length}</strong>／${all} 檔有揭露${fpi?`（${fpi} 檔外國發行人不揭露）`:''}：中位數 <strong>${salTxt(median(s))}</strong>（P25 ${salK(q(.25))}、P75 ${salK(q(.75))}）・≥ $200k <strong>${a.filter(r=>r.med>=2e5).length}</strong> 檔、&lt; $50k <strong>${a.filter(r=>r.med<5e4).length}</strong> 檔${rs.length?`・CEO 倍數中位 <strong>${fmt(median(rs))} 倍</strong>`:''}`;
+  $('sTake').innerHTML=`追蹤清單 <strong>${a.length}</strong>／${all} 檔有揭露${fpi?`（${fpi} 檔外國發行人不揭露）`:''}：中位數 <strong>${salK(median(s))}</strong>（P25 ${salK(q(.25))}、P75 ${salK(q(.75))}）・≥ ${fxOn()?salK(2e5):'$200k'} <strong>${a.filter(r=>r.med>=2e5).length}</strong> 檔、&lt; ${fxOn()?salK(5e4):'$50k'} <strong>${a.filter(r=>r.med<5e4).length}</strong> 檔${rs.length?`・CEO 倍數中位 <strong>${fmt(median(rs))} 倍</strong>`:''}`;
   $('sTabs').innerHTML=SR_TABS.map(([k,l])=>`<button type="button" data-tab="${k}" aria-pressed="${SR.tab===k}">${l}</button>`).join('');
   let rows=a.slice(),th,cell;
   const co=r=>`<td class="co"><span class="nmw"><span class="nm">${r.id}</span><span class="cd" title="${esc(stockOf(r.id).name||'')}">${esc(shortOf(stockOf(r.id)))}</span></span><span class="ind">${esc(r.th)}${ROLE[r.id]?'・'+ROLE[r.id]:''}</span></td>`;
