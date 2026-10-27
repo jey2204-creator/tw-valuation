@@ -911,7 +911,8 @@ function klDraw(){
   const S20=c.addLineSeries({color:MAC[20],lineWidth:1,priceLineVisible:false,lastValueVisible:false,crosshairMarkerVisible:false,priceFormat:PF});S20.setData(l20);
   const S60=c.addLineSeries({color:MAC[60],lineWidth:1.5,priceLineVisible:false,lastValueVisible:false,crosshairMarkerVisible:false,priceFormat:PF});S60.setData(l60);
   const S120=c.addLineSeries({color:MAC[120],lineWidth:1.5,priceLineVisible:false,lastValueVisible:false,crosshairMarkerVisible:false,priceFormat:PF});S120.setData(l120);
-  const S240=c.addLineSeries({color:MAC[240],lineWidth:2,lineStyle:2,priceLineVisible:false,lastValueVisible:false,crosshairMarkerVisible:false,priceFormat:PF});S240.setData(l240);
+  // 年線離股價很遠時不撐開座標（否則 K 棒被壓扁）：不參與自動縮放，超出範圍就只在圖例／摘要顯示
+  const S240=c.addLineSeries({color:MAC[240],lineWidth:2,lineStyle:2,priceLineVisible:false,lastValueVisible:false,crosshairMarkerVisible:false,priceFormat:PF,autoscaleInfoProvider:()=>null});S240.setData(l240);
   const VS=v.addHistogramSeries({priceFormat:KF,priceLineVisible:false,lastValueVisible:false});VS.setData(vs);
   const V5=v.addLineSeries({color:MAC[5],lineWidth:1,priceLineVisible:false,lastValueVisible:false,crosshairMarkerVisible:false,priceFormat:KF});
   const vol=all.map(r=>r[1]),vm5=ma(vol,5);V5.setData(all.map((r,i)=>vm5[i]==null||i<from?null:{time:t(i),value:vm5[i]}).filter(Boolean));
@@ -926,7 +927,7 @@ function klDraw(){
   const leg=(i)=>{const r=all[i],pv=i>0?all[i-1][0]:null,ch=pv?r[0]-pv:null,pc=pv?(ch/pv*100):null,cl=ch>0?'up':ch<0?'dn':'';
     const sp=(k,val)=>`<span style="color:${MAC[k]}">MA${k} ${val==null?'—':fmt(val,2)}</span>`;
     const px=x=>x==null?'—':fmt(x,x>=1000?0:x>=100?1:2),sgn=x=>x==null?'—':(x>0?'+':'')+fmt(x),cc=x=>x>0?'up':x<0?'dn':'';
-    $('klLeg').innerHTML=`<b style="color:${fg}">${dd[i].slice(4,6)}/${dd[i].slice(6)}</b> 開${px(r[8]??r[0])} 高${px(r[9]??r[0])} 低${px(r[10]??r[0])} 收<b class="${cl}">${px(r[0])}</b> <span class="${cl}">${pc==null?'':(pc>0?'+':'')+pc.toFixed(2)+'%'}</span><br>量 ${fmt(r[1])}　外資 <b class="${cc(r[2])}">${sgn(r[2])}</b>　投信 <b class="${cc(r[3])}">${sgn(r[3])}</b><br><span style="color:${MAC[5]}">5日 ${px(m5[i])}</span> <span style="color:${MAC[20]}">20日 ${px(m20[i])}</span> <span style="color:${MAC[60]}">60日 ${px(m60[i])}</span> <span style="color:${MAC[120]}">120日 ${px(m120[i])}</span> <span style="color:${MAC[240]}">240日 ${px(m240[i])}</span>`};
+    $('klLeg').innerHTML=`<b style="color:${fg}">${dd[i].slice(4,6)}/${dd[i].slice(6)}</b> 開${px(r[8]??r[0])} 高${px(r[9]??r[0])} 低${px(r[10]??r[0])} 收<b class="${cl}">${px(r[0])}</b> <span class="${cl}">${pc==null?'':(pc>0?'+':'')+pc.toFixed(2)+'%'}</span><br>量 ${fmt(r[1])}　外資 <b class="${cc(r[2])}">${sgn(r[2])}</b>　投信 <b class="${cc(r[3])}">${sgn(r[3])}</b><br>${[5,20,60,120,240].map(k=>`<span style="color:${MAC[k]}">${k}日${px({5:m5,20:m20,60:m60,120:m120,240:m240}[k][i])}</span>`).join(' ')}`};
   const last=all.length-1;leg(last);
   const onX=p=>{if(!p.time){leg(last);return}const i=dd.findIndex(d=>+d.slice(0,4)===p.time.year&&+d.slice(4,6)===p.time.month&&+d.slice(6)===p.time.day);if(i>=0)leg(i)};
   // 十字線垂直虛線四張圖同步：在哪張圖按住，其他三張用 setCrosshairPosition 對到同一天
@@ -942,7 +943,7 @@ function klDraw(){
   const vr=vv?(r[1]/vv):null;
   const sm=(k,n)=>{const a=all.slice(-n).map(x=>x[k]).filter(x=>x!=null);return a.length?a.reduce((p,q)=>p+q,0):null},sg=x=>x==null?'—':(x>0?'+':'')+fmt(x),cl=x=>x>0?'up':x<0?'dn':'';
   const f5=sm(2,5),f20=sm(2,20),t5=sm(3,5),t20=sm(3,20);
-  $('tKl').innerHTML=`均線 <strong>${bull?'多頭排列（5＞20＞60）':bear?'空頭排列（5＜20＜60）':'糾結／轉折中'}</strong><br>價位 ${abv||'—'}（▲線上 ▼線下）<br>60 日區間 ${lo>=1000?fmt(lo):fmt(lo,lo>=100?1:2)}～${hi>=1000?fmt(hi):fmt(hi,hi>=100?1:2)}（現價位於 ${((r[0]-lo)/(hi-lo||1)*100).toFixed(0)}% 處）・今量 ${vr?(vr>=1.5?'<strong class="up">放大 '+vr.toFixed(1)+'×</strong>':vr<=.6?'<strong>萎縮 '+vr.toFixed(1)+'×</strong>':vr.toFixed(1)+'×'):'—'} 5 日均量<br>外資 5 日 <strong class="${cl(f5)}">${sg(f5)}</strong>／20 日 <strong class="${cl(f20)}">${sg(f20)}</strong>・投信 5 日 <strong class="${cl(t5)}">${sg(t5)}</strong>／20 日 <strong class="${cl(t20)}">${sg(t20)}</strong> 張`;
+  $('tKl').innerHTML=`均線 <strong>${bull?'多頭排列（5＞20＞60）':bear?'空頭排列（5＜20＜60）':'糾結／轉折中'}</strong><br>價位 ${abv||'—'}（▲線上 ▼線下）${a240?`・距年線 <strong class="${r[0]>=a240?'up':'dn'}">${r[0]>=a240?'+':''}${((r[0]/a240-1)*100).toFixed(1)}%</strong>`:''}<br>60 日區間 ${lo>=1000?fmt(lo):fmt(lo,lo>=100?1:2)}～${hi>=1000?fmt(hi):fmt(hi,hi>=100?1:2)}（現價位於 ${((r[0]-lo)/(hi-lo||1)*100).toFixed(0)}% 處）・今量 ${vr?(vr>=1.5?'<strong class="up">放大 '+vr.toFixed(1)+'×</strong>':vr<=.6?'<strong>萎縮 '+vr.toFixed(1)+'×</strong>':vr.toFixed(1)+'×'):'—'} 5 日均量<br>外資 5 日 <strong class="${cl(f5)}">${sg(f5)}</strong>／20 日 <strong class="${cl(f20)}">${sg(f20)}</strong>・投信 5 日 <strong class="${cl(t5)}">${sg(t5)}</strong>／20 日 <strong class="${cl(t20)}">${sg(t20)}</strong> 張`;
   // 近 10 日表
   const pz=x=>x==null?'—':fmt(x,x>=1000?0:x>=100?1:2),sz=x=>x==null?'—':(x>0?'+':'')+fmt(x),cz=x=>x>0?'up':x<0?'dn':'';
   $('tbKl').innerHTML='<tr><th>日期</th><th>收</th><th>漲跌%</th><th>量</th><th>外資</th><th>投信</th></tr>'+all.slice(-10).reverse().map((x,j)=>{const i=last-j,pv=i>0?all[i-1][0]:null,pc=pv?((x[0]/pv-1)*100):null,cl=cz(pc);
