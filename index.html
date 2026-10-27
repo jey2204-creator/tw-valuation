@@ -1376,7 +1376,7 @@ function renderNp(){
   const f=v=>v==null?'—':fmt(v,Math.abs(v)<10?2:Math.abs(v)<100?1:0);
   $('npSeg').hidden=fin;$('npSeg').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.m===M));
   const o=base(),ch=mk('cNp');o.xAxis.data=S.map(x=>x.l+(x.fl?'*':''));o.yAxis.scale=false;
-  const lab=n=>({show:true,position:'top',fontSize:9,color:mu,fontFamily:'IBM Plex Mono',formatter:p=>p.dataIndex>=S.length-n&&p.value!=null?f(p.value):''});
+  const lab=n=>({show:true,position:'top',fontSize:9,color:mu,fontFamily:'IBM Plex Mono',formatter:p=>p.dataIndex>=S.length-n&&p.value!=null?(Math.abs(p.value)>=1000?String(Math.round(p.value)):f(p.value)):''}); // ≥1000 不加逗號，手機上 4 根柱的數字才放得下
   const colOf=x=>x.y.t==='轉盈'||x.y.v>0?up:x.y.t==='轉虧'||x.y.v<0?dn:mu;
   if(M==='n'){
     // 柱子壓在下方約 6 成、年增率線放上方，避免數字互相蓋住
@@ -1384,9 +1384,9 @@ function renderNp(){
     const lo=ys.length?Math.min(...ys):0,hi=ys.length?Math.max(...ys):10,sp=Math.max(hi-lo,10);
     o.yAxis.max=bmax>0?bmax*1.65:null;o.yAxis.min=bmin<0?bmin*1.2:0;o.grid.right=10;
     o.yAxis=[o.yAxis,{...o.yAxis,scale:false,min:lo-sp*1.75,max:hi+sp*.25,splitLine:{show:false},axisLabel:{show:false}}];
-    o.series=[{name:'母公司淨利',type:'bar',barCategoryGap:'28%',itemStyle:{color:up,borderRadius:[2,2,0,0]},label:lab(8),
+    o.series=[{name:'母公司淨利',type:'bar',barCategoryGap:'28%',itemStyle:{color:up,borderRadius:[2,2,0,0]},label:lab(4),
         data:S.map(x=>({value:x.ni,itemStyle:{color:colOf(x),opacity:x.fl?.45:1,borderColor:colOf(x),borderWidth:x.fl?1.5:0,borderType:'dashed'}}))},
-      {name:'年增率',type:'line',yAxisIndex:1,data:S.map((x,i)=>({value:x.y.v==null||x.y.v>300?null:+x.y.v.toFixed(1),label:{position:(S.length-1-i)%2?'bottom':'top'}})),symbol:'circle',symbolSize:4,lineStyle:{width:2,color:warm},itemStyle:{color:warm},
+      {name:'年增率',type:'line',yAxisIndex:1,data:S.map((x,i)=>({value:x.y.v==null||x.y.v>300?null:+x.y.v.toFixed(1),label:{position:(S.length-1-i)%2?'bottom':'top'}})),symbol:'circle',symbolSize:4,lineStyle:{width:2,color:warm},itemStyle:{color:warm},labelLayout:{hideOverlap:true},
         label:{show:true,position:'top',fontSize:9,color:warm,fontFamily:'IBM Plex Mono',formatter:p=>p.dataIndex>=S.length-4&&p.value!=null?(p.value>0?'+':'')+Math.round(p.value)+'%':''}}];
   }else{
     o.series=[{name:'本業',type:'bar',stack:'p',barCategoryGap:'28%',data:S.map(x=>({value:x.op,itemStyle:{opacity:x.fl?.5:1}})),itemStyle:{color:acc}},
