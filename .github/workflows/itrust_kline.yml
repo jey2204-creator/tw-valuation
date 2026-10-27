@@ -34,11 +34,22 @@ jobs:
           TAG: ${{ inputs.tag }}
           FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
         run: python itrust/kline_fetch.py "$D" "$CODES" "$TAG"
-      - name: 只提交 itrust/kline/
+      - name: 投信估計持股（MoneyDJ，失敗不影響日K）
+        continue-on-error: true
+        timeout-minutes: 20
+        env:
+          D: ${{ inputs.date }}
+          CODES: ${{ inputs.codes }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          [ -n "$TAG" ] && { echo "回補模式不抓投信持股"; exit 0; }
+          python itrust/tsh_fetch.py "$D" "$CODES"
+      - name: 只提交 itrust/kline/ 與 itrust/tsh.json
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A itrust/kline/
+          [ -f itrust/tsh.json ] && git add itrust/tsh.json
           git diff --cached --quiet && exit 0
           git commit -m "itrust kline: ${D}${TAG:+ $TAG}"
           for i in 1 2 3; do

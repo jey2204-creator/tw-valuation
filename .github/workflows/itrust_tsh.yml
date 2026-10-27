@@ -1,0 +1,43 @@
+name: itrust 投信估計持股（MoneyDJ，手動回補）
+run-name: itrust tsh ${{ inputs.date }}
+on:
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "交易日 YYYYMMDD"
+        required: true
+      codes:
+        description: "代號清單；填 @kline 代表用 itrust/kline/<date>.json 的名單"
+        required: false
+        default: "@kline"
+permissions:
+  contents: write
+concurrency:
+  group: itrust-kline
+  cancel-in-progress: false
+jobs:
+  tsh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: 抓投信估計持股
+        env:
+          D: ${{ inputs.date }}
+          CODES: ${{ inputs.codes }}
+        run: python itrust/tsh_fetch.py "$D" "$CODES"
+      - name: 只提交 itrust/tsh.json
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add itrust/tsh.json
+          git diff --cached --quiet && exit 0
+          git commit -m "itrust tsh: ${{ inputs.date }}"
+          for i in 1 2 3; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 10
+          done
+          exit 1
