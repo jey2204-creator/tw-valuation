@@ -890,7 +890,7 @@ function klDraw(){
     fs.push(r[2]!=null?{time:tm,value:r[2],color:r[2]>=0?up:dn}:{time:tm});ts.push(r[3]!=null?{time:tm,value:r[3],color:r[3]>=0?up:dn}:{time:tm});   // 沒籌碼的日子放空白點，讓四張圖的時間軸一樣長
     if(m5[i]!=null)l5.push({time:tm,value:m5[i]});if(m20[i]!=null)l20.push({time:tm,value:m20[i]});if(m60[i]!=null)l60.push({time:tm,value:m60[i]});if(m120[i]!=null)l120.push({time:tm,value:m120[i]})}
   const opt={layout:{background:{type:'solid',color:'transparent'},attributionLogo:false,textColor:mu,fontFamily:getComputedStyle(document.body).fontFamily,fontSize:10},grid:{vertLines:{color:line},horzLines:{color:line}},
-    rightPriceScale:{borderColor:line,minimumWidth:66,scaleMargins:{top:.08,bottom:.05}},timeScale:{borderColor:line,rightOffset:2,barSpacing:Math.max(3,Math.floor(($('klBox').clientWidth-60)/n)),fixLeftEdge:true,fixRightEdge:true,timeVisible:false,tickMarkFormatter:(tt)=>tt.month+'/'+tt.day},
+    rightPriceScale:{borderColor:line,scaleMargins:{top:.08,bottom:.05}},timeScale:{borderColor:line,rightOffset:1,barSpacing:Math.max(3,Math.floor(($('klBox').clientWidth-60)/n)),fixLeftEdge:true,fixRightEdge:true,timeVisible:false,tickMarkFormatter:(tt)=>tt.month+'/'+tt.day},
     crosshair:{mode:L.CrosshairMode.Normal,vertLine:{labelBackgroundColor:css('--accent'),style:2,color:mu},horzLine:{labelBackgroundColor:css('--accent'),style:2,color:mu}},handleScroll:{vertTouchDrag:false},handleScale:{axisPressedMouseMove:false}};
   if(KL.c){KL.c.remove();KL.v.remove();KL.f.remove();KL.t.remove()}
   const c=KL.c=L.createChart($('klBox'),{...opt,width:$('klBox').clientWidth,height:226,timeScale:{...opt.timeScale,visible:false}});   // 日期軸移到最下面投信圖
@@ -901,19 +901,21 @@ function klDraw(){
   $('klTn').textContent=ts.some(x=>x.value)?'':'（近 60 日無進出）';
   if(!ts.some(x=>x.value))TS.applyOptions({autoscaleInfoProvider:()=>({priceRange:{minValue:-100,maxValue:100}})});   // 投信完全沒進出時軸不要顯示 0.05
   FS.createPriceLine({price:0,color:line,lineWidth:1,lineStyle:0,axisLabelVisible:false});TS.createPriceLine({price:0,color:line,lineWidth:1,lineStyle:0,axisLabelVisible:false});
-  const CS=c.addCandlestickSeries({upColor:up,downColor:dn,borderUpColor:up,borderDownColor:dn,wickUpColor:up,wickDownColor:dn,priceLineVisible:false,lastValueVisible:true,priceFormat:{type:'price',precision:2,minMove:.01}});
+  // 價格軸小數位數依股價：50 元以下 2 位、500 元以下 1 位、以上不顯示（台股升降單位），右邊軸才不會被 22000.00 撐寬
+  const lp=all[all.length-1][0]||0,PF=lp<50?{type:'price',precision:2,minMove:.01}:lp<500?{type:'price',precision:1,minMove:.1}:{type:'price',precision:0,minMove:1};
+  const CS=c.addCandlestickSeries({upColor:up,downColor:dn,borderUpColor:up,borderDownColor:dn,wickUpColor:up,wickDownColor:dn,priceLineVisible:false,lastValueVisible:true,priceFormat:PF});
   CS.setData(cs);
   const MAC={5:css('--accent'),20:css('--warm'),60:css('--accent2'),120:dk?'#c78bff':'#8a4dd6'};
-  const S5=c.addLineSeries({color:MAC[5],lineWidth:1,priceLineVisible:false,lastValueVisible:false,crosshairMarkerVisible:false});S5.setData(l5);
-  const S20=c.addLineSeries({color:MAC[20],lineWidth:1,priceLineVisible:false,lastValueVisible:false,crosshairMarkerVisible:false});S20.setData(l20);
-  const S60=c.addLineSeries({color:MAC[60],lineWidth:1.5,priceLineVisible:false,lastValueVisible:false,crosshairMarkerVisible:false});S60.setData(l60);
-  const S120=c.addLineSeries({color:MAC[120],lineWidth:1.5,priceLineVisible:false,lastValueVisible:false,crosshairMarkerVisible:false});S120.setData(l120);
+  const S5=c.addLineSeries({color:MAC[5],lineWidth:1,priceLineVisible:false,lastValueVisible:false,crosshairMarkerVisible:false,priceFormat:PF});S5.setData(l5);
+  const S20=c.addLineSeries({color:MAC[20],lineWidth:1,priceLineVisible:false,lastValueVisible:false,crosshairMarkerVisible:false,priceFormat:PF});S20.setData(l20);
+  const S60=c.addLineSeries({color:MAC[60],lineWidth:1.5,priceLineVisible:false,lastValueVisible:false,crosshairMarkerVisible:false,priceFormat:PF});S60.setData(l60);
+  const S120=c.addLineSeries({color:MAC[120],lineWidth:1.5,priceLineVisible:false,lastValueVisible:false,crosshairMarkerVisible:false,priceFormat:PF});S120.setData(l120);
   const VS=v.addHistogramSeries({priceFormat:{type:'volume'},priceLineVisible:false,lastValueVisible:false});VS.setData(vs);
   const V5=v.addLineSeries({color:MAC[5],lineWidth:1,priceLineVisible:false,lastValueVisible:false,crosshairMarkerVisible:false});
   const vol=all.map(r=>r[1]),vm5=ma(vol,5);V5.setData(all.map((r,i)=>vm5[i]==null||i<from?null:{time:t(i),value:vm5[i]}).filter(Boolean));
   [c,v,f,tc].forEach(x=>x.timeScale().fitContent());
   // 四張圖右邊價格軸寬度不同（2600.00 vs 80K vs 0）→ 繪圖區寬度不同、虛線會錯位；量出最寬的那張，全部設成一樣寬
-  const eqW=()=>{const w=Math.max(66,...[c,v,f,tc].map(x=>x.priceScale('right').width()));[c,v,f,tc].forEach(x=>x.applyOptions({rightPriceScale:{minimumWidth:w}}))};
+  const eqW=()=>{const w=Math.max(36,...[c,v,f,tc].map(x=>x.priceScale('right').width()));[c,v,f,tc].forEach(x=>x.applyOptions({rightPriceScale:{minimumWidth:w}}))};
   requestAnimationFrame(()=>{eqW();requestAnimationFrame(eqW)});
   // 兩張圖同步 + 圖例
   let lock=false;const sync=(a,b)=>a.timeScale().subscribeVisibleLogicalRangeChange(r=>{if(lock||!r)return;lock=true;b.timeScale().setVisibleLogicalRange(r);lock=false});[[c,v],[v,c],[c,f],[f,c],[c,tc],[tc,c]].forEach(([a,b])=>sync(a,b));
