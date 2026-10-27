@@ -296,7 +296,8 @@ def collect():
             fails[k] = 0
             if r is None:
                 if k == "pL" and d < today and not rec.get("p"):   # 過去的平日證交所沒資料 = 休市
-                    rec = {"closed": 1}
+                    # 2026/10/23 曾因證交所暫時回空值被誤判成休市 → 要連續兩次執行都沒資料才定案
+                    rec = {"closed": 1} if rec.get("miss") else {"miss": 1}
                     changed = True
                     break
                 if k != "pL" and d < today:              # 交易日卻沒資料 = 這個來源有問題
@@ -304,12 +305,13 @@ def collect():
                     errs.append(f"{d:%m/%d} {k}: 無資料或日期不符")
                 continue
             rec.setdefault(slot, {}).update(r)
+            rec.pop("miss", None)
             src.add(k)
             rec["src"] = sorted(src)
             changed = True
         if changed:
             save_day(d, rec)
-        if not rec.get("closed"):
+        if not rec.get("closed") and not rec.get("miss"):
             for k in need:
                 if k in src:
                     have[k] += 1

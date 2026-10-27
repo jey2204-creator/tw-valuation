@@ -12,6 +12,8 @@
 輸出 data/chip.json：只放 themes.json 成份股＋EXTRA（全市場每天約 2,000 檔，全放會太大）
   days = [YYYYMMDD…]（舊→新）
   d[代號] = 每天一列 [收盤, 成交張數, 外資張, 投信張, 自營張, 融資增減張, 融券增減張, 融資餘額張]，缺資料為 null
+另輸出全市場分片 data/chip_s/NN.json（NN = 代號前兩碼，約 70 個檔、每檔 30～120KB）：{days, d:{代號:[同上列]}}
+  個股頁先查 chip.json，沒有再抓對應分片 → 任何上市櫃股票都看得到逐日籌碼（2026/10/27 起）
 用法：python fetch_chip.py
 """
 import json, sys, time, datetime as dt
@@ -254,6 +256,53 @@ def targets():
     return sorted(ids)
 
 
+def rows_of(c, recs):
+    k = lambda x: None if x is None else round(x / 1000)          # 股 → 張
+    rows = []
+    for day, px, rec in recs:
+        p = px.get("p", {}).get(c) or [None, None]
+        src = set(rec.get("src", []))
+        iv = rec.get("i", {}).get(c)
+        mv = rec.get("m", {}).get(c)
+        # 該來源當天有抓到但沒有這檔 = 0；來源沒抓到 = null
+        if iv is None and {"iL", "iO"} <= src:
+            iv = [0, 0, 0]
+        rows.append([p[0], k(p[1]),
+                     *(k(x) for x in (iv or [None] * 3)),
+                     *((round(x) if x is not None else None) for x in (mv or [None] * 3))])
+    return rows
+
+
+def build_shards(days):
+    """全市場逐日籌碼，依代號前兩碼分片存 data/chip_s/NN.json（檔案只在內容有變時改寫）"""
+    recs = [(day, px, load(day)) for day, px in days]
+    codes = set()
+    for _, px, _ in recs:
+        codes.update(px.get("p", {}).keys())
+    SH = OUT / "chip_s"
+    SH.mkdir(parents=True, exist_ok=True)
+    groups = {}
+    for c in codes:
+        if c.isdigit() and len(c) >= 4:
+            groups.setdefault(c[:2], []).append(c)
+    n = 0
+    for g, cs in groups.items():
+        d = {c: rows_of(c, recs) for c in sorted(cs)}
+        d = {c: r for c, r in d.items() if any(x[0] for x in r)}
+        if not d:
+            continue
+        txt = json.dumps({"days": [x for x, _ in days], "d": d}, ensure_ascii=False, separators=(",", ":"))
+        f = SH / f"{g}.json"
+        if not f.exists() or f.read_text("utf-8") != txt:
+            f.write_text(txt, "utf-8")
+        n += len(d)
+    live = {f"{g}.json" for g in groups}
+    for f in SH.glob("*.json"):
+        if f.name not in live:
+            f.unlink()
+    return n, len(groups)
+
+
 def build(days):
     ids = targets()
     recs = [(day, px, load(day)) for day, px in days]
@@ -285,6 +334,11 @@ def main():
         sys.exit(1)
     errs = collect(days)
     d, cover = build(days)
+    try:
+        ns, ng = build_shards(days)
+        print(f"chip_s/: {ns} 檔分成 {ng} 片")
+    except Exception as e:
+        errs.append(f"shards: {str(e)[:80]}")
     res = dict(updated=dt.datetime.utcnow().strftime("%Y-%m-%dT%H:%MZ"), days=[x for x, _ in days],
                fields=["close", "vol", "foreign", "trust", "dealer", "marginChg", "shortChg", "marginBal"],
                cover=cover, req=fm.nreq, secs=int(time.time() - T0), fails=fails, errors=errs[:30],
