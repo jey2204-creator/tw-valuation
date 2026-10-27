@@ -415,7 +415,7 @@ def patch_summary(pdays):
     if (S.get("pxAsof") or "") > day:
         return "summary 已較新"
     n = 0
-    for c, (cl, _) in last["p"].items():
+    for c, (cl, *_) in last["p"].items():
         x = S["d"].get(c)
         if x is None or not cl:
             continue
