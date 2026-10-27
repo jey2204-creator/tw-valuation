@@ -886,10 +886,10 @@ function klDraw(){
     if(m5[i]!=null)l5.push({time:tm,value:m5[i]});if(m20[i]!=null)l20.push({time:tm,value:m20[i]});if(m60[i]!=null)l60.push({time:tm,value:m60[i]});if(m120[i]!=null)l120.push({time:tm,value:m120[i]})}
   const opt={layout:{background:{type:'solid',color:'transparent'},attributionLogo:false,textColor:mu,fontFamily:getComputedStyle(document.body).fontFamily,fontSize:10},grid:{vertLines:{color:line},horzLines:{color:line}},
     rightPriceScale:{borderColor:line,scaleMargins:{top:.08,bottom:.05}},timeScale:{borderColor:line,rightOffset:2,barSpacing:Math.max(3,Math.floor(($('klBox').clientWidth-60)/n)),fixLeftEdge:true,fixRightEdge:true,timeVisible:false,tickMarkFormatter:(tt)=>tt.month+'/'+tt.day},
-    crosshair:{mode:L.CrosshairMode.Normal,vertLine:{labelBackgroundColor:css('--accent')},horzLine:{labelBackgroundColor:css('--accent')}},handleScroll:{vertTouchDrag:false},handleScale:{axisPressedMouseMove:false}};
+    crosshair:{mode:L.CrosshairMode.Normal,vertLine:{labelBackgroundColor:css('--accent'),style:2,color:mu},horzLine:{labelBackgroundColor:css('--accent'),style:2,color:mu}},handleScroll:{vertTouchDrag:false},handleScale:{axisPressedMouseMove:false}};
   if(KL.c){KL.c.remove();KL.v.remove();KL.f.remove();KL.t.remove()}
   const c=KL.c=L.createChart($('klBox'),{...opt,width:$('klBox').clientWidth,height:300});
-  const sub=(id,h,m)=>L.createChart($(id),{...opt,width:$(id).clientWidth,height:h,timeScale:{...opt.timeScale,visible:false},rightPriceScale:{...opt.rightPriceScale,scaleMargins:m}});
+  const sub=(id,h,m)=>L.createChart($(id),{...opt,width:$(id).clientWidth,height:h,timeScale:{...opt.timeScale,visible:false},rightPriceScale:{...opt.rightPriceScale,scaleMargins:m},crosshair:{...opt.crosshair,horzLine:{visible:false,labelVisible:false}}});
   const v=KL.v=sub('klVol',70,{top:.1,bottom:0}),f=KL.f=sub('klF',64,{top:.1,bottom:.1}),tc=KL.t=sub('klT',64,{top:.1,bottom:.1});
   const FS=f.addHistogramSeries({priceFormat:{type:'volume'},priceLineVisible:false,lastValueVisible:false,base:0});FS.setData(fs);
   const TS=tc.addHistogramSeries({priceFormat:{type:'volume'},priceLineVisible:false,lastValueVisible:false,base:0});TS.setData(ts);
@@ -914,7 +914,11 @@ function klDraw(){
     $('klLeg').innerHTML=`<b style="color:${fg}">${dd[i].slice(4,6)}/${dd[i].slice(6)}</b>　開 ${fmt(r[8]??r[0],2)}　高 ${fmt(r[9]??r[0],2)}　低 ${fmt(r[10]??r[0],2)}　收 <b class="${cl}">${fmt(r[0],2)}</b> <span class="${cl}">${ch==null?'':(ch>0?'+':'')+fmt(ch,2)+' ('+(pc>0?'+':'')+pc.toFixed(2)+'%)'}</span>　量 ${fmt(r[1])} 張　外資 <span class="${r[2]>0?'up':r[2]<0?'dn':''}">${r[2]==null?'—':(r[2]>0?'+':'')+fmt(r[2])}</span>　投信 <span class="${r[3]>0?'up':r[3]<0?'dn':''}">${r[3]==null?'—':(r[3]>0?'+':'')+fmt(r[3])}</span><br>${sp(5,m5[i])}　${sp(20,m20[i])}　${sp(60,m60[i])}　${sp(120,m120[i])}`};
   const last=all.length-1;leg(last);
   const onX=p=>{if(!p.time){leg(last);return}const i=dd.findIndex(d=>+d.slice(0,4)===p.time.year&&+d.slice(4,6)===p.time.month&&+d.slice(6)===p.time.day);if(i>=0)leg(i)};
-  [c,v,f,tc].forEach(x=>x.subscribeCrosshairMove(onX));
+  // 十字線垂直虛線四張圖同步：在哪張圖按住，其他三張用 setCrosshairPosition 對到同一天
+  const CH4=[[c,CS],[v,VS],[f,FS],[tc,TS]];
+  CH4.forEach(([ch,se])=>ch.subscribeCrosshairMove(p=>{onX(p);
+    CH4.forEach(([o,os])=>{if(o===ch)return;if(!p.time){o.clearCrosshairPosition();return}
+      o.setCrosshairPosition(NaN,p.time,os)})}));
   // 摘要：均線排列、位置、量
   const r=all[last],a5=m5[last],a20=m20[last],a60=m60[last],a120=m120[last],vv=vm5[last];
   const bull=a5!=null&&a20!=null&&a60!=null&&a5>a20&&a20>a60,bear=a5!=null&&a20!=null&&a60!=null&&a5<a20&&a20<a60;
