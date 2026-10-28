@@ -15,7 +15,7 @@
 
 欄位用關鍵字比對（中英文都認），官方改名不會整支掛掉；每個來源原始回應存 data/notice/raw_*.json。
 歷史：data/notice/hist.json {YYYYMMDD: {att:[代號…], dis:[代號…]}} 保留 150 天 → 連續天數、近 10／30 日次數。
-環境變數：BACKFILL=天數（手動跑時回補證交所注意名單歷史，預設 0；第一次建議 45）
+環境變數：BACKFILL=天數（手動跑時回補證交所注意名單歷史，預設抓近 14 天；第一次建議 45）
 權證／可轉債等 6 碼代號一律略過，只留股票、ETF。
 """
 import json, os, re, time, datetime as dt, urllib.request
@@ -32,7 +32,7 @@ TZ = dt.timezone(dt.timedelta(hours=8))
 NOW = dt.datetime.now(TZ)
 TODAY = NOW.strftime("%Y%m%d")
 BACKFILL = int(os.environ.get("BACKFILL") or 0)
-DIAG = {"src": {}, "fail": [], "backfill": {}}
+DIAG = {"src": {}, "fail": []}
 
 RWD = "https://www.twse.com.tw/rwd/zh/announcement/"
 TWSE = "https://openapi.twse.com.tw/v1/"
@@ -52,7 +52,8 @@ def get(url, tries=3):
             except Exception:
                 j = json.loads(raw.decode("big5", "replace"))
             if isinstance(j, dict):                       # 證交所 rwd 格式：{stat, fields, data:[[...]]}
-                DIAG.setdefault("probe", {})[url[:100]] = raw.decode("utf-8", "replace")[:600]
+                if not j.get("data"):
+                    DIAG.setdefault("probe", {})[url[:100]] = raw.decode("utf-8", "replace")[:300]
                 if j.get("fields") and isinstance(j.get("data"), list):
                     return [dict(zip(j["fields"], row)) for row in j["data"]]
                 if j.get("tables"):
@@ -189,14 +190,11 @@ def parse_pre(rows, mkt):
 att, dis, pre = [], [], []
 
 # 上市：官網 rwd 優先 → OpenAPI 備援
-TWSE_ATT_URLS = [RWD + f"notice?date={TODAY}&response=json", RWD + "notice?response=json",
-                 f"https://www.twse.com.tw/announcement/notice?response=json&date={TODAY}",
-                 RWD + f"notice?startDate={TODAY}&endDate={TODAY}&response=json",
-                 TWSE + "announcement/notice"]
-for i, u in enumerate(TWSE_ATT_URLS):
-    rows = fetch_rows(f"twse_att{i or ''}", u)
-    if any(code_of(r) for r in rows):
-        DIAG["twse_att_url"] = u; break
+# 實測：證交所 rwd notice 只認 startDate／endDate（date 參數會被忽略），一次可拉一段期間，每列有「日期」
+d_att = (NOW - dt.timedelta(days=BACKFILL or 14)).strftime("%Y%m%d")
+rows = fetch_rows("twse_att", RWD + f"notice?startDate={d_att}&endDate={TODAY}&response=json")
+if not any(code_of(r) for r in rows):
+    rows = fetch_rows("twse_att_openapi", TWSE + "announcement/notice")
 att += parse_att(rows, "上市")
 d0 = (NOW - dt.timedelta(days=20)).strftime("%Y%m%d")
 rows = fetch_rows("twse_dis", RWD + f"punish?startDate={d0}&endDate={TODAY}&response=json")
@@ -237,25 +235,6 @@ for v in att:
 for d, s in by_day.items():
     old = set(hist.get(d, {}).get("att", []))
     hist.setdefault(d, {"att": [], "dis": []})["att"] = sorted(old | s)
-if BACKFILL:
-    day = NOW
-    for _ in range(BACKFILL):
-        day -= dt.timedelta(days=1)
-        if day.weekday() >= 5:
-            continue
-        ds = day.strftime("%Y%m%d")
-        if hist.get(ds, {}).get("bf"):
-            continue
-        rows = get(RWD + f"notice?date={ds}&response=json", tries=2)
-        time.sleep(1.2)
-        if rows is None:
-            continue
-        codes = sorted({code_of(r) for r in rows if code_of(r)})
-        hist.setdefault(ds, {"att": [], "dis": []})
-        hist[ds]["att"] = sorted(set(hist[ds]["att"]) | set(codes))
-        if codes:
-            hist[ds]["bf"] = 1
-        DIAG["backfill"][ds] = len(codes)
 hist[ASOF] = hist.get(ASOF, {"att": [], "dis": []})
 hist[ASOF]["dis"] = sorted({v["c"] for v in dis})
 hist = {k: hist[k] for k in sorted(hist)[-150:] if k}
@@ -278,7 +257,7 @@ def stats(c):
 
 # ---------------------------------------------------------------- 整理輸出
 att = {v["c"]: v for v in att if (v["d"] or ASOF) == ASOF}                        # 只留最新一天
-dis = {v["c"]: v for v in dis if not v["end"] or v["end"] >= ASOF}                # 處置期未結束
+dis = {v["c"]: v for v in dis if not v["end"] or v["end"] > ASOF}                 # 處置期未結束（迄日＝名單日的已結束）
 pre = {v["c"]: v for v in pre}
 for v in att.values():
     v["n10"], v["n30"], v["streak"] = stats(v["c"])
@@ -298,4 +277,4 @@ out = {"updated": NOW.strftime("%Y-%m-%dT%H:%MZ"), "asof": ASOF, "histDays": len
        "pre": sorted(pre.values(), key=lambda x: (-x["n10"], x["c"])),
        "diag": DIAG}
 OUT.write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")))
-print(f"asof {ASOF}: 注意 {len(att)}（上市 {sum(v['m']=='上市' for v in att.values())}）、處置 {len(dis)}、快達 {len(pre)}；hist {len(days)} 天；src {DIAG['src']}；backfill {len(DIAG['backfill'])} 天；fail {DIAG['fail']}")
+print(f"asof {ASOF}: 注意 {len(att)}（上市 {sum(v['m']=='上市' for v in att.values())}）、處置 {len(dis)}、快達 {len(pre)}；hist {len(days)} 天；src {DIAG['src']}；fail {DIAG['fail']}")
