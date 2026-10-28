@@ -119,9 +119,10 @@ body.ov .km{padding:1px 4px 2px;border-radius:6px}
 body.ov .km-h{font-size:9.5px;line-height:14px;gap:3px}
 body.ov .km-h b{font-size:11.5px}
 body.ov .km-h .tg{font-size:8.5px;line-height:13px;padding:0 4px}
-body.ov .km-h .ovx{display:inline;margin-left:auto;font:600 10px var(--font-num)}
+body.ov .km-h .ovx{display:inline-flex;align-items:center;gap:3px;margin-left:auto;font:600 10px var(--font-num)}
 .km-h .nx{flex:none;font:800 9px var(--font-body);line-height:13px;padding:0 3px;border-radius:4px;background:var(--buy);color:#fff}
 body.ov .km-h .ovx.up{color:var(--buy)}body.ov .km-h .ovx.dn{color:var(--dn)}
+.km-h .sts{display:none}body.ov .km-h .sts{display:inline-flex;gap:2px;margin-left:auto;vertical-align:top}.km-h .sk{font:700 9px var(--font-num);line-height:12px;padding:0 3px;border-radius:3px;font-style:normal;letter-spacing:-.02em}.km-h .sk.up{background:var(--buy);color:#fff}.km-h .sk.dn{background:var(--dn);color:#fff}.km-h .sk.z{background:var(--line);color:var(--muted)}
 body.ov .km-cv{margin-top:0;min-height:48px}
 }
 /* 橫向：5×4；直向：3×7（第 7 列只有 2 張） */
@@ -180,7 +181,7 @@ body.shopen{overflow:hidden}
 .sh-tags{display:flex;gap:4px;flex-wrap:wrap;margin-top:2px}
 .sh-tags span{font:700 11px var(--font-body);padding:1px 8px;border-radius:999px;background:var(--chip);color:var(--muted)}
 .sh-tags span.hot{background:var(--buy);color:var(--surface)}
-.sh-tags span.w{background:var(--warn-soft);color:var(--warn)}
+.sh-tags span.w{background:var(--warn-soft);color:var(--warn)}.sh-tags span.up{background:var(--buy-soft);color:var(--buy)}.sh-tags span.dn{background:#e6f4ea;color:var(--dn)}
 .sh-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;margin-top:6px}
 .sh-grid div{background:var(--surface);border:1px solid var(--line);border-radius:7px;padding:2px 6px;min-width:0}
 .sh-grid span{display:block;font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -269,7 +270,7 @@ body.shopen{overflow:hidden}
     <h2>怎麼看</h2>
     <p>每張卡片＝名單日盤後的排行前 20 名（投信、外資皆 ≥0.5 億，與排行頁預設門檻相同），日K用自己的資料（每晚更新），最右邊<b>虛線框</b>那根是今天盤中到目前為止的K棒。</p>
     <p><b>投信賣／外資賣</b>分頁＝名單日投信、外資<b>賣超佔股本</b>前 20 名（賣超金額 ≥0.5 億，佔股本為負、越負越前面），用來看法人正在出脫哪些股票與族群；<b>土洋賣</b>＝投信賣超（≥0.5 億）且外資同日也賣超，依投本比＋外本比越負越前面（雙賣，最該避開的一組），徽章直接顯示兩邊賣超張數；名單是前一交易日的，盤中看的是「昨天被賣的股今天怎麼走」，不是今天的即時賣壓。賣超名單的日K底圖從 10/22 晚上起才會齊全。</p>
-    <p><b>總覽</b>鈕：手機直向 3 欄 × 7 列、轉橫 5 欄 × 4 列，一屏看完 20 檔；小卡畫最近 20 根 K 棒＋20/60MA＋前 20 日高，下方兩條細柱帶「投」「外」＝每日投信、外資買賣超張數（紅買綠賣，到名單日為止，盤中那根沒有法人數字），右上為漲跌幅與盤中量比；橫向另在右上顯示名單日張數「投/外」（k＝千張）；突破／跳空的排最前面；點一張放大看量與完整法人圖。</p>
+    <p><b>總覽</b>鈕：手機直向 3 欄 × 7 列、轉橫 5 欄 × 4 列，一屏看完 20 檔；小卡畫最近 20 根 K 棒＋20/60MA＋前 20 日高，下方兩條熱力帶「投」「外」＝每日投信、外資買賣超<b>佔股本％</b>的力道（紅買綠賣；顏色越深越大：淡 &lt;0.05%、中 ≥0.15%、深 ≥0.3%，到名單日為止，盤中那格空白）；第 2 行右側徽章「投3▲ 外2▼」＝連續買／賣超天數（按住看近 5 日累計），右上為漲跌幅與盤中量比；橫向另在右上顯示名單日張數「投/外」（k＝千張）；突破／跳空的排最前面；點一張放大看量與完整法人圖（放大卡的投信／外資柱狀圖同樣改以佔股本％為刻度，點線＝±0.15%，右側為刻度上限）。</p>
     <p><b>另一邊法人</b>徽章：買超卡片上若另一邊法人在名單日是<b>賣超</b>，標 ⚠「外資賣 N張」／「投信賣 N張」（投信買、外資倒貨的要特別小心）；賣超卡片上另一邊也賣標 ⚠「也賣」（雙賣），另一邊反向買標紅色「買」（分歧）。張數＝名單日當天的淨買賣超。</p>
     <p><b>紅色虛線</b>＝前20日高：名單日（含）往前 20 個交易日的最高價。現價或盤中最高碰到它，卡片加紅框並標「突破」；開盤就高於它標「跳空」。價格未還原權息，近 20 日內有除權息時標 ⚠，那條線可能偏高。</p>
     <p>量：<b>0.92×→1.4×</b>＝目前累計量是前 5 日均量的 0.92 倍，依常見盤中量分布推估全天約 1.4 倍（12:00 大約完成全天 65% 的量；09:10 前不估）。量的柱狀圖裡，虛線框是推估的全天量、點線是前 5 日均量。</p>
@@ -350,6 +351,16 @@ function tshTag(c){const o=tshOf(c);if(!o)return '';return `<span class="tsh${o.
 function tshLine(c){const o=tshOf(c);if(!o)return '<span class="tshn">投持 <b>—</b></span>';
   const z=o.dp==null||Math.abs(o.dp)<0.005;const dp=o.dp==null?'':` <em class="${z?'':o.dp>0?'up':'dn'}" title="近 ${o.n} 筆變化（佔股本百分點）">${o.n}日${z?'±':o.dp>0?'+':'−'}${Math.abs(o.dp).toFixed(2)}</em>`;
   return `<span class="tshn" title="投信估計持股 ${fmt(o.lots)}張（${md(o.d)}，MoneyDJ 估計值：每日買賣超累加＋基金季報校正）">投持 <b class="${o.lo?'lo':''}">${tshPct(o)}</b>${dp}</span>`}
+// 2026-10-28 法人力道：熱力帶分級門檻（佔股本％，定了就不改，前後才能比）＋連買／連賣天數與近5日累計
+const HEAT=[0.05,0.15,0.3];
+function instStreak(S){const sh=S.shares||null,a=(S.inst||[]).filter(x=>x[0]<=L).sort((p,q)=>p[0]<q[0]?-1:1);
+  const one=i=>{let n=0,sg=0;for(let j=a.length-1;j>=0;j--){const v=a[j][i];if(v==null||v===0)break;const t=v>0?1:-1;if(!sg)sg=t;if(t!==sg)break;n++}
+    let c5=0,k=0;for(let j=a.length-1;j>=0&&k<5;j--,k++){c5+=a[j][i]||0}return {n,sg,c5,p5:sh?c5*1000/sh*100:null}};
+  return {it:one(1),fi:one(2)}}
+function streakBadges(S){if(!S)return '';const o=instStreak(S);const f=(x,w)=>{if(!x.sg||!x.n)return `<i class="sk z">${w}—</i>`;
+  const p=x.p5==null?'':(x.p5>0?'+':'')+x.p5.toFixed(2)+'%';const cls=x.sg>0?'up':'dn';
+  return `<i class="sk ${cls}" title="${w}${x.sg>0?'連買':'連賣'}${x.n}天；近5日累計 ${x.c5>0?'+':''}${fmt(x.c5)}張${p?'（佔股本'+p+'）':''}">${w}${x.n}${x.sg>0?'▲':'▼'}</i>`};
+  return f(o.it,'投')+f(o.fi,'外')}
 // 徽章：買超分頁只警示「另一邊在賣」；賣超分頁兩邊都標（也賣＝雙賣 ⚠、反向買＝分歧）
 function oppBadge(r,full){const o=other(r.c);const who=(view==='fi'||view==='fis')?'投信':'外資';const n=who==='投信'?o.tl:o.fl;
   if(n==null||n===0)return '';const lots=fmt(Math.abs(n))+'張';
@@ -410,7 +421,7 @@ function series(r){
   const nx=nxBar&&lcl?{o:nxBar[1]/lcl-1,h:nxBar[2]/lcl-1,c:nxBar[4]/lcl-1,brk:nxBar[2]>=hi20}:null;
   const since=retro&&lcl&&cur?cur/lcl-1:null;
   const mx=retro&&after>0?Math.max(...all.slice(base.length).map(x=>x[2]))/lcl-1:null;
-  return {bars:all,live:!!live,lastD,state,q,px:cur,chg:retro?since:chg,dchg:chg,hi20,avg5,exIn,dist:cur&&hi20?cur/hi20-1:null,vNow,vProj,frac,brk,gap,inst:e.i||[],ex:e.x||[],retro,lcl,since,nx,mx,after,lIdx:base.length-1};
+  return {bars:all,live:!!live,lastD,state,q,px:cur,chg:retro?since:chg,dchg:chg,hi20,avg5,exIn,dist:cur&&hi20?cur/hi20-1:null,vNow,vProj,frac,brk,gap,inst:e.i||[],ex:e.x||[],shares:sharesOf(r.c),retro,lcl,since,nx,mx,after,lIdx:base.length-1};
 }
 
 // ---- 畫 K 線 ----
@@ -452,18 +463,24 @@ function drawK(cv,S,N,opt){
   if(volH&&liveJ>=0&&S.vProj){const y=VY(S.vProj*S.avg5);g.save();g.strokeStyle=fg;g.lineWidth=1;g.setLineDash([2,2]);g.strokeRect(X(liveJ)-bw/2,y,bw,vY0-y);g.restore()}
   if(volH&&S.avg5){const y=VY(S.avg5);g.save();g.strokeStyle=mu;g.lineWidth=1;g.setLineDash([1,2]);g.beginPath();g.moveTo(padL,y);g.lineTo(W-padR,y);g.stroke();g.restore()}
   if(!mini){g.fillStyle=mu;g.textAlign='left';g.font='9px '+css('--font-body');g.textBaseline='top';g.fillText('量(張)',padL+2,top+priceH+gap);g.font='10px '+css('--font-num');g.textBaseline='middle'}
-  // 投信／外資買賣超（完整卡）
-  if(nInst){const im=new Map((S.inst||[]).map(x=>[x[0],x]));
-    [['投信買賣超(張)',1],['外資買賣超(張)',2]].forEach(([lab,i],k)=>{const iTop=vY0+gap+(instH+gap)*k,iMid=iTop+instH/2;let imax=1;
-      if(miniInst){vis.forEach(x=>{const r=im.get(x[0]);if(r&&r[i]!=null)imax=Math.max(imax,Math.abs(r[i]))});
-        g.strokeStyle=ln;g.lineWidth=1;g.beginPath();g.moveTo(padL,iMid);g.lineTo(W-padR,iMid);g.stroke();
-        vis.forEach((x,j)=>{const r=im.get(x[0]);const v=r?r[i]:null;if(v==null||v===0)return;const y=iMid-v/imax*(instH/2-0.5);g.fillStyle=v>0?up:dn;g.globalAlpha=x[0]===L?1:.75;g.fillRect(X(j)-bw/2,Math.min(y,iMid),bw,Math.max(1,Math.abs(iMid-y)));g.globalAlpha=1});
-        g.fillStyle=mu;g.font='600 7.5px '+css('--font-body');g.textAlign='left';g.textBaseline='middle';g.fillText(k?'外':'投',padL+1,iMid);return}
-      vis.forEach(x=>{const r=im.get(x[0]);if(r&&r[i]!=null)imax=Math.max(imax,Math.abs(r[i]))});
+  // 投信／外資買賣超：2026-10-28 改用「佔股本％」口徑（張×1000÷掛牌股數）；縮圖畫熱力帶（顏色深淺＝力道，不靠高度），完整卡柱狀圖改固定刻度
+  if(nInst){const im=new Map((S.inst||[]).map(x=>[x[0],x]));const sh=S.shares||null;const toPct=v=>sh?v*1000/sh*100:null;
+    [['投信買賣超',1],['外資買賣超',2]].forEach(([lab,i],k)=>{const iTop=vY0+gap+(instH+gap)*k,iMid=iTop+instH/2;let imax=1;
+      if(miniInst){
+        // 熱力帶：每格＝一天，|佔股本| ≥0.3%＝深、≥0.15%＝中、≥0.05%＝淺、>0＝極淡；沒掛牌股數時退回用該卡最大值分級
+        if(!sh)vis.forEach(x=>{const r=im.get(x[0]);if(r&&r[i]!=null)imax=Math.max(imax,Math.abs(r[i]))});
+        g.fillStyle=ln;g.globalAlpha=.6;g.fillRect(padL,iTop,W-padL-padR,instH);g.globalAlpha=1;
+        vis.forEach((x,j)=>{const r=im.get(x[0]);const v=r?r[i]:null;if(v==null||v===0)return;const a=Math.abs(sh?toPct(v):v/imax*0.3);
+          const al=a>=HEAT[2]?1:a>=HEAT[1]?.68:a>=HEAT[0]?.4:.16;g.fillStyle=v>0?up:dn;g.globalAlpha=al;g.fillRect(X(j)-cw/2+0.5,iTop,Math.max(1,cw-1),instH);g.globalAlpha=1});
+        g.fillStyle=sf;g.globalAlpha=.85;g.fillRect(padL,iTop,10,instH);g.globalAlpha=1;g.fillStyle=mu;g.font='600 7.5px '+css('--font-body');g.textAlign='left';g.textBaseline='middle';g.fillText(k?'外':'投',padL+1,iMid);return}
+      const val=x=>{const r=im.get(x[0]);if(!r||r[i]==null)return null;return sh?toPct(r[i]):r[i]};
+      let mx=0;vis.forEach(x=>{const v=val(x);if(v!=null)mx=Math.max(mx,Math.abs(v))});
+      imax=sh?Math.max(HEAT[2],Math.ceil(mx/0.1)*0.1):Math.max(1,mx);
       g.strokeStyle=ln;g.lineWidth=1;g.beginPath();g.moveTo(padL,iMid);g.lineTo(W-padR,iMid);g.stroke();
-      vis.forEach((x,j)=>{const r=im.get(x[0]);const v=r?r[i]:null;if(v==null||v===0)return;const y=iMid-v/imax*(instH/2-1);g.fillStyle=v>0?up:dn;g.fillRect(X(j)-bw/2,Math.min(y,iMid),bw,Math.max(1,Math.abs(iMid-y)))});
-      g.fillStyle=mu;g.font='9px '+css('--font-body');g.textAlign='left';g.textBaseline='top';g.fillText(lab,padL+2,iTop);g.font='10px '+css('--font-num');g.textBaseline='middle';
-      g.textAlign='left';g.fillText('±'+fmt(imax),W-padR+4,iMid)})}
+      if(sh){[HEAT[1],-HEAT[1]].forEach(p=>{const y=iMid-p/imax*(instH/2-1);g.save();g.strokeStyle=mu;g.globalAlpha=.5;g.setLineDash([1,3]);g.beginPath();g.moveTo(padL,y);g.lineTo(W-padR,y);g.stroke();g.restore()})}
+      vis.forEach((x,j)=>{const v=val(x);if(v==null||v===0)return;const y=iMid-v/imax*(instH/2-1);g.fillStyle=v>0?up:dn;g.fillRect(X(j)-bw/2,Math.min(y,iMid),bw,Math.max(1,Math.abs(iMid-y)))});
+      g.fillStyle=mu;g.font='9px '+css('--font-body');g.textAlign='left';g.textBaseline='top';g.fillText(lab+(sh?'(佔股本%)':'(張)'),padL+2,iTop);g.font='10px '+css('--font-num');g.textBaseline='middle';
+      g.textAlign='left';g.fillText('±'+(sh?imax.toFixed(1)+'%':fmt(imax)),W-padR+4,iMid)})}
   // 月份刻度
   if(axisH){g.fillStyle=mu;g.textAlign='center';g.textBaseline='bottom';let lastM='';vis.forEach((x,j)=>{const mm=x[0].slice(0,6);if(mm!==lastM){lastM=mm;if(j>0)g.fillText(+x[0].slice(4,6)+'月',X(j),Hh-1)}});g.textBaseline='middle'}
   // K 線（紅漲綠跌）；今天盤中那根畫虛線框
@@ -582,7 +599,7 @@ function render(){
     const nxTag=S&&S.retro&&S.nx&&S.nx.brk?'<span class="nx" title="名單日隔天盤中過前20日高">突</span>':'';
     const tm=S&&S.live&&S.q&&S.q.t?S.q.t.slice(0,5):(S&&S.state==='done'?'收':md(S?S.bars[S.bars.length-1][0]:L));
     return `<article class="km${S&&S.live&&S.brk?' brk':''}${S&&S.retro?' retro':''}" data-c="${esc(r.c)}" role="button" tabindex="0" aria-label="${esc(r.n)} 放大">
-      <div class="km-h"><span>${r.rank}</span><b>${esc(r.n)}</b>${tg}${oppBadge(r,false)}${S&&S.exIn?'<span title="近20日有除權息，20日高未還原">⚠</span>':''}<span class="ovl">${(()=>{const o=other(r.c);const f=n=>n==null?'—':(n>0?'+':n<0?'−':'')+(Math.abs(n)>=1000?(Math.abs(n)/1000).toFixed(1)+'k':String(Math.abs(n)));return `${f(o.tl)}/${f(o.fl)}`})()}</span>${nxTag}<span class="ovx ${cls(S&&S.chg)}">${S&&S.chg!=null?(S.chg>0?'▲':S.chg<0?'▼':'')+Math.abs(S.chg*100).toFixed(1)+'%':''}${S&&S.live&&(S.vProj??S.vNow)!=null?' 量'+(S.vProj??S.vNow).toFixed(1)+'×':''}${S&&S.retro?'':frB(r.k)}</span>${S&&S.retro?'':`<span class="tm">${frB(r.k)}${tm}</span>`}</div>
+      <div class="km-h"><span>${r.rank}</span><b>${esc(r.n)}</b>${tg}${oppBadge(r,false)}${S&&S.exIn?'<span title="近20日有除權息，20日高未還原">⚠</span>':''}<span class="ovl">${(()=>{const o=other(r.c);const f=n=>n==null?'—':(n>0?'+':n<0?'−':'')+(Math.abs(n)>=1000?(Math.abs(n)/1000).toFixed(1)+'k':String(Math.abs(n)));return `${f(o.tl)}/${f(o.fl)}`})()}</span>${nxTag}<span class="ovx ${cls(S&&S.chg)}">${S&&S.chg!=null?(S.chg>0?'▲':S.chg<0?'▼':'')+Math.abs(S.chg*100).toFixed(1)+'%':''}${S&&S.live&&(S.vProj??S.vNow)!=null?' 量'+(S.vProj??S.vNow).toFixed(1)+'×':''}${S&&S.retro?'':frB(r.k)}<span class="sts">${streakBadges(S)}</span></span>${S&&S.retro?'':`<span class="tm">${frB(r.k)}${tm}</span>`}</div>
       <div class="km-p">${S&&S.retro?`<span class="lcl">${pxFmt(S.lcl)}→</span>`:''}<b class="${cls(S&&S.chg)}">${pxFmt(S?S.px:r.cl)}</b><span class="${cls(S&&S.chg)}" title="${S&&S.retro?'現價相對名單日收':''}">${S&&S.chg!=null?(S.chg>0?'▲':S.chg<0?'▼':'')+Math.abs(S.chg*100).toFixed(2)+'%':'—'}</span>${tshTag(r.c)}</div>
       ${S?'<canvas class="km-cv"></canvas>':''}
       <div class="km-f">${footHtml(S)}</div></article>`}).join('');
@@ -615,6 +632,7 @@ function fillSheet(){
   const tags=[];if(S&&S.live){if(S.gap)tags.push('<span class="hot">開盤跳空過前20日高</span>');else if(S.brk)tags.push('<span class="hot">盤中碰到前20日高</span>')}
   if(S&&S.exIn)tags.push('<span class="w">⚠ 近20日有除權息，前20日高未還原</span>');
   {const ob=oppBadge(r,true);if(ob)tags.push(ob.replace(/class="tg op /,'class="'))}
+  if(S){const o=instStreak(S);[['投信',o.it],['外資',o.fi]].forEach(([w,x])=>{if(!x.sg||!x.n)return;const p=x.p5==null?'':'，近5日'+(x.p5>0?'+':'')+x.p5.toFixed(2)+'%';tags.push(`<span class="${x.sg>0?'up':'dn'}">${w}${x.sg>0?'連買':'連賣'}${x.n}天${p}</span>`)})}
   const tm=S&&S.live&&q.t?`盤中 ${q.t}`:S&&S.state==='close'?`今日收盤`:S?`日K至 ${md(S.bars[S.bars.length-1][0])}`:'';
   const ysym=encodeURIComponent(r.c)+(r.m==='上櫃'?'.TWO':'.TW');
   const yahoo='https://tw.stock.yahoo.com/quote/'+ysym+'/technical-analysis';
