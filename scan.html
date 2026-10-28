@@ -96,7 +96,7 @@ select.ch.on{background-color:var(--sel);color:var(--selfg);font-weight:700}
     <span class="t">K線掃描<small>beta</small></span>
     <div id="themes" style="display:contents"></div>
     <select class="ch" id="indSel"><option value="">證交所產業 ▾</option></select>
-    <a class="home" href="index.html">估值看板 →</a>
+    <a class="home" href="index.html">← 估值看板</a>
   </div>
 </div>
 <div class="sb" id="sortBar">
@@ -151,6 +151,7 @@ async function pick(sel){cur=sel;
   const s=$('indSel');s.classList.toggle('on',sel.kind==='i');if(sel.kind!=='i')s.value='';
   if(sel.kind==='t'){try{sessionStorage.setItem('lastTheme',sel.id)}catch(e){}}
   history.replaceState(null,'',sel.kind==='t'?'#'+sel.id:'#i/'+encodeURIComponent(sel.id));
+  document.querySelector('.hd a.home').href=sel.kind==='t'&&sel.id!=='_fav'?'index.html#t/'+encodeURIComponent(sel.id):'index.html';
   const ids=sel.kind==='t'?(THEMES.find(t=>t.id===sel.id)||{stocks:[]}).stocks.map(x=>x[0]):(IND[sel.id]||[]);
   const name=sel.kind==='t'?(THEMES.find(t=>t.id===sel.id)||{}).name:sel.id;document.title=`${name} K線掃描`;
   $('grid').innerHTML=`<div class="empty">讀取 ${ids.length} 檔日K…</div>`;$('cnt').textContent='';
