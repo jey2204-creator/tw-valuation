@@ -129,7 +129,10 @@ function themesAll(base){const c=store.get('themeCfg')||{},order=c.order||[],hid
   const fav=(store.get('fav')||[]).filter(x=>/^\d{4,6}[A-Z]?$/.test(x));if(fav.length)out.unshift({id:'_fav',name:'★ 自選',stocks:fav.map(x=>[x,''])});
   return out}
 async function init(){
-  const [L,T]=await Promise.all([fetch('data/list.json?t='+Date.now()).then(r=>r.json()).catch(()=>[]),fetch('data/themes.json?t='+Date.now()).then(r=>r.json()).catch(()=>({themes:[]}))]);
+  const [L,T,TOP]=await Promise.all([fetch('data/list.json?t='+Date.now()).then(r=>r.json()).catch(()=>[]),fetch('data/themes.json?t='+Date.now()).then(r=>r.json()).catch(()=>({themes:[]})),fetch('data/itrust_top.json?t='+Date.now()).then(r=>r.json()).catch(()=>null)]);
+  // 投本比自動主題（與估值看板同一份 data/itrust_top.json）：投信／外資／土洋前 20，每天自動換名單
+  if(TOP&&TOP.lists){const md=TOP.asof?`${+TOP.asof.slice(4,6)}/${+TOP.asof.slice(6)}`:'';
+    [['itop','📈 投信買超前20','it'],['ftop','🌐 外資買超前20','fi'],['btop','🤝 土洋同買前20','both']].forEach(([id,n,k])=>{const L2=TOP.lists[k]||[];if(L2.length)T.themes=[{id,name:`${n}（${md}）`,stocks:L2.map(r=>[r.c,r.sub||''])},...(T.themes||[])]})}
   L.forEach(([c,n,m,i])=>{NAME[c]=n;(IND[i]=IND[i]||[]).push(c)});
   THEMES=themesAll(T.themes||[]);
   $('themes').innerHTML=THEMES.map(t=>`<button class="ch" data-t="${esc(t.id)}" aria-pressed="false">${esc(t.name)}<span style="opacity:.6;font-size:11px"> ${t.stocks.length}</span></button>`).join('');

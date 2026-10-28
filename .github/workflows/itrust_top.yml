@@ -1,0 +1,32 @@
+name: itrust 前20名單 → 估值頁主題（data/itrust_top.json）
+# 分享版同步排程每天推 itrust/data.js 幾次；一有變動就抽最新名單日的投信／外資／土洋前 20，
+# 寫成幾 KB 的 data/itrust_top.json，給根目錄估值頁（index.html）當三個自動換名單的主題。
+on:
+  push:
+    branches: [main]
+    paths: ["itrust/data.js", "itrust/top_extract.py"]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: update-data          # 跟「更新股票資料」同一個隊伍，避免 git push 互撞
+  cancel-in-progress: false
+jobs:
+  top:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: 抽前 20 名單
+        run: python itrust/top_extract.py
+      - name: 有變動才提交
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/itrust_top.json
+          git diff --cached --quiet && echo "沒有變動" && exit 0
+          git commit -m "itrust_top: $(python -c "import json;print(json.load(open('data/itrust_top.json'))['asof'])")"
+          git pull --rebase origin main
+          git push

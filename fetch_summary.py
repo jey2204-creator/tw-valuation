@@ -82,7 +82,15 @@ def finmind(dataset, sid, start):
 
 def theme_ids():
     th = json.loads((OUT / "themes.json").read_text("utf-8"))["themes"]
-    return sorted({s[0] for t in th for s in t["stocks"]})
+    return sorted({s[0] for t in th for s in t["stocks"]} | itrust_top_ids())
+
+def itrust_top_ids():
+    """估值頁的投本比自動主題（data/itrust_top.json：投信／外資／土洋前 20）也當成主題成份股一起抓。"""
+    try:
+        j = json.loads((OUT / "itrust_top.json").read_text("utf-8"))
+        return {r["c"] for L in (j.get("lists") or {}).values() for r in L}
+    except Exception:
+        return set()
 
 
 def eps_of(rows):
