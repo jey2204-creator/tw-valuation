@@ -14,7 +14,7 @@ h = open(src, encoding="utf-8").read()
 
 # ↓ 之後由世杰提供 Supabase 專案的 URL 與 anon key，填在這裡
 SB_URL = "https://YOUR-PROJECT.supabase.co"
-SB_KEY = "YOUR-ANON-KEY"
+SB_KEY = "sb_publishable_W4CH98UR-Dp-WgknERYg2A_TRg8-v7t"
 
 
 def rep(old, new, n=1):
@@ -59,7 +59,7 @@ SYNC_JS = r'''<script>
 (function(){
 const URL_='%SB_URL%',KEY='%SB_KEY%';
 if(!URL_||URL_.includes('YOUR-')){console.warn('sync: 尚未設定 Supabase');}
-const HDR={apikey:KEY,Authorization:'Bearer '+KEY,'Content-Type':'application/json'};
+const HDR={apikey:KEY,'Content-Type':'application/json',...(KEY.startsWith('sb_')?{}:{Authorization:'Bearer '+KEY})};
 const raw=store.set.bind(store);
 let code=store.get('syncCode')||'',meta=store.get('syncMeta')||{},tm=null,busy=false,lastMerged=false;
 const save=()=>raw('syncMeta',meta);
