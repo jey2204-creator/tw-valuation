@@ -13,7 +13,7 @@ BETA = dst != src
 h = open(src, encoding="utf-8").read()
 
 # ↓ 之後由世杰提供 Supabase 專案的 URL 與 anon key，填在這裡
-SB_URL = "https://YOUR-PROJECT.supabase.co"
+SB_URL = "https://iszztgcjxyzwjzmrmxkw.supabase.co"
 SB_KEY = "sb_publishable_W4CH98UR-Dp-WgknERYg2A_TRg8-v7t"
 
 

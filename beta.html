@@ -2382,9 +2382,9 @@ document.getElementById('noteBtn').addEventListener('click',function(){const n=d
 <script>
 // ---------- ☁️ 雲端同步（Supabase RPC）：fav + themeCfg ----------
 (function(){
-const URL_='https://YOUR-PROJECT.supabase.co',KEY='YOUR-ANON-KEY';
+const URL_='https://iszztgcjxyzwjzmrmxkw.supabase.co',KEY='sb_publishable_W4CH98UR-Dp-WgknERYg2A_TRg8-v7t';
 if(!URL_||URL_.includes('YOUR-')){console.warn('sync: 尚未設定 Supabase');}
-const HDR={apikey:KEY,Authorization:'Bearer '+KEY,'Content-Type':'application/json'};
+const HDR={apikey:KEY,'Content-Type':'application/json',...(KEY.startsWith('sb_')?{}:{Authorization:'Bearer '+KEY})};
 const raw=store.set.bind(store);
 let code=store.get('syncCode')||'',meta=store.get('syncMeta')||{},tm=null,busy=false,lastMerged=false;
 const save=()=>raw('syncMeta',meta);
