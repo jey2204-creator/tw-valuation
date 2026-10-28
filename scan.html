@@ -121,7 +121,7 @@ const pxFmt=p=>p==null?'—':p>=1000?fmt(p,0):p>=100?fmt(p,1):fmt(p,2);
 const pct=(x,d=1)=>x==null?'—':(x>0?'▲':x<0?'▼':'')+Math.abs(x*100).toFixed(d)+'%';
 const cls=x=>x>0?'up':x<0?'dn':'';
 const md=d=>d?+d.slice(4,6)+'/'+ +d.slice(6,8):'';
-let NAME={},IND={},THEMES=[],cur=null,sortK='chg',N=40,FL={ma20:false,ts3:false,vr12:false},SHARD={},ROWS=[],openI=-1,shN=80;
+let NAME={},IND={},THEMES=[],NOTICE=null,cur=null,sortK='chg',N=40,FL={ma20:false,ts3:false,vr12:false},SHARD={},ROWS=[],openI=-1,shN=80;
 // ---- 主題清單：data/themes.json ＋ 手機裡改過／自訂的主題（themeCfg，與估值看板同一份）＋ 自選（fav） ----
 function themesAll(base){const c=store.get('themeCfg')||{},order=c.order||[],hidden=c.hidden||[],mine=c.themes||{};const bm={};base.forEach(t=>bm[t.id]=t);
   const ids=[...order.filter(i=>bm[i]||mine[i]),...base.map(t=>t.id),...Object.keys(mine)].filter((v,i,a)=>a.indexOf(v)===i&&(bm[v]||mine[v])&&!hidden.includes(v));
@@ -144,7 +144,7 @@ async function init(){
     if(b.dataset.k){sortK=b.dataset.k}else if(b.dataset.f){FL[b.dataset.f]=!FL[b.dataset.f]}else if(b.dataset.n){N=+b.dataset.n}
     paintBar();render()});
   const h=decodeURIComponent(location.hash.slice(1));let first=null;
-  if(h.startsWith('i/'))first={kind:'i',id:h.slice(2)};else if(h&&THEMES.some(t=>t.id===h))first={kind:'t',id:h};
+  if(h.startsWith('n/'))first={kind:'n',id:h.slice(2)};else if(h.startsWith('i/'))first={kind:'i',id:h.slice(2)};else if(h&&THEMES.some(t=>t.id===h))first={kind:'t',id:h};
   if(!first){let last='';try{last=sessionStorage.getItem('lastTheme')||''}catch(e){}first={kind:'t',id:THEMES.some(t=>t.id===last)?last:THEMES[0].id}}
   pick(first);
 }
@@ -153,10 +153,14 @@ async function pick(sel){cur=sel;
   document.querySelectorAll('#themes button').forEach(b=>b.setAttribute('aria-pressed',String(sel.kind==='t'&&b.dataset.t===sel.id)));
   const s=$('indSel');s.classList.toggle('on',sel.kind==='i');if(sel.kind!=='i')s.value='';
   if(sel.kind==='t'){try{sessionStorage.setItem('lastTheme',sel.id)}catch(e){}}
-  history.replaceState(null,'',sel.kind==='t'?'#'+sel.id:'#i/'+encodeURIComponent(sel.id));
-  document.querySelector('.hd a.home').href=sel.kind==='t'&&sel.id!=='_fav'?'index.html#t/'+encodeURIComponent(sel.id):'index.html';
-  const ids=sel.kind==='t'?(THEMES.find(t=>t.id===sel.id)||{stocks:[]}).stocks.map(x=>x[0]):(IND[sel.id]||[]);
-  const name=sel.kind==='t'?(THEMES.find(t=>t.id===sel.id)||{}).name:sel.id;document.title=`${name} K線掃描`;
+  history.replaceState(null,'',sel.kind==='t'?'#'+sel.id:(sel.kind==='n'?'#n/':'#i/')+encodeURIComponent(sel.id));
+  document.querySelector('.hd a.home').href=sel.kind==='n'?'notice.html#'+sel.id:sel.kind==='t'&&sel.id!=='_fav'?'index.html#t/'+encodeURIComponent(sel.id):'index.html';
+  document.querySelector('.hd a.home').textContent=sel.kind==='n'?'← 注意／處置':'← 估值看板';
+  // 注意／處置名單（2026-10-29）：notice.html 的「掃 K 線」入口 → #n/att|dis|pre，名單來自 data/notice.json
+  if(sel.kind==='n'&&!NOTICE){try{NOTICE=await fetch('data/notice.json?t='+Math.floor(Date.now()/3e5)).then(r=>r.ok?r.json():null)}catch(e){NOTICE=null}}
+  const NN={att:'🟡 注意股',dis:'🔴 處置股',pre:'🟠 快達處置'};
+  const ids=sel.kind==='n'?((NOTICE&&NOTICE[sel.id])||[]).map(x=>x.c):sel.kind==='t'?(THEMES.find(t=>t.id===sel.id)||{stocks:[]}).stocks.map(x=>x[0]):(IND[sel.id]||[]);
+  const name=sel.kind==='n'?(NN[sel.id]||'注意股'):sel.kind==='t'?(THEMES.find(t=>t.id===sel.id)||{}).name:sel.id;document.title=`${name} K線掃描`;
   $('grid').innerHTML=`<div class="empty">讀取 ${ids.length} 檔日K…</div>`;$('cnt').textContent='';
   const groups=[...new Set(ids.map(c=>c.slice(0,2)))];
   await Promise.all(groups.map(g=>loadShard(g)));
@@ -262,7 +266,7 @@ $('ov').addEventListener('click',e=>{if(e.target===$('ov'))closeSheet()});
 addEventListener('keydown',e=>{if(openI<0)return;if(e.key==='Escape')closeSheet();if(e.key==='ArrowLeft'&&openI>0){openI--;fillSheet()}if(e.key==='ArrowRight'&&openI<SHR.length-1){openI++;fillSheet()}});
 {let x0=null;$('sh').addEventListener('touchstart',e=>{x0=e.touches[0].clientX},{passive:true});$('sh').addEventListener('touchend',e=>{if(x0==null)return;const dx=e.changedTouches[0].clientX-x0;x0=null;if(Math.abs(dx)<60)return;if(dx<0&&openI<SHR.length-1){openI++;fillSheet()}else if(dx>0&&openI>0){openI--;fillSheet()}},{passive:true})}
 let rt;addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>{render();if(openI>=0)fillSheet()},150)});
-addEventListener('hashchange',()=>{const h=decodeURIComponent(location.hash.slice(1));if(h.startsWith('i/')){if(!cur||cur.kind!=='i'||cur.id!==h.slice(2))pick({kind:'i',id:h.slice(2)})}else if(THEMES.some(t=>t.id===h)&&(!cur||cur.kind!=='t'||cur.id!==h))pick({kind:'t',id:h})});
+addEventListener('hashchange',()=>{const h=decodeURIComponent(location.hash.slice(1));if(h.startsWith('n/')){if(!cur||cur.kind!=='n'||cur.id!==h.slice(2))pick({kind:'n',id:h.slice(2)})}else if(h.startsWith('i/')){if(!cur||cur.kind!=='i'||cur.id!==h.slice(2))pick({kind:'i',id:h.slice(2)})}else if(THEMES.some(t=>t.id===h)&&(!cur||cur.kind!=='t'||cur.id!==h))pick({kind:'t',id:h})});
 init();
 </script>
 </body>
