@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>產業 K 線掃描（beta）</title>
+<title>產業 K 線掃描</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#f3f4f6" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0e1117" media="(prefers-color-scheme: dark)">
@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=IBM+Plex+Mono:wght@500;600&display=swap">
 <style>
-/* 產業 K 線掃描 beta（2026-10-28）：點細產業 → 整面小卡（K＋MA20/60＋投信/外資柱）→ 點小卡放大。資料全部來自 data/chip_s 分片，不用新排程。 */
+/* 產業 K 線掃描（2026-10-28 beta → 同日正式版）：點細產業 → 整面小卡（K＋MA20/60＋投信/外資柱）→ 點小卡放大。資料全部來自 data/chip_s 分片，不用新排程。 */
 :root{
   --bg:#f3f4f6; --card:#ffffff; --fg:#151a23; --muted:#5d6675; --line:#e2e5ea; --grid:#eceef2;
   --accent:#1f5fbf; --warm:#c46a12; --up:#d32f2f; --down:#138a4b;
@@ -93,7 +93,7 @@ select.ch.on{background-color:var(--sel);color:var(--selfg);font-weight:700}
 <body>
 <div class="hd">
   <div class="row">
-    <span class="t">K線掃描<small>beta</small></span>
+    <span class="t">K線掃描</span>
     <div id="themes" style="display:contents"></div>
     <select class="ch" id="indSel"><option value="">證交所產業 ▾</option></select>
     <a class="home" href="index.html">← 估值看板</a>
