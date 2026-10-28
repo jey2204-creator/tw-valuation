@@ -99,6 +99,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[r
 .ovb{flex:none;min-height:34px;padding:0 10px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--muted);font-weight:700;font-size:13px;cursor:pointer;white-space:nowrap}
 .ovb[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
 .ovd{position:relative;flex:none}
+.ovhb{padding:0 7px!important;font-family:var(--font-body)!important}.ovhb[aria-pressed=true]{background:var(--buy);color:#fff;border-color:var(--buy)}
 .ovdb{min-height:34px;padding:0 8px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--fg);font:700 12.5px var(--font-num);cursor:pointer;white-space:nowrap}
 .ovdb.retro{background:var(--otc);border-color:var(--otc);color:#fff}
 .ovdp{position:absolute;right:0;top:calc(100% + 4px);z-index:30;min-width:150px;max-height:min(60vh,380px);overflow-y:auto;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.18);padding:4px}
@@ -233,6 +234,7 @@ body.shopen{overflow:hidden}
     </div>
     <span class="ovd" id="ovd" hidden><button type="button" class="ovdb" id="ovdBtn" aria-haspopup="listbox" aria-expanded="false" title="名單日">10/22 ▾</button>
       <div class="ovdp" id="ovdp" hidden role="listbox" aria-label="名單日"></div></span>
+    <button type="button" class="ovdb ovhb" id="ovHeat" hidden aria-pressed="false" title="投／外買賣超畫法：柱狀 ↔ 熱力帶">柱</button>
     <button type="button" class="ovb" id="ovBtn" aria-pressed="false" title="手機轉橫時 5×4 一屏看完 20 檔">總覽</button>
     <button type="button" class="rf" id="rf">⚡ 更新</button>
   </div>
@@ -270,7 +272,7 @@ body.shopen{overflow:hidden}
     <h2>怎麼看</h2>
     <p>每張卡片＝名單日盤後的排行前 20 名（投信、外資皆 ≥0.5 億，與排行頁預設門檻相同），日K用自己的資料（每晚更新），最右邊<b>虛線框</b>那根是今天盤中到目前為止的K棒。</p>
     <p><b>投信賣／外資賣</b>分頁＝名單日投信、外資<b>賣超佔股本</b>前 20 名（賣超金額 ≥0.5 億，佔股本為負、越負越前面），用來看法人正在出脫哪些股票與族群；<b>土洋賣</b>＝投信賣超（≥0.5 億）且外資同日也賣超，依投本比＋外本比越負越前面（雙賣，最該避開的一組），徽章直接顯示兩邊賣超張數；名單是前一交易日的，盤中看的是「昨天被賣的股今天怎麼走」，不是今天的即時賣壓。賣超名單的日K底圖從 10/22 晚上起才會齊全。</p>
-    <p><b>總覽</b>鈕：手機直向 3 欄 × 7 列、轉橫 5 欄 × 4 列，一屏看完 20 檔；小卡畫最近 20 根 K 棒＋20/60MA＋前 20 日高，下方兩條熱力帶「投」「外」＝每日投信、外資買賣超<b>佔股本％</b>的力道（紅買綠賣；顏色越深越大：淡 &lt;0.05%、中 ≥0.15%、深 ≥0.3%，到名單日為止，盤中那格空白）；第 2 行右側徽章「投3▲ 外2▼」＝連續買／賣超天數（按住看近 5 日累計），右上為漲跌幅與盤中量比；橫向另在右上顯示名單日張數「投/外」（k＝千張）；突破／跳空的排最前面；點一張放大看量與完整法人圖（放大卡的投信／外資柱狀圖同樣改以佔股本％為刻度，點線＝±0.15%，右側為刻度上限）。</p>
+    <p><b>總覽</b>鈕：手機直向 3 欄 × 7 列、轉橫 5 欄 × 4 列，一屏看完 20 檔；小卡畫最近 20 根 K 棒＋20/60MA＋前 20 日高，下方兩條「投」「外」帶＝每日投信、外資買賣超，控制列「柱／熱」鈕切換畫法（記在手機）：<b>柱</b>＝張數柱狀（每張卡用自己的最大值縮放）；<b>熱</b>＝熱力帶＝每日投信、外資買賣超<b>佔股本％</b>的力道（紅買綠賣；顏色越深越大：淡 &lt;0.05%、中 ≥0.15%、深 ≥0.3%，到名單日為止，盤中那格空白）；第 2 行右側徽章「投3▲ 外2▼」＝連續買／賣超天數（按住看近 5 日累計），右上為漲跌幅與盤中量比；橫向另在右上顯示名單日張數「投/外」（k＝千張）；突破／跳空的排最前面；點一張放大看量與完整法人圖（放大卡的投信／外資柱狀圖同樣改以佔股本％為刻度，點線＝±0.15%，右側為刻度上限）。</p>
     <p><b>另一邊法人</b>徽章：買超卡片上若另一邊法人在名單日是<b>賣超</b>，標 ⚠「外資賣 N張」／「投信賣 N張」（投信買、外資倒貨的要特別小心）；賣超卡片上另一邊也賣標 ⚠「也賣」（雙賣），另一邊反向買標紅色「買」（分歧）。張數＝名單日當天的淨買賣超。</p>
     <p><b>紅色虛線</b>＝前20日高：名單日（含）往前 20 個交易日的最高價。現價或盤中最高碰到它，卡片加紅框並標「突破」；開盤就高於它標「跳空」。價格未還原權息，近 20 日內有除權息時標 ⚠，那條線可能偏高。</p>
     <p>量：<b>0.92×→1.4×</b>＝目前累計量是前 5 日均量的 0.92 倍，依常見盤中量分布推估全天約 1.4 倍（12:00 大約完成全天 65% 的量；09:10 前不估）。量的柱狀圖裡，虛線框是推估的全天量、點線是前 5 日均量。</p>
@@ -300,6 +302,8 @@ const cls=x=>x>0?'up':x<0?'dn':'';
 const md=d=>d?d.slice(4,6)+'/'+d.slice(6,8):'—';
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+// 2026-10-28 總覽投／外畫法切換：bar＝原本柱狀（每卡自己最大值縮放）、heat＝熱力帶（佔股本％分級）；預設柱狀
+const HEAT_KEY='itrust_live_instmode';let instMode=null;
 const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
 
 // ---- 台北時間 ----
@@ -466,6 +470,11 @@ function drawK(cv,S,N,opt){
   // 投信／外資買賣超：2026-10-28 改用「佔股本％」口徑（張×1000÷掛牌股數）；縮圖畫熱力帶（顏色深淺＝力道，不靠高度），完整卡柱狀圖改固定刻度
   if(nInst){const im=new Map((S.inst||[]).map(x=>[x[0],x]));const sh=S.shares||null;const toPct=v=>sh?v*1000/sh*100:null;
     [['投信買賣超',1],['外資買賣超',2]].forEach(([lab,i],k)=>{const iTop=vY0+gap+(instH+gap)*k,iMid=iTop+instH/2;let imax=1;
+      if(miniInst&&instMode!=='heat'){   // 柱狀（改版前原樣）
+        vis.forEach(x=>{const r=im.get(x[0]);if(r&&r[i]!=null)imax=Math.max(imax,Math.abs(r[i]))});
+        g.strokeStyle=ln;g.lineWidth=1;g.beginPath();g.moveTo(padL,iMid);g.lineTo(W-padR,iMid);g.stroke();
+        vis.forEach((x,j)=>{const r=im.get(x[0]);const v=r?r[i]:null;if(v==null||v===0)return;const y=iMid-v/imax*(instH/2-0.5);g.fillStyle=v>0?up:dn;g.globalAlpha=x[0]===L?1:.75;g.fillRect(X(j)-bw/2,Math.min(y,iMid),bw,Math.max(1,Math.abs(iMid-y)));g.globalAlpha=1});
+        g.fillStyle=mu;g.font='600 7.5px '+css('--font-body');g.textAlign='left';g.textBaseline='middle';g.fillText(k?'外':'投',padL+1,iMid);return}
       if(miniInst){
         // 熱力帶：每格＝一天，|佔股本| ≥0.3%＝深、≥0.15%＝中、≥0.05%＝淺、>0＝極淡；沒掛牌股數時退回用該卡最大值分級
         if(!sh)vis.forEach(x=>{const r=im.get(x[0]);if(r&&r[i]!=null)imax=Math.max(imax,Math.abs(r[i]))});
@@ -590,7 +599,7 @@ function render(){
   if(!H){grid.innerHTML=`<div class="empty">${histErr?'日K讀取失敗：'+esc(histErr):'讀取日K中…'}</div>`;return}
   document.body.classList.toggle('ov',ov);$('ovBtn').setAttribute('aria-pressed',String(ov));
   // 總覽的名單日按鈕（2026-10-24）：總覽把頂部收掉，所以在控制列放一顆日期鈕
-  {const w=$('ovd'),b=$('ovdBtn');w.hidden=!ov;b.textContent=md(L)+' ▾';b.classList.toggle('retro',isRetro());b.title='名單日 '+md(L)+(isRetro()?'（回顧）':'（最新）')}
+  {const w=$('ovd'),b=$('ovdBtn');w.hidden=!ov;const hb=$('ovHeat');hb.hidden=!ov;hb.textContent=instMode==='heat'?'熱':'柱';hb.setAttribute('aria-pressed',String(instMode==='heat'));b.textContent=md(L)+' ▾';b.classList.toggle('retro',isRetro());b.title='名單日 '+md(L)+(isRetro()?'（回顧）':'（最新）')}
   const R=rows();$('cnt').textContent=R.length+' 檔';
   if(isOV())R.sort((a,b)=>((b.S&&b.S.live?(b.S.gap?2:b.S.brk?1:0):0)-(a.S&&a.S.live?(a.S.gap?2:a.S.brk?1:0):0))||a.r.rank-b.r.rank);   // 總覽：突破／跳空排最前
   if(!R.length){grid.innerHTML='<div class="empty">這一天沒有符合門檻的名單。</div>';return}
@@ -744,6 +753,8 @@ document.querySelectorAll('.sortbar button').forEach(b=>b.onclick=()=>{sortK=b.d
   document.addEventListener('click',e=>{if(!pop.hidden&&!e.composedPath().includes(pop))close()});
   document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!pop.hidden)close()});
 })();
+instMode=store.get(HEAT_KEY)==='heat'?'heat':'bar';
+$('ovHeat').onclick=()=>{instMode=instMode==='heat'?'bar':'heat';store.set(HEAT_KEY,instMode);render()};
 $('ovBtn').onclick=()=>{ov=!ov;store.set(OV_KEY,ov?'1':'0');render();$('ovBtn').title=ov?'總覽：直向 3×7、轉橫 5×4':'手機一屏看完 20 檔'};
 if(ovMQ.addEventListener)ovMQ.addEventListener('change',()=>render());
 $('rf').onclick=()=>{if(!apiUrl()){$('setup').hidden=false;$('apiIn').focus();return}refresh()};
