@@ -5,6 +5,11 @@ on:
     - cron: "25 10 * * 1-5"   # 台北 18:25 備援
     - cron: "25 12 * * 1-5"   # 台北 20:25 備援
   workflow_dispatch:
+    inputs:
+      backfill:
+        description: "回補證交所注意名單歷史天數（第一次建議 45，平常留空）"
+        required: false
+        default: ""
 permissions:
   contents: write
 concurrency:
@@ -20,6 +25,8 @@ jobs:
         with:
           python-version: "3.12"
       - name: 抓注意／處置／快達處置名單
+        env:
+          BACKFILL: ${{ github.event.inputs.backfill }}
         run: python fetch_notice.py
       - name: 提交
         if: always()
