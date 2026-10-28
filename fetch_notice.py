@@ -52,6 +52,7 @@ def get(url, tries=3):
             except Exception:
                 j = json.loads(raw.decode("big5", "replace"))
             if isinstance(j, dict):                       # 證交所 rwd 格式：{stat, fields, data:[[...]]}
+                DIAG.setdefault("probe", {})[url[:100]] = raw.decode("utf-8", "replace")[:600]
                 if j.get("fields") and isinstance(j.get("data"), list):
                     return [dict(zip(j["fields"], row)) for row in j["data"]]
                 if j.get("tables"):
@@ -97,16 +98,18 @@ def num(s):
 
 def ymd(s):
     """1151028 / 115/10/28 / 115年10月28日 / 2026-10-28 / 20261028 → 20261028"""
-    m = re.search(r"(\d{2,4})\D?年?\D?(\d{1,2})\D?月?\D?(\d{1,2})", s or "")
+    s = (s or "").strip()
+    if re.fullmatch(r"\d{7}", s):
+        return f"{int(s[:3]) + 1911}{s[3:]}"
+    if re.fullmatch(r"\d{8}", s):
+        return s
+    m = re.search(r"(\d{2,4})\s*[/年.\-]\s*(\d{1,2})\s*[/月.\-]\s*(\d{1,2})", s)
     if m:
         y, mo, d = int(m.group(1)), int(m.group(2)), int(m.group(3))
         if y < 1000:
             y += 1911
         return f"{y}{mo:02d}{d:02d}"
-    s = re.sub(r"\D", "", s or "")
-    if len(s) == 7:
-        return f"{int(s[:3]) + 1911}{s[3:]}"
-    return s if len(s) == 8 else ""
+    return ""
 
 
 def last_date(s):
@@ -186,9 +189,14 @@ def parse_pre(rows, mkt):
 att, dis, pre = [], [], []
 
 # 上市：官網 rwd 優先 → OpenAPI 備援
-rows = fetch_rows("twse_att", RWD + "notice?response=json")
-if not any(code_of(r) for r in rows):
-    rows = fetch_rows("twse_att_openapi", TWSE + "announcement/notice")
+TWSE_ATT_URLS = [RWD + f"notice?date={TODAY}&response=json", RWD + "notice?response=json",
+                 f"https://www.twse.com.tw/announcement/notice?response=json&date={TODAY}",
+                 RWD + f"notice?startDate={TODAY}&endDate={TODAY}&response=json",
+                 TWSE + "announcement/notice"]
+for i, u in enumerate(TWSE_ATT_URLS):
+    rows = fetch_rows(f"twse_att{i or ''}", u)
+    if any(code_of(r) for r in rows):
+        DIAG["twse_att_url"] = u; break
 att += parse_att(rows, "上市")
 d0 = (NOW - dt.timedelta(days=20)).strftime("%Y%m%d")
 rows = fetch_rows("twse_dis", RWD + f"punish?startDate={d0}&endDate={TODAY}&response=json")
@@ -222,7 +230,7 @@ dates = [v["d"] for v in att if v.get("d")]
 ASOF = max(dates) if dates else TODAY
 
 # ---------------------------------------------------------------- 歷史：來源回傳的每一天都記（櫃買會回兩天）；手動回補證交所
-hist = load(HIST, {})
+hist = {k: v for k, v in load(HIST, {}).items() if re.fullmatch(r"20\d{6}", k)}
 by_day = {}
 for v in att:
     by_day.setdefault(v["d"] or ASOF, set()).add(v["c"])
@@ -244,7 +252,9 @@ if BACKFILL:
             continue
         codes = sorted({code_of(r) for r in rows if code_of(r)})
         hist.setdefault(ds, {"att": [], "dis": []})
-        hist[ds]["att"] = sorted(set(hist[ds]["att"]) | set(codes)); hist[ds]["bf"] = 1
+        hist[ds]["att"] = sorted(set(hist[ds]["att"]) | set(codes))
+        if codes:
+            hist[ds]["bf"] = 1
         DIAG["backfill"][ds] = len(codes)
 hist[ASOF] = hist.get(ASOF, {"att": [], "dis": []})
 hist[ASOF]["dis"] = sorted({v["c"] for v in dis})
