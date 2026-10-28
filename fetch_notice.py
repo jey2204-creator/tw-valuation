@@ -167,9 +167,18 @@ def parse_dis(rows, mkt):
         if not c:
             continue
         period = pick(r, r"period", r"處置起迄|處置期間|起迄|期間")
+        detail = pick(r, r"disposalcondition|^detail$", r"處置內容|內容", r"condition")
+        detail = re.sub(r"\s*\*\s*", "\n", detail).strip()                      # 櫃買把每項用「* 」接在同一行
+        mtxt = pick(r, r"measure", r"處置措施|措施") + " " + detail
+        mm = re.search(r"每\s*([一二三四五六七八九十\d]+)\s*分鐘撮合", mtxt)
+        measure = f"每{mm.group(1)}分鐘撮合" if mm else pick(r, r"measure", r"處置措施|措施")[:14]
+        if "預收" in mtxt or "全部之買進價金" in mtxt or "收取全部" in mtxt:
+            measure += "・預收款券"
+        ds = [ymd(x) for x in re.findall(r"\d{2,4}[/年.\-]\d{1,2}[/月.\-]\d{1,2}|\d{7,8}", period)]
+        ds = [d for d in ds if d]
         out.append({"c": c, "n": name_of(c, pick(r, *NAME_PATS)), "m": market_of(c, mkt),
-                    "r": pick(r, r"reason", r"處置原因|原因"), "period": period, "end": last_date(period),
-                    "measure": pick(r, r"measure", r"處置措施|措施", r"condition", r"content|內容"),
+                    "r": pick(r, r"reason", r"處置原因|處置條件|原因"), "period": period, "start": min(ds) if ds else "", "end": max(ds) if ds else "",
+                    "measure": measure.strip("・"), "detail": detail,
                     "d": ymd(pick(r, *DATE_PATS))})
     return out
 
@@ -270,7 +279,9 @@ for v in pre.values():
     v["n10"], v["n30"], _ = stats(v["c"])
 for v in dis.values():
     v["n30"] = stats(v["c"])[1]
-    v["endMd"] = f"{int(v['end'][4:6])}/{int(v['end'][6:])}" if v["end"] else ""
+    md_ = lambda d: f"{int(d[4:6])}/{int(d[6:])}" if d else ""
+    v["endMd"], v["startMd"] = md_(v["end"]), md_(v["start"])
+    v["left"] = sum(1 for i in range(1, 25) if (dt.datetime.strptime(ASOF, "%Y%m%d") + dt.timedelta(days=i)).weekday() < 5 and (dt.datetime.strptime(ASOF, "%Y%m%d") + dt.timedelta(days=i)).strftime("%Y%m%d") <= v["end"]) if v["end"] else None
 
 out = {"updated": NOW.strftime("%Y-%m-%dT%H:%MZ"), "asof": ASOF, "histDays": len(days),
        "att": sorted(att.values(), key=lambda x: (-x["streak"], -x["n10"], x["c"])),
