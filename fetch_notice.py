@@ -166,7 +166,7 @@ def parse_dis(rows, mkt):
         c = code_of(r)
         if not c:
             continue
-        period = pick(r, r"period", r"處置期間|期間")
+        period = pick(r, r"period", r"處置起迄|處置期間|起迄|期間")
         out.append({"c": c, "n": name_of(c, pick(r, *NAME_PATS)), "m": market_of(c, mkt),
                     "r": pick(r, r"reason", r"處置原因|原因"), "period": period, "end": last_date(period),
                     "measure": pick(r, r"measure", r"處置措施|措施", r"condition", r"content|內容"),
@@ -259,9 +259,10 @@ def stats(c):
 att = {v["c"]: v for v in att if (v["d"] or ASOF) == ASOF}                        # 只留最新一天
 dis = {v["c"]: v for v in dis if not v["end"] or v["end"] > ASOF}                 # 處置期未結束（迄日＝名單日的已結束）
 pre = {v["c"]: v for v in pre}
+# 快達處置：上市用證交所官方名單；上櫃沒有官方端點 → 用本站歷史次數估算（近 10 日 ≥5 次或近 30 日 ≥11 次）
 for v in att.values():
     v["n10"], v["n30"], v["streak"] = stats(v["c"])
-    v["warn"] = v["n10"] >= 5 or v["n30"] >= 11 or v["c"] in pre
+    v["warn"] = v["c"] in pre or (v["m"] == "上櫃" and (v["n10"] >= 5 or v["n30"] >= 11))
 for v in att.values():
     if v["warn"] and v["c"] not in pre:
         pre[v["c"]] = {"c": v["c"], "n": v["n"], "m": v["m"], "r": f"依本站紀錄：近 10 日 {v['n10']} 次、近 30 日 {v['n30']} 次列注意（估算，非官方名單）", "d": ASOF, "est": True}
