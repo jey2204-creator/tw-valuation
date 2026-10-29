@@ -139,10 +139,12 @@ async function init(){
   // 投本比自動主題（與估值看板同一份 data/itrust_top.json）：投信／外資／土洋前 20，每天自動換名單
   if(TOP&&TOP.lists){const md=TOP.asof?`${+TOP.asof.slice(4,6)}/${+TOP.asof.slice(6)}`:'';
     [['itop','📈 投信買超前20','it'],['ftop','🌐 外資買超前20','fi'],['btop','🤝 土洋同買前20','both']].forEach(([id,n,k])=>{const L2=TOP.lists[k]||[];if(L2.length)T.themes=[{id,name:`${n}（${md}）`,stocks:L2.map(r=>[r.c,r.sub||''])},...(T.themes||[])]})}
+  // 注意／處置自動主題（與估值看板同一份 data/notice.json；id 與首頁一致：natt／npre／ndis）
+  if(NT){const md=NT.asof?`${+NT.asof.slice(4,6)}/${+NT.asof.slice(6)}`:'';
+    [['ndis','🔴 處置股','dis'],['npre','🟠 快達處置','pre'],['natt','🟡 注意股','att']].forEach(([id,n,k])=>{const L2=NT[k]||[];if(L2.length)T.themes=[{id,name:`${n}（${md}）`,stocks:L2.map(r=>[r.c,''])},...(T.themes||[])]})}
   L.forEach(([c,n,m,i])=>{NAME[c]=n;(IND[i]=IND[i]||[]).push(c)});
   THEMES=themesAll(T.themes||[]);
-  const nmd=NT&&NT.asof?`${+NT.asof.slice(4,6)}/${+NT.asof.slice(6)}`:'';
-  $('themes').innerHTML=(NT?[['att','🟡 注意',NT.att.length],['dis','🔴 處置',NT.dis.length],['pre','🟠 快達處置',NT.pre.length]].map(([id,n,c])=>`<button class="ch nt" data-n="${id}" aria-pressed="false" title="${nmd} 名單">${n}<span style="opacity:.6;font-size:11px"> ${c}</span></button>`).join(''):'')+THEMES.map(t=>`<button class="ch" data-t="${esc(t.id)}" aria-pressed="false">${esc(t.name)}<span style="opacity:.6;font-size:11px"> ${t.stocks.length}</span></button>`).join('');
+  $('themes').innerHTML=THEMES.map(t=>`<button class="ch" data-t="${esc(t.id)}" aria-pressed="false">${esc(t.name)}<span style="opacity:.6;font-size:11px"> ${t.stocks.length}</span></button>`).join('');
   const inds=Object.keys(IND).filter(k=>k&&k!=='其他').sort((a,b)=>IND[b].length-IND[a].length);
   $('indSel').innerHTML='<option value="">證交所產業 ▾</option>'+inds.map(k=>`<option value="${esc(k)}">${esc(k)}（${IND[k].length}）</option>`).join('');
   $('themes').addEventListener('click',e=>{const b=e.target.closest('button[data-t],button[data-n]');if(b)pick(b.dataset.n?{kind:'n',id:b.dataset.n}:{kind:'t',id:b.dataset.t})});
@@ -151,7 +153,7 @@ async function init(){
     if(b.dataset.k){sortK=b.dataset.k}else if(b.dataset.f){FL[b.dataset.f]=!FL[b.dataset.f]}else if(b.dataset.n){N=+b.dataset.n}
     paintBar();render()});
   const h=decodeURIComponent(location.hash.slice(1));let first=null;
-  if(h.startsWith('n/'))first={kind:'n',id:h.slice(2)};else if(h.startsWith('i/'))first={kind:'i',id:h.slice(2)};else if(h&&THEMES.some(t=>t.id===h))first={kind:'t',id:h};
+  if(h.startsWith('n/'))first={kind:'t',id:'n'+h.slice(2)};else if(h.startsWith('i/'))first={kind:'i',id:h.slice(2)};else if(h&&THEMES.some(t=>t.id===h))first={kind:'t',id:h};
   if(!first){let last='';try{last=sessionStorage.getItem('lastTheme')||''}catch(e){}first={kind:'t',id:THEMES.some(t=>t.id===last)?last:THEMES[0].id}}
   pick(first);
 }
@@ -161,8 +163,7 @@ async function pick(sel){cur=sel;
   const s=$('indSel');s.classList.toggle('on',sel.kind==='i');if(sel.kind!=='i')s.value='';
   if(sel.kind==='t'){try{sessionStorage.setItem('lastTheme',sel.id)}catch(e){}}
   history.replaceState(null,'',sel.kind==='t'?'#'+sel.id:(sel.kind==='n'?'#n/':'#i/')+encodeURIComponent(sel.id));
-  document.querySelector('.hd a.home').href=sel.kind==='n'?'notice.html#'+sel.id:sel.kind==='t'&&sel.id!=='_fav'?'index.html#t/'+encodeURIComponent(sel.id):'index.html';
-  document.querySelector('.hd a.home').textContent=sel.kind==='n'?'← 注意／處置':'← 估值看板';
+  document.querySelector('.hd a.home').href=sel.kind==='t'&&sel.id!=='_fav'?'index.html#t/'+encodeURIComponent(sel.id):'index.html';
   // 注意／處置名單（2026-10-29）：notice.html 的「掃 K 線」入口 → #n/att|dis|pre，名單來自 data/notice.json
   if(sel.kind==='n'&&!NOTICE){try{NOTICE=await fetch('data/notice.json?t='+Math.floor(Date.now()/3e5)).then(r=>r.ok?r.json():null)}catch(e){NOTICE=null}}
   const NN={att:'🟡 注意股',dis:'🔴 處置股',pre:'🟠 快達處置'};

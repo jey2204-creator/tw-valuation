@@ -1313,7 +1313,7 @@ let LIST=[],WATCH=[];
 // ---- 投本比自動主題（2026-10-28）：data/itrust_top.json 由 Actions（itrust_top.yml）在 itrust/data.js 推送後抽出
 //      最新名單日的投信前20／外資前20／土洋同買前20，口徑同分享版排行頁預設（買超 ≥0.5 億、市值不限）。
 //      這三個主題每天自動換名單、不可編輯、不佔 ⭐自選 30 檔額度；要長期盯的股票仍由個股頁 ☆ 自己加。
-let TOP=null;const AUTO_IDS=['itop','ftop','btop'];const isAuto=id=>AUTO_IDS.includes(id);
+let TOP=null,NT=null;const AUTO_IDS=['itop','ftop','btop','natt','npre','ndis'];const isAuto=id=>AUTO_IDS.includes(id);
 function autoThemes(){
   if(!TOP||!TOP.lists)return [];
   const md=TOP.asof?`${+TOP.asof.slice(4,6)}/${+TOP.asof.slice(6)}`:'';
@@ -1323,7 +1323,16 @@ function autoThemes(){
   const mk=(id,name,k,desc)=>{const L=TOP.lists[k]||[];return L.length?[{id,name:`${name}（${md}）`,auto:true,desc,stocks:L.map(r=>[r.c,note(r,k)])}]:[]};
   return [...mk('itop','📈 投信買超前20','it','投信買超佔股本前 20 名（買超金額 ≥0.5 億、市值不限），排序＝投本比由高到低'),
           ...mk('ftop','🌐 外資買超前20','fi','外資買超佔股本前 20 名（買超金額 ≥0.5 億、市值不限），排序＝外本比由高到低'),
-          ...mk('btop','🤝 土洋同買前20','both','投信買超（≥0.5 億）且外資當天也淨買超，排序＝投本比＋外本比')];
+          ...mk('btop','🤝 土洋同買前20','both','投信買超（≥0.5 億）且外資當天也淨買超，排序＝投本比＋外本比'),
+          ...noticeThemes()];
+}
+// ---- 注意／處置自動主題（2026-10-29）：data/notice.json 由 notice.yml 每個交易日 17:25 抓證交所＋櫃買；備註＝「連3・10日7次」／「剩4日」
+function noticeThemes(){
+  if(!NT)return [];const md=NT.asof?`${+NT.asof.slice(4,6)}/${+NT.asof.slice(6)}`:'';
+  const mk=(id,name,L,desc,note)=>L.length?[{id,name:`${name}（${md}）`,auto:true,notice:true,desc,stocks:L.map(x=>[x.c,note(x)])}]:[];
+  return [...mk('natt','🟡 注意股',NT.att||[],'證交所／櫃買當日公布的注意有價證券（漲幅、週轉率、本益比、成交量等達標），排序＝連續天數',x=>[x.streak>1?`連${x.streak}`:'',x.n10?`10日${x.n10}次`:''].filter(Boolean).join('・')),
+          ...mk('npre','🟠 快達處置',NT.pre||[],'注意累計次數接近處置門檻（近 10 日 5 次或近 30 日 11 次）；上市為官方名單，上櫃用本站紀錄估算',x=>`10日${x.n10||0}次${x.est?'・估算':''}`),
+          ...mk('ndis','🔴 處置股',NT.dis||[],'分盤撮合、可能預收款券，流動性大降；排序＝處置結束日',x=>[x.left!=null?`剩${x.left}日`:'',x.measure?x.measure.split('・')[0]:''].filter(Boolean).join('・'))];
 }
 const store={get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
 async function fm(dataset,id,start){
@@ -2224,7 +2233,8 @@ function showTheme(tid){
   if(MODE==='m'){const mw=median(ids.map(i=>mv(i,'w'))),mm=median(ids.map(i=>mv(i,'m'))),mq=median(ids.map(i=>mv(i,'q'))),vr=median(ids.map(i=>mv(i,'vr'))),nf=ids.filter(i=>mv(i,'fire')).length;
     $('tSum').innerHTML=MO?`${ids.length} 檔中位數：週 <strong class="${sign(mw)}">${pct(mw)}</strong>・月 <strong class="${sign(mm)}">${pct(mm)}</strong>・季 <strong class="${sign(mq)}">${pct(mq)}</strong>・量比 <strong>${fmt(vr,2)}</strong>${(()=>{const bw=median(ids.map(i=>tv(i,'b4w')));return bw==null?'':`・大戶週變化 <strong class="${sign(bw)}">${pp(bw,2)}</strong>`})()}・🔥 <strong>${nf}</strong> 檔`:'動能資料尚未產生（第一次需回補約 3 個月歷史資料）'}
   $('tTbl').dataset.sort='';$('tTbl').dataset.note=t.auto?'1':'';table($('tTbl'),t.stocks);
-  if(t.auto)$('tSum').innerHTML=`<span class="asof">🔄 名單日 ${TOP.asof.slice(0,4)}/${TOP.asof.slice(4,6)}/${TOP.asof.slice(6)}・每個交易日盤後自動更新，不可編輯、不佔自選額度</span><br>${t.desc}。股名下方「投0.77%・連3」＝佔股本％、連續 3 個交易日在這個榜上。想長期盯的股票，進個股頁按 ☆ 加入自選。<br>`+$('tSum').innerHTML;
+  if(t.notice)$('tSum').innerHTML=`<span class="asof">🔄 名單日 ${NT.asof.slice(0,4)}/${NT.asof.slice(4,6)}/${NT.asof.slice(6)}・每個交易日 17:25 後自動更新，不可編輯、不佔自選額度</span><br>${t.desc}。<b>列注意不是買進訊號</b>——常見高開低走；自選股出現在這裡請當減碼提醒。看原因全文與處置細節：<a href="notice.html#${t.id==='natt'?'att':t.id==='npre'?'pre':'dis'}">注意／處置頁 →</a><br>`+$('tSum').innerHTML;
+  else if(t.auto)$('tSum').innerHTML=`<span class="asof">🔄 名單日 ${TOP.asof.slice(0,4)}/${TOP.asof.slice(4,6)}/${TOP.asof.slice(6)}・每個交易日盤後自動更新，不可編輯、不佔自選額度</span><br>${t.desc}。股名下方「投0.77%・連3」＝佔股本％、連續 3 個交易日在這個榜上。想長期盯的股票，進個股頁按 ☆ 加入自選。<br>`+$('tSum').innerHTML;
   if(MODE==='m'){$('tFoot').innerHTML=`週／月／季＝收盤對比 5／20／60 個交易日前（未還原除權息，跨除息日會略低）。量比＝5 日均量 ÷ 20 日均量，≥1.5 標紅＝放量。投／外＝投信、外資近 5 日買賣超張數；「投連N天」＝投信連續買超 3 天以上。🔥＝月漲＋量比≥1.5＋法人 5 日買超≥成交量 1%。<br>投／外 5日＝投信、外資近 5 個交易日買賣超（張）。大戶＝集保持股 400 張以上的持股占比（每週六更新），後面數字是占比變化（百分點）；股東＝集保股東人數變化%。<b>虛線底的字、標籤都可以點，會跳出說明。</b>籌碼標籤看 4 週：<span class="flag" style="color:var(--up);border-color:var(--up)">集中</span>＝大戶↑、股東人數↓（散戶賣大戶接）；<span class="flag" style="color:var(--warm);border-color:var(--warm)">散戶追</span>＝大戶↑但人數也增加超過 3%（熱度高、留意追高）；<span class="flag" style="color:var(--down);border-color:var(--down)">分散</span>＝大戶↓、人數↑；變化很小不標。🔥 旁的 <span class="flag" style="color:var(--up);border-color:var(--up)">集中↑</span>＝🔥 且籌碼集中。增資、可轉債轉換會讓大戶比失真，大幅變化請查公告。<br>點欄位標題排序；「量比」連點可切換投信 5 日、外資 5 日、投信連買、大戶週增、大戶 4 週、股東人數 4 週減少排序。`+(TD&&TD.weeks.length<2?'<br>⚠️ 集保資料目前只有 1 週，週變化要等下週六更新後才有。':'')+(MO&&MO.nPx<61?`<br>⚠️ 歷史資料目前 ${MO.nPx} 個交易日，季%需要 61 天，回補完成前顯示「—」。`:'');return}
   $('tFoot').innerHTML=`「四季」＝近四季 EPS 合計（到${QN?' '+QN:'最新一季'}）對比前四季合計的年增率，比單季年增平滑、較不受低基期影響；資料不足 8 季的股票退回「單季」（最新一季對比去年同季）。橘色季別＝跟其他檔不同季；<span class="flag">業外</span>＝近四季有一季 EPS 可能含一次性收益。<span>低基期</span>＝年增超過 300%，不算 PEG。PEG＝本益比（近四季）÷ 近四季 EPS 年增，<span class="cheap">&lt;1 偏便宜</span>、<span class="pricey">&gt;2 偏貴</span>；記憶體等循環股的 PEG 參考性低。單季、預估 PEG 看個股頁本益比下方。<br>股票名稱下方的「億／兆」＝市值＝收盤 × 已發行普通股數（公司基本資料）；<b>#1～#3</b>＝主題內市值名次。👑＝市值和營收規模（今年累計營收 ÷ 月數）都是主題第 1 名；只有市值第 1 而營收不是，常是估值較高墊高市值，不一定是產業龍頭。龍頭常已反映在估值上，記得搭配本益比位階看。<br>「薪 316萬 +20%」＝非擔任主管職務之全時員工薪資中位數${SA&&SA.yrAD?`（${SA.yrAD} 年，證交所／櫃買每年 6 月底公布前一年度）`:''}與對前一年度的變化：含本薪、獎金、加班費與員工酬勞，排除經理人與部分工時，只算該公司本身員工（不含子公司），所以分紅多的 IC 設計、景氣好的年度會特別高；KY 公司（外國企業）不在揭露範圍，不顯示。點個股頁的薪資列可看平均數與主題內名次。<br>「<span class="flag ail3">AI 高</span> 61%」＝AI 成分：公司法說／年報講的 AI 或資料中心相關營收占比，<span class="ail3">高</span> ≥50%、<span class="ail2">中</span> 20～50%、<span class="ail1">低</span> &lt;20%、無＝查過但公司沒有任何揭露；<b>沒有標籤＝還沒查</b>（目前只查主題成份股與庫存股，要補查告訴 Claude）；數字前有「~」＝媒體或法人推估，「推估」＝公司不拆分、依事業結構判斷。各公司口徑不同（有的是占伺服器營收、HPC 平台、整條產品線），不能直接比大小，<b>點標籤看口徑與來源</b>，個股頁有一年前比較與來源連結。AI 純度高的通常本益比也高，要跟估值位階一起看。<br>點欄位標題排序；「股票」連點＝依市值、薪資中位數、AI 成分排序，「本益比」連點可切換成 EPS 年增、PEG 排序。點一列看個股圖表。`+(S?` 資料更新 ${S.updated.slice(0,10)}`:'');
 }
@@ -2365,6 +2375,7 @@ addEventListener('hashchange',route);
     LIST=Object.values(m).map(s=>[s.stock_id,s.stock_name,s.type==='twse'?'上市':'上櫃',s.industry_category]).sort((a,b)=>a[0].localeCompare(b[0]));store.set('list',{t:Date.now(),d:LIST})}catch(e){}}}
   try{const r=await fetch('data/themes.json?t='+Date.now());if(r.ok)BASE=(await r.json()).themes||[]}catch(e){}
   try{const r=await fetch('data/itrust_top.json?t='+Date.now());if(r.ok)TOP=await r.json()}catch(e){}
+  try{const r=await fetch('data/notice.json?t='+Math.floor(Date.now()/3e5));if(r.ok)NT=await r.json()}catch(e){}
   BASE=[...autoThemes(),...BASE];
   applyCfg();
   try{const r=await fetch('data/summary.json?t='+Date.now());if(r.ok)S=await r.json()}catch(e){}

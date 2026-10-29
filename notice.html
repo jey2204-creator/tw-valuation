@@ -100,7 +100,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
   <span class="lab">市場</span><button data-m="" aria-pressed="true">全部</button><button data-m="上市">上市</button><button data-m="上櫃">上櫃</button>
   <span class="sep"></span>
   <span class="lab">排序</span><button data-s="streak" aria-pressed="true">連續天</button><button data-s="chg">漲幅</button><button data-s="vr">量比</button><button data-s="n30">30日次數</button>
-  <a class="sc" id="scanLink" href="scan.html#n/att">📈 掃 K 線</a><button id="noteBtn" aria-pressed="false" aria-label="說明">ⓘ</button>
+  <a class="sc" id="scanLink" href="scan.html#natt">📈 掃 K 線</a><button id="noteBtn" aria-pressed="false" aria-label="說明">ⓘ</button>
 </div>
 <div class="cnt" id="cnt"></div>
 <div class="note hid" id="note"></div>
@@ -151,7 +151,7 @@ function hl(s){return esc(s).replace(/(\d+(?:\.\d+)?%|\d+(?:\.\d+)?倍)/g,'<em>$
 function paint(){
   document.querySelectorAll('.tab').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.tab===TAB)));
   document.querySelectorAll('#bar button').forEach(b=>{if(b.dataset.m!=null)b.setAttribute('aria-pressed',String(b.dataset.m===MK));else if(b.dataset.s)b.setAttribute('aria-pressed',String(b.dataset.s===SORT))});
-  $('scanLink').href='scan.html#n/'+TAB;document.title=T[TAB].title;
+  $('scanLink').href='scan.html#n'+TAB;document.title=T[TAB].title;
   $('note').innerHTML=T[TAB].tip;
   const R=rows(),all=(D[TAB]||[]).length;
   const up=R.filter(x=>(K[x.c]||{}).chg>0).length;
