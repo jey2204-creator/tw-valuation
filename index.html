@@ -1365,7 +1365,8 @@ async function live(id){
   if(star){ // 分割還原：用「母公司淨利 ÷ EPS」反推每季隱含股數，最新一季當基準；舊季差超過 30% 就把 EPS 換到現在基準，股數也改用隱含股數
     const sh=x=>x[6]!=null&&Math.abs(x[5])>=0.5&&Math.abs(x[6])>=1e7&&(x[6]>0)===(x[5]>0)?x[6]/x[5]:null;
     let ref=null;for(let i=q.length-1;i>=0&&!ref;i--)ref=sh(q[i]);
-    if(ref){shares=ref/1e8;let cur=1;for(let i=q.length-1;i>=0;i--){const v=sh(q[i]);if(v){const r=v/ref;cur=Math.abs(r-1)>0.3?r:1}if(cur!==1)q[i][5]=+(q[i][5]*cur).toFixed(2)}}}
+    if(ref)shares=ref/1e8;
+    let prev=null,cur=1;for(let i=q.length-1;i>=0;i--){const v=sh(q[i]);if(v&&prev){const r=v/prev;if(Math.abs(r-1)>0.3)cur*=r}if(v)prev=v;if(cur!==1)q[i][5]=+(q[i][5]*cur).toFixed(2)}}
   q.forEach(x=>x.length=6);
   const ml=rows=>{const m={};rows.slice().sort((a,b)=>a.date<b.date?-1:1).forEach(r=>m[r.date.slice(0,7)]=r);return m};
   const pm=ml(px),em=ml(per),riv=[];
@@ -1543,8 +1544,8 @@ function buildY10(fs,bs,cf,dv,px,star){
   // 太小的淨利／EPS 推不準，沿用後一季的比例。減資、增資不做（加權平均股數會讓比例不固定）
   let adjK=null;
   if(star){const sh=q=>{const n=NI[q.d],e=q.eps;return n!=null&&e!=null&&Math.abs(e)>=0.5&&Math.abs(n)>=1e7&&(n>0)===(e>0)?n/e:null};
-    let ref=null;for(let i=Qa.length-1;i>=0&&!ref;i--)ref=sh(Qa[i]);
-    if(ref){let cur=1;for(let i=Qa.length-1;i>=0;i--){const v=sh(Qa[i]);if(v){const r=v/ref;cur=Math.abs(r-1)>0.3?r:1}Qa[i].k=cur;if(cur!==1){Qa[i].eps*=cur;adjK=Math.max(adjK||0,cur>1?cur:1/cur)}}}}
+    // 只認「相鄰兩季隱含股數突然跳 30% 以上」的分割事件，把倍數往前累乘；多年慢慢增資的股數變化不算（官方 EPS 也不重編）
+    let prev=null,cur=1;for(let i=Qa.length-1;i>=0;i--){const v=sh(Qa[i]);if(v&&prev){const r=v/prev;if(Math.abs(r-1)>0.3)cur*=r}if(v)prev=v;Qa[i].k=cur;if(cur!==1){Qa[i].eps*=cur;adjK=Math.max(adjK||0,cur>1?cur:1/cur)}}}
   const S=(a,k)=>a.some(x=>x[k]==null)?null:a.reduce((s,x)=>s+x[k],0),P=(a,b)=>a==null||!b?null:a/b*100;
   // 股利：依「股利所屬年度」（year 欄的民國年）加總；同一個年度字串重複公告時取最新一筆
   const dvk={};dv.forEach(r=>{const k=String(r.year||'')+'|'+(r.CashExDividendTradingDate||r.StockExDividendTradingDate||'');if(!dvk[k]||(r.date||'')>(dvk[k].date||''))dvk[k]=r});
@@ -1579,7 +1580,7 @@ function buildY10(fs,bs,cf,dv,px,star){
   return {A:A.slice(-12).map(rr),Q:Qr.slice(-40).map(rr),asof:lq.l,adj:adjK?Math.round(adjK*100)/100:null};
 }
 async function loadY10(id){
-  const k='y10v3_'+id,c=store.get(k);
+  const k='y10v4_'+id,c=store.get(k);
   if(c&&Date.now()-c.t<12*3600e3&&c.v){Y10=c.v;Y10L=null;renderY10();return}
   if(Y10L===id)return;Y10L=id;
   $('cY10').hidden=true;$('tY10').innerHTML='<div class="y10msg">⏳ 正在向 FinMind 抓 11 年財報（約 5–10 秒）…</div>';
@@ -1592,7 +1593,7 @@ async function loadY10(id){
     const v=buildY10(fs,bs,cf,dv,px,nm.includes('*'));Y10L=null;
     if(!v){$('tY10').innerHTML='<div class="y10msg">歷史財報不足 4 季，無法顯示</div>';return}
     Y10=v;try{store.set(k,{t:Date.now(),v})}catch(e){}
-    if(!localStorage.getItem(k))try{Object.keys(localStorage).filter(x=>x.startsWith('y10v2_')||x.startsWith('y10v3_')).forEach(x=>localStorage.removeItem(x));store.set(k,{t:Date.now(),v})}catch(e){}
+    if(!localStorage.getItem(k))try{Object.keys(localStorage).filter(x=>x.startsWith('y10v2_')||x.startsWith('y10v3_')||x.startsWith('y10v4_')).forEach(x=>localStorage.removeItem(x));store.set(k,{t:Date.now(),v})}catch(e){}
     renderY10();
   }catch(e){Y10L=null;if(Y10ID!==id)return;
     $('tY10').innerHTML=`<div class="y10msg">⚠️ ${e.message}<br><button type="button" id="y10Re">重試</button></div>`;
