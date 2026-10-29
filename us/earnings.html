@@ -79,7 +79,7 @@ th{color:var(--muted);font-weight:500;font-size:12px}
 table.impact td:first-child{width:64px;padding-top:8px}
 table.ov td:first-child{width:52px;font-weight:600}
 table.ov .when{font-size:11px;font-weight:400;color:var(--muted);line-height:1.2;margin-top:1px}
-table.ov .when.est{opacity:.6}
+table.ov .when.est{color:#d97706;font-weight:600}
 table.ov td,table.ov th{text-align:right;white-space:nowrap}
 table.ov td:first-child,table.ov th:first-child{text-align:left}
 .tag{display:inline-block;padding:1px 7px;border-radius:999px;font-size:11px;font-weight:600;white-space:nowrap}
@@ -164,8 +164,21 @@ a.lnk{color:var(--accent);text-decoration:none;font-weight:600}
     return list;
   }
   let LIST=merged();
-  const revS=c=>c.manual?c.kpi[0].s:(c.kpi[0]&&c.kpi[0].n.startsWith('營收')?c.kpi[0].s:null);
-  const epsS=c=>c.auto&&c.auto.epsSurp!=null?c.auto.epsSurp:(c.manual?c.kpi[1].s:null);
+  // 公布時間判斷（美東）：盤前 9:30、盤中 12:00、盤後 16:00、未定 23:59 之後才算已公布
+  const HR={bmo:'盤前',amc:'盤後',dmh:'盤中'}, HT={bmo:'09:30',dmh:'12:00',amc:'16:00'};
+  const fmtET=t=>new Intl.DateTimeFormat('sv-SE',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(t).replace(',','');
+  const nowET=fmtET(new Date()), updET=AUTO.updated?fmtET(new Date(AUTO.updated)):'';
+  for(const c of LIST){
+    const a=c.auto; let d=a&&a.date?a.date:null, hk=a&&a.hour?a.hour:'';
+    if(!d&&c.date){const m=String(c.date).match(/(\d{4})\D(\d{1,2})\D(\d{1,2})/); if(m) d=`${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;}
+    if(!hk&&c.date){const k=Object.keys(HR).find(x=>String(c.date).includes(HR[x])); if(k) hk=k;}
+    // 待公布：還沒到公布時間；待更新：時間到了但自動層最後更新早於公布時間（數字可能是 Finnhub 預填值）
+    const T=d?`${d} ${HT[hk]||'23:59'}`:'', notYet=!!d&&nowET<T, stale=!!d&&!notYet&&!!a&&updET<T;
+    c.rel={d,hk,notYet,stale,pending:notYet||stale};
+  }
+  const revS=c=>c.rel&&c.rel.pending?null:c.manual?c.kpi[0].s:(c.kpi[0]&&c.kpi[0].n.startsWith('營收')?c.kpi[0].s:null);
+  const rxS=c=>c.rel&&c.rel.pending?null:c.reaction.pct;
+  const epsS=c=>c.rel&&c.rel.pending?null:c.auto&&c.auto.epsSurp!=null?c.auto.epsSurp:(c.manual?c.kpi[1].s:null);
 
   Chart.defaults.color = C.muted;
   Chart.defaults.font.family = '-apple-system,BlinkMacSystemFont,"PingFang TC","Noto Sans TC",sans-serif';
@@ -212,16 +225,13 @@ a.lnk{color:var(--accent);text-decoration:none;font-weight:600}
 
   function overviewHtml(){
     const cell=s=>`<span class="tag ${dirOf(s)}">${pct(s)}</span>`;
-    const HR={bmo:'盤前',amc:'盤後',dmh:'盤中'};
-    const when=c=>{const a=c.auto; let d=a&&a.date?a.date:null, h=a&&a.hour?HR[a.hour]||'':'';
-      if(!d&&c.date){const m=String(c.date).match(/(\d{4})\D(\d{1,2})\D(\d{1,2})/); if(m) d=`${m[1]}-${m[2]}-${m[3]}`; if(!h){const k=Object.values(HR).find(x=>String(c.date).includes(x)); if(k) h=k;}}
-      if(!d) return '';
-      const md=d.slice(5).replace('-','/').replace(/^0/,''), est=a&&a.epsAct==null;
-      return `<div class="when${est?' est':''}">${md}${h?' '+h:''}${est?' ?':''}</div>`;};
-    const rows=LIST.map((c,i)=>`<tr><td><a class="lnk" href="#${esc(c.ticker)}">${esc(c.ticker)}</a>${c.manual?'':'<small style="color:var(--muted)"> 自動</small>'}${when(c)}</td><td>${cell(revS(c))}</td><td>${cell(epsS(c))}</td><td>${cell(c.reaction.pct)}</td></tr>`).join('');
+    const when=c=>{const r=c.rel; if(!r||!r.d) return '';
+      const md=r.d.slice(5).replace('-','/').replace(/^0/,''), h=HR[r.hk]||'';
+      return `<div class="when${r.pending?' est':''}">${md}${h?' '+h:''}${r.notYet?' · 待公布':(r.stale?' · 待更新':'')}</div>`;};
+    const rows=LIST.map((c,i)=>`<tr><td><a class="lnk" href="#${esc(c.ticker)}">${esc(c.ticker)}</a>${c.manual?'':'<small style="color:var(--muted)"> 自動</small>'}${when(c)}</td><td>${cell(revS(c))}</td><td>${cell(epsS(c))}</td><td>${cell(rxS(c))}</td></tr>`).join('');
     return `<header><div class="tk">${esc(DATA.season)} · 美股財報季總覽</div><h1>本季誰勝誰敗</h1></header>
     <div class="card"><h2>📋 驚喜率一覽</h2><table class="ov"><thead><tr><th>公司</th><th>營收</th><th>EPS</th><th>首日</th></tr></thead><tbody>${rows}</tbody></table>
-    <div class="note">EPS 驚喜率優先用 Finnhub；公司下方為公布日（美東，盤前／盤後，? = 預估）；首日 = 財報後首個交易日收盤 vs 前一收盤（FinMind）。「自動」= 只有自動層，尚無分析。${autoNote()}</div></div>
+    <div class="note">EPS 驚喜率優先用 Finnhub；公司下方為公布日（美東，盤前／盤後）；還沒到公布時間標「待公布」、已公布但自動層尚未重抓標「待更新」，兩者數字都不顯示（避免 Finnhub 預填值）；首日 = 財報後首個交易日收盤 vs 前一收盤（FinMind）。「自動」= 只有自動層，尚無分析。${autoNote()}</div></div>
     <div class="card"><h2>📊 驚喜率 vs 首日反應</h2><div class="chart"><canvas id="ovchart"></canvas></div>
     <div class="note">超過 ±40% 的長條截斷顯示，數字為真實值。理想情況是三根同向；「EPS 勝但首日跌」代表市場看的是別的東西（例如 CapEx 指引）。</div></div>`;
   }
@@ -280,7 +290,7 @@ a.lnk{color:var(--accent);text-decoration:none;font-weight:600}
     if(c.histChart) drawCustom(c.histChart,'chH');
   }
   function drawOverview(){
-    const CAP=40, real=[LIST.map(revS),LIST.map(epsS),LIST.map(c=>c.reaction.pct)];
+    const CAP=40, real=[LIST.map(revS),LIST.map(epsS),LIST.map(rxS)];
     const clip=a=>a.map(v=>v==null?null:Math.max(-CAP,Math.min(CAP,v)));
     const el=document.getElementById('ovchart'); el.parentElement.style.height=(90+LIST.length*58)+'px';
     mkChart(el,{type:'bar',
