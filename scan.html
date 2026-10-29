@@ -64,6 +64,11 @@ select.ch.on{background-color:var(--sel);color:var(--selfg);font-weight:700}
 .km-s .vr{color:var(--muted)}.km-s .vr.hi{color:var(--warm);font-weight:700}
 .tg{flex:none;font:700 8.5px var(--f-num);line-height:13px;padding:0 2.5px;border-radius:3px;color:#fff;background:var(--muted);letter-spacing:-.02em}
 .tg.b{background:var(--up)}.tg.s{background:var(--down)}.tg.n{background:var(--chip);color:var(--muted)}
+/* 注意／處置標記（2026-10-29）：任何清單裡的股票若在 data/notice.json 名單上就亮 */
+.km-h .tg{margin-left:auto}
+.tg.ny{background:#b88600}.tg.no{background:#d9731a}.tg.nr{background:var(--up);outline:1.5px solid var(--up);outline-offset:1px}
+.ch.nt{border:1px solid var(--line);background:var(--card)}.ch.nt[aria-pressed=true]{background:var(--sel);color:var(--selfg)}
+.sh-h .ntag{font:700 11px var(--f-num);padding:1px 6px;border-radius:4px;color:#fff}
 .km-cv{display:block;width:100%;height:92px;margin-top:1px}
 @media (min-width:700px){.km-cv{height:110px}}
 .empty{padding:40px 16px;text-align:center;color:var(--muted)}
@@ -121,7 +126,7 @@ const pxFmt=p=>p==null?'—':p>=1000?fmt(p,0):p>=100?fmt(p,1):fmt(p,2);
 const pct=(x,d=1)=>x==null?'—':(x>0?'▲':x<0?'▼':'')+Math.abs(x*100).toFixed(d)+'%';
 const cls=x=>x>0?'up':x<0?'dn':'';
 const md=d=>d?+d.slice(4,6)+'/'+ +d.slice(6,8):'';
-let NAME={},IND={},THEMES=[],NOTICE=null,cur=null,sortK='chg',N=40,FL={ma20:false,ts3:false,vr12:false},SHARD={},ROWS=[],openI=-1,shN=80;
+let NAME={},IND={},THEMES=[],NOTICE=null,NMAP={},cur=null,sortK='chg',N=40,FL={ma20:false,ts3:false,vr12:false},SHARD={},ROWS=[],openI=-1,shN=80;
 // ---- 主題清單：data/themes.json ＋ 手機裡改過／自訂的主題（themeCfg，與估值看板同一份）＋ 自選（fav） ----
 function themesAll(base){const c=store.get('themeCfg')||{},order=c.order||[],hidden=c.hidden||[],mine=c.themes||{};const bm={};base.forEach(t=>bm[t.id]=t);
   const ids=[...order.filter(i=>bm[i]||mine[i]),...base.map(t=>t.id),...Object.keys(mine)].filter((v,i,a)=>a.indexOf(v)===i&&(bm[v]||mine[v])&&!hidden.includes(v));
@@ -129,16 +134,18 @@ function themesAll(base){const c=store.get('themeCfg')||{},order=c.order||[],hid
   const fav=(store.get('fav')||[]).filter(x=>/^\d{4,6}[A-Z]?$/.test(x));if(fav.length)out.unshift({id:'_fav',name:'★ 自選',stocks:fav.map(x=>[x,''])});
   return out}
 async function init(){
-  const [L,T,TOP]=await Promise.all([fetch('data/list.json?t='+Date.now()).then(r=>r.json()).catch(()=>[]),fetch('data/themes.json?t='+Date.now()).then(r=>r.json()).catch(()=>({themes:[]})),fetch('data/itrust_top.json?t='+Date.now()).then(r=>r.json()).catch(()=>null)]);
+  const [L,T,TOP,NT]=await Promise.all([fetch('data/list.json?t='+Date.now()).then(r=>r.json()).catch(()=>[]),fetch('data/themes.json?t='+Date.now()).then(r=>r.json()).catch(()=>({themes:[]})),fetch('data/itrust_top.json?t='+Date.now()).then(r=>r.json()).catch(()=>null),fetch('data/notice.json?t='+Math.floor(Date.now()/3e5)).then(r=>r.ok?r.json():null).catch(()=>null)]);
+  NOTICE=NT;NMAP={};if(NT){(NT.att||[]).forEach(x=>NMAP[x.c]={k:x.warn?'o':'y',n:x.streak||1,r:x.r});(NT.pre||[]).forEach(x=>{if(!NMAP[x.c]||NMAP[x.c].k==='y')NMAP[x.c]={k:'o',n:(NMAP[x.c]||{}).n||0,r:x.r}});(NT.dis||[]).forEach(x=>NMAP[x.c]={k:'r',n:x.left,r:x.r,end:x.endMd})}
   // 投本比自動主題（與估值看板同一份 data/itrust_top.json）：投信／外資／土洋前 20，每天自動換名單
   if(TOP&&TOP.lists){const md=TOP.asof?`${+TOP.asof.slice(4,6)}/${+TOP.asof.slice(6)}`:'';
     [['itop','📈 投信買超前20','it'],['ftop','🌐 外資買超前20','fi'],['btop','🤝 土洋同買前20','both']].forEach(([id,n,k])=>{const L2=TOP.lists[k]||[];if(L2.length)T.themes=[{id,name:`${n}（${md}）`,stocks:L2.map(r=>[r.c,r.sub||''])},...(T.themes||[])]})}
   L.forEach(([c,n,m,i])=>{NAME[c]=n;(IND[i]=IND[i]||[]).push(c)});
   THEMES=themesAll(T.themes||[]);
-  $('themes').innerHTML=THEMES.map(t=>`<button class="ch" data-t="${esc(t.id)}" aria-pressed="false">${esc(t.name)}<span style="opacity:.6;font-size:11px"> ${t.stocks.length}</span></button>`).join('');
+  const nmd=NT&&NT.asof?`${+NT.asof.slice(4,6)}/${+NT.asof.slice(6)}`:'';
+  $('themes').innerHTML=(NT?[['att','🟡 注意',NT.att.length],['dis','🔴 處置',NT.dis.length],['pre','🟠 快達處置',NT.pre.length]].map(([id,n,c])=>`<button class="ch nt" data-n="${id}" aria-pressed="false" title="${nmd} 名單">${n}<span style="opacity:.6;font-size:11px"> ${c}</span></button>`).join(''):'')+THEMES.map(t=>`<button class="ch" data-t="${esc(t.id)}" aria-pressed="false">${esc(t.name)}<span style="opacity:.6;font-size:11px"> ${t.stocks.length}</span></button>`).join('');
   const inds=Object.keys(IND).filter(k=>k&&k!=='其他').sort((a,b)=>IND[b].length-IND[a].length);
   $('indSel').innerHTML='<option value="">證交所產業 ▾</option>'+inds.map(k=>`<option value="${esc(k)}">${esc(k)}（${IND[k].length}）</option>`).join('');
-  $('themes').addEventListener('click',e=>{const b=e.target.closest('button[data-t]');if(b)pick({kind:'t',id:b.dataset.t})});
+  $('themes').addEventListener('click',e=>{const b=e.target.closest('button[data-t],button[data-n]');if(b)pick(b.dataset.n?{kind:'n',id:b.dataset.n}:{kind:'t',id:b.dataset.t})});
   $('indSel').addEventListener('change',e=>{if(e.target.value)pick({kind:'i',id:e.target.value})});
   $('sortBar').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
     if(b.dataset.k){sortK=b.dataset.k}else if(b.dataset.f){FL[b.dataset.f]=!FL[b.dataset.f]}else if(b.dataset.n){N=+b.dataset.n}
@@ -150,7 +157,7 @@ async function init(){
 }
 function paintBar(){document.querySelectorAll('#sortBar button').forEach(b=>{if(b.dataset.k)b.setAttribute('aria-pressed',String(b.dataset.k===sortK));else if(b.dataset.f)b.setAttribute('aria-pressed',String(!!FL[b.dataset.f]));else if(b.dataset.n)b.setAttribute('aria-pressed',String(+b.dataset.n===N))})}
 async function pick(sel){cur=sel;
-  document.querySelectorAll('#themes button').forEach(b=>b.setAttribute('aria-pressed',String(sel.kind==='t'&&b.dataset.t===sel.id)));
+  document.querySelectorAll('#themes button').forEach(b=>b.setAttribute('aria-pressed',String((sel.kind==='t'&&b.dataset.t===sel.id)||(sel.kind==='n'&&b.dataset.n===sel.id))));
   const s=$('indSel');s.classList.toggle('on',sel.kind==='i');if(sel.kind!=='i')s.value='';
   if(sel.kind==='t'){try{sessionStorage.setItem('lastTheme',sel.id)}catch(e){}}
   history.replaceState(null,'',sel.kind==='t'?'#'+sel.id:(sel.kind==='n'?'#n/':'#i/')+encodeURIComponent(sel.id));
@@ -190,18 +197,20 @@ function build(c){const s=SHARD[c.slice(0,2)];if(!s||!s.d||!s.d[c])return null;c
 function rows(){let R=ROWS.filter(r=>(!FL.ma20||(r.d20!=null&&r.d20>=0))&&(!FL.ts3||r.ts>=3)&&(!FL.vr12||(r.vr!=null&&r.vr>=1.2)));
   const key={chg:r=>r.chg??-9,vr:r=>r.vr??-9,ts:r=>r.ts,fs:r=>r.fs,d20:r=>r.d20??-9,h20:r=>(r.brk?10:0)+(r.hi20?r.px/r.hi20:0)}[sortK];
   return R.sort((a,b)=>key(b)-key(a)||(b.chg??0)-(a.chg??0))}
+// 注意／處置標記：🟡 連 N 天注意、🟠 快達處置、🔴 處置中（剩 N 日）
+function nbadge(c){const m=NMAP[c];if(!m)return '';return m.k==='r'?`<span class="tg nr" title="處置中">處${m.n!=null?m.n:''}</span>`:m.k==='o'?`<span class="tg no" title="快達處置">快${m.n||''}</span>`:`<span class="tg ny" title="注意">注${m.n}</span>`}
 function badge(v,who){if(!v)return `<span class="tg n">${who}—</span>`;return `<span class="tg ${v>0?'b':'s'}">${who}${Math.min(Math.abs(v),9)}${v>0?'▲':'▼'}</span>`}
 function render(){
   const R=rows();const all=ROWS.length;
   $('cnt').innerHTML=all?`<b>${R.length}</b>／${all} 檔・最新 ${md(ROWS[0].bars[ROWS[0].bars.length-1].d)}・<b>${ROWS.filter(r=>r.d20!=null&&r.d20>=0).length}</b> 檔站上月線・投信連買≥3 <b>${ROWS.filter(r=>r.ts>=3).length}</b> 檔・點小卡放大`:'';
   if(!R.length){$('grid').innerHTML=`<div class="empty">${all?'沒有符合篩選條件的股票':'這個清單讀不到日K'}</div>`;return}
   $('grid').innerHTML=R.map((r,i)=>`<article class="km${r.brk&&r.chg>0?' hot':''}" data-i="${i}" role="button" tabindex="0">
-    <div class="km-h"><span class="rk">${i+1}</span><b>${esc(r.n)}</b><span class="cd">${esc(r.c)}</span>${r.split?'<span class="cd" title="近 130 日有分割／股數變動，價位概略還原">⚠</span>':''}</div>
+    <div class="km-h"><span class="rk">${i+1}</span><b>${esc(r.n)}</b><span class="cd">${esc(r.c)}</span>${r.split?'<span class="cd" title="近 130 日有分割／股數變動，價位概略還原">⚠</span>':''}${nbadge(r.c)}</div>
     <div class="km-s"><span class="${cls(r.chg)}">${pct(r.chg)}</span><span class="vr${r.vr>=1.5?' hi':''}">量${r.vr==null?'—':r.vr.toFixed(1)+'×'}</span>${badge(r.ts,'投')}${badge(r.fs,'外')}</div>
     <canvas class="km-cv"></canvas></article>`).join('');
   const io=new IntersectionObserver(es=>{es.forEach(e=>{if(!e.isIntersecting)return;const el=e.target,cv=el.querySelector('canvas');if(!cv.dataset.done){drawK(cv,R[+el.dataset.i],N,{mini:true});cv.dataset.done=1}io.unobserve(el)})},{rootMargin:'300px 0px'});
   $('grid').querySelectorAll('.km').forEach(el=>{io.observe(el);el.onclick=()=>openSheet(R,+el.dataset.i);el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openSheet(R,+el.dataset.i)}}});
-  $('foot').innerHTML=`小卡＝近 ${N} 根日K（<span class="num" style="color:var(--ma20)">━</span> 20日線、<span class="num" style="color:var(--ma60)">━</span> 60日線、紅虛線＝前 20 日最高），下面兩條＝投信／外資每日買賣超（紅買綠賣）。量比＝今日量 ÷ 前 5 日均量；投／外＝連續買（▲）賣（▼）天數；紅框＝今天上漲且觸及前 20 日高；⚠＝近 130 日有分割（價位概略還原，未還原除權息）。籌碼資料近 60 個交易日，K 線 130 日；分片資料與估值看板個股頁同一份。`;
+  $('foot').innerHTML=`小卡＝近 ${N} 根日K（<span class="num" style="color:var(--ma20)">━</span> 20日線、<span class="num" style="color:var(--ma60)">━</span> 60日線、紅虛線＝前 20 日最高），下面兩條＝投信／外資每日買賣超（紅買綠賣）。量比＝今日量 ÷ 前 5 日均量；投／外＝連續買（▲）賣（▼）天數；紅框＝今天上漲且觸及前 20 日高；⚠＝近 130 日有分割（價位概略還原，未還原除權息）。<b>注N</b>＝連 N 天列注意、<b>快N</b>＝快達處置、<b>處N</b>＝處置中剩 N 個交易日（名單每日 17:25 更新）。籌碼資料近 60 個交易日，K 線 130 日；分片資料與估值看板個股頁同一份。`;
 }
 // ---- 畫 K：mini（小卡）與 full（放大卡） ----
 function drawK(cv,r,NN,opt){
@@ -249,11 +258,12 @@ function openSheet(R,i){SHR=R;openI=i;$('ov').hidden=false;document.body.style.o
 function closeSheet(){$('ov').hidden=true;document.body.style.overflow='';openI=-1}
 function fillSheet(){const r=SHR[openI];if(!r)return closeSheet();const last=r.bars[r.bars.length-1];
   const lot=v=>v==null?'—':(v>0?'+':'')+fmt(v);
-  $('sh').innerHTML=`<div class="sh-h"><b>${esc(r.n)}</b><span class="cd">${esc(r.c)}</span><span class="px ${cls(r.chg)}">${pxFmt(r.px)}</span><span class="chg ${cls(r.chg)}">${pct(r.chg,2)}</span><button class="x" id="shX" aria-label="關閉">×</button></div>
+  const nm=NMAP[r.c],ntag=nm?`<span class="ntag" style="background:${nm.k==='r'?'var(--up)':nm.k==='o'?'#d9731a':'#b88600'}">${nm.k==='r'?'處置中'+(nm.end?'～'+nm.end:''):nm.k==='o'?'快達處置':'注意 連'+nm.n+'天'}</span>`:'';
+  $('sh').innerHTML=`<div class="sh-h"><b>${esc(r.n)}</b><span class="cd">${esc(r.c)}</span>${ntag}<span class="px ${cls(r.chg)}">${pxFmt(r.px)}</span><span class="chg ${cls(r.chg)}">${pct(r.chg,2)}</span><button class="x" id="shX" aria-label="關閉">×</button></div>
     <div class="sh-m"><span>${md(last.d)} 開<b>${pxFmt(last.o)}</b> 高<b>${pxFmt(last.h)}</b> 低<b>${pxFmt(last.l)}</b></span><span>量 <b>${fmt(last.v)}</b>張（<b class="${r.vr>=1.5?'up':''}">${r.vr==null?'—':r.vr.toFixed(1)+'×'}</b>）</span>
       <span>投信 5日<b class="${cls(r.t5)}">${lot(r.t5)}</b> 20日<b class="${cls(r.t20)}">${lot(r.t20)}</b></span><span>外資 5日<b class="${cls(r.f5)}">${lot(r.f5)}</b> 20日<b class="${cls(r.f20)}">${lot(r.f20)}</b></span>
       <span><b>${r.arr}</b>・距月線<b class="${cls(r.d20)}">${pct(r.d20)}</b>・距季線<b class="${cls(r.d60)}">${pct(r.d60)}</b>・距年線<b class="${cls(r.d240)}">${pct(r.d240)}</b>・60日區間<b>${r.pos60==null?'—':Math.round(r.pos60*100)+'%'}</b></span></div>
-    <div class="leg"><span><i style="background:var(--ma20)"></i>20日</span><span><i style="background:var(--ma60)"></i>60日</span><span><i style="background:var(--ma240);height:0;border-top:2px dashed var(--ma240)"></i>240日</span><span><i style="height:0;border-top:1px dashed var(--up)"></i>前20日高</span></div>
+    ${nm?`<div class="sh-m" style="color:var(--muted)"><span>${esc(nm.r||'')}</span></div>`:''}<div class="leg"><span><i style="background:var(--ma20)"></i>20日</span><span><i style="background:var(--ma60)"></i>60日</span><span><i style="background:var(--ma240);height:0;border-top:2px dashed var(--ma240)"></i>240日</span><span><i style="height:0;border-top:1px dashed var(--up)"></i>前20日高</span></div>
     <canvas class="sh-cv"></canvas>
     <div class="sh-seg"><button data-n="40" aria-pressed="${shN===40}">2月</button><button data-n="80" aria-pressed="${shN===80}">4月</button><button data-n="130" aria-pressed="${shN===130}">6月</button><a href="index.html#${esc(r.c)}">財報・估值 →</a></div>
     <div class="sh-nav"><button id="shPrev" ${openI<=0?'disabled style="visibility:hidden"':''}>‹ ${openI>0?esc(SHR[openI-1].n):''}</button><span>${openI+1}／${SHR.length}</span><button id="shNext" ${openI>=SHR.length-1?'disabled style="visibility:hidden"':''}>${openI<SHR.length-1?esc(SHR[openI+1].n):''} ›</button></div>`;
