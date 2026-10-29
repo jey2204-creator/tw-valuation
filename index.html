@@ -2120,6 +2120,7 @@ function tdSt(d){
 }
 const PX_CUT=19*60+30,PX_END=23*60+30,MG_CUT=23*60,MG_END=24*60;
 let FR={};
+let RS=null;   // data/run_status.json：每日更新各步驟有沒有當掉（run_status.py 寫）
 async function asofCheck(){
   FR={px:S&&S.pxAsof?await daySt(S.pxAsof,PX_CUT,PX_END):null,
       mo:MO&&MO.asof?await daySt(MO.asof,PX_CUT,PX_END):null,
@@ -2141,7 +2142,11 @@ function frTags(){
 }
 function frNote(){
   const L=[],p=MODE==='m'&&MO?FR.mo:FR.px,nm=MODE==='m'&&MO?'動能（價量）':'收盤';
-  if(p&&p.st==='wait')L.push(['','⏳ 今日收盤約 16:00～18:00 後更新（排程 15:47 起每小時跑一次）']);
+  // 程式當掉（不是排程延遲）→ 直接講出錯，取代「可能延遲／漏跑」的猜測
+  const sk=MODE==='m'&&MO?'mom':'sum',bad=RS&&RS.steps&&RS.steps[sk]&&RS.steps[sk].ok===false?RS.steps[sk]:null;
+  if(bad){const t=s=>s?s.slice(5).replace('-','/'):'';
+    L.push(['s',`❌ ${nm}程式出錯${p&&p.d?`，資料停在 ${md(p.d)}`:''}（${t(bad.since)} 起）：${bad.err}。已推播 Telegram，請 Claude 修`]);}
+  else if(p&&p.st==='wait')L.push(['','⏳ 今日收盤約 16:00～18:00 後更新（排程 15:47 起每小時跑一次）']);
   else if(p&&p.st==='late')L.push(['s',`⏳ 今日 ${md(p.exp)} ${nm}還沒進來：排程可能延遲，晚上排程會再補`]);
   else if(p&&p.st==='miss')L.push(['s',`⚠️ 應該要有 ${md(p.exp)} ${nm}，資料還停在 ${md(p.d)}：排程可能漏跑，可請 Claude 手動更新`]);
   if(MODE==='m'&&MO){
@@ -2384,6 +2389,7 @@ addEventListener('hashchange',route);
   applyCfg();
   try{const r=await fetch('data/summary.json?t='+Date.now());if(r.ok)S=await r.json()}catch(e){}
   try{const r=await fetch('data/momentum.json?t='+Date.now());if(r.ok)MO=await r.json()}catch(e){}
+  try{const r=await fetch('data/run_status.json?t='+Date.now());if(r.ok)RS=await r.json()}catch(e){}
   try{const r=await fetch('data/tdcc.json?t='+Date.now());if(r.ok)TD=await r.json()}catch(e){}
   try{const r=await fetch('data/guide.json?t='+Date.now());if(r.ok)GD=await r.json()}catch(e){}
   try{const r=await fetch('data/salary.json?t='+Date.now());if(r.ok){SA=await r.json();SRALL=null}}catch(e){}

@@ -15,6 +15,10 @@ on:
         description: "填 1 強制重抓 MOPS 員工人數"
         required: false
         default: ""
+      tg_test:
+        description: "填 1 ＝ 健康檢查送一則 Telegram 測試訊息"
+        required: false
+        default: ""
 permissions:
   contents: write
 concurrency:                   # 排程延遲時可能好幾次擠在一起 → 排隊一次跑一個，避免 git push 互撞
@@ -29,41 +33,65 @@ jobs:
         with:
           python-version: "3.12"
       - name: 全市場摘要（主題頁用）
+        id: sum
         continue-on-error: true
         env:
           FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
-        run: python fetch_summary.py
+        run: python fetch_summary.py 2>&1 | tee "$RUNNER_TEMP/sum.log"
       - name: 員工薪資中位數（每年 6 月底換新年度，內容沒變不寫檔）
+        id: sal
         continue-on-error: true
         timeout-minutes: 5
-        run: python fetch_salary.py
+        run: python fetch_salary.py 2>&1 | tee "$RUNNER_TEMP/sal.log"
       - name: 員工人數（MOPS 一年一次；手動執行可填 force_headcount=1 強制）
+        id: hc
         continue-on-error: true
         timeout-minutes: 6
         env:
           FORCE: ${{ github.event.inputs.force_headcount || '' }}
-        run: python fetch_headcount.py
+        run: python fetch_headcount.py 2>&1 | tee "$RUNNER_TEMP/hc.log"
       - name: 股價動能＋法人（動能模式用）
+        id: mom
         continue-on-error: true
         timeout-minutes: 20
-        run: python fetch_momentum.py
+        run: python fetch_momentum.py 2>&1 | tee "$RUNNER_TEMP/mom.log"
       - name: 逐日籌碼＋K 線分片（法人、融資券、開高低、年線）
+        id: chip
         continue-on-error: true
         timeout-minutes: 15
-        run: python fetch_chip.py
+        run: python fetch_chip.py 2>&1 | tee "$RUNNER_TEMP/chip.log"
       - name: 集保大戶持股比（每週）
+        id: tdcc
         continue-on-error: true
         timeout-minutes: 12
-        run: python fetch_tdcc.py
+        run: python fetch_tdcc.py 2>&1 | tee "$RUNNER_TEMP/tdcc.log"
       - name: 抓資料
+        id: main
         env:
           FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
-        run: python fetch.py
+        run: python fetch.py 2>&1 | tee "$RUNNER_TEMP/main.log"
+      - name: 健康檢查（哪一步壞了 → data/run_status.json、Telegram 通知）
+        if: always()
+        continue-on-error: true
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          STEP_sum: ${{ steps.sum.outcome }}
+          STEP_sal: ${{ steps.sal.outcome }}
+          STEP_hc: ${{ steps.hc.outcome }}
+          STEP_mom: ${{ steps.mom.outcome }}
+          STEP_chip: ${{ steps.chip.outcome }}
+          STEP_tdcc: ${{ steps.tdcc.outcome }}
+          STEP_main: ${{ steps.main.outcome }}
+          TG_TEST: ${{ github.event.inputs.tg_test || '' }}
+        run: python run_status.py
       - name: 有變動才提交
+        if: always()
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/
+          # 個股財報（fetch.py）失敗 → 跟以前一樣不提交資料，但健康檢查結果還是要存（不然每次排程都重複推播）
+          if [ "${{ steps.main.outcome }}" = "failure" ]; then git add data/run_status.json 2>/dev/null || true; else git add data/; fi
           git diff --cached --quiet || git commit -m "data: $(TZ=Asia/Taipei date +%F)"
           git pull --rebase -X theirs || (git rebase --abort; git pull --no-rebase -X ours)
           git push
