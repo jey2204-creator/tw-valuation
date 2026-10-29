@@ -42,7 +42,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 .ch.st{background:var(--card);border:1px solid var(--line)}
 select.ch{appearance:none;-webkit-appearance:none;padding-right:22px;background:var(--chip) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0h10L5 6z' fill='%235d6675'/%3E%3C/svg%3E") no-repeat right 8px center;max-width:46vw;text-overflow:ellipsis}
 select.ch.on{background-color:var(--sel);color:var(--selfg);font-weight:700}
-/* 兩行控制列（2026-10-29 beta）：第 1 行＝名單日期（最左）＋ K 線區間；第 2 行＝排序 6 顆等寬分段鈕（不捲動、無標籤；「漲幅」連點循環日／週／月）；第 3 行＝篩選。全部不橫向捲動。 */
+/* 兩行控制列（2026-10-29 beta）：第 1 行＝名單日期（最左）＋ K 線區間；第 2 行＝排序 6 顆等寬分段鈕（不捲動、無標籤；「漲幅」連點循環日／週／月）；第 3 行＝篩選 4 顆（月線、季線可同時開＝同時站上）。全部不橫向捲動。 */
 .sb{padding:4px 8px 0;font-size:12px;color:var(--muted)}
 .sb .r{display:flex;gap:4px;align-items:center;min-width:0}
 .sb .r+.r{margin-top:4px}
@@ -114,7 +114,7 @@ select.ch.on{background-color:var(--sel);color:var(--selfg);font-weight:700}
 <div class="sb" id="sortBar">
   <div class="r"><select id="ndSel" hidden title="看哪一天的注意名單"></select><span class="sp"></span><span class="per" style="display:contents"><button data-n="20">1月</button><button data-n="40" aria-pressed="true">2月</button><button data-n="60">3月</button></span></div>
   <div class="r" title="排序"><button data-k="chg" aria-pressed="true">日漲</button><button data-k="vr">量比</button><button data-k="ts">投連</button><button data-k="fs">外連</button><button data-k="d20" title="距月線">月線</button><button data-k="h20" title="近20日高">20高</button></div>
-  <div class="r"><span class="lab">篩</span><button class="f" data-f="ma20">站上月線</button><button class="f" data-f="ts3">投連≥3</button><button class="f" data-f="vr12">量≥1.2×</button></div>
+  <div class="r"><span class="lab">篩</span><button class="f" data-f="ma20" title="收盤站上 20 日線">月線</button><button class="f" data-f="ma60" title="收盤站上 60 日線">季線</button><button class="f" data-f="ts3" title="投信連買 ≥3 天">投連≥3</button><button class="f" data-f="vr12" title="量比 ≥1.2">量≥1.2</button></div>
 </div>
 <div class="cnt" id="cnt"></div>
 <div class="grid" id="grid"><div class="empty">讀取中…</div></div>
@@ -129,7 +129,7 @@ const pxFmt=p=>p==null?'—':p>=1000?fmt(p,0):p>=100?fmt(p,1):fmt(p,2);
 const pct=(x,d=1)=>x==null?'—':(x>0?'▲':x<0?'▼':'')+Math.abs(x*100).toFixed(d)+'%';
 const cls=x=>x>0?'up':x<0?'dn':'';
 const md=d=>d?+d.slice(4,6)+'/'+ +d.slice(6,8):'';
-let CHGP='d',NAME={},MKT={},IND={},THEMES=[],NOTICE=null,NMAP={},HIST=null,HDAYS=[],NDATE='',CUR_IDS=[],cur=null,sortK='chg',N=40,FL={ma20:false,ts3:false,vr12:false},SHARD={},ROWS=[],openI=-1,shN=80;
+let CHGP='d',NAME={},MKT={},IND={},THEMES=[],NOTICE=null,NMAP={},HIST=null,HDAYS=[],NDATE='',CUR_IDS=[],cur=null,sortK='chg',N=40,FL={ma20:false,ma60:false,ts3:false,vr12:false},SHARD={},ROWS=[],openI=-1,shN=80;
 // ---- 主題清單：data/themes.json ＋ 手機裡改過／自訂的主題（themeCfg，與估值看板同一份）＋ 自選（fav） ----
 const AUTO_IDS=['itop','ftop','btop','natt','npre','ndis','nend','npost'];   // 自動主題（與首頁同一份順序）
 function themesAll(base){const c=store.get('themeCfg')||{},order=c.order||[],hidden=c.hidden||[],mine=c.themes||{};const bm={};base.forEach(t=>bm[t.id]=t);
@@ -217,7 +217,7 @@ function build(c){const s=SHARD[c.slice(0,2)];if(!s||!s.d||!s.d[c])return null;c
     arr:ma5!=null&&ma20!=null&&ma60!=null?(ma5>ma20&&ma20>ma60?'多頭排列':ma5<ma20&&ma20<ma60?'空頭排列':'糾結'):'—'}}
 // 漲幅連點循環（2026-10-29）：日→週（5 日）→月（20 日），按鈕文字跟著變
 const CHGK=()=>CHGP==='w'?'chg5':CHGP==='m'?'chg20':'chg';
-function rows(){let R=ROWS.filter(r=>(!FL.ma20||(r.d20!=null&&r.d20>=0))&&(!FL.ts3||r.ts>=3)&&(!FL.vr12||(r.vr!=null&&r.vr>=1.2)));
+function rows(){let R=ROWS.filter(r=>(!FL.ma20||(r.d20!=null&&r.d20>=0))&&(!FL.ma60||(r.d60!=null&&r.d60>=0))&&(!FL.ts3||r.ts>=3)&&(!FL.vr12||(r.vr!=null&&r.vr>=1.2)));
   const ck=CHGK();const key={chg:r=>r[ck]??-9,vr:r=>r.vr??-9,ts:r=>r.ts,fs:r=>r.fs,d20:r=>r.d20??-9,h20:r=>(r.brk?10:0)+(r.hi20?r.px/r.hi20:0)}[sortK];
   return R.sort((a,b)=>key(b)-key(a)||(b.chg??0)-(a.chg??0))}
 // 注意／處置標記：🟡 連 N 天注意、🟠 快達處置、🔴 處置中（剩 N 日）
@@ -225,7 +225,7 @@ function nbadge(c){const m=NMAP[c];if(!m)return '';return m.k==='r'?`<span class
 function badge(v,who){if(!v)return `<span class="tg n">${who}—</span>`;return `<span class="tg ${v>0?'b':'s'}">${who}${Math.min(Math.abs(v),9)}${v>0?'▲':'▼'}</span>`}
 function render(){
   const R=rows();const all=ROWS.length;
-  $('cnt').innerHTML=all?`<b>${R.length}</b>／${all} 檔・最新 ${md(ROWS[0].bars[ROWS[0].bars.length-1].d)}・<b>${ROWS.filter(r=>r.d20!=null&&r.d20>=0).length}</b> 檔站上月線・投信連買≥3 <b>${ROWS.filter(r=>r.ts>=3).length}</b> 檔・點小卡放大`:'';
+  $('cnt').innerHTML=all?`<b>${R.length}</b>／${all} 檔・最新 ${md(ROWS[0].bars[ROWS[0].bars.length-1].d)}・<b>${ROWS.filter(r=>r.d20!=null&&r.d20>=0).length}</b> 檔站上月線・<b>${ROWS.filter(r=>r.d60!=null&&r.d60>=0).length}</b> 檔站上季線・投信連買≥3 <b>${ROWS.filter(r=>r.ts>=3).length}</b> 檔・點小卡放大`:'';
   if(!R.length){$('grid').innerHTML=`<div class="empty">${all?'沒有符合篩選條件的股票':'這個清單讀不到日K'}</div>`;return}
   $('grid').innerHTML=R.map((r,i)=>`<article class="km${r.brk&&r.chg>0?' hot':''}" data-i="${i}" role="button" tabindex="0">
     <div class="km-h"><span class="rk">${i+1}</span><b>${esc(r.n)}</b><span class="cd">${esc(r.c)}</span>${r.split?'<span class="cd" title="近 130 日有分割／股數變動，價位概略還原">⚠</span>':''}${liveTag(r)}${nbadge(r.c)}</div>
