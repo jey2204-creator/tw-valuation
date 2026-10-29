@@ -709,6 +709,7 @@ function plan(onlyCur){
 }
 async function refresh(onlyCur){
   const api=apiUrl();if(!api||busy){render();return}
+  store.set('live_hb',String(Date.now()));   // 心跳：讓掃描頁知道這頁開著（它就不搶富果額度）
   busy=true;$('rf').disabled=true;setStatus();
   const P=plan(onlyCur===true);
   const chunks=[];
