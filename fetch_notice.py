@@ -245,7 +245,7 @@ for d, s in by_day.items():
     old = set(hist.get(d, {}).get("att", []))
     hist.setdefault(d, {"att": [], "dis": []})["att"] = sorted(old | s)
 hist[ASOF] = hist.get(ASOF, {"att": [], "dis": []})
-hist[ASOF]["dis"] = sorted({v["c"] for v in dis})
+hist[ASOF]["dis"] = sorted({v["c"] for v in dis if not v["end"] or v["end"] > ASOF})   # 只記當天仍在處置中的（2026-10-29 修：之前把 60 天窗口內已結束的也記進去）
 hist = {k: hist[k] for k in sorted(hist)[-150:] if k}
 HIST.write_text(json.dumps(hist, ensure_ascii=False, separators=(",", ":")))
 days = [d for d in sorted(hist) if d <= ASOF and hist[d]["att"]]   # 有名單的交易日
