@@ -377,8 +377,10 @@ def compute():
         return round((cl[-1] / base - 1) * 100, 1) if base else None
 
     for c in ids:
-        cl = [r["p"].get(c, [None, None])[0] for _, r in pdays]
-        vo = [r["p"].get(c, [None, None])[1] for _, r in pdays]
+        # 舊交易日被 prune() 瘦身成只剩收盤 [close] → 成交量取不到時當 None（2026/10/28 起曾因此 IndexError 整支停擺）
+        pv = [r["p"].get(c) or [None] for _, r in pdays]
+        cl = [v[0] for v in pv]
+        vo = [v[1] if len(v) > 1 else None for v in pv]
         w, m, q = ret(cl, 5), ret(cl, 20), ret(cl, 60)
         v5 = [x for x in vo[-5:] if x is not None]
         v20 = [x for x in vo[-20:] if x is not None]
