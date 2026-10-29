@@ -205,7 +205,7 @@ rows = fetch_rows("twse_att", RWD + f"notice?startDate={d_att}&endDate={TODAY}&r
 if not any(code_of(r) for r in rows):
     rows = fetch_rows("twse_att_openapi", TWSE + "announcement/notice")
 att += parse_att(rows, "上市")
-d0 = (NOW - dt.timedelta(days=20)).strftime("%Y%m%d")
+d0 = (NOW - dt.timedelta(days=max(60, BACKFILL))).strftime("%Y%m%d")   # 拉 60 天：含已結束的處置，供「近期結束」與處置後報酬統計
 rows = fetch_rows("twse_dis", RWD + f"punish?startDate={d0}&endDate={TODAY}&response=json")
 if not any(code_of(r) for r in rows):
     rows = fetch_rows("twse_dis_openapi", TWSE + "announcement/punish")
@@ -264,6 +264,18 @@ def stats(c):
     return n10, n30, streak
 
 
+# ---------------------------------------------------------------- 處置歷史（2026-10-29）：每筆看過的處置（含已結束）併進 dis_hist.json
+# 證交所一次拉得到 60 天，上櫃 OpenAPI 只回最近兩天 → 靠每日累積（上櫃歷史自 2026/10/29 起才完整）
+DHIST = NDIR / "dis_hist.json"
+dh = {k: v for k, v in load(DHIST, {}).items() if isinstance(v, dict) and v.get("end")}
+for v in dis:
+    if v.get("start") and v.get("end"):
+        dh[f"{v['c']}|{v['start']}"] = {"c": v["c"], "n": v["n"], "m": v["m"], "start": v["start"], "end": v["end"],
+                                        "r": v["r"], "measure": v["measure"]}
+cut_old = (NOW - dt.timedelta(days=420)).strftime("%Y%m%d")
+dh = {k: v for k, v in sorted(dh.items()) if v["start"] >= cut_old}
+DHIST.write_text(json.dumps(dh, ensure_ascii=False, separators=(",", ":")))
+
 # ---------------------------------------------------------------- 整理輸出
 att = {v["c"]: v for v in att if (v["d"] or ASOF) == ASOF}                        # 只留最新一天
 dis = {v["c"]: v for v in dis if not v["end"] or v["end"] > ASOF}                 # 處置期未結束（迄日＝名單日的已結束）
@@ -283,10 +295,22 @@ for v in dis.values():
     v["endMd"], v["startMd"] = md_(v["end"]), md_(v["start"])
     v["left"] = sum(1 for i in range(1, 25) if (dt.datetime.strptime(ASOF, "%Y%m%d") + dt.timedelta(days=i)).weekday() < 5 and (dt.datetime.strptime(ASOF, "%Y%m%d") + dt.timedelta(days=i)).strftime("%Y%m%d") <= v["end"]) if v["end"] else None
 
+# ---------------------------------------------------------------- 即將結束（處置中、3 個交易日內到期）／近期結束（10 個交易日內結束，一檔多筆留最近）
+md_fmt = lambda d: f"{int(d[4:6])}/{int(d[6:])}" if d else ""
+dend = sorted([v for v in dis.values() if v.get("left") is not None and v["left"] <= 3], key=lambda x: (x["left"], x["c"]))
+cut10 = days[-10] if len(days) >= 10 else (days[0] if days else "")
+dpost = {}
+for v in sorted(dh.values(), key=lambda x: x["end"], reverse=True):
+    if v["end"] <= ASOF and (not cut10 or v["end"] >= cut10) and v["c"] not in dpost and v["c"] not in dis:   # 又進新一輪處置的不算「剛結束」
+        dpost[v["c"]] = {**v, "n": name_of(v["c"], v["n"]), "endMd": md_fmt(v["end"]), "startMd": md_fmt(v["start"]),
+                         "ago": sum(1 for d in days if d > v["end"])}
+dpost = sorted(dpost.values(), key=lambda x: (x["ago"], x["c"]))
+
 out = {"updated": NOW.strftime("%Y-%m-%dT%H:%MZ"), "asof": ASOF, "histDays": len(days),
+       "dend": dend, "dpost": dpost,
        "att": sorted(att.values(), key=lambda x: (-x["streak"], -x["n10"], x["c"])),
        "dis": sorted(dis.values(), key=lambda x: (x["end"] or "9", x["c"])),
        "pre": sorted(pre.values(), key=lambda x: (-x["n10"], x["c"])),
        "diag": DIAG}
 OUT.write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")))
-print(f"asof {ASOF}: 注意 {len(att)}（上市 {sum(v['m']=='上市' for v in att.values())}）、處置 {len(dis)}、快達 {len(pre)}；hist {len(days)} 天；src {DIAG['src']}；fail {DIAG['fail']}")
+print(f"asof {ASOF}: 注意 {len(att)}（上市 {sum(v['m']=='上市' for v in att.values())}）、處置 {len(dis)}、快達 {len(pre)}、快結束 {len(dend)}、剛結束 {len(dpost)}；dis_hist {len(dh)} 筆；hist {len(days)} 天；src {DIAG['src']}；fail {DIAG['fail']}")
