@@ -11,7 +11,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=IBM+Plex+Mono:wght@500;600&display=swap">
 <style>
-/* 注意／處置股（2026-10-29 beta）：三頁籤（注意／處置／快達處置）＋ 上市上櫃篩選。名單來自 data/notice.json（fetch_notice.py 每日 17:25 抓證交所＋櫃買 OpenAPI），小 K 來自 data/chip_s 分片（與掃描頁同一份）。 */
+/* 注意／處置股（2026-10-29）：五頁籤 注意／處置／快達處置／⏳快結束／✅剛結束 ＋ 上市上櫃篩選。
+   名單來自 data/notice.json（fetch_notice.py 每日 17:25 抓證交所＋櫃買；dend/dpost 由 data/notice/dis_hist.json 累積），
+   小 K 來自 data/chip_s 分片（與掃描頁同一份）；K 圖紅色底色＝處置期間。統計見 stats.html。2026-10-29 beta 確認後併入。 */
 :root{
   --bg:#f3f4f6; --card:#ffffff; --fg:#151a23; --muted:#5d6675; --line:#e2e5ea; --grid:#eceef2;
   --accent:#1f5fbf; --warm:#c46a12; --up:#d32f2f; --down:#138a4b; --y:#b88600; --o:#d9731a;
@@ -57,6 +59,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 .nc{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:6px 8px 5px;display:grid;grid-template-columns:1fr 112px;grid-template-rows:auto auto;gap:2px 8px;min-width:0;position:relative}
 .nc.dis{border-color:var(--up)}
 .nc.warn{border-color:var(--o)}
+.nc.post{border-color:var(--accent)}
 .nc-h{display:flex;align-items:baseline;gap:5px;min-width:0;line-height:17px;flex-wrap:wrap}
 .nc-h a.nm{font-size:14.5px;font-weight:900;color:inherit;white-space:nowrap}
 .nc-h .cd{font-family:var(--f-num);font-size:11.5px;color:var(--muted)}
@@ -68,6 +71,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 .tg.y{background:color-mix(in srgb,var(--y) 18%,transparent);color:var(--y);font-weight:700}
 .tg.o{background:color-mix(in srgb,var(--o) 18%,transparent);color:var(--o);font-weight:700}
 .tg.r{background:color-mix(in srgb,var(--up) 16%,transparent);color:var(--up);font-weight:700}
+.tg.a{background:color-mix(in srgb,var(--accent) 15%,transparent);color:var(--accent);font-weight:700}
 .tg.g{color:var(--muted)}
 .tg b{font-family:var(--f-num);font-weight:600}
 .rs{grid-column:1 / -1;font-size:12px;color:var(--muted);line-height:1.4;margin-top:2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;cursor:pointer}
@@ -93,13 +97,15 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
     <button class="tab" data-tab="att" aria-pressed="true">🟡 注意<b id="nAtt">—</b></button>
     <button class="tab" data-tab="dis" aria-pressed="false">🔴 處置<b id="nDis">—</b></button>
     <button class="tab" data-tab="pre" aria-pressed="false">🟠 快達處置<b id="nPre">—</b></button>
+    <button class="tab" data-tab="dend" aria-pressed="false">⏳ 快結束<b id="nEnd">—</b></button>
+    <button class="tab" data-tab="dpost" aria-pressed="false">✅ 剛結束<b id="nPost">—</b></button>
     <a class="home" href="index.html">← 估值看板</a>
   </div>
 </div>
 <div class="sb" id="bar">
   <span class="lab">市場</span><button data-m="" aria-pressed="true">全部</button><button data-m="上市">上市</button><button data-m="上櫃">上櫃</button>
   <span class="sep"></span>
-  <span class="lab">排序</span><button data-s="streak" aria-pressed="true">連續天</button><button data-s="chg">漲幅</button><button data-s="vr">量比</button><button data-s="n30">30日次數</button>
+  <span class="lab">排序</span><button data-s="def" aria-pressed="true" id="defBtn">連續天</button><button data-s="chg">漲幅</button><button data-s="vr">量比</button><button data-s="n30" id="n30Btn">30日次數</button><button data-s="ret" id="retBtn" hidden>結束後</button>
   <a class="sc" id="scanLink" href="scan.html#natt">📈 掃 K 線</a><button id="noteBtn" aria-pressed="false" aria-label="說明">ⓘ</button>
 </div>
 <div class="cnt" id="cnt"></div>
@@ -112,22 +118,26 @@ const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim
 const fmt=(n,d=0)=>n==null?'—':Number(n).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
 const pxFmt=p=>p==null?'—':p>=1000?fmt(p,0):p>=100?fmt(p,1):fmt(p,2);
 const pct=(x,d=1)=>x==null?'—':(x>0?'▲':x<0?'▼':'')+Math.abs(x*100).toFixed(d)+'%';
+const sgn=(x,d=1)=>x==null?'—':(x>0?'+':'')+(x*100).toFixed(d)+'%';
 const cls=x=>x>0?'up':x<0?'dn':'';
 const md=d=>d?+d.slice(4,6)+'/'+ +d.slice(6,8):'';
-let D=null,TAB='att',MK='',SORT='streak',SHARD={},K={};
-const T={att:{title:'注意股',tip:'<b>注意股</b>＝交易所依「最近六日漲幅、週轉率、本益比、成交量放大」等標準公布的過熱警示。<b>不是買進訊號</b>——被列注意後常見高開低走；若手上有，把它當減碼提醒。連續天數＝連續幾個交易日都在名單上；次數用本站紀錄算（上市已回補 2026/9/14 起，上櫃自 2026/10/27 起累積，所以上櫃 30 日次數前期會偏少）。'},
-  dis:{title:'處置股',tip:'<b>處置股</b>＝注意次數達標後改為「分盤撮合」（每 5 或 20 分鐘撮合一次）、可能要求預收款券，流動性大降、不能當沖。處置期間通常 10 個交易日。'},
-  pre:{title:'快達處置',tip:'<b>快達處置</b>＝注意累計次數接近處置門檻（近 10 日 5 次或近 30 日 11 次）。再被列一次就可能進處置、分盤交易。上市名單來自證交所官方公布；上櫃若官方端點抓不到，用本站歷史次數估算（卡片會標「估算」）。'}};
+let D=null,TAB='att',MK='',SORT='def',SHARD={},K={},LR=[];
+const T={att:{def:'連續天',title:'注意股',tip:'<b>注意股</b>＝交易所依「最近六日漲幅、週轉率、本益比、成交量放大」等標準公布的過熱警示。<b>不是買進訊號</b>——被列注意後常見高開低走；若手上有，把它當減碼提醒。連續天數＝連續幾個交易日都在名單上；次數用本站紀錄算（上市已回補 2026/9/14 起，上櫃自 2026/10/27 起累積，所以上櫃 30 日次數前期會偏少）。'},
+  dis:{def:'結束日',title:'處置股',tip:'<b>處置股</b>＝注意次數達標後改為「分盤撮合」（每 5 或 20 分鐘撮合一次）、可能要求預收款券，流動性大降、不能當沖。處置期間通常 10 個交易日。排序預設＝越快結束越前面；K 圖紅色底色＝處置期間。'},
+  pre:{def:'10日次數',title:'快達處置',tip:'<b>快達處置</b>＝注意累計次數接近處置門檻（近 10 日 5 次或近 30 日 11 次）。再被列一次就可能進處置、分盤交易。上市名單來自證交所官方公布；上櫃若官方端點抓不到，用本站歷史次數估算（卡片會標「估算」）。'},
+  dend:{def:'剩餘日',title:'快結束',tip:'<b>⏳ 快結束</b>＝處置中、<b>3 個交易日內</b>恢復正常撮合的股票。<b>結束≠利多</b>——常見說法是「處置結束會噴」，但也可能主力早在分盤期間出完貨；先看「📊 處置後統計」的歷史勝率，再決定要不要當訊號。K 圖紅色底色＝處置期間。'},
+  dpost:{def:'結束日',title:'剛結束',tip:'<b>✅ 剛結束</b>＝最近 <b>10 個交易日內</b>處置結束（已恢復逐筆撮合）。卡片「結束後」＝從處置最後一天收盤到最新收盤的累計漲跌；K 圖紅色底色＝處置期間，可直接看處置前、中、後的價量。又進新一輪處置的股票不在這裡（在「處置」）。樣本：上市回補近 60 天，上櫃自 2026/10/29 起累積。'}};
 async function init(){
   const r=await fetch('data/notice.json?t='+Math.floor(Date.now()/3e5)).catch(()=>null);
   D=r&&r.ok?await r.json():null;
   if(!D){$('list').innerHTML='<div class="empty">還沒有名單資料（排程第一次跑完後才有）</div>';return}
   $('nAtt').textContent=D.att.length;$('nDis').textContent=D.dis.length;$('nPre').textContent=D.pre.length;
-  const h=location.hash.slice(1);if(['att','dis','pre'].includes(h))TAB=h;
+  $('nEnd').textContent=(D.dend||[]).length;$('nPost').textContent=(D.dpost||[]).length;
+  const h=location.hash.slice(1);if(['att','dis','pre','dend','dpost'].includes(h))TAB=h;
   document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{TAB=b.dataset.tab;history.replaceState(null,'','#'+TAB);paint()});
   $('bar').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.id==='noteBtn'){const on=$('note').classList.toggle('hid');b.setAttribute('aria-pressed',String(!on));return}if(b.dataset.m!=null)MK=b.dataset.m;else if(b.dataset.s)SORT=b.dataset.s;paint()});
   $('list').addEventListener('click',e=>{if(e.target.closest('a'))return;const c=e.target.closest('.nc');if(c)c.classList.toggle('open')});
-  const codes=[...new Set([...D.att,...D.dis,...D.pre].map(x=>x.c))];
+  const codes=[...new Set([...D.att,...D.dis,...D.pre,...(D.dend||[]),...(D.dpost||[])].map(x=>x.c))];
   await Promise.all([...new Set(codes.map(c=>c.slice(0,2)))].map(g=>loadShard(g)));
   codes.forEach(c=>K[c]=kinfo(c));
   paint();
@@ -143,27 +153,39 @@ function kinfo(c){const s=SHARD[c.slice(0,2)];if(!s||!s.d||!s.d[c])return null;c
   const hi20=Math.max(...bars.slice(-21,-1).map(x=>x.h));
   const sum=(k,w)=>{let a=0,g=false;bars.slice(-w).forEach(x=>{if(x[k]!=null){a+=x[k];g=true}});return g?a:null};
   return {bars,px:last.c,d:last.d,chg:prev.c?last.c/prev.c-1:null,vr:v5?last.v/v5:null,c6,hi20,ma20:ma(20,n-1),ma60:ma(60,n-1),t5:sum('t',5),f5:sum('f',5)}}
+// 結束後累計漲跌：處置最後一天（≤迄日的最後一根）收盤 → 最新收盤
+function retAfter(c,end){const k=K[c];if(!k||!end)return null;let i=-1;k.bars.forEach((b,j)=>{if(b.d<=end)i=j});
+  if(i<0)return null;if(i>=k.bars.length-1)return {ret:0,n:0};
+  return {ret:k.bars[k.bars.length-1].c/k.bars[i].c-1,n:k.bars.length-1-i}}
 function rows(){let R=(D[TAB]||[]).filter(x=>!MK||x.m===MK);
   const k=c=>K[c]||{};
-  const key={streak:x=>(x.streak||0)*1000+(x.n10||0),chg:x=>k(x.c).chg??-9,vr:x=>k(x.c).vr??-9,n30:x=>(x.n30||0)*100+(x.n10||0)}[SORT];
+  const def=TAB==='dend'?x=>-(x.left??9):TAB==='dpost'?x=>-(x.ago??99):TAB==='dis'?x=>-( +(x.end||'99999999')):TAB==='pre'?x=>(x.n10||0)*100+(x.n30||0):x=>(x.streak||0)*1000+(x.n10||0);
+  const key={def,chg:x=>k(x.c).chg??-9,vr:x=>k(x.c).vr??-9,n30:x=>(x.n30||0)*100+(x.n10||0),ret:x=>(retAfter(x.c,x.end)||{}).ret??-9}[SORT]||def;
   return R.sort((a,b)=>key(b)-key(a)||(k(b.c).chg??0)-(k(a.c).chg??0))}
 function hl(s){return esc(s).replace(/(\d+(?:\.\d+)?%|\d+(?:\.\d+)?倍)/g,'<em>$1</em>').replace(/([一二三四五六七八九十]+、)/g,'<br>$1').replace(/^<br>/,'')}
 function paint(){
   document.querySelectorAll('.tab').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.tab===TAB)));
+  if(SORT==='ret'&&!['dis','dend','dpost'].includes(TAB))SORT='def';
+  if(SORT==='n30'&&['dend','dpost'].includes(TAB))SORT='def';
   document.querySelectorAll('#bar button').forEach(b=>{if(b.dataset.m!=null)b.setAttribute('aria-pressed',String(b.dataset.m===MK));else if(b.dataset.s)b.setAttribute('aria-pressed',String(b.dataset.s===SORT))});
-  $('scanLink').href='scan.html#n'+TAB;document.title=T[TAB].title;
+  $('defBtn').textContent=T[TAB].def;$('retBtn').hidden=!['dis','dend','dpost'].includes(TAB);$('n30Btn').hidden=['dend','dpost'].includes(TAB);
+  const toStats=['dend','dpost'].includes(TAB);
+  $('scanLink').href=toStats?'stats.html':'scan.html#n'+TAB;$('scanLink').textContent=toStats?'📊 處置後統計':'📈 掃 K 線';
+  document.title=T[TAB].title;
   $('note').innerHTML=T[TAB].tip;
-  const R=rows(),all=(D[TAB]||[]).length;
+  const R=rows(),all=(D[TAB]||[]).length;LR=R;
   const up=R.filter(x=>(K[x.c]||{}).chg>0).length;
   $('cnt').innerHTML=`<b>${R.length}</b>／${all} 檔・名單 ${md(D.asof)}・今日上漲 <b>${up}</b> 檔・點卡片展開原因・ⓘ 看說明`;
-  if(!R.length){$('list').innerHTML=`<div class="empty">${all?'這個市場沒有':'今天沒有'}${T[TAB].title}</div>`;return}
-  $('list').innerHTML=R.map((x,i)=>{const k=K[x.c];const cs=TAB==='dis'?'dis':(x.warn||TAB==='pre')?'warn':'';
-    const tags=[];
+  if(!R.length){$('list').innerHTML=`<div class="empty">${all?'這個市場沒有':'目前沒有'}${T[TAB].title}</div>`;return}
+  $('list').innerHTML=R.map((x,i)=>{const k=K[x.c];const cs=TAB==='dpost'?'post':(TAB==='dis'||TAB==='dend')?'dis':(x.warn||TAB==='pre')?'warn':'';
+    const tags=[];const ra=['dend','dpost'].includes(TAB)?retAfter(x.c,x.end):null;
     if(TAB==='att'){tags.push(`<span class="tg y">連 <b>${x.streak||1}</b> 天</span>`);tags.push(`<span class="tg${x.warn?' o':''}">10日 <b>${x.n10??'—'}</b>・30日 <b>${x.n30??'—'}</b> 次</span>`);if(x.warn)tags.push('<span class="tg o">⚠ 快達處置</span>');if(x.cnt)tags.push(`<span class="tg g">官方累計 <b>${fmt(x.cnt)}</b></span>`)}
     if(TAB==='dis'){tags.push(`<span class="tg r">處置 ${esc(x.startMd||'?')}～${esc(x.endMd||'?')}${x.left!=null?`・剩 <b>${x.left}</b> 日`:''}</span>`);if(x.measure)tags.push(`<span class="tg o">${esc(x.measure)}</span>`);if(x.n30)tags.push(`<span class="tg g">30日注意 <b>${x.n30}</b> 次</span>`)}
     if(TAB==='pre'){tags.push(`<span class="tg o">10日 <b>${x.n10??'—'}</b>・30日 <b>${x.n30??'—'}</b> 次</span>`);if(x.est)tags.push('<span class="tg g">估算</span>')}
+    if(TAB==='dend'){tags.push(`<span class="tg r">剩 <b>${x.left}</b> 日・${esc(x.startMd||'?')}～${esc(x.endMd||'?')}</span>`);if(x.measure)tags.push(`<span class="tg o">${esc(x.measure)}</span>`)}
+    if(TAB==='dpost'){tags.push(`<span class="tg a">結束 ${esc(x.endMd||'?')}・<b>${x.ago===0?'今天':x.ago+' 日前'}</b></span>`);if(ra&&ra.n>0)tags.push(`<span class="tg">結束後 <b class="${cls(ra.ret)}">${sgn(ra.ret)}</b></span>`);if(x.measure)tags.push(`<span class="tg g">${esc(x.measure)}</span>`)}
     if(x.pe!=null)tags.push(`<span class="tg g">本益比 <b>${fmt(x.pe,1)}</b></span>`);
-    if(k){if(k.c6!=null)tags.push(`<span class="tg g">6日 <b class="${cls(k.c6)}">${pct(k.c6)}</b></span>`);if(k.vr!=null)tags.push(`<span class="tg g">量 <b class="${k.vr>=1.5?'up':''}">${k.vr.toFixed(1)}×</b></span>`);
+    if(k){if(k.c6!=null&&!['dend','dpost'].includes(TAB))tags.push(`<span class="tg g">6日 <b class="${cls(k.c6)}">${pct(k.c6)}</b></span>`);if(k.vr!=null)tags.push(`<span class="tg g">量 <b class="${k.vr>=1.5?'up':''}">${k.vr.toFixed(1)}×</b></span>`);
       if(k.t5!=null)tags.push(`<span class="tg g">投5日 <b class="${cls(k.t5)}">${(k.t5>0?'+':'')+fmt(k.t5)}</b></span>`);if(k.f5!=null)tags.push(`<span class="tg g">外5日 <b class="${cls(k.f5)}">${(k.f5>0?'+':'')+fmt(k.f5)}</b></span>`)}
     const px=k?k.px:x.px;
     return `<article class="nc ${cs}" data-c="${esc(x.c)}" data-i="${i}">
@@ -172,11 +194,11 @@ function paint(){
       ${k?'<canvas class="kv"></canvas>':'<div class="kv none">無日K</div>'}
       <div class="rs">${hl(x.r||'（未附原因）')}${x.detail?'<span class="dt"><br>'+hl(x.detail).replace(/\n/g,'<br>')+'</span>':''}<i>展開</i></div>
     </article>`}).join('');
-  const io=new IntersectionObserver(es=>{es.forEach(e=>{if(!e.isIntersecting)return;const el=e.target,cv=el.querySelector('canvas.kv');if(cv&&!cv.dataset.done){drawMini(cv,K[el.dataset.c]);cv.dataset.done=1}io.unobserve(el)})},{rootMargin:'300px 0px'});
+  const io=new IntersectionObserver(es=>{es.forEach(e=>{if(!e.isIntersecting)return;const el=e.target,cv=el.querySelector('canvas.kv');if(cv&&!cv.dataset.done){const x=LR[+el.dataset.i]||{};drawMini(cv,K[el.dataset.c],x.start?{s:x.start,e:x.end}:null);cv.dataset.done=1}io.unobserve(el)})},{rootMargin:'300px 0px'});
   $('list').querySelectorAll('.nc').forEach(el=>io.observe(el));
-  $('foot').innerHTML=`小圖＝近 40 根日K（<span class="num" style="color:var(--ma20)">━</span> 20日線、<span class="num" style="color:var(--ma60)">━</span> 60日線、紅虛線＝前 20 日最高），底下一條＝投信每日買賣超（紅買綠賣）。6日＝近六個交易日漲幅（注意股主要標準之一）；量比＝今日量 ÷ 前 5 日均量；投／外 5 日＝投信／外資 5 日合計買賣超（張）。名單每個交易日 17:25 後自動更新（資料 ${esc(D.updated||'')}，本站歷史 ${D.histDays} 天）。點股名進個股頁看財報；「掃 K 線」把整份名單放進掃描頁放大看。本頁不構成投資建議。`;
+  $('foot').innerHTML=`小圖＝近 40 根日K（<span class="num" style="color:var(--ma20)">━</span> 20日線、<span class="num" style="color:var(--ma60)">━</span> 60日線、紅虛線＝前 20 日最高，<b>紅色底色＝處置期間</b>），底下一條＝投信每日買賣超（紅買綠賣）。6日＝近六個交易日漲幅；量比＝今日量 ÷ 前 5 日均量；「結束後」＝處置最後一天收盤到最新收盤的累計漲跌。名單每個交易日 17:25 後自動更新（資料 ${esc(D.updated||'')}，本站歷史 ${D.histDays} 天）。處置歷史自動累積中——<a href="stats.html">📊 處置後統計</a>看結束後 1／3／5／10 日報酬與勝率。本頁不構成投資建議。`;
 }
-function drawMini(cv,r){if(!r)return;const dpr=window.devicePixelRatio||1,W=cv.clientWidth,Hh=cv.clientHeight;if(!W||!Hh)return;
+function drawMini(cv,r,band){if(!r)return;const dpr=window.devicePixelRatio||1,W=cv.clientWidth,Hh=cv.clientHeight;if(!W||!Hh)return;
   cv.width=Math.round(W*dpr);cv.height=Math.round(Hh*dpr);const g=cv.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,W,Hh);
   const up=css('--up'),dn=css('--down'),fg=css('--fg'),ln=css('--grid'),MC={20:css('--ma20'),60:css('--ma60')};
   const all=r.bars,n=all.length,s=Math.max(0,n-40),vis=all.slice(s),m=vis.length;
@@ -188,6 +210,8 @@ function drawMini(cv,r){if(!r)return;const dpr=window.devicePixelRatio||1,W=cv.c
   if(r.hi20){hi=Math.max(hi,r.hi20);lo=Math.min(lo,r.hi20)}
   if(!(hi>lo)){hi=lo*1.01||1;lo=lo*0.99||0}const pad=(hi-lo)*0.05;hi+=pad;lo-=pad;
   const cw=W/m,bw=Math.max(1.2,cw*0.62),X=j=>cw*j+cw/2,Y=p=>top+(hi-p)/(hi-lo)*priceH;
+  if(band&&band.s){let j0=-1,j1=-1;vis.forEach((x,j)=>{if(x.d>=band.s&&(!band.e||x.d<=band.e)){if(j0<0)j0=j;j1=j}});
+    if(j0>=0){g.save();g.globalAlpha=.13;g.fillStyle=up;g.fillRect(cw*j0,top,cw*(j1-j0+1),priceH);g.restore()}}
   g.strokeStyle=ln;g.lineWidth=1;[0.25,0.5,0.75].forEach(f=>{const y=Y(lo+(hi-lo)*(1-f));g.beginPath();g.moveTo(0,y);g.lineTo(W,y);g.stroke()});
   if(r.hi20){const y=Y(r.hi20);g.save();g.strokeStyle=up;g.setLineDash([3,3]);g.beginPath();g.moveTo(0,y);g.lineTo(W,y);g.stroke();g.restore()}
   vis.forEach((x,j)=>{const col=x.c>x.o?up:x.c<x.o?dn:fg,xx=X(j),yo=Y(x.o),yc=Y(x.c),t=Math.min(yo,yc),hh=Math.max(1,Math.abs(yo-yc));g.strokeStyle=col;g.fillStyle=col;g.lineWidth=1;g.beginPath();g.moveTo(xx,Y(x.h));g.lineTo(xx,Y(x.l));g.stroke();g.fillRect(xx-bw/2,t,bw,hh)});

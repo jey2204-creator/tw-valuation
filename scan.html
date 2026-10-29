@@ -131,7 +131,7 @@ const cls=x=>x>0?'up':x<0?'dn':'';
 const md=d=>d?+d.slice(4,6)+'/'+ +d.slice(6,8):'';
 let NAME={},MKT={},IND={},THEMES=[],NOTICE=null,NMAP={},HIST=null,HDAYS=[],NDATE='',CUR_IDS=[],cur=null,sortK='chg',N=40,FL={ma20:false,ts3:false,vr12:false},SHARD={},ROWS=[],openI=-1,shN=80;
 // ---- 主題清單：data/themes.json ＋ 手機裡改過／自訂的主題（themeCfg，與估值看板同一份）＋ 自選（fav） ----
-const AUTO_IDS=['itop','ftop','btop','natt','npre','ndis'];   // 自動主題（與首頁同一份順序）
+const AUTO_IDS=['itop','ftop','btop','natt','npre','ndis','nend','npost'];   // 自動主題（與首頁同一份順序）
 function themesAll(base){const c=store.get('themeCfg')||{},order=c.order||[],hidden=c.hidden||[],mine=c.themes||{};const bm={};base.forEach(t=>bm[t.id]=t);
   // 順序完全照首頁：沒被手動排過的自動主題放最前 → 首頁「編輯」的順序 → 其餘內建主題 → 自訂主題；首頁隱藏的這裡也不顯示
   const ids=[...AUTO_IDS.filter(i=>bm[i]&&!order.includes(i)),...order.filter(i=>bm[i]||mine[i]),...base.map(t=>t.id),...Object.keys(mine)].filter((v,i,a)=>a.indexOf(v)===i&&(bm[v]||mine[v])&&!hidden.includes(v));
@@ -152,7 +152,7 @@ async function init(){
     [['itop','📈 投信買超前20','it'],['ftop','🌐 外資買超前20','fi'],['btop','🤝 土洋同買前20','both']].forEach(([id,n,k])=>{const L2=TOP.lists[k]||[];if(L2.length)T.themes=[{id,name:`${n}（${md}）`,stocks:L2.map(r=>[r.c,r.sub||''])},...(T.themes||[])]})}
   // 注意／處置自動主題（與估值看板同一份 data/notice.json；id 與首頁一致：natt／npre／ndis）
   if(NT){const md=NT.asof?`${+NT.asof.slice(4,6)}/${+NT.asof.slice(6)}`:'';
-    const NTH=[['natt','🟡 注意股','att'],['npre','🟠 快達處置','pre'],['ndis','🔴 處置股','dis']].map(([id,n,k])=>{const L2=NT[k]||[];return L2.length?{id,name:`${n}（${md}）`,stocks:L2.map(r=>[r.c,''])}:null}).filter(Boolean);
+    const NTH=[['natt','🟡 注意股','att'],['npre','🟠 快達處置','pre'],['ndis','🔴 處置股','dis'],['nend','⏳ 快結束','dend'],['npost','✅ 剛結束','dpost']].map(([id,n,k])=>{const L2=NT[k]||[];return L2.length?{id,name:`${n}（${md}）`,stocks:L2.map(r=>[r.c,''])}:null}).filter(Boolean);
     T.themes=[...(T.themes||[]).filter(t=>AUTO_IDS.includes(t.id)),...NTH,...(T.themes||[]).filter(t=>!AUTO_IDS.includes(t.id))]}
   L.forEach(([c,n,m,i])=>{NAME[c]=n;MKT[c]=m;(IND[i]=IND[i]||[]).push(c)});
   THEMES=themesAll(T.themes||[]);
