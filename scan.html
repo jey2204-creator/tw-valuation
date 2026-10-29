@@ -147,7 +147,7 @@ async function init(){
     T.themes=[...(T.themes||[]).filter(t=>AUTO_IDS.includes(t.id)),...NTH,...(T.themes||[]).filter(t=>!AUTO_IDS.includes(t.id))]}
   L.forEach(([c,n,m,i])=>{NAME[c]=n;(IND[i]=IND[i]||[]).push(c)});
   THEMES=themesAll(T.themes||[]);
-  $('themes').innerHTML=THEMES.map(t=>`<button class="ch" data-t="${esc(t.id)}" aria-pressed="false">${esc(t.name)}<span style="opacity:.6;font-size:11px"> ${t.stocks.length}</span></button>`).join('');
+  $('themes').innerHTML=THEMES.map(t=>{const dm=t.name.match(/^(.*?)\s*[（(](\d{1,2}\/\d{1,2})[）)]\s*$/);return `<button class="ch" data-t="${esc(t.id)}" aria-pressed="false" title="${esc(t.name)}">${esc(dm?dm[1]:t.name)}<span style="opacity:.6;font-size:11px"> ${t.stocks.length}${dm?'・'+dm[2]:''}</span></button>`}).join('');
   const inds=Object.keys(IND).filter(k=>k&&k!=='其他').sort((a,b)=>IND[b].length-IND[a].length);
   $('indSel').innerHTML='<option value="">證交所產業 ▾</option>'+inds.map(k=>`<option value="${esc(k)}">${esc(k)}（${IND[k].length}）</option>`).join('');
   $('themes').addEventListener('click',e=>{const b=e.target.closest('button[data-t],button[data-n]');if(b)pick(b.dataset.n?{kind:'n',id:b.dataset.n}:{kind:'t',id:b.dataset.t})});

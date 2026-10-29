@@ -2180,7 +2180,9 @@ function themeList(el){
   el.innerHTML=`<div class="panel"><div class="tbl"><table class="lst tlt"><thead><tr><th data-tk="">主題</th>${TLC.map(th).join('')}</tr></thead><tbody>`+rows.map(r=>{
     const {t,n,y,pe,ey,pg,mm,nf,a3,a2}=r;
     const meta=`<span class="dtip" data-tip="${n} 檔的中位數${n<5?'；檔數少，中位數容易被單一股票帶動':''}" style="${n<5?'color:var(--warm)':''}">${n}檔</span>${a3!=null&&(a3||a2)?` AI<span class="ail3">${a3}</span>/<span class="ail2">${a2}</span>`:''}${nf?` 🔥${nf}`:''}`;
-    return `<tr data-t="${t.id}"><td><span class="tn">${t.name.replace(/^\p{Extended_Pictographic}\uFE0F?\s*/u,'')}</span><span class="tm">${meta}</span></td>
+    // 自動主題的名單日「（10/28）」移到第二行小字，主題名維持一行（2026-10-29）
+    const nm=t.name.replace(/^\p{Extended_Pictographic}\uFE0F?\s*/u,''),dm=nm.match(/^(.*?)\s*[（(](\d{1,2}\/\d{1,2})[）)]\s*$/);
+    return `<tr data-t="${t.id}"><td><span class="tn">${dm?dm[1]:nm}</span><span class="tm">${dm?`${dm[2]}・`:''}${meta}</span></td>
       <td class="${sign(y)}">${y==null?'—':pct(y,0)}</td><td class="${sign(ey)}">${ey==null?'—':pct(ey,0)}</td>
       <td>${pe==null?'—':fmt(pe,1)}</td><td class="${pg==null?'':pg<1?'cheap':pg>2?'pricey':''}">${pg==null?'—':fmt(pg,2)}</td>
       <td class="${sign(mm)}">${mm==null?'—':pct(mm,1)}</td></tr>`}).join('')+'</tbody></table></div></div>';
