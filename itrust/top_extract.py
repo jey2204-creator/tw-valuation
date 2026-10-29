@@ -158,8 +158,37 @@ def main():
             both.append({**base(r), "rank": i + 1, "p": round(r["p"], 2), "fp": round(fp, 2),
                          "sum": round(r["p"] + fp, 2), "amt": r.get("amt"), "lots": r.get("lots"), "streak": ds})
 
+    # 歷史名單（2026-10-30）：每個名單日的投信／外資／土洋前 20 代號，給掃描頁「看前幾天的名單」用。
+    # data.js 只留約 20 個交易日，所以跟上一版 itrust_top.json 的 hist 合併累積（保留 150 天）。
+    def both_set(d):
+        if not days.get(d) or not fdays.get(d):
+            return None
+        kept = []
+        for r in days[d].get("rows", []):
+            if not pass_t(r) or not r.get("s"):
+                continue
+            fv = fv_of(fdays, d, r["c"])
+            if not fv or fv <= 0:
+                continue
+            kept.append((r["c"], r["p"] + fv / r["s"] * 100))
+        kept.sort(key=lambda x: -x[1])
+        return [c for c, _ in kept[:20]]
+    hist = {}
+    try:
+        hist = {k: v for k, v in (json.loads(OUT.read_text("utf-8")).get("hist") or {}).items() if k and k[:2] == "20"}
+    except Exception:
+        pass
+    for d in cal:
+        if not days.get(d):
+            continue
+        st, sf, sb = set_t(d), set_f(d), both_set(d)
+        hist[d] = {"it": sorted(st or [], key=lambda c: -next((r["p"] for r in days[d]["rows"] if r["c"] == c), 0)),
+                   "fi": sorted(sf or [], key=lambda c: -next((r["p"] for r in fdays.get(d, {}).get("rows", []) if r["c"] == c), 0)),
+                   "both": sb or []}
+    hist = {k: hist[k] for k in sorted(hist)[-150:]}
+
     out = {"asof": cur, "builtAt": j.get("builtAt"), "minAmt": MIN_AMT,
-           "lists": {"it": it, "fi": fi, "both": both}}
+           "lists": {"it": it, "fi": fi, "both": both}, "hist": hist}
     OUT.write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")), "utf-8")
     print(f"{cur}: 投信 {len(it)}、外資 {len(fi)}、土洋 {len(both)} 檔 → {OUT.relative_to(ROOT)} ({OUT.stat().st_size} bytes)")
 
