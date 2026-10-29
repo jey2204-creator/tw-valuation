@@ -42,7 +42,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 .ch.st{background:var(--card);border:1px solid var(--line)}
 select.ch{appearance:none;-webkit-appearance:none;padding-right:22px;background:var(--chip) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0h10L5 6z' fill='%235d6675'/%3E%3C/svg%3E") no-repeat right 8px center;max-width:46vw;text-overflow:ellipsis}
 select.ch.on{background-color:var(--sel);color:var(--selfg);font-weight:700}
-/* 兩行控制列（2026-10-29 beta）：第 1 行＝名單日期（最左）＋ K 線區間；第 2 行＝排序分段鈕（等寬不捲動，4 顆＋「更多」）；第 3 行＝篩選。全部不橫向捲動。 */
+/* 兩行控制列（2026-10-29 beta）：第 1 行＝名單日期（最左）＋ K 線區間；第 2 行＝排序 6 顆等寬分段鈕（不捲動、無標籤）；第 3 行＝篩選。全部不橫向捲動。 */
 .sb{padding:4px 8px 0;font-size:12px;color:var(--muted)}
 .sb .r{display:flex;gap:4px;align-items:center;min-width:0}
 .sb .r+.r{margin-top:4px}
@@ -55,7 +55,6 @@ select.ch.on{background-color:var(--sel);color:var(--selfg);font-weight:700}
 .sb select{height:26px;padding:0 20px 0 8px;border-radius:13px;border:1px solid var(--line);background:var(--card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0h10L5 6z' fill='%235d6675'/%3E%3C/svg%3E") no-repeat right 7px center;color:var(--fg);font:500 12px var(--f-body);appearance:none;-webkit-appearance:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sb select.on,.sb select#ndSel{border-color:var(--sel);background-color:var(--sel);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0h10L5 6z' fill='%23ffffff'/%3E%3C/svg%3E");color:var(--selfg);font-weight:700}
 .sb select#ndSel{flex:1 1 auto;min-width:0;max-width:62%}
-.sb select#moreSel{flex:1 1 0;min-width:0}
 .cnt{padding:4px 10px 0;font-size:11.5px;color:var(--muted)}
 .cnt b{color:var(--fg)}
 .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:5px 5px 14px}
@@ -114,7 +113,7 @@ select.ch.on{background-color:var(--sel);color:var(--selfg);font-weight:700}
 </div>
 <div class="sb" id="sortBar">
   <div class="r"><select id="ndSel" hidden title="看哪一天的注意名單"></select><span class="sp"></span><span class="per" style="display:contents"><button data-n="20">1月</button><button data-n="40" aria-pressed="true">2月</button><button data-n="60">3月</button></span></div>
-  <div class="r"><span class="lab">排序</span><button data-k="chg" aria-pressed="true">漲幅</button><button data-k="vr">量比</button><button data-k="ts">投連</button><button data-k="fs">外連</button><select id="moreSel" title="其他排序"><option value="">更多 ▾</option><option value="d20">距月線</option><option value="h20">近20高</option></select></div>
+  <div class="r" title="排序"><button data-k="chg" aria-pressed="true">漲幅</button><button data-k="vr">量比</button><button data-k="ts">投連</button><button data-k="fs">外連</button><button data-k="d20" title="距月線">月線</button><button data-k="h20" title="近20日高">20高</button></div>
   <div class="r"><span class="lab">篩</span><button class="f" data-f="ma20">站上月線</button><button class="f" data-f="ts3">投連≥3</button><button class="f" data-f="vr12">量≥1.2×</button></div>
 </div>
 <div class="cnt" id="cnt"></div>
@@ -162,7 +161,6 @@ async function init(){
   $('indSel').innerHTML='<option value="">證交所產業 ▾</option>'+inds.map(k=>`<option value="${esc(k)}">${esc(k)}（${IND[k].length}）</option>`).join('');
   $('themes').addEventListener('click',e=>{const b=e.target.closest('button[data-t],button[data-n]');if(b)pick(b.dataset.n?{kind:'n',id:b.dataset.n}:{kind:'t',id:b.dataset.t})});
   $('indSel').addEventListener('change',e=>{if(e.target.value)pick({kind:'i',id:e.target.value})});
-  $('moreSel').addEventListener('change',e=>{if(e.target.value){sortK=e.target.value;paintBar();render()}});
   $('sortBar').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
     if(b.dataset.k){sortK=b.dataset.k}else if(b.dataset.f){FL[b.dataset.f]=!FL[b.dataset.f]}else if(b.dataset.n){N=+b.dataset.n;try{localStorage.setItem('scanN',String(N))}catch(e){}}
     paintBar();render()});
@@ -171,8 +169,7 @@ async function init(){
   if(!first){let last='';try{last=sessionStorage.getItem('lastTheme')||''}catch(e){}first={kind:'t',id:THEMES.some(t=>t.id===last)?last:THEMES[0].id}}
   pick(first);
 }
-function paintBar(){const m=$('moreSel'),inMore=[...m.options].some(o=>o.value===sortK);m.classList.toggle('on',inMore);m.value=inMore?sortK:'';
-  document.querySelectorAll('#sortBar button').forEach(b=>{if(b.dataset.k)b.setAttribute('aria-pressed',String(b.dataset.k===sortK));else if(b.dataset.f)b.setAttribute('aria-pressed',String(!!FL[b.dataset.f]));else if(b.dataset.n)b.setAttribute('aria-pressed',String(+b.dataset.n===N))})}
+function paintBar(){document.querySelectorAll('#sortBar button').forEach(b=>{if(b.dataset.k)b.setAttribute('aria-pressed',String(b.dataset.k===sortK));else if(b.dataset.f)b.setAttribute('aria-pressed',String(!!FL[b.dataset.f]));else if(b.dataset.n)b.setAttribute('aria-pressed',String(+b.dataset.n===N))})}
 async function pick(sel){cur=sel;
   document.querySelectorAll('#themes button').forEach(b=>b.setAttribute('aria-pressed',String((sel.kind==='t'&&b.dataset.t===sel.id)||(sel.kind==='n'&&b.dataset.n===sel.id))));
   {const on=document.querySelector('#themes button[aria-pressed=true]');if(on)on.scrollIntoView({inline:'center',block:'nearest'})}
