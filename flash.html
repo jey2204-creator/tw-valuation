@@ -43,6 +43,12 @@ body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--f-body);fon
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;flex:none}
 .seg button{font:inherit;font-size:12.5px;line-height:1.6;border:0;background:var(--card);color:var(--muted);padding:2px 11px;cursor:pointer}
 .seg button[aria-pressed="true"]{background:var(--fg);color:var(--card);font-weight:700}
+#sbtn{font:inherit;font-size:14px;line-height:1.5;border:1px solid var(--line);border-radius:999px;background:var(--card);color:var(--fg);padding:1px 9px;cursor:pointer;flex:none}
+#sbtn[aria-pressed="true"]{background:var(--accent);color:#fff;border-color:var(--accent)}
+.srow{display:none;gap:6px;margin-top:6px}.srow.on{display:flex}
+.srow input{flex:1;min-width:0;font:inherit;font-size:16px;border:1px solid var(--accent);border-radius:999px;padding:4px 12px;background:var(--card);color:var(--fg)}
+.srow button{font:inherit;font-size:12.5px;border:1px solid var(--line);border-radius:999px;background:var(--card);color:var(--muted);padding:2px 10px}
+.shint{font-size:11.5px;color:var(--muted);margin:6px 2px 0}
 select{margin-left:auto;font:inherit;font-size:12.5px;color:var(--fg);background:var(--card);border:1px solid var(--line);border-radius:999px;padding:2px 8px}
 .chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin-top:7px}
 .chips::-webkit-scrollbar{display:none}
@@ -95,6 +101,7 @@ a:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid var
   <div class="bar">
     <div class="row1">
       <div class="seg" id="seas" role="group" aria-label="季別"></div>
+      <button type="button" id="sbtn" aria-pressed="false" aria-label="搜尋代號或名稱">🔍</button>
       <select id="sort" aria-label="排序">
         <option value="t">最新公布</option>
         <option value="eg">EPS 年增 ▼</option>
@@ -111,6 +118,8 @@ a:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid var
       <button data-f="dd">📈📈 營收淨利雙增</button>
       <button data-f="x">⚠️ 業外高</button>
     </div>
+    <div class="srow" id="srow"><input id="sq" type="text" inputmode="search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" name="stock-code-search" placeholder="代號或名稱，例：2327、國巨"><button type="button" id="sclr">清除</button></div>
+    <p class="shint" id="shint" hidden></p>
   </div>
 
   <div class="stats" id="stats"></div>
@@ -123,13 +132,13 @@ a:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid var
     「法說」＝公司在董事會前自行公告的 EPS，董事會版出來後自動取代。<br>「分割還原」＝公司做過分割、面額變更（名稱帶 *），去年同季與近四季 EPS 已換算到目前股數基準，數字會跟新聞上的「官方 EPS 年增」不同但可比。<br>
     營收＝單季營收（億）＋年增；「營收淨利雙增」＝單季營收與淨利年增都 > 0（淨利大增但營收沒跟上，多半是業外或一次性毛利，可持續性要打折）；銀行、保險無營收科目顯示「—」。<br>
     業外占比＝(稅前 − 營業利益) ÷ 稅前，≥ 30% 標 ⚠️：淨利大增若來自業外，不宜直接推算未來 EPS。<br>
-    ⭐ 追蹤＝首頁自選、自訂主題與內建主題成份股。點一列開個股頁。
+    ⭐ 追蹤＝首頁自選、自訂主題與內建主題成份股。點一列開個股頁。🔍 搜尋代號或名稱時不分季別、不套篩選，同一家各季都列出來。
   </p>
 </div>
 <script>
 const $=id=>document.getElementById(id);
 const store={get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
-let D=null,WATCH=new Set(),SEA=null,F='all',SORT=store.get('flSort')||'t',SHOW=60;
+let D=null,WATCH=new Set(),SEA=null,F='all',SORT=store.get('flSort')||'t',SHOW=60,QS='';
 const fmt=(v,d=2)=>v==null?'—':v.toLocaleString('zh-TW',{minimumFractionDigits:d,maximumFractionDigits:d});
 const cls=v=>v==null?'mu':v>0?'up':v<0?'dn':'mu';
 function g(v,t){ // 成長率＋標籤
@@ -175,6 +184,14 @@ function row(i){
   return h;
 }
 function render(){
+  const q=QS.trim().toLowerCase();
+  if(q){ // 搜尋：不分季別、不套篩選，代號開頭或名稱包含；同一家各季都列出來（新的在前）好比上季
+    const L=D.items.filter(i=>i.c.startsWith(q)||(i.n||'').toLowerCase().includes(q)).sort((a,b)=>a.c!==b.c?(a.c<b.c?-1:1):(a.q<b.q?1:-1));
+    const n=new Set(L.map(i=>i.c)).size;
+    $('stats').hidden=true;$('calBox').hidden=true;   // 搜尋時收起統計與日曆，結果直接在搜尋框下面
+    $('shint').hidden=false;$('shint').textContent=L.length?`找到 ${n} 家、${L.length} 則（各季都列，新的在前；不套季別與篩選）`:'沒有這家公司的財報快訊——可能還沒公布，或名稱／代號打錯';
+    $('list').innerHTML=L.slice(0,SHOW).map(row).join('');$('more').hidden=L.length<=SHOW;$('more').textContent=`顯示更多（還有 ${L.length-SHOW} 則）`;return}
+  $('shint').hidden=true;$('stats').hidden=false;$('calBox').hidden=false;
   const all=D.items.filter(i=>i.q===SEA);
   let L=all.filter(pass);
   const key={t:i=>i.t,eg:i=>growthOf(i)??-1e9,rg:i=>i.rvYoy??-1e9,ni:i=>(i.s&&i.s.ni)??-1e9,pe:i=>i.pe==null?1e9:-i.pe}[SORT];
@@ -219,6 +236,10 @@ $('seas').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)
   document.querySelectorAll('#seas button').forEach(x=>x.setAttribute('aria-pressed',x===b));render()});
 $('chips').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;F=b.dataset.f;SHOW=60;render()});
 $('sort').addEventListener('change',e=>{SORT=e.target.value;store.set('flSort',SORT);render()});
+$('sbtn').addEventListener('click',()=>{const on=!$('srow').classList.contains('on');$('srow').classList.toggle('on',on);$('sbtn').setAttribute('aria-pressed',on);
+  if(on)$('sq').focus();else{QS='';$('sq').value='';SHOW=60;if(D)render()}});
+$('sq').addEventListener('input',e=>{QS=e.target.value;SHOW=60;if(D)render()});
+$('sclr').addEventListener('click',()=>{QS='';$('sq').value='';SHOW=60;$('sq').focus();if(D)render()});
 $('more').addEventListener('click',()=>{SHOW+=80;render()});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&D&&Date.now()-new Date(D.updated)>25*60e3)main()});
 main();
