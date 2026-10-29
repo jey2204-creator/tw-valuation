@@ -2,8 +2,6 @@
  "season": "2026 Q3",
  "since": "2026-10-01",
  "watch": [
-  "GOOGL",
-  "MSFT",
   "AMZN",
   "AAPL",
   "NVDA",
@@ -1293,6 +1291,748 @@
     [
      "註：SpaceX 2026/6 上市，歷史驚喜率序列不足，暫無趨勢圖；Q4／Q1'27 指引出自法說會口述，部分媒體稱公司未給正式指引",
      ""
+    ]
+   ]
+  },
+  {
+   "ticker": "GOOGL",
+   "name": "Alphabet",
+   "exchange": "NASDAQ",
+   "date": "2026/10/28 盤後",
+   "reaction": {
+    "text": "",
+    "dir": "flat",
+    "pct": null
+   },
+   "kpi": [
+    {
+     "n": "營收（億）",
+     "v": "1,276",
+     "e": "預期 1,282",
+     "s": -0.5
+    },
+    {
+     "n": "GAAP EPS",
+     "v": "2.12",
+     "e": "預期 3.02",
+     "s": -29.8
+    },
+    {
+     "n": "Google Cloud 營收（億）",
+     "v": "307",
+     "e": "YoY +103%",
+     "s": null,
+     "label": "翻倍"
+    },
+    {
+     "n": "自由現金流（億）",
+     "v": "−91",
+     "e": "連兩季為負",
+     "s": null,
+     "label": "轉負"
+    }
+   ],
+   "kpiNote": "EPS 大 miss 主因是 SpaceX 持股的未實現評價損失（其他收支 −$82 億，約吃掉 EPS $0.55），本業營業利益其實 +30%；營收 1,276 億僅略低於共識，Cloud 翻倍。盤後 −8～−10% 盯的是 CapEx 514 億 > 營業現金流 423 億、FCF −91 億，加上「2027 CapEx 顯著增加」。",
+   "surprise": {
+    "labels": [
+     "營收",
+     "GAAP EPS",
+     "EPS 排除 SpaceX 損失",
+     "CapEx vs 預期"
+    ],
+    "data": [
+     -0.5,
+     -29.8,
+     -11.6,
+     -7.0
+    ],
+    "min": -40,
+    "max": 15,
+    "note": "EPS 以 TradingKey 整理的共識 $3.02 計（Finnhub 共識 $3.11）；排除 SpaceX 評價損失約 $0.55 後 EPS 約 $2.67，仍 miss 11.6%。CapEx 514 億低於 FactSet 預期 552 億，以負值呈現（少花＝正面）。"
+   },
+   "charts": [
+    {
+     "title": "🧩 各業務營收 YoY：Cloud 一枝獨秀、廣告放緩",
+     "open": true,
+     "type": "bar",
+     "fmt": "pct",
+     "horizontal": true,
+     "max": 125,
+     "labels": [
+      "Google Cloud",
+      "搜尋＋其他",
+      "訂閱／平台／裝置",
+      "YouTube 廣告",
+      "聯播網"
+     ],
+     "datasets": [
+      {
+       "label": "YoY",
+       "data": [
+        103,
+        12,
+        11,
+        9,
+        1
+       ],
+       "color": "accent"
+      }
+     ],
+     "note": "Cloud +103%（307 億）已占總營收 24%；廣告合計只 +11%，搜尋 +12% 低於市場期待，Q4 還有去年基期墊高的壓力。"
+    },
+    {
+     "title": "💸 CapEx vs 營業現金流（億美元）",
+     "open": true,
+     "type": "bar",
+     "fmt": "num",
+     "labels": [
+      "Q3'25",
+      "Q4'25",
+      "Q1'26",
+      "Q2'26",
+      "Q3'26"
+     ],
+     "datasets": [
+      {
+       "label": "營業現金流",
+       "data": [
+        367,
+        391,
+        401,
+        457,
+        423
+       ],
+       "color": "est"
+      },
+      {
+       "label": "CapEx",
+       "data": [
+        240,
+        282,
+        374,
+        463,
+        514
+       ],
+       "color": "accent"
+      }
+     ],
+     "note": "CapEx 連兩季超過營業現金流 → FCF 轉負（Q2 −6 億、Q3 −91 億）。前四季為財報約略值。2026 全年指引 1,950～2,050 億維持不變，2027「顯著增加」。"
+    },
+    {
+     "title": "☁️ Cloud 營業利益率",
+     "open": false,
+     "type": "line",
+     "fmt": "pct",
+     "min": 15,
+     "max": 40,
+     "labels": [
+      "Q3'25",
+      "Q4'25",
+      "Q1'26",
+      "Q2'26",
+      "Q3'26"
+     ],
+     "datasets": [
+      {
+       "label": "Cloud 營業利益率",
+       "data": [
+        23.7,
+        26.3,
+        28.5,
+        32.1,
+        36.2
+       ],
+       "color": "accent"
+      }
+     ],
+     "note": "Cloud 營業利益 111 億、利益率 36.2%（去年 23.7%）；Backlog 5,610 億，約 55% 將於 24 個月內認列。管理層預告 Q4 第三方算力上線會短期壓縮 Cloud 利益率。前四季為約略值。"
+    },
+    {
+     "title": "⚖️ 預期 vs 實際",
+     "open": false,
+     "type": "bar",
+     "fmt": "usd",
+     "labels": [
+      "GAAP EPS"
+     ],
+     "datasets": [
+      {
+       "label": "市場預期",
+       "data": [
+        3.02
+       ],
+       "color": "est"
+      },
+      {
+       "label": "實際公布",
+       "data": [
+        2.12
+       ],
+       "color": "accent"
+      }
+     ],
+     "note": "若排除 SpaceX 評價損失（約 $0.55），EPS 約 $2.67，仍低於預期——折舊與資料中心營運成本（電力）同步墊高。"
+    }
+   ],
+   "impact": [
+    {
+     "d": "down",
+     "t": "CapEx $514 億 > 營業現金流 $423 億，FCF −$91 億（連兩季負）",
+     "w": "盤後重挫主因：市場從「AI 成長」轉向「現金回收」；2027 CapEx 還要顯著增加，數字留到 Q4 法說"
+    },
+    {
+     "d": "down",
+     "t": "SpaceX 持股未實現損失，其他收支 −$82 億",
+     "w": "GAAP EPS 2.12 vs 預期 3.02 的最大缺口；非本業、不影響現金，但會隨 SpaceX 估值波動反覆出現"
+    },
+    {
+     "d": "down",
+     "t": "搜尋廣告 +12%、聯播網 +1%，Q4 匯率逆風＋高基期",
+     "w": "AI 搜尋分流疑慮未解；管理層預告 Q4 搜尋成長會再掉「幾個百分點」"
+    },
+    {
+     "d": "up",
+     "t": "Google Cloud 營收 +103% 至 $307 億，利益率 36.2%",
+     "w": "AI 基建與 TPU 外銷開始貢獻，Backlog $5,610 億（+ TPU 系統銷售 2027 更明顯放量）"
+    },
+    {
+     "d": "up",
+     "t": "營業利益 $406 億（+30%），利益率 31.8%",
+     "w": "本業獲利能力沒問題，問題在於「賺的錢全部再投下去」"
+    },
+    {
+     "d": "flat",
+     "t": "Gemini App 用戶 10 億；季配息 $0.22",
+     "w": "AI 敘事有數據，但短期抵不過現金流疑慮"
+    }
+   ],
+   "other": [
+    {
+     "t": "營收 YoY",
+     "c": [
+      [
+       "實際",
+       "+25%"
+      ],
+      [
+       "固定匯率",
+       "+25%"
+      ]
+     ]
+    },
+    {
+     "t": "GAAP 淨利（億）",
+     "c": [
+      [
+       "本季",
+       "265"
+      ],
+      [
+       "去年",
+       "350"
+      ],
+      [
+       "tag",
+       "down",
+       "−24%"
+      ]
+     ]
+    },
+    {
+     "t": "營業利益（億）",
+     "c": [
+      [
+       "本季",
+       "406"
+      ],
+      [
+       "YoY",
+       "+30%"
+      ],
+      [
+       "利益率",
+       "31.8%"
+      ]
+     ]
+    },
+    {
+     "t": "Google Services（億）",
+     "c": [
+      [
+       "營收",
+       "963"
+      ],
+      [
+       "YoY",
+       "+11%"
+      ],
+      [
+       "營業利益",
+       "392"
+      ]
+     ]
+    },
+    {
+     "t": "Google Cloud（億）",
+     "c": [
+      [
+       "營收",
+       "307"
+      ],
+      [
+       "YoY",
+       "+103%"
+      ],
+      [
+       "Backlog",
+       "5,610"
+      ]
+     ]
+    },
+    {
+     "t": "資本支出（億）",
+     "c": [
+      [
+       "本季",
+       "514"
+      ],
+      [
+       "FactSet 預期",
+       "552"
+      ],
+      [
+       "2026 指引",
+       "1,950～2,050"
+      ]
+     ]
+    },
+    {
+     "t": "現金流（億）",
+     "c": [
+      [
+       "營業現金流",
+       "423"
+      ],
+      [
+       "自由現金流",
+       "−91"
+      ],
+      [
+       "tag",
+       "down",
+       "連兩季負"
+      ]
+     ]
+    },
+    {
+     "t": "其他收支（億）",
+     "c": [
+      [
+       "本季",
+       "−82"
+      ],
+      [
+       "主因",
+       "SpaceX 未實現損失"
+      ]
+     ]
+    }
+   ],
+   "sources": [
+    [
+     "法說會重點（TradingKey）",
+     "https://www.tradingkey.com/news/transcripts/262249599-tradingkey"
+    ],
+    [
+     "財報數字與共識（TradingKey）",
+     "https://www.tradingkey.com/analysis/stocks/us-stocks/262248965-google-earnings-report-q3-services-cloud-search-capital-expenditures-cash-tradingkey"
+    ],
+    [
+     "CapEx 指引與盤後（StockTitan）",
+     "https://www.stocktitan.net/articles/alphabet-q3-2026-earnings-google-cloud-doubles-search-slows"
+    ],
+    [
+     "Fortune：Cloud 翻倍、現金流轉負",
+     "https://fortune.com/2026/10/28/alphabet-google-stock-drops-cloud-revenue-doubles-free-cash-flow-negative/"
+    ],
+    [
+     "Alphabet 投資人關係（新聞稿）",
+     "https://abc.xyz/investor/"
+    ]
+   ]
+  },
+  {
+   "ticker": "MSFT",
+   "name": "Microsoft",
+   "exchange": "NASDAQ",
+   "date": "2026/10/28 盤後",
+   "reaction": {
+    "text": "",
+    "dir": "flat",
+    "pct": null
+   },
+   "kpi": [
+    {
+     "n": "營收（億）",
+     "v": "923",
+     "e": "預期 907.5",
+     "s": 1.7
+    },
+    {
+     "n": "EPS",
+     "v": "4.89",
+     "e": "預期 4.72",
+     "s": 3.6
+    },
+    {
+     "n": "Azure YoY",
+     "v": "+48%",
+     "e": "下季指引 49～50%",
+     "s": null,
+     "label": "再加速"
+    },
+    {
+     "n": "自由現金流（億）",
+     "v": "+186",
+     "e": "營業現金流 580",
+     "s": null,
+     "label": "為正"
+    }
+   ],
+   "kpiNote": "營收、EPS 雙 beat，Azure +48%、下季指引 49～50% 再加速，FCF 仍為正——與 Alphabet 同一晚、同樣砸 AI 基建，市場給的分數卻相反，差別就在現金流。Finnhub 營收共識 925 億偏高（顯示 −0.2%），以 24/7 Wall St. 整理的街上共識 907.5 億計為 +1.7%。",
+   "surprise": {
+    "labels": [
+     "營收",
+     "EPS",
+     "下季營收指引 vs 共識"
+    ],
+    "data": [
+     1.7,
+     3.6,
+     1.6
+    ],
+    "min": -10,
+    "max": 10,
+    "note": "EPS 以街上共識 $4.72 計（Finnhub 共識 $4.82 → +1.5%）；下季指引中值 965.5 億 vs 市場約 950 億（約略值）。"
+   },
+   "charts": [
+    {
+     "title": "🧩 新分部與主要業務 YoY",
+     "open": true,
+     "type": "bar",
+     "fmt": "pct",
+     "horizontal": true,
+     "min": -45,
+     "max": 60,
+     "labels": [
+      "Azure",
+      "微軟雲",
+      "Agents & Infra",
+      "M365 商用雲",
+      "搜尋廣告（ex-TAC）",
+      "Devices & Consumer",
+      "Xbox",
+      "Windows OEM"
+     ],
+     "datasets": [
+      {
+       "label": "YoY",
+       "data": [
+        48,
+        30,
+        25,
+        17,
+        12,
+        -3,
+        -2,
+        -27
+       ],
+       "color": "accent"
+      }
+     ],
+     "note": "9 月起改成兩大分部：Agents & Infra（768 億，+25%）吃下八成營收；Devices & Consumer（155 億，−3%）靠 Windows／Xbox 拖累。"
+    },
+    {
+     "title": "💸 CapEx vs 營業現金流（億美元）",
+     "open": true,
+     "type": "bar",
+     "fmt": "num",
+     "labels": [
+      "FY26Q1",
+      "FY26Q2",
+      "FY26Q3",
+      "FY26Q4",
+      "FY27Q1"
+     ],
+     "datasets": [
+      {
+       "label": "營業現金流",
+       "data": [
+        450,
+        418,
+        480,
+        520,
+        580
+       ],
+       "color": "est"
+      },
+      {
+       "label": "CapEx（含融資租賃）",
+       "data": [
+        349,
+        375,
+        424,
+        440,
+        452
+       ],
+       "color": "accent"
+      }
+     ],
+     "note": "CapEx 452 億（含融資租賃 74 億；現金支付 394 億）仍低於營業現金流 580 億 → FCF +186 億。下季 CapEx 預計逾 500 億、日曆年約 1,700 億，部分第三方算力交付遞延到下半年。前四季為約略值。"
+    },
+    {
+     "title": "☁️ Azure 年增率走勢",
+     "open": false,
+     "type": "line",
+     "fmt": "pct",
+     "min": 30,
+     "max": 55,
+     "labels": [
+      "FY26Q1",
+      "FY26Q2",
+      "FY26Q3",
+      "FY26Q4",
+      "FY27Q1",
+      "FY27Q2 指引"
+     ],
+     "datasets": [
+      {
+       "label": "Azure YoY（固定匯率）",
+       "data": [
+        40,
+        39,
+        39,
+        42,
+        48,
+        49.5
+       ],
+       "color": "accent"
+      }
+     ],
+     "note": "連兩季加速，下季指引 49～50% 為近年最高；管理層強調仍受算力供給限制。前四季為約略值。"
+    },
+    {
+     "title": "⚖️ 預期 vs 實際",
+     "open": false,
+     "type": "bar",
+     "fmt": "num",
+     "labels": [
+      "營收（億）",
+      "下季營收指引中值（億）"
+     ],
+     "datasets": [
+      {
+       "label": "市場預期",
+       "data": [
+        907.5,
+        950
+       ],
+       "color": "est"
+      },
+      {
+       "label": "實際／指引",
+       "data": [
+        923,
+        965.5
+       ],
+       "color": "accent"
+      }
+     ],
+     "note": "Q2 指引 960～971 億（+18～19%），高於街上預期；下季指引的市場共識為約略值。"
+    }
+   ],
+   "impact": [
+    {
+     "d": "up",
+     "t": "Azure +48%，下季指引 49～50%，商業 RPO +73%",
+     "w": "AI 需求仍供不應求；RPO 超過 12 個月的部分 +98%，能見度拉長到 2.3 年"
+    },
+    {
+     "d": "up",
+     "t": "FCF +$186 億，營業現金流 $580 億（+29%）",
+     "w": "同一晚 Alphabet FCF −91 億，微軟仍「邊投資邊賺現金」——這是盤後走勢分歧的核心"
+    },
+    {
+     "d": "down",
+     "t": "CapEx $452 億（翻倍），下季逾 $500 億、日曆年約 $1,700 億",
+     "w": "Q2 營業利益率指引「略降」；若 Azure 成長不再加速，現金流優勢會收斂"
+    },
+    {
+     "d": "down",
+     "t": "商業訂單 −12%、Windows OEM −27%",
+     "w": "前者是 OpenAI 高基期（市場多已預期），後者是 PC 換機潮退去；Devices & Consumer 分部 −3%"
+    },
+    {
+     "d": "flat",
+     "t": "OpenAI 相關：其他收支 −$2.3 億，分析師估 OpenAI 占營收 11%（公司未證實）",
+     "w": "集中度風險持續，但本季影響小"
+    },
+    {
+     "d": "up",
+     "t": "Copilot 日活 QoQ +50%、YoY 5 倍；Foundry 客戶 12 萬",
+     "w": "AI 變現從基建擴到應用層，但仍未揭露 Copilot 席次"
+    }
+   ],
+   "other": [
+    {
+     "t": "營收 YoY",
+     "c": [
+      [
+       "實際",
+       "+19%"
+      ],
+      [
+       "毛利率",
+       "68%"
+      ]
+     ]
+    },
+    {
+     "t": "營業利益",
+     "c": [
+      [
+       "YoY",
+       "+21%"
+      ],
+      [
+       "利益率",
+       "50%"
+      ],
+      [
+       "營業費用 YoY",
+       "+6%"
+      ]
+     ]
+    },
+    {
+     "t": "EPS",
+     "c": [
+      [
+       "本季",
+       "4.89"
+      ],
+      [
+       "YoY",
+       "+18%"
+      ],
+      [
+       "去年",
+       "4.13"
+      ]
+     ]
+    },
+    {
+     "t": "微軟雲（億）",
+     "c": [
+      [
+       "營收",
+       "639"
+      ],
+      [
+       "YoY",
+       "+30%"
+      ],
+      [
+       "毛利率",
+       "66%"
+      ]
+     ]
+    },
+    {
+     "t": "商業 RPO（億）",
+     "c": [
+      [
+       "餘額",
+       "6,770"
+      ],
+      [
+       "YoY",
+       "+73%"
+      ],
+      [
+       "12 個月內認列",
+       "約 30%"
+      ]
+     ]
+    },
+    {
+     "t": "資本支出（億）",
+     "c": [
+      [
+       "含融資租賃",
+       "452"
+      ],
+      [
+       "現金支付",
+       "394"
+      ],
+      [
+       "下季",
+       "逾 500"
+      ]
+     ]
+    },
+    {
+     "t": "現金流（億）",
+     "c": [
+      [
+       "營業現金流",
+       "580"
+      ],
+      [
+       "自由現金流",
+       "186"
+      ],
+      [
+       "股東回饋",
+       "102"
+      ]
+     ]
+    },
+    {
+     "t": "FY27Q2 指引（億）",
+     "c": [
+      [
+       "營收",
+       "960～971"
+      ],
+      [
+       "Azure",
+       "+49～50%"
+      ],
+      [
+       "營業利益率",
+       "略降"
+      ]
+     ]
+    }
+   ],
+   "sources": [
+    [
+     "法說會重點（TradingKey）",
+     "https://www.tradingkey.com/news/transcripts/262249601-tradingkey"
+    ],
+    [
+     "財報數字與共識（24/7 Wall St.）",
+     "https://247wallst.com/cards/microsoft-q1-2027-earnings-msft-01m6223bcjxyqzvby9cw8yzzqb"
+    ],
+    [
+     "CNBC：盤後漲 4%",
+     "https://www.cnbc.com/2026/10/28/microsoft-msft-q1-earnings-report-2027.html"
+    ],
+    [
+     "Microsoft 投資人關係（新聞稿）",
+     "https://www.microsoft.com/en-us/investor/"
     ]
    ]
   }

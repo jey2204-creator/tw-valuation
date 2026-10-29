@@ -175,12 +175,12 @@ a.lnk{color:var(--accent);text-decoration:none;font-weight:600}
     if(!d&&c.date){const m=String(c.date).match(/(\d{4})\D(\d{1,2})\D(\d{1,2})/); if(m) d=`${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;}
     if(!hk&&c.date){const k=Object.keys(HR).find(x=>String(c.date).includes(HR[x])); if(k) hk=k;}
     // 待公布：還沒到公布時間；待更新：時間到了但自動層最後更新早於公布時間（數字可能是 Finnhub 預填值）
-    const T=d?`${d} ${HT[hk]||'23:59'}`:'', notYet=!!d&&nowET<T, stale=!!d&&!notYet&&!!a&&updET<T;
+    const T=d?`${d} ${HT[hk]||'23:59'}`:'', notYet=!!d&&nowET<T, stale=!c.manual&&!!d&&!notYet&&!!a&&updET<T;   // 手動分析層的數字已人工核對，不受自動層更新時間影響
     c.rel={d,hk,notYet,stale,pending:notYet||stale};
   }
   const revS=c=>c.rel&&c.rel.pending?null:c.manual?c.kpi[0].s:(c.kpi[0]&&c.kpi[0].n.startsWith('營收')?c.kpi[0].s:null);
   const rxS=c=>c.rel&&c.rel.pending?null:c.reaction.pct;
-  const epsS=c=>c.rel&&c.rel.pending?null:c.auto&&c.auto.epsSurp!=null?c.auto.epsSurp:(c.manual?c.kpi[1].s:null);
+  const epsS=c=>c.rel&&c.rel.pending?null:c.manual?c.kpi[1].s:(c.auto&&c.auto.epsSurp!=null?c.auto.epsSurp:null);   // 手動分析層優先（Finnhub 共識／營收口徑常不準）
 
   Chart.defaults.color = C.muted;
   Chart.defaults.font.family = '-apple-system,BlinkMacSystemFont,"PingFang TC","Noto Sans TC",sans-serif';
