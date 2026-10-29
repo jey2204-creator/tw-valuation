@@ -46,7 +46,7 @@ body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--f-body);fon
 #sbtn{font:inherit;font-size:14px;line-height:1.5;border:1px solid var(--line);border-radius:999px;background:var(--card);color:var(--fg);padding:1px 9px;cursor:pointer;flex:none}
 #sbtn[aria-pressed="true"]{background:var(--accent);color:#fff;border-color:var(--accent)}
 .srow{display:none;gap:6px;margin-top:6px}.srow.on{display:flex}
-.srow input{flex:1;min-width:0;font:inherit;font-size:14px;border:1px solid var(--accent);border-radius:999px;padding:4px 12px;background:var(--card);color:var(--fg)}
+.srow input{flex:1;min-width:0;font:inherit;font-size:16px;border:1px solid var(--accent);border-radius:999px;padding:4px 12px;background:var(--card);color:var(--fg)}
 .srow button{font:inherit;font-size:12.5px;border:1px solid var(--line);border-radius:999px;background:var(--card);color:var(--muted);padding:2px 10px}
 .shint{font-size:11.5px;color:var(--muted);margin:6px 2px 0}
 select{margin-left:auto;font:inherit;font-size:12.5px;color:var(--fg);background:var(--card);border:1px solid var(--line);border-radius:999px;padding:2px 8px}
@@ -118,7 +118,7 @@ a:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid var
       <button data-f="dd">📈📈 營收淨利雙增</button>
       <button data-f="x">⚠️ 業外高</button>
     </div>
-    <div class="srow" id="srow"><input id="sq" type="search" inputmode="search" autocomplete="off" placeholder="代號或名稱，例：2327、國巨"><button type="button" id="sclr">清除</button></div>
+    <div class="srow" id="srow"><input id="sq" type="text" inputmode="search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" name="stock-code-search" placeholder="代號或名稱，例：2327、國巨"><button type="button" id="sclr">清除</button></div>
     <p class="shint" id="shint" hidden></p>
   </div>
 
