@@ -1,5 +1,173 @@
 [
 {
+"Date": "1151029",
+"SecuritiesCompanyCode": "1569",
+"CompanyName": "濱川",
+"TradingInformation": "最近六個營業日(自當日之前一個營業日起)之當日沖銷成交量占總成交量比率達65.85%，當日之前一個營業日當日沖銷成交量占總成交量達80.79%（第十三款)",
+"ClosePrice": "92.30",
+"PriceEarningRatio": "N/A"
+},
+{
+"Date": "1151029",
+"SecuritiesCompanyCode": "2221",
+"CompanyName": "大甲",
+"TradingInformation": "最近六個營業日(含當日)累積之最後成交價漲幅達32.08%(第一款)最近六十個營業日(含當日)起迄兩個營業日之最後成交價漲幅達268.36%(第二款)最近九十個營業日(含當日)起迄兩個營業日之最後成交價漲幅達250.76%(第二款)當日週轉率達6.05%(第四款)凱基證券公司當日受託買進該有價證券之成交量占當日該有價證券總成交量之比率為40.34%(第五款)",
+"ClosePrice": "159.50",
+"PriceEarningRatio": "52.64"
+},
+{
+"Date": "1151029",
+"SecuritiesCompanyCode": "3374",
+"CompanyName": "精材",
+"TradingInformation": "當日本益比為76.53、股價淨值比為13.42且為其所屬產業類別股價淨值比之2.78倍、當日週轉率達6.95%(第六款)",
+"ClosePrice": "487.50",
+"PriceEarningRatio": "76.53"
+},
+{
+"Date": "1151029",
+"SecuritiesCompanyCode": "3441",
+"CompanyName": "聯一光",
+"TradingInformation": "最近六個營業日(含當日)累積之最後成交價跌幅達24.09%且最近六個營業日(含當日)起迄兩個營業日之最後成交價價差達新臺幣80.5元(第一款)當日本益比為77.16、股價淨值比為9.05且為其所屬產業類別股價淨值比之4.2倍、當日週轉率達5.47%(第六款)",
+"ClosePrice": "187.50",
+"PriceEarningRatio": "77.16"
+},
+{
+"Date": "1151029",
+"SecuritiesCompanyCode": "3498",
+"CompanyName": "陽程",
+"TradingInformation": "最近六個營業日(自當日之前一個營業日起)之當日沖銷成交量占總成交量比率達67.93%，當日之前一個營業日當日沖銷成交量占總成交量達71.72%（第十三款)",
+"ClosePrice": "256.00",
+"PriceEarningRatio": "58.31"
+},
+{
+"Date": "1151029",
+"SecuritiesCompanyCode": "3691",
+"CompanyName": "碩禾",
+"TradingInformation": "最近六個營業日(含當日)累積之最後成交價漲幅達42.06%(第一款)富邦證券公司當日受託買進該有價證券之成交量占當日該有價證券總成交量之比率為31.08%(第五款)",
+"ClosePrice": "144.00",
+"PriceEarningRatio": "52.55"
+},
+{
+"Date": "1151029",
+"SecuritiesCompanyCode": "4577",
+"CompanyName": "達航科技",
+"TradingInformation": "最近六個營業日(含當日)累積之最後成交價漲幅達27.13%，當日之成交量較最近六十個營業日日平均成交量放大5.85倍(第三款)當日週轉率達11.22%(第四款)",
+"ClosePrice": "130.50",
+"PriceEarningRatio": "N/A"
+},
+{
+"Date": "1151029",
+"SecuritiesCompanyCode": "4741",
+"CompanyName": "泓瀚",
+"TradingInformation": "最近六個營業日(含當日)累積之最後成交價漲幅達32.46%(第一款)當日之成交量較最近六十個營業日日平均成交量放大11.5倍(第三款)當日週轉率達7.35%(第四款)",
+"ClosePrice": "54.10",
+"PriceEarningRatio": "44.71"
+},
+{
+"Date": "1151029",
+"SecuritiesCompanyCode": "4979",
+"CompanyName": "華星光",
+"TradingInformation": "當日本益比為78.07、股價淨值比為15.3且為其所屬產業類別股價淨值比之2.28倍、當日週轉率達5.57%(第六款)",
+"ClosePrice": "477.00",
+"PriceEarningRatio": "78.07"
+},
+{
+"Date": "1151029",
+"SecuritiesCompanyCode": "5426",
+"CompanyName": "振發",
+"TradingInformation": "最近六個營業日(自當日之前一個營業日起)之當日沖銷成交量占總成交量比率達64.7%，當日之前一個營業日當日沖銷成交量占總成交量達74.7%（第十三款)",
+"ClosePrice": "31.80",
+"PriceEarningRatio": "50.48"
+},
+{
+"Date": "1151029",
+"SecuritiesCompanyCode": "54642",
+"CompanyName": "霖宏二",
+"TradingInformation": "最近六個營業日(含當日)累積之最後成交價跌幅達31.96%(第一款)",
+"ClosePrice": "198.00",
+"PriceEarningRatio": "N/A"
+},
+{
+"Date": "1151029",
+"SecuritiesCompanyCode": "6233",
+"CompanyName": "旺玖",
+"TradingInformation": "最近六個營業日(含當日)之日平均成交量較最近六十個營業日日平均成交量放大為5.52倍，當日成交量較最近六十個營業日之日平均成交量放大為21.47倍(第九款)",
+"ClosePrice": "30.90",
+"PriceEarningRatio": "140.45"
+},
+{
+"Date": "1151029",
+"SecuritiesCompanyCode": "6240",
+"CompanyName": "松崗",
+"TradingInformation": "最近六個營業日(含當日)累積之最後成交價漲幅達31.05%(第一款)",
+"ClosePrice": "37.00",
+"PriceEarningRatio": "N/A"
+},
+{
+"Date": "1151029",
+"SecuritiesCompanyCode": "6751",
+"CompanyName": "智聯服務",
+"TradingInformation": "最近六個營業日(含當日)累積之最後成交價漲幅達31.17%(第一款)",
+"ClosePrice": "80.60",
+"PriceEarningRatio": "13.97"
+},
+{
+"Date": "1151029",
+"SecuritiesCompanyCode": "6870",
+"CompanyName": "騰雲",
+"TradingInformation": "最近六個營業日(含當日)累積之最後成交價漲幅達24.66%且最近六個營業日(含當日)起迄兩個營業日之最後成交價價差達新臺幣52元(第一款)",
+"ClosePrice": "397.00",
+"PriceEarningRatio": "45.84"
+},
+{
+"Date": "1151029",
+"SecuritiesCompanyCode": "68732",
+"CompanyName": "泓德能源二",
+"TradingInformation": "最近六個營業日(含當日)累積之最後成交價跌幅達32.1%(第一款)",
+"ClosePrice": "60.00",
+"PriceEarningRatio": "N/A"
+},
+{
+"Date": "1151029",
+"SecuritiesCompanyCode": "6925",
+"CompanyName": "意藍",
+"TradingInformation": "最近六個營業日(含當日)累積之最後成交價漲幅達33.1%(第一款)最近三十個營業日(含當日)起迄兩個營業日之最後成交價漲幅達152.98%(第二款)最近六十個營業日(含當日)起迄兩個營業日之最後成交價漲幅達148.53%(第二款)當日週轉率達6.07%(第四款)",
+"ClosePrice": "127.00",
+"PriceEarningRatio": "43.64"
+},
+{
+"Date": "1151029",
+"SecuritiesCompanyCode": "735855",
+"CompanyName": "南俊統一61購01",
+"TradingInformation": "最近六個營業日(含當日)累積之最後成交價跌幅達35.22%(第一款)",
+"ClosePrice": "1.37",
+"PriceEarningRatio": "N/A"
+},
+{
+"Date": "1151029",
+"SecuritiesCompanyCode": "7704",
+"CompanyName": "明遠精密",
+"TradingInformation": "最近六個營業日(含當日)累積之最後成交價漲幅達29.47%，當日之成交量較最近六十個營業日日平均成交量放大7.63倍(第三款)",
+"ClosePrice": "79.40",
+"PriceEarningRatio": "24.66"
+},
+{
+"Date": "1151029",
+"SecuritiesCompanyCode": "8099",
+"CompanyName": "大世科",
+"TradingInformation": "最近六個營業日(含當日)累積之最後成交價漲幅達46.33%(第一款)當日之成交量較最近六十個營業日日平均成交量放大22.04倍(第三款)當日週轉率達7.91%(第四款)",
+"ClosePrice": "102.50",
+"PriceEarningRatio": "31.16"
+},
+{
+"Date": "1151029",
+"SecuritiesCompanyCode": "8291",
+"CompanyName": "尚茂",
+"TradingInformation": "最近六個營業日(含當日)累積之最後成交價漲幅達47.2%(第一款)",
+"ClosePrice": "30.85",
+"PriceEarningRatio": "N/A"
+},
+{
 "Date": "1151028",
 "SecuritiesCompanyCode": "1569",
 "CompanyName": "濱川",
@@ -158,181 +326,5 @@
 "TradingInformation": "最近六個營業日(含當日)累積之最後成交價漲幅達35.79%(第一款)富邦證券公司當日受託買進該有價證券之成交量占當日該有價證券總成交量之比率為63.97%(第五款)",
 "ClosePrice": "93.60",
 "PriceEarningRatio": "28.45"
-},
-{
-"Date": "1151027",
-"SecuritiesCompanyCode": "1569",
-"CompanyName": "濱川",
-"TradingInformation": "最近六十個營業日(含當日)起迄兩個營業日之最後成交價漲幅達154.83%(第二款)最近六個營業日(自當日之前一個營業日起)之當日沖銷成交量占總成交量比率達61.74%，當日之前一個營業日當日沖銷成交量占總成交量達70.8%（第十三款)",
-"ClosePrice": "94.80",
-"PriceEarningRatio": "N/A"
-},
-{
-"Date": "1151027",
-"SecuritiesCompanyCode": "3324",
-"CompanyName": "雙鴻",
-"TradingInformation": "最近六個營業日(自當日之前一個營業日起)之當日沖銷成交量占總成交量比率達60.74%，當日之前一個營業日當日沖銷成交量占總成交量達64.44%（第十三款)",
-"ClosePrice": "1335.00",
-"PriceEarningRatio": "30.79"
-},
-{
-"Date": "1151027",
-"SecuritiesCompanyCode": "3354",
-"CompanyName": "律勝",
-"TradingInformation": "最近六個營業日(含當日)累積之最後成交價漲幅達30.02%(第一款)最近六十個營業日(含當日)起迄兩個營業日之最後成交價漲幅達164.37%(第二款)",
-"ClosePrice": "50.10",
-"PriceEarningRatio": "N/A"
-},
-{
-"Date": "1151027",
-"SecuritiesCompanyCode": "3374",
-"CompanyName": "精材",
-"TradingInformation": "當日本益比為72.76、股價淨值比為12.76且為其所屬產業類別股價淨值比之2.66倍、當日週轉率達11%(第六款)",
-"ClosePrice": "463.50",
-"PriceEarningRatio": "72.76"
-},
-{
-"Date": "1151027",
-"SecuritiesCompanyCode": "3441",
-"CompanyName": "聯一光",
-"TradingInformation": "當日本益比為80.66、股價淨值比為9.46且為其所屬產業類別股價淨值比之4.16倍、當日週轉率達32.43%(第六款)",
-"ClosePrice": "196.00",
-"PriceEarningRatio": "80.66"
-},
-{
-"Date": "1151027",
-"SecuritiesCompanyCode": "3498",
-"CompanyName": "陽程",
-"TradingInformation": "最近六十個營業日(含當日)起迄兩個營業日之最後成交價漲幅達170.09%(第二款)",
-"ClosePrice": "252.00",
-"PriceEarningRatio": "57.40"
-},
-{
-"Date": "1151027",
-"SecuritiesCompanyCode": "4188",
-"CompanyName": "安克",
-"TradingInformation": "最近六個營業日(含當日)累積之最後成交價漲幅達35.55%(第一款)當日之成交量較最近六十個營業日日平均成交量放大6.94倍(第三款)",
-"ClosePrice": "18.45",
-"PriceEarningRatio": "N/A"
-},
-{
-"Date": "1151027",
-"SecuritiesCompanyCode": "4577",
-"CompanyName": "達航科技",
-"TradingInformation": "最近六個營業日(含當日)累積之最後成交價漲幅達28.38%，當日週轉率達7.56%(第四款)",
-"ClosePrice": "114.50",
-"PriceEarningRatio": "N/A"
-},
-{
-"Date": "1151027",
-"SecuritiesCompanyCode": "49793",
-"CompanyName": "華星光三",
-"TradingInformation": "最近六個營業日(含當日)累積之最後成交價跌幅達27.65%且最近六個營業日(含當日)起迄兩個營業日之最後成交價價差達新臺幣53元(第一款)",
-"ClosePrice": "263.00",
-"PriceEarningRatio": "N/A"
-},
-{
-"Date": "1151027",
-"SecuritiesCompanyCode": "5205",
-"CompanyName": "中茂",
-"TradingInformation": "最近六個營業日(含當日)累積之最後成交價跌幅達31.91%(第一款)",
-"ClosePrice": "22.15",
-"PriceEarningRatio": "N/A"
-},
-{
-"Date": "1151027",
-"SecuritiesCompanyCode": "54642",
-"CompanyName": "霖宏二",
-"TradingInformation": "最近六個營業日(含當日)累積之最後成交價跌幅達23.38%且最近六個營業日(含當日)起迄兩個營業日之最後成交價價差達新臺幣59元(第一款)",
-"ClosePrice": "220.00",
-"PriceEarningRatio": "N/A"
-},
-{
-"Date": "1151027",
-"SecuritiesCompanyCode": "5475",
-"CompanyName": "德宏",
-"TradingInformation": "當日本益比為141.86、股價淨值比為21.35且為其所屬產業類別股價淨值比之5.77倍、當日週轉率達5.83%、元大證券公司當日買進該有價證券之成交金額達3.58億元，且占當日該有價證券之總成交金額25.61%(第六款)",
-"ClosePrice": "183.00",
-"PriceEarningRatio": "141.86"
-},
-{
-"Date": "1151027",
-"SecuritiesCompanyCode": "6148",
-"CompanyName": "驊宏資",
-"TradingInformation": "最近六個營業日(自當日之前一個營業日起)之當日沖銷成交量占總成交量比率達66.07%，當日之前一個營業日當日沖銷成交量占總成交量達64.43%（第十三款)",
-"ClosePrice": "43.00",
-"PriceEarningRatio": "39.81"
-},
-{
-"Date": "1151027",
-"SecuritiesCompanyCode": "6261",
-"CompanyName": "久元",
-"TradingInformation": "最近六個營業日(自當日之前一個營業日起)之借券賣出成交量占總成交量比率達13.12%，當日之前一個營業日借券賣出成交量較最近六十個營業日(自當日之前一個營業日起)之日平均借券賣出成交量放大為5倍(第十二款)",
-"ClosePrice": "74.20",
-"PriceEarningRatio": "14.46"
-},
-{
-"Date": "1151027",
-"SecuritiesCompanyCode": "6274",
-"CompanyName": "台燿",
-"TradingInformation": "當日本益比為65.01、股價淨值比為15.86且為其所屬產業類別股價淨值比之4.28倍、當日週轉率達5.47%(第六款)最近六個營業日(含當日)起迄兩個營業日之最後成交價價差達新臺幣335元(第十一款)",
-"ClosePrice": "1280.00",
-"PriceEarningRatio": "65.01"
-},
-{
-"Date": "1151027",
-"SecuritiesCompanyCode": "6418",
-"CompanyName": "詠昇",
-"TradingInformation": "最近六個營業日(含當日)累積之最後成交價漲幅達40%(第一款)當日之成交量較最近六十個營業日日平均成交量放大11.13倍(第三款)當日週轉率達8.64%(第四款)元大證券公司當日受託買進該有價證券之成交量占當日該有價證券總成交量之比率為30.28%(第五款)",
-"ClosePrice": "48.00",
-"PriceEarningRatio": "126.32"
-},
-{
-"Date": "1151027",
-"SecuritiesCompanyCode": "6697",
-"CompanyName": "東捷資訊",
-"TradingInformation": "最近六個營業日(含當日)之日平均成交量較最近六十個營業日日平均成交量放大為7.29倍，當日成交量較最近六十個營業日之日平均成交量放大為31.32倍(第九款)",
-"ClosePrice": "50.40",
-"PriceEarningRatio": "16.47"
-},
-{
-"Date": "1151027",
-"SecuritiesCompanyCode": "6751",
-"CompanyName": "智聯服務",
-"TradingInformation": "最近六個營業日(含當日)累積之最後成交價漲幅達46.39%(第一款)當日之成交量較最近六十個營業日日平均成交量放大8.63倍(第三款)",
-"ClosePrice": "77.20",
-"PriceEarningRatio": "13.38"
-},
-{
-"Date": "1151027",
-"SecuritiesCompanyCode": "6925",
-"CompanyName": "意藍",
-"TradingInformation": "最近六個營業日(含當日)累積之最後成交價漲幅達32.73%(第一款)最近三十個營業日(含當日)起迄兩個營業日之最後成交價漲幅達126.39%(第二款)當日週轉率達12.49%(第四款)",
-"ClosePrice": "111.50",
-"PriceEarningRatio": "38.32"
-},
-{
-"Date": "1151027",
-"SecuritiesCompanyCode": "735855",
-"CompanyName": "南俊統一61購01",
-"TradingInformation": "最近六個營業日(含當日)累積之最後成交價跌幅達37.96%(第一款)",
-"ClosePrice": "1.75",
-"PriceEarningRatio": "N/A"
-},
-{
-"Date": "1151027",
-"SecuritiesCompanyCode": "8089",
-"CompanyName": "康全電訊",
-"TradingInformation": "最近六個營業日(含當日)累積之最後成交價漲幅達33.68%(第一款)當日之成交量較最近六十個營業日日平均成交量放大7.72倍(第三款)",
-"ClosePrice": "27.65",
-"PriceEarningRatio": "N/A"
-},
-{
-"Date": "1151027",
-"SecuritiesCompanyCode": "8091",
-"CompanyName": "翔名",
-"TradingInformation": "最近六個營業日(自當日之前一個營業日起)之借券賣出成交量占總成交量比率達16.68%，當日之前一個營業日借券賣出成交量較最近六十個營業日(自當日之前一個營業日起)之日平均借券賣出成交量放大為6倍(第十二款)",
-"ClosePrice": "200.50",
-"PriceEarningRatio": "20.97"
 }
 ]
