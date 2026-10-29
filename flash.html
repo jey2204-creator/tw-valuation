@@ -98,6 +98,7 @@ a:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid var
       <select id="sort" aria-label="排序">
         <option value="t">最新公布</option>
         <option value="eg">EPS 年增 ▼</option>
+        <option value="rg">營收年增 ▼</option>
         <option value="ni">單季淨利 ▼</option>
         <option value="pe">本益比 ▲</option>
       </select>
@@ -107,6 +108,7 @@ a:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid var
       <button data-f="w">⭐ 追蹤</button>
       <button data-f="g">📈 年增</button>
       <button data-f="b">📉 衰退／轉虧</button>
+      <button data-f="dd">📈📈 營收淨利雙增</button>
       <button data-f="x">⚠️ 業外高</button>
     </div>
   </div>
@@ -119,6 +121,7 @@ a:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid var
   <p class="foot">
     數字來源：公開資訊觀測站「董事會通過財報」重大訊息（第 31 款標準格式，1 月 1 日累計數）。單季＝本期累計 − 上一季累計；去年同季、上一季用觀測站財報彙總。<br>
     「法說」＝公司在董事會前自行公告的 EPS，董事會版出來後自動取代。<br>「分割還原」＝公司做過分割、面額變更（名稱帶 *），去年同季與近四季 EPS 已換算到目前股數基準，數字會跟新聞上的「官方 EPS 年增」不同但可比。<br>
+    營收＝單季營收（億）＋年增；「營收淨利雙增」＝單季營收與淨利年增都 > 0（淨利大增但營收沒跟上，多半是業外或一次性毛利，可持續性要打折）；銀行、保險無營收科目顯示「—」。<br>
     業外占比＝(稅前 − 營業利益) ÷ 稅前，≥ 30% 標 ⚠️：淨利大增若來自業外，不宜直接推算未來 EPS。<br>
     ⭐ 追蹤＝首頁自選、自訂主題與內建主題成份股。點一列開個股頁。
   </p>
@@ -149,6 +152,7 @@ function pass(i){
   if(F==='g')return e!=null&&e>0;
   if(F==='b')return e!=null&&e<0;
   if(F==='x')return i.nonop!=null&&i.nonop>=30;
+  if(F==='dd')return i.rvYoy!=null&&i.rvYoy>0&&i.yoy!=null&&i.yoy>0;
   return true;
 }
 function row(i){
@@ -162,6 +166,7 @@ function row(i){
   if(self){h+=`<div><small>公告</small><span style="font-size:11.5px">${i.subj}</span></div></div></a>`;return h}
   h+=`<div><small>淨利（億）· 季增</small><b class="${cls(s.ni)}">${fmt(s.ni,s.ni!=null&&Math.abs(s.ni)>=100?0:1)}</b>${g(i.qoq,i.qoqT)}</div></div>`;
   const bits=[];
+  if(s.rev!=null)bits.push(`營收 <span class="num">${fmt(s.rev,Math.abs(s.rev)>=100?0:1)}</span>${i.rvYoy!=null?`<span class="${i.rvYoy>0?'up':i.rvYoy<0?'dn':'mu'}"> ${i.rvYoy>0?'+':''}${fmt(i.rvYoy,0)}%</span>`:''}`);
   if(i.gm!=null||i.om!=null)bits.push(`毛 <span class="num">${fmt(i.gm,1)}%</span> 營 <span class="num">${fmt(i.om,1)}%</span>${i.mSrc==='累計'?'<span class="mu">(累計)</span>':''}`);
   if(i.nonop!=null)bits.push(i.nonop>=30?`<span class="warn">⚠️ 業外 ${fmt(i.nonop,0)}%</span>`:`業外 <span class="num">${fmt(i.nonop,0)}%</span>`);
   if(i.ytd&&i.ytd.eps!=null)bits.push(`累計 EPS <span class="num">${fmt(i.ytd.eps)}</span>${g(i.ytdYoy,i.ytdYoyT)}`);
@@ -172,7 +177,7 @@ function row(i){
 function render(){
   const all=D.items.filter(i=>i.q===SEA);
   let L=all.filter(pass);
-  const key={t:i=>i.t,eg:i=>growthOf(i)??-1e9,ni:i=>(i.s&&i.s.ni)??-1e9,pe:i=>i.pe==null?1e9:-i.pe}[SORT];
+  const key={t:i=>i.t,eg:i=>growthOf(i)??-1e9,rg:i=>i.rvYoy??-1e9,ni:i=>(i.s&&i.s.ni)??-1e9,pe:i=>i.pe==null?1e9:-i.pe}[SORT];
   L.sort((a,b)=>{const x=key(a),y=key(b);return x<y?1:x>y?-1:0});
   $('list').innerHTML=L.slice(0,SHOW).map(row).join('')||`<div class="empty">${F==='w'?'追蹤的股票這一季還沒公布':'這個條件沒有公司'}</div>`;
   $('more').hidden=L.length<=SHOW;$('more').textContent=`顯示更多（還有 ${L.length-SHOW} 家）`;
