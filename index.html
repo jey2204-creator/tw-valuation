@@ -682,6 +682,7 @@ function header(){
   const q1=Q[Q.length-1],q0=Q[Q.length-2];
   const pc=v=>v==null?'—':v+'%';$('tMar').innerHTML=`${q1[0]} 毛利率 <strong>${pc(q1[2])}</strong>、營益率 <strong>${pc(q1[3])}</strong>、淨利率 <strong>${pc(q1[4])}</strong>（上季 ${pc(q0[2])}／${pc(q0[3])}／${pc(q0[4])}）`+(q1[2]==null?'<br><span class="pill">金融業</span> 財報沒有毛利與營業利益，只顯示淨利率':'');
   $('tEps').innerHTML=`${q1[0]} EPS <strong>${q1[5]}</strong> 元${q0[5]>0?`，季增 ${((q1[5]/q0[5]-1)*100).toFixed(0)}%`:''}；近四季 <strong>${D.inj?sum(Q.slice(-4).map(x=>x[5])).toFixed(2):lastR[2]?.toFixed(2)}</strong> 元`;
+  if(D.split)$('tEps').innerHTML+=' <span class="pill">分割還原</span> 名稱帶 *＝做過分割，分割前各季 EPS 已換到現在的股數基準';
   if(D.inj){const h=gH(D.inj);$('tEps').innerHTML+=`<br><span class="pill">財報速報</span> ${D.inj} 是公司 ${gDate(h&&h.act.on)} 法說公布的數字，財報資料庫更新前先帶入；上方「本益比」「近四季EPS」數字卡與河流圖仍算到 ${Q[Q.length-2][0]}`}
   const pct=(arr,v)=>Math.round(arr.filter(x=>x!=null&&x<=v).length/arr.filter(x=>x!=null).length*100);
   const band=(ms,v)=>{for(let i=ms.length-1;i>=0;i--)if(v>=ms[i])return i===ms.length-1?`${ms[i]} 倍以上`:`${ms[i]}–${ms[i+1]} 倍`;return `${ms[0]} 倍以下`};
@@ -1351,7 +1352,8 @@ async function live(id){
   const cf=await fm('TaiwanStockCashFlowsStatement',id,start2).catch(()=>[]);
   if(!px.length)throw new Error(`查無 ${id} 的股價資料（可能是興櫃、已下市或代號錯誤）`);
   const cap=bs.filter(r=>r.type==='OrdinaryShare'||r.type==='CapitalStock').sort((a,b)=>a.date<b.date?-1:1);
-  const shares=cap.length?cap[cap.length-1].value/10/1e8:null;
+  let shares=cap.length?cap[cap.length-1].value/10/1e8:null;
+  const it=LIST.find(s=>s[0]===id),star=((it&&it[1])||'').includes('*');   // 名稱帶 *＝面額非 10 元（分割過），股本 ÷10 算不出股數
   const rvd={};rv.forEach(r=>{rvd[`${r.revenue_year}-${String(r.revenue_month).padStart(2,'0')}`]=r.revenue/1e8});
   const rev=Object.keys(rvd).sort().map(k=>{const p=rvd[`${+k.slice(0,4)-1}${k.slice(4)}`];return [k,Math.round(rvd[k]),p?+((rvd[k]/p-1)*100).toFixed(1):null]}).filter(r=>r[2]!=null);
   const qd={};fs.forEach(r=>{(qd[r.date]=qd[r.date]||{})[r.type]=r.value});
@@ -1359,14 +1361,18 @@ async function live(id){
     let eps=o.EPS;if(eps==null&&ni!=null&&shares)eps=ni/1e8/shares;
     if(!rv_||eps==null)return;
     const pct=v=>v==null?null:+(v/rv_*100).toFixed(1);
-    q.push([`${d.slice(2,4)}Q${+d.slice(5,7)/3}`,Math.round(rv_/1e8),pct(o.GrossProfit),pct(o.OperatingIncome),pct(ni),+eps.toFixed(2)])});
+    q.push([`${d.slice(2,4)}Q${+d.slice(5,7)/3}`,Math.round(rv_/1e8),pct(o.GrossProfit),pct(o.OperatingIncome),pct(ni),+eps.toFixed(2),ni])});
+  if(star){ // 分割還原：用「母公司淨利 ÷ EPS」反推每季隱含股數，最新一季當基準；舊季差超過 30% 就把 EPS 換到現在基準，股數也改用隱含股數
+    const sh=x=>x[6]!=null&&Math.abs(x[5])>=0.5&&Math.abs(x[6])>=1e7&&(x[6]>0)===(x[5]>0)?x[6]/x[5]:null;
+    let ref=null;for(let i=q.length-1;i>=0&&!ref;i--)ref=sh(q[i]);
+    if(ref){shares=ref/1e8;let cur=1;for(let i=q.length-1;i>=0;i--){const v=sh(q[i]);if(v){const r=v/ref;cur=Math.abs(r-1)>0.3?r:1}if(cur!==1)q[i][5]=+(q[i][5]*cur).toFixed(2)}}}
+  q.forEach(x=>x.length=6);
   const ml=rows=>{const m={};rows.slice().sort((a,b)=>a.date<b.date?-1:1).forEach(r=>m[r.date.slice(0,7)]=r);return m};
   const pm=ml(px),em=ml(per),riv=[];
   Object.keys(pm).sort().forEach(k=>{if(!em[k])return;const c=pm[k].close,pe=em[k].PER,pb=em[k].PBR;
     riv.push([k,c,pe?+(c/pe).toFixed(2):null,pb?+(c/pb).toFixed(2):null,pe,pb])});
   const P=px.slice().sort((a,b)=>a.date<b.date?-1:1),E=per.slice().sort((a,b)=>a.date<b.date?-1:1);
-  const it=LIST.find(s=>s[0]===id);
-  return {id,name:it?it[1]:id,live:true,updated:new Date().toISOString().slice(0,16)+'Z',shares:shares?+shares.toFixed(4):null,
+  return {id,name:it?it[1]:id,live:true,split:star||undefined,updated:new Date().toISOString().slice(0,16)+'Z',shares:shares?+shares.toFixed(4):null,
     capex:buildCapex(cf,q),inv:buildInv(bs,fs,cf,q),cf:buildCf(fs,cf,q),np:buildNp(fs,q),last:{date:P[P.length-1].date,close:P[P.length-1].close,prev:(P[P.length-2]||P[P.length-1]).close,pe:E.length?E[E.length-1].PER:null,pb:E.length?E[E.length-1].PBR:null},rev,q,riv};
 }
 // 與 fetch.py 的 build_capex() 相同邏輯
@@ -1515,7 +1521,7 @@ let Y10=null,Y10ID=null,Y10IO=null,Y10L=null;
 let Y10T=(()=>{try{return localStorage.getItem('y10T')||'g'}catch(e){return 'g'}})(),Y10P=(()=>{try{return localStorage.getItem('y10P')||'y'}catch(e){return 'y'}})();
 const Y10QD=['03-31','06-30','09-30','12-31'];
 function y10Ser(rows,types,re){let d=serT(rows,types);if(!Object.keys(d).length&&re){d={};rows.forEach(r=>{if(r.value!=null&&re.test((r.origin_name||'').trim()))d[r.date]=r.value})}return d}
-function buildY10(fs,bs,cf,dv,px){
+function buildY10(fs,bs,cf,dv,px,star){
   const g=(t,re)=>y10Ser(fs,t,re),b=(t,re)=>y10Ser(bs,t,re);
   const REV=g(['Revenue'],/^營業收入合計$/),GP=g(['GrossProfit'],/^營業毛利/),OP=g(['OperatingIncome'],/^營業利益/),
     NI=g(['EquityAttributableToOwnersOfParent'],/^母公司業主/),EPS=g(['EPS'],/^基本每股盈餘/);
@@ -1532,6 +1538,13 @@ function buildY10(fs,bs,cf,dv,px){
     Qa.push({d,y,n,l:`${String(y).slice(2)}Q${n}`,rev:e8(rv),gp:e8(GP[d]),op:e8(OP[d]),ni:e8(NI[d]),eps,ocf:e8(OCF[`${y}-${n}`]),cx:e8(CX[`${y}-${n}`]),
       eq:e8(eqAt(d)),ta:e8(TA[d]),tl:e8(tlAt(d))})});
   if(Qa.length<4)return null;
+  // 分割還原：名稱帶 *（面額非 10 元＝做過分割／面額變更）的公司，FinMind 的舊 EPS、股利、股價都是分割前的數字。
+  // 用「母公司淨利 ÷ EPS」反推每季隱含股數，跟最新一季差超過 30% 就把舊數字乘上比例換到現在的股數基準；
+  // 太小的淨利／EPS 推不準，沿用後一季的比例。減資、增資不做（加權平均股數會讓比例不固定）
+  let adjK=null;
+  if(star){const sh=q=>{const n=NI[q.d],e=q.eps;return n!=null&&e!=null&&Math.abs(e)>=0.5&&Math.abs(n)>=1e7&&(n>0)===(e>0)?n/e:null};
+    let ref=null;for(let i=Qa.length-1;i>=0&&!ref;i--)ref=sh(Qa[i]);
+    if(ref){let cur=1;for(let i=Qa.length-1;i>=0;i--){const v=sh(Qa[i]);if(v){const r=v/ref;cur=Math.abs(r-1)>0.3?r:1}Qa[i].k=cur;if(cur!==1){Qa[i].eps*=cur;adjK=Math.max(adjK||0,cur>1?cur:1/cur)}}}}
   const S=(a,k)=>a.some(x=>x[k]==null)?null:a.reduce((s,x)=>s+x[k],0),P=(a,b)=>a==null||!b?null:a/b*100;
   // 股利：依「股利所屬年度」（year 欄的民國年）加總；同一個年度字串重複公告時取最新一筆
   const dvk={};dv.forEach(r=>{const k=String(r.year||'')+'|'+(r.CashExDividendTradingDate||r.StockExDividendTradingDate||'');if(!dvk[k]||(r.date||'')>(dvk[k].date||''))dvk[k]=r});
@@ -1539,11 +1552,13 @@ function buildY10(fs,bs,cf,dv,px){
     const c=(+r.CashEarningsDistribution||0)+(+r.CashStatutorySurplus||0),s=(+r.StockEarningsDistribution||0)+(+r.StockStatutorySurplus||0);
     if(!c&&!s)return;const o=DV[fy]=DV[fy]||{c:0,s:0};o.c+=c;o.s+=s});
   // 股價：年底收盤、年均收盤
-  const PY={};px.forEach(r=>{const y=+r.date.slice(0,4),o=PY[y]=PY[y]||{n:0,s:0,d:'',c:null};o.n++;o.s+=r.close;if(r.date>o.d){o.d=r.date;o.c=r.close}});
+  const KQ={};Qa.forEach(q=>{KQ[q.y*4+q.n]=q.k||1});const kOf=d=>KQ[+d.slice(0,4)*4+Math.ceil(+d.slice(5,7)/3)]||1;   // 分割前的股價依該季比例換算
+  const PY={};px.forEach(r=>{const y=+r.date.slice(0,4),o=PY[y]=PY[y]||{n:0,s:0,d:'',c:null},c=r.close*kOf(r.date);o.n++;o.s+=c;if(r.date>o.d){o.d=r.date;o.c=c}});
   const lastPx=px.length?px.reduce((a,r)=>r.date>a.date?r:a):null;
   const row=(l,qs,y,ttm)=>{const rev=S(qs,'rev'),gp=S(qs,'gp'),op=S(qs,'op'),ni=S(qs,'ni'),eps=S(qs,'eps'),ocf=S(qs,'ocf'),cx=S(qs,'cx');
     const z=qs[qs.length-1],pz=Qa.find(x=>x.y===z.y-1&&x.n===z.n),eqA=z.eq!=null?(pz&&pz.eq!=null?(z.eq+pz.eq)/2:z.eq):null;
-    const dd=ttm?null:DV[y],pc=ttm?(lastPx&&lastPx.close):PY[y]&&PY[y].c,pa=ttm?(lastPx&&lastPx.close):PY[y]&&PY[y].s/PY[y].n;
+    const kk=ttm?1:(z.k||1),dd0=ttm?null:DV[y],dd=dd0?{c:dd0.c*kk,s:dd0.s*kk}:null,   // 股利、股價跟 EPS 一起換到現在股數基準
+      pc=ttm?(lastPx&&lastPx.close):PY[y]&&PY[y].c,pa=ttm?(lastPx&&lastPx.close):PY[y]&&PY[y].s/PY[y].n;
     return {l,y,ttm,rev,gm:P(gp,rev),om:P(op,rev),nm:P(ni,rev),ni,eps,ocf,fcf:ocf!=null&&cx!=null?ocf-cx:null,cx,
       roe:ni!=null&&eqA>0?ni/eqA*100:null,debt:z.tl!=null&&z.ta?z.tl/z.ta*100:null,div:dd?dd.c:null,sdiv:dd?dd.s:null,
       po:dd&&eps>0?dd.c/eps*100:null,close:pc||null,pe:pa&&eps>0?pa/eps:null}};
@@ -1561,10 +1576,10 @@ function buildY10(fs,bs,cf,dv,px){
     return {l:x.l,rev:x.rev,gm:P(x.gp,x.rev),om:P(x.op,x.rev),nm:P(x.ni,x.rev),ni:x.ni,eps:x.eps,ocf:x.ocf,fcf:x.ocf!=null&&x.cx!=null?x.ocf-x.cx:null,
       roe:ni4!=null&&eqA>0?ni4/eqA*100:null,debt:x.tl!=null&&x.ta?x.tl/x.ta*100:null,ry:ly&&ly.rev?(x.rev/ly.rev-1)*100:null,ey:ly&&ly.eps>0&&x.eps!=null?(x.eps/ly.eps-1)*100:null}});
   const rr=o=>{const k={et:o.et};for(const [a,v] of Object.entries(o))k[a]=typeof v==='number'?(['eps','div','sdiv'].includes(a)?r2(v):r1(v)):v;return k};
-  return {A:A.slice(-12).map(rr),Q:Qr.slice(-40).map(rr),asof:lq.l};
+  return {A:A.slice(-12).map(rr),Q:Qr.slice(-40).map(rr),asof:lq.l,adj:adjK?Math.round(adjK*100)/100:null};
 }
 async function loadY10(id){
-  const k='y10v2_'+id,c=store.get(k);
+  const k='y10v3_'+id,c=store.get(k);
   if(c&&Date.now()-c.t<12*3600e3&&c.v){Y10=c.v;Y10L=null;renderY10();return}
   if(Y10L===id)return;Y10L=id;
   $('cY10').hidden=true;$('tY10').innerHTML='<div class="y10msg">⏳ 正在向 FinMind 抓 11 年財報（約 5–10 秒）…</div>';
@@ -1573,10 +1588,11 @@ async function loadY10(id){
     const [fs,bs,cf,dv,px]=await Promise.all([fm('TaiwanStockFinancialStatements',id,st),fm('TaiwanStockBalanceSheet',id,st),
       fm('TaiwanStockCashFlowsStatement',id,st).catch(()=>[]),fm('TaiwanStockDividend',id,st).catch(()=>[]),fm('TaiwanStockPrice',id,st).catch(()=>[])]);
     if(Y10ID!==id)return;
-    const v=buildY10(fs,bs,cf,dv,px);Y10L=null;
+    const nm=(D&&D.name)||((LIST.find(s=>s[0]===id)||[])[1])||'';
+    const v=buildY10(fs,bs,cf,dv,px,nm.includes('*'));Y10L=null;
     if(!v){$('tY10').innerHTML='<div class="y10msg">歷史財報不足 4 季，無法顯示</div>';return}
     Y10=v;try{store.set(k,{t:Date.now(),v})}catch(e){}
-    if(!localStorage.getItem(k))try{Object.keys(localStorage).filter(x=>x.startsWith('y10v2_')).forEach(x=>localStorage.removeItem(x));store.set(k,{t:Date.now(),v})}catch(e){}
+    if(!localStorage.getItem(k))try{Object.keys(localStorage).filter(x=>x.startsWith('y10v2_')||x.startsWith('y10v3_')).forEach(x=>localStorage.removeItem(x));store.set(k,{t:Date.now(),v})}catch(e){}
     renderY10();
   }catch(e){Y10L=null;if(Y10ID!==id)return;
     $('tY10').innerHTML=`<div class="y10msg">⚠️ ${e.message}<br><button type="button" id="y10Re">重試</button></div>`;
@@ -1667,7 +1683,7 @@ function renderY10(){
     L.push(`ROE ${f(x.roe,1)}%・負債比 ${f(x.debt,1)}%`);if(x.ocf!=null)L.push(`營業現金流 ${f(x.ocf)}・自由現金流 ${f(x.fcf)}・淨利 ${f(x.ni)} 億`);
     if(x.pe!=null)L.push(`${x.ttm?'目前':'年均'}本益比 ${fmt(x.pe,1)} 倍`);return L.join('<br>')};
   ch.setOption(o,true);ch.resize();
-  $('fY10').textContent=foot+' 資料：FinMind，進這一頁才即時抓，手機快取 12 小時。';
+  $('fY10').textContent=(Y10.adj?`已分割還原（×${Y10.adj}）：公司做過分割／面額變更，分割前的 EPS、股利、股價已換到現在的股數基準，跟當年新聞的數字不同但前後可比。 `:'')+foot+' 資料：FinMind，進這一頁才即時抓，手機快取 12 小時。';
   // 明細表（年度）
   const c=(v,d)=>v==null?'—':fmt(v,d),cp=v=>v==null?'—':`<span class="${sg(v)}">${pct(v,0)}</span>`;
   $('tbY10').innerHTML='<thead><tr><th>年度</th><th>營收億</th><th>年增</th><th>毛利率</th><th>營益率</th><th>淨利率</th><th>EPS</th><th>EPS年增</th><th>現金股利</th><th>配息率</th><th>ROE</th><th>負債比</th><th>自由現金流</th><th>年均PE</th></tr></thead><tbody>'+
