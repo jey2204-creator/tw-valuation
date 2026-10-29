@@ -240,16 +240,58 @@ def hq(y, n):
     return QCACHE[k]
 
 
+REF = {}          # 代號 → 目前股數基準（千股，由本期 歸母淨利÷EPS 推得）；用來把分割／減資前的 EPS 換到同一基準
+ADJ = {}          # 代號 → 本次有無做過換算（給前端標「分割還原」）
+ADJ_TH = 0.30     # 股數差超過 30% 才視為分割／減資（避免庫藏股、ESOP、小額增資被誤調）
+STAR = {}         # 代號 → 名稱帶 *（面額非 10 元，做過分割／面額變更）
+
+
+def shares(rec):
+    """由累計數推隱含股數（千股）；淨利或 EPS 太小、正負不一致就回 None"""
+    ni, e = rec.get("ni"), rec.get("eps")
+    # EPS 只有兩位小數，太小的 EPS 推不準股數（0.04 元誤差就 12%），所以要 |EPS| ≥ 0.5、|淨利| ≥ 1,000 萬
+    if ni is None or e is None or abs(e) < 0.5 or abs(ni) < 10000 or (ni > 0) != (e > 0):
+        return None
+    return ni / e
+
+
+def set_ref(code, rec):
+    sh = shares(rec) if rec else None
+    if sh:
+        REF[code] = sh
+    else:
+        REF.pop(code, None)
+    ADJ.pop(code, None)
+
+
+def adj_eps(code, rec):
+    """把舊期間的 EPS 換到目前股數基準：EPS × (舊股數 ÷ 現股數)。分割 1→4 的公司，去年 EPS 會除以 4"""
+    ref = REF.get(code)
+    sh = shares(rec)
+    if not ref or not sh:
+        return rec
+    ratio = sh / ref
+    # 只處理面額非 10 元（名稱帶 *）＝做過分割／面額變更的公司：分割會追溯重編，前後股數差是乾淨的整數倍。
+    # 減資、增資、合併不處理——當年 EPS 用加權平均股數，前後期比例不固定，硬調會調錯；官方與新聞也都不重編
+    big = max(ratio, 1 / ratio)
+    if not STAR.get(code) or big <= 1 + ADJ_TH:
+        return rec
+    o = dict(rec)
+    o["eps"] = round(rec["eps"] * ratio, 2)
+    ADJ[code] = round(1 / ratio, 2) if ratio < 1 else round(ratio, 2)
+    return o
+
+
 def prev_ytd(code, y, n, ann):
-    """(y, n) 的累計數；優先用自己存的重訊（有毛利、營益），沒有再用 MOPS 彙總"""
+    """(y, n) 的累計數；優先用自己存的重訊（有毛利、營益），沒有再用 MOPS 彙總。EPS 一律換到目前股數基準"""
     if n == 0:
         return {"ni": 0, "eps": 0, "rev": 0, "pre": 0, "gp": 0, "op": 0}   # 第 1 季前一期累計＝0
     a = ann.get((code, y, n))
     if a:
-        return a
+        return adj_eps(code, a)
     h = hq(y, n).get(code)
     if h:
-        return {"ni": h[1], "pre": h[2], "rev": h[3] * 1000 if h[3] is not None else None, "eps": h[4]}
+        return adj_eps(code, {"ni": h[1], "pre": h[2], "rev": h[3] * 1000 if h[3] is not None else None, "eps": h[4]})
     return None
 
 
@@ -306,6 +348,10 @@ def ttm_pe(code, y, n, ytd_eps, ann, sd):
 
 def build(raw):
     names = {r[0]: r[1] for r in load(DATA / "list.json", [])}
+    STAR.update({c: True for c, n in names.items() if "*" in (n or "")})
+    for r in raw.values():
+        if "*" in (r.get("nm") or ""):
+            STAR[r["c"]] = True
     summ = load(DATA / "summary.json", {})
     sd, se = summ.get("d") or {}, summ.get("eps") or {}
     ann, items, cal, selfs = {}, [], {}, []
@@ -328,6 +374,7 @@ def build(raw):
 
     for (code, y, n), a in ann.items():
         r = a["r"]
+        set_ref(code, a)                                               # 本期股數＝基準，舊期間 EPS 依此還原
         s = single(code, y, n, ann, cur=a) or {}
         ly = single(code, y - 1, n, ann) or {}
         pq = single(code, y, n - 1, ann) if n > 1 else single(code, y - 1, 4, ann)
@@ -363,13 +410,15 @@ def build(raw):
             "yoy": g_ni, "yoyT": t_ni, "epsYoy": g_eps, "epsYoyT": t_eps, "qoq": q_ni, "qoqT": tq_ni,
             "ytdYoy": y_ni, "ytdYoyT": ty_ni,
             "gm": gm, "om": om, "nm": nm, "mSrc": margin_src, "nonop": nonop, "nonopSrc": nonop_src,
-            "ttm": ttm, "pe": pe, "close": close,
+            "ttm": ttm, "pe": pe, "close": close, "adj": ADJ.get(code),
         })
     for s in selfs:
         r = s["r"]
         q = f"{s['y']}Q{s['n']}"
         if (r["c"], s["y"], s["n"]) in ann:
             continue                                                   # 董事會版已出，以董事會版為準
+        REF.pop(r["c"], None)                                          # 自結只有 EPS：用最近一期累計數當股數基準
+        set_ref(r["c"], prev_ytd(r["c"], s["y"], s["n"] - 1, ann) if s["n"] > 1 else prev_ytd(r["c"], s["y"] - 1, 4, ann))
         if not s["single"]:                                            # 累計數 → 扣掉上一季累計
             p = prev_ytd(r["c"], s["y"], s["n"] - 1, ann)
             if p is None or p.get("eps") is None:
@@ -381,7 +430,7 @@ def build(raw):
         ttm, pe, close = ttm_pe(r["c"], s["y"], s["n"], (p["eps"] + s["eps"]) if p and p.get("eps") is not None else None, ann, sd)
         items.append({"c": r["c"], "ttm": ttm, "pe": pe, "close": close, "n": names.get(r["c"], r["nm"]), "mk": 0 if r["mk"] == "sii" else 1,
                       "t": f"{r['d']} {r['tm'][:5]}", "q": q, "k": "self", "subj": r["subj"][:60],
-                      "s": {"eps": s["eps"]}, "ly": {"eps": ly.get("eps")}, "epsYoy": g, "epsYoyT": t})
+                      "s": {"eps": s["eps"]}, "ly": {"eps": ly.get("eps")}, "epsYoy": g, "epsYoyT": t, "adj": ADJ.get(r["c"])})
     # 已公布的不再列在日曆
     done = {(i["c"], i["q"]) for i in items}
     today = NOW.date().isoformat()

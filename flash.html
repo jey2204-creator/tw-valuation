@@ -118,7 +118,7 @@ a:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid var
 
   <p class="foot">
     數字來源：公開資訊觀測站「董事會通過財報」重大訊息（第 31 款標準格式，1 月 1 日累計數）。單季＝本期累計 − 上一季累計；去年同季、上一季用觀測站財報彙總。<br>
-    「法說」＝公司在董事會前自行公告的 EPS，董事會版出來後自動取代。<br>
+    「法說」＝公司在董事會前自行公告的 EPS，董事會版出來後自動取代。<br>「分割還原」＝公司做過分割、面額變更（名稱帶 *），去年同季與近四季 EPS 已換算到目前股數基準，數字會跟新聞上的「官方 EPS 年增」不同但可比。<br>
     業外占比＝(稅前 − 營業利益) ÷ 稅前，≥ 30% 標 ⚠️：淨利大增若來自業外，不宜直接推算未來 EPS。<br>
     ⭐ 追蹤＝首頁自選、自訂主題與內建主題成份股。點一列開個股頁。
   </p>
@@ -158,7 +158,7 @@ function row(i){
   let h=`<a class="it${dir}${w?' w':''}" href="./#${i.c}"><div class="l1"><span class="nm">${w?'⭐ ':''}${i.n}</span><span class="cd">${i.c}</span>`+
     `${i.mk?'<span class="tag">櫃</span>':''}${self?'<span class="tag self">法說</span>':''}<span class="tm">${dshort(i.t)}</span></div>`;
   h+=`<div class="l2"><div><small>${qlab(i.q)} EPS（元）</small><b class="${cls(s.eps)}">${fmt(s.eps)}</b></div>`+
-     `<div><small>EPS 年增 · 去年 ${fmt(i.ly&&i.ly.eps)}</small><b>${g(i.epsYoy,i.epsYoyT).replace('<i','<span').replace('</i>','</span>')}</b></div>`;
+     `<div><small>EPS 年增 · 去年 ${fmt(i.ly&&i.ly.eps)}${i.adj?'<span class="warn" title="去年 EPS 已依股數變動（分割／減資）換算到目前基準">·分割還原</span>':''}</small><b>${g(i.epsYoy,i.epsYoyT).replace('<i','<span').replace('</i>','</span>')}</b></div>`;
   if(self){h+=`<div><small>公告</small><span style="font-size:11.5px">${i.subj}</span></div></div></a>`;return h}
   h+=`<div><small>淨利（億）· 季增</small><b class="${cls(s.ni)}">${fmt(s.ni,s.ni!=null&&Math.abs(s.ni)>=100?0:1)}</b>${g(i.qoq,i.qoqT)}</div></div>`;
   const bits=[];
