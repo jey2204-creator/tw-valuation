@@ -383,6 +383,7 @@ def build(raw):
         g_ni, t_ni = growth(s.get("ni"), ly.get("ni"))
         g_eps, t_eps = growth(s.get("eps"), ly.get("eps"))
         q_ni, tq_ni = growth(s.get("ni"), pq.get("ni"))
+        g_rv, _ = growth(s.get("rev"), ly.get("rev")) if (s.get("rev") or 0) > 0 and (ly.get("rev") or 0) > 0 else (None, None)   # 單季營收年增
         y_ni, ty_ni = growth(a.get("ni"), lyy.get("ni"))
         # 業外占比：單季算得出來用單季，否則用累計
         if s.get("op") is not None and s.get("pre") is not None and s["pre"] > 0:
@@ -407,7 +408,7 @@ def build(raw):
             "pq": {"ni": round(pq["ni"] / 1e5, 2) if pq.get("ni") is not None else None, "eps": pq.get("eps")},
             "ytd": {"ni": round(a["ni"] / 1e5, 2) if a.get("ni") is not None else None, "eps": a.get("eps"),
                     "rev": round(a["rev"] / 1e5, 2) if a.get("rev") is not None else None},
-            "yoy": g_ni, "yoyT": t_ni, "epsYoy": g_eps, "epsYoyT": t_eps, "qoq": q_ni, "qoqT": tq_ni,
+            "rvYoy": g_rv, "yoy": g_ni, "yoyT": t_ni, "epsYoy": g_eps, "epsYoyT": t_eps, "qoq": q_ni, "qoqT": tq_ni,
             "ytdYoy": y_ni, "ytdYoyT": ty_ni,
             "gm": gm, "om": om, "nm": nm, "mSrc": margin_src, "nonop": nonop, "nonopSrc": nonop_src,
             "ttm": ttm, "pe": pe, "close": close, "adj": ADJ.get(code),
@@ -514,6 +515,8 @@ def card(i):
          f"EPS <b>{e if e is not None else '—'}</b> 元（年增 {gtxt(i.get('epsYoy'), i.get('epsYoyT'))}・去年 {(i.get('ly') or {}).get('eps', '—')}）"]
     if s.get("ni") is not None:
         L.append(f"淨利 {s['ni']:,.1f} 億（年增 {gtxt(i.get('yoy'), i.get('yoyT'))}・季增 {gtxt(i.get('qoq'), i.get('qoqT'))}）")
+    if s.get("rev") is not None:
+        L.append(f"營收 {s['rev']:,.1f} 億（年增 {gtxt(i.get('rvYoy'), None)}）")
     m = []
     if i.get("gm") is not None:
         m.append(f"毛 {i['gm']:.1f}%")
