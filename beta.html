@@ -713,7 +713,7 @@ function render(){
    o.series=[{name:'單季EPS',type:'bar',data:Q.map(x=>x[0]===D.inj?{value:x[5],itemStyle:{color:rgba(acc2,.3),borderColor:acc2,borderWidth:1.5,borderType:'dashed'}}:x[5]),itemStyle:{color:acc2,borderRadius:[2,2,0,0]},markArea:D.inj?{silent:true,itemStyle:{color:rgba(warm,.08)},label:{show:true,position:'insideTop',fontSize:9,color:warm,formatter:D.injSrc==='flash'?'快訊':'速報'},data:[[{xAxis:D.inj},{xAxis:D.inj}]]}:undefined,label:{show:true,position:'top',fontSize:9,color:css('--muted'),fontFamily:'IBM Plex Mono',formatter:p=>p.dataIndex>=Q.length-4?p.value:''}},
      {name:'近四季',type:'line',yAxisIndex:1,data:ttm,symbol:'none',lineStyle:{width:2,color:warm},itemStyle:{color:warm}}];
    c.setOption(o,true)}
-  renderNp();loadFlashNp(D.id);y10Init(D.id);renderCx();renderCf();renderInv();renderKl();renderChip();renderGuide();
+  renderNp();loadFlashNp(D.id);y10Init(D.id);if(Y10&&Y10ID===D.id)renderY10();renderCx();renderCf();renderInv();renderKl();renderChip();renderGuide();
   renderFwd();river('cPE',PEM,2,'倍 PE');renderPegH();river('cPB',PBM,3,'倍 PB');
 }
 // ---- 存貨健康度：D.inv 每季 [季別, 存貨, 營業成本, 應收帳款, 合約負債|null, 稅後淨利, 單季營業現金流|null]（億） ----
@@ -1654,14 +1654,19 @@ function renderY10(){
   else V=['','⚪ 接近 10 年常態',`${lastL} EPS ${f(now,2)}，${F.length} 年平均 ${f(mE,2)}`];
   $('tY10').innerHTML=`<span class="pill">${kind}</span> <span class="pill ${V[0]}">${V[1]}</span> ${V[2]} <span class="y10tip" data-y10t>${$('y10').classList.contains('open')?'收起 ▴':'依據 ▾'}</span>`+`<span class="y10why"><br>分類依據：虧損 ${loss} 年、EPS 年減超過 2 成 ${drops} 次${cv!=null?`、EPS 波動度（標準差÷平均）${fmt(cv,2)}`:''}</span>`;
   // 圖
-  const Q=Y10P==='q',R=Q?Y10.Q:A;$('y10U').textContent=Q?`${R.length}季`:`${F.length}年${T?'+近4季':''}`;
+  const Q=Y10P==='q';let R=Q?Y10.Q:A,FL=null;
+  if(Q&&D&&D.injSrc==='flash'&&D.id===Y10ID&&D.inj===qNext(Y10.asof)&&['g','p','e'].includes(Y10T)){
+    const x=D.q[D.q.length-1],yl=String(+x[0].slice(0,2)-1).padStart(2,'0')+x[0].slice(2),ly=Y10.Q.find(z=>z.l===yl);
+    FL={l:x[0],fl:true,rev:x[1],gm:x[2],om:x[3],nm:x[4],eps:x[5],ni:x[4]!=null?Math.round(x[1]*x[4]/10)/10:null,ry:ly&&ly.rev?Math.round((x[1]/ly.rev-1)*1000)/10:null,ey:ly&&ly.eps>0&&x[5]!=null?Math.round((x[5]/ly.eps-1)*1000)/10:null};
+    R=[...R.slice(1),FL]}
+  $('y10U').textContent=Q?`${R.length}季`:`${F.length}年${T?'+近4季':''}`;
   $('y10Per').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.p===Y10P));
   $('y10Tab').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.t===Y10T));
   $('cY10').hidden=false;const ch=mk('cY10'),o=base();o.xAxis.data=R.map(x=>Q?x.l:(x.ttm?'近4季':"'"+x.l.slice(2)));o.yAxis.scale=false;
   const N=R.length,every=Q?4:2,show=i=>Q?(i>=N-4):((N-1-i)%every===0);
   const lab=(fm,col)=>({show:true,position:'top',fontSize:9,color:col||mu,fontFamily:'IBM Plex Mono',formatter:p=>show(p.dataIndex)&&p.value!=null?fm(p.value):''});
   const bar=(name,k,col,fm)=>({name,type:'bar',barCategoryGap:Q?'22%':'30%',label:lab(fm),itemStyle:{color:typeof col==='function'?up:col},
-    data:R.map(x=>({value:x[k],itemStyle:{color:typeof col==='function'?col(x):col,opacity:x.ttm?.5:1,borderColor:typeof col==='function'?col(x):col,borderWidth:x.ttm?1.5:0,borderType:'dashed',borderRadius:[2,2,0,0]}}))});
+    data:R.map(x=>({value:x[k],itemStyle:{color:typeof col==='function'?col(x):col,opacity:x.ttm||x.fl?.5:1,borderColor:typeof col==='function'?col(x):col,borderWidth:x.ttm||x.fl?1.5:0,borderType:'dashed',borderRadius:[2,2,0,0]}}))});
   const line=(name,k,col,ya,dash)=>({name,type:'line',yAxisIndex:ya||0,data:R.map(x=>x[k]),symbol:'circle',symbolSize:Q?2:4,connectNulls:true,lineStyle:{width:2,color:col,type:dash?'dashed':'solid'},itemStyle:{color:col},
     endLabel:{show:true,color:col,fontSize:10,fontFamily:'IBM Plex Mono',formatter:p=>p.value==null?'':fmt(p.value,1)}});
   const gc=k=>x=>x[k]==null?mu:x[k]>0?up:x[k]<0?dn:mu,big=v=>Math.abs(v)>=1000?String(Math.round(v)):f(v);
@@ -1690,12 +1695,14 @@ function renderY10(){
     o.series=[bar('營業現金流','ocf',acc,big),{...bar('自由現金流','fcf',acc2,big),label:{show:false}},{...line('母公司淨利','ni',fg),endLabel:{show:false}}];
     foot='自由現金流＝營業現金流 − 資本支出（取得不動產、廠房及設備）。長期淨利有、自由現金流卻常是負的＝賺的錢都要再投資或卡在應收／存貨。';
   }
-  o.tooltip.formatter=ps=>{const x=R[ps[0].dataIndex],L=[`<b>${x.ttm?'近四季（'+Y10.asof+' 止）':x.l}</b>`];
+  o.tooltip.formatter=ps=>{const x=R[ps[0].dataIndex],L=[`<b>${x.ttm?'近四季（'+Y10.asof+' 止）':x.l+(x.fl?'（財報快訊自結）':'')}</b>`];
     L.push(`營收 ${f(x.rev,0)} 億（年增 ${pct(x.ry,1)}）`);L.push(`毛利率 ${f(x.gm,1)}%・營益率 ${f(x.om,1)}%・淨利率 ${f(x.nm,1)}%`);
     L.push(`EPS ${f(x.eps,2)} 元（年增 ${x.et||(x.ey==null?'—':pct(x.ey,0))}）`+(x.div!=null?`・現金股利 ${f(x.div,2)}${x.po!=null?`（配息率 ${fmt(x.po,0)}%）`:''}`:''));
     L.push(`ROE ${f(x.roe,1)}%・負債比 ${f(x.debt,1)}%`);if(x.ocf!=null)L.push(`營業現金流 ${f(x.ocf)}・自由現金流 ${f(x.fcf)}・淨利 ${f(x.ni)} 億`);
     if(x.pe!=null)L.push(`${x.ttm?'目前':'年均'}本益比 ${fmt(x.pe,1)} 倍`);return L.join('<br>')};
+  if(FL&&o.series.length)o.series[0].markArea={silent:true,itemStyle:{color:rgba(warm,.08)},label:{show:true,position:'insideTop',fontSize:9,color:warm,formatter:'快訊'},data:[[{xAxis:FL.l},{xAxis:FL.l}]]};
   ch.setOption(o,true);ch.resize();
+  if(FL)foot+=`${FL.l} 為公司 ${D.injOn||''} 公告的自結數（財報快訊），FinMind 進資料後自動換成正式值。`;
   $('fY10').textContent=(Y10.adj?`已分割還原（×${Y10.adj}）：公司做過分割／面額變更，分割前的 EPS、股利、股價已換到現在的股數基準，跟當年新聞的數字不同但前後可比。 `:'')+foot+' 資料：FinMind，進這一頁才即時抓，手機快取 12 小時。';
   // 明細表（年度）
   const c=(v,d)=>v==null?'—':fmt(v,d),cp=v=>v==null?'—':`<span class="${sg(v)}">${pct(v,0)}</span>`;
