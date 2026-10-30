@@ -710,10 +710,35 @@ function render(){
    o.grid.right=30;c.setOption(o,true)}
   {const o=base(),c=mk('cEps');o.xAxis.data=Q.map(x=>x[0]);o.yAxis.scale=false;
    const ttm=Q.map((x,i)=>i<3?null:+sum(Q.slice(i-3,i+1).map(z=>z[5])).toFixed(2));
-   o.yAxis=[o.yAxis,{...o.yAxis,splitLine:{show:false}}];
-   o.series=[{name:'單季EPS',type:'bar',data:Q.map(x=>x[0]===D.inj?{value:x[5],itemStyle:{color:rgba(acc2,.3),borderColor:acc2,borderWidth:1.5,borderType:'dashed'}}:x[5]),itemStyle:{color:acc2,borderRadius:[2,2,0,0]},markArea:D.inj?{silent:true,itemStyle:{color:rgba(warm,.14)},label:{show:true,position:'insideBottom',fontSize:9,color:warm,formatter:D.injSrc==='flash'?'快訊':'速報'},data:[[{xAxis:D.inj},{xAxis:D.inj}]]}:undefined,label:{show:true,position:'top',fontSize:9,color:css('--muted'),fontFamily:'IBM Plex Mono',formatter:p=>p.dataIndex>=Q.length-4?p.value:''}},
-     {name:'近四季',type:'line',yAxisIndex:1,data:ttm,symbol:'none',lineStyle:{width:2,color:warm},itemStyle:{color:warm}}];
-   c.setOption(o,true)}
+   // 左右軸都固定 5 格、上方留 25% 空間給數字標籤
+   const N=Q.length,bv=Q.map(x=>x[5]),mxB=Math.max(0,...bv.filter(v=>v!=null))||1,mxT=Math.max(0,...ttm.filter(v=>v!=null))||1,
+     mnB=Math.min(0,...bv.filter(v=>v!=null)),mnT=Math.min(0,...ttm.filter(v=>v!=null)),
+     nice=v=>{const e=Math.pow(10,Math.floor(Math.log10(v||1))),f=v/e;return (f<=1?1:f<=2?2:f<=2.5?2.5:f<=5?5:10)*e},
+     stB=nice(mxB*1.25/5),stT=nice(mxT*1.25/5),maxB=Math.ceil(mxB*1.25/stB)*stB,maxT=Math.ceil(mxT*1.25/stT)*stT,
+     minB=mnB<0?-Math.ceil(-mnB/stB)*stB:0,minT=mnT<0?-Math.ceil(-mnT/stT)*stT:0;
+   o.yAxis=[{...o.yAxis,min:minB,max:maxB,interval:stB},{...o.yAxis,min:minT,max:maxT,interval:stT,splitLine:{show:false},axisLabel:{...o.yAxis.axisLabel,fontSize:9,color:rgba(css('--muted'),.65)}}];
+   const bar={name:'單季EPS',type:'bar',data:Q.map(x=>x[0]===D.inj?{value:x[5],itemStyle:{color:rgba(acc2,.3),borderColor:acc2,borderWidth:1.5,borderType:'dashed'}}:x[5]),itemStyle:{color:acc2,borderRadius:[2,2,0,0]},markArea:D.inj?{silent:true,itemStyle:{color:rgba(warm,.14)},label:{show:true,position:'insideBottom',fontSize:9,color:warm,formatter:D.injSrc==='flash'?'快訊':'速報'},data:[[{xAxis:D.inj},{xAxis:D.inj}]]}:undefined,label:{show:false}};
+   o.series=[bar,{name:'近四季',type:'line',yAxisIndex:1,data:ttm,symbol:'none',lineStyle:{width:2,color:warm},itemStyle:{color:warm}}];
+   c.setOption(o,true);
+   // 數字標籤避讓（最後 4 根）：先畫一次拿到像素座標，再逐根檢查——壓到近四季線就往上推、跟前一個標籤疊到也往上推；
+   // 文字加底色描邊，壓到線上也看得清；最後一根往左縮避開右軸刻度；跟柱頂拉開時補一條細短線指回柱子
+   {const px=(ax,v)=>c.convertToPixel({[ax]:0},v),W=24,H=10,xs=Q.map((_,i)=>c.convertToPixel({xAxisIndex:0},i)),
+      ly=ttm.map(v=>v==null?null:c.convertToPixel({yAxisIndex:1},v)),yb=bv.map(v=>v==null?null:c.convertToPixel({yAxisIndex:0},v)),
+      lineY=x=>{for(let j=1;j<N;j++){if(ly[j-1]==null||ly[j]==null)continue;const a=xs[j-1],b=xs[j];if(x>=Math.min(a,b)-.5&&x<=Math.max(a,b)+.5)return ly[j-1]+(ly[j]-ly[j-1])*(x-a)/(b-a)}return null};
+    let prev=null;const data=bar.data.slice(),lines=[];
+    for(let i=Math.max(0,N-4);i<N;i++){if(bv[i]==null)continue;const x=xs[i]+(i===N-1?-5:0),top=yb[i];let y=top-4;   // y＝標籤底邊
+      const clear=()=>{for(let k=0;k<6;k++){let hit=false;for(const dx of[-W/2,-W/4,0,W/4,W/2]){const v=lineY(x+dx);if(v!=null&&v>y-H-3&&v<y+3){hit=true;break}}
+        if(hit){y-=H+2;continue}if(prev&&Math.abs(x-prev.x)<W&&Math.abs(y-prev.y)<H+1){y=prev.y-H-1;continue}break}};
+      clear();
+      const d=typeof data[i]==='object'?{...data[i]}:{value:data[i]},base0=yb.length&&c.convertToPixel({yAxisIndex:0},0);
+      if(top-4-y>14&&base0-top>40&&Q[i][0]!==D.inj){   // 要推很遠、柱子又夠高 → 改放柱內白字（描邊用柱色，線穿過也看得清）
+        y=top+H+5;prev={x:xs[i],y};
+        d.label={show:true,position:'insideTop',distance:5,fontSize:9,fontFamily:'IBM Plex Mono',color:css('--card'),textBorderColor:acc2,textBorderWidth:2,formatter:p=>fmt(p.value,2)}}
+      else{prev={x,y};
+        d.label={show:true,position:'top',distance:4,fontSize:9,fontFamily:'IBM Plex Mono',color:css('--fg'),textBorderColor:css('--card'),textBorderWidth:2.5,formatter:p=>fmt(p.value,2),offset:[x-xs[i],y-(top-4)]};
+        if(top-4-y>8)lines.push([[xs[i],top-2],[xs[i],y+2]])}
+      data[i]=d}
+    c.setOption({series:[{data,markLine:lines.length?{silent:true,symbol:'none',animation:false,lineStyle:{color:css('--muted'),width:1,opacity:.5},data:lines.map(([a,b])=>[{coord:null,x:a[0],y:a[1]},{x:b[0],y:b[1]}])}:undefined}]})}}
   renderNp();loadFlashNp(D.id);y10Init(D.id);if(Y10&&Y10ID===D.id)renderY10();renderCx();renderCf();renderInv();renderKl();renderChip();renderGuide();
   renderFwd();river('cPE',PEM,2,'倍 PE');renderPegH();river('cPB',PBM,3,'倍 PB');
 }
