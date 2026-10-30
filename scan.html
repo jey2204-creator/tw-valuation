@@ -71,6 +71,10 @@ select.ch.on{background-color:var(--sel);color:var(--selfg);font-weight:700}
 .tg{flex:none;font:700 8.5px var(--f-num);line-height:13px;padding:0 2.5px;border-radius:3px;color:#fff;background:var(--muted);letter-spacing:-.02em}
 .tg.b{background:var(--up)}.tg.s{background:var(--down)}.tg.n{background:var(--chip);color:var(--muted)}
 .km-h .lvdot{flex:none;font-size:8px;color:var(--warm);margin-left:auto;line-height:15px}.km-h .lvdot.dl{color:var(--muted)}.km-h .lvdot+.tg{margin-left:3px}
+/* 2026-10-30：小卡右上「即／延／昨／未」狀態小標（即時、Yahoo 延遲、還是昨收、今天尚無成交）；昨收的漲幅數字變淡並排到最後，避免開盤初期即時跟昨收混排 */
+.km-h .lv{flex:none;font:700 8.5px var(--f-num);line-height:13px;padding:0 3px;border-radius:3px;margin-left:auto;background:var(--warm);color:#fff}.km-h .lv.dl{background:var(--chip);color:var(--muted)}.km-h .lv.st{background:transparent;color:var(--muted);border:1px solid var(--line)}.km-h .lv+.tg{margin-left:3px}
+.km-s .st{opacity:.55}
+.cnt .miss{color:var(--warm);font-weight:700}
 /* 注意／處置標記（2026-10-29）：任何清單裡的股票若在 data/notice.json 名單上就亮 */
 .km-h .tg{margin-left:auto}
 .tg.ny{background:#b88600}.tg.no{background:#d9731a}.tg.nr{background:var(--up);outline:1.5px solid var(--up);outline-offset:1px}
@@ -129,7 +133,7 @@ const pxFmt=p=>p==null?'—':p>=1000?fmt(p,0):p>=100?fmt(p,1):fmt(p,2);
 const pct=(x,d=1)=>x==null?'—':(x>0?'▲':x<0?'▼':'')+Math.abs(x*100).toFixed(d)+'%';
 const cls=x=>x>0?'up':x<0?'dn':'';
 const md=d=>d?+d.slice(4,6)+'/'+ +d.slice(6,8):'';
-let RANKED=false,CHGP='d',NAME={},MKT={},IND={},THEMES=[],NOTICE=null,NMAP={},PMAP=null,HIST=null,DH=null,HDAYS=[],THIST=null,TDAYS=[],TOPL=null,NDATE='',CUR_IDS=[],cur=null,sortK='chg',N=40,FL={ma20:false,ma60:false,ts3:false,vr12:false},SHARD={},ROWS=[],openI=-1,shN=80;
+let MISS=[],RANKED=false,CHGP='d',NAME={},MKT={},IND={},THEMES=[],NOTICE=null,NMAP={},PMAP=null,HIST=null,DH=null,HDAYS=[],THIST=null,TDAYS=[],TOPL=null,NDATE='',CUR_IDS=[],cur=null,sortK='chg',N=40,FL={ma20:false,ma60:false,ts3:false,vr12:false},SHARD={},ROWS=[],openI=-1,shN=80;
 // ---- 主題清單：data/themes.json ＋ 手機裡改過／自訂的主題（themeCfg，與估值看板同一份）＋ 自選（fav） ----
 const AUTO_IDS=['itop','ftop','btop','natt','npre','ndis','nend','npost'];   // 自動主題（與首頁同一份順序）
 function themesAll(base){const c=store.get('themeCfg')||{},order=c.order||[],hidden=c.hidden||[],mine=c.themes||{};const bm={};base.forEach(t=>bm[t.id]=t);
@@ -195,7 +199,7 @@ async function pick(sel){cur=sel;
   const groups=[...new Set(ids.map(c=>c.slice(0,2)))];
   await Promise.all(groups.map(g=>loadShard(g)));
   if(cur!==sel)return;
-  CUR_IDS=ids;ROWS=ids.map((c,i)=>{const r=build(c);if(r)r.li=i;return r}).filter(Boolean);
+  CUR_IDS=ids;ROWS=ids.map((c,i)=>{const r=build(c);if(r)r.li=i;return r}).filter(Boolean);MISS=ids.filter(c=>!ROWS.some(r=>r.c===c));
   render();liveKick();
 }
 // ---- 2026-10-29：用 hist.json（每日注意名單）＋ dis_hist.json（處置起迄）回推「選定日」的五種名單；交易日用平日近似（與 fetch_notice.py 的 left 一致） ----
@@ -226,7 +230,7 @@ async function loadShard(g){if(SHARD[g]!==undefined)return SHARD[g];SHARD[g]=nul
 function build(c){const s=SHARD[c.slice(0,2)];if(!s||!s.d||!s.d[c])return null;const days=s.days,rows=s.d[c];
   const bars=[];rows.forEach((r,i)=>{if(!r||r[0]==null)return;const cl=r[0],o=r[8]??cl,h=r[9]??Math.max(o,cl),l=r[10]??Math.min(o,cl);bars.push({d:days[i],o,h,l,c:cl,v:r[1]||0,f:r[2],t:r[3],m240:r[11]})});
   // 即時（2026-10-29）：盤中把今天那根 K 棒接在日 K 最後（資料來自 twse-live Worker；收盤後排程更新分片前也先用它）
-  const q=LIVE.get(c);if(q&&!q.miss&&q.d&&bars.length&&q.d>bars[bars.length-1].d&&q.o!=null){const z=q.z??q.pz??q.o;bars.push({d:q.d,o:q.o,h:q.h??Math.max(q.o,z),l:q.l??Math.min(q.o,z),c:z,v:q.v||0,f:null,t:null,m240:null,live:q.src||'live',lt:q.t})}
+  const q=LIVE.get(c);if(q&&!q.miss&&q.d&&bars.length&&q.d>bars[bars.length-1].d&&(q.o!=null||q.z!=null)){const o=q.o??q.z,z=q.z??q.pz??o;bars.push({d:q.d,o,h:q.h??Math.max(o,z),l:q.l??Math.min(o,z),c:z,v:q.v||0,f:null,t:null,m240:null,live:q.src||'live',lt:q.t})}
   if(bars.length<6)return null;
   // 分割／減資等大跳空（台股漲跌幅 10%，單日變動超過 ±35% 視為股數變動）：把之前的價位概略還原，否則小卡會被壓扁
   let split=false;for(let i=1;i<bars.length;i++){const k=bars[i].o/bars[i-1].c;if(k<0.65||k>1.55){split=true;for(let j=0;j<i;j++){const b=bars[j];b.o*=k;b.h*=k;b.l*=k;b.c*=k;b.v=Math.round(b.v/k)}}}
@@ -242,29 +246,31 @@ function build(c){const s=SHARD[c.slice(0,2)];if(!s||!s.d||!s.d[c])return null;c
   const dp=DH?Object.values(DH).filter(v=>v&&v.c===c&&v.start&&v.end).map(v=>[v.start,v.end]):[];
   const nd=HIST?Object.fromEntries(Object.entries(HIST).filter(([d,v])=>(v.att||[]).includes(c)).map(([d])=>[d,'y'])):{};
   if(TOPK&&THIST)Object.entries(THIST).forEach(([d,v])=>{if((v[TOPK]||[]).includes(c))nd[d]=TOPK});
-  return {c,n:NAME[c]||c,bars,nd,dp,px:last.c,chg:prev.c?last.c/prev.c-1:null,chg5:n>5&&bars[n-6].c?last.c/bars[n-6].c-1:null,chg20:n>20&&bars[n-21].c?last.c/bars[n-21].c-1:null,vr:v5?last.v/v5:null,ts:streak('t'),fs:streak('f'),t5:sum('t',5),f5:sum('f',5),t20:sum('t',20),f20:sum('f',20),
+  return {c,n:NAME[c]||c,bars,nd,dp,d:last.d,live:!!last.live,px:last.c,chg:prev.c?last.c/prev.c-1:null,chg5:n>5&&bars[n-6].c?last.c/bars[n-6].c-1:null,chg20:n>20&&bars[n-21].c?last.c/bars[n-21].c-1:null,vr:v5?last.v/v5:null,ts:streak('t'),fs:streak('f'),t5:sum('t',5),f5:sum('f',5),t20:sum('t',20),f20:sum('f',20),
     split,ma5,ma20,ma60,m240:last.m240,d20:ma20?last.c/ma20-1:null,d60:ma60?last.c/ma60-1:null,d240:last.m240?last.c/last.m240-1:null,hi20,brk:last.h>=hi20,pos60:hi60>lo60?(last.c-lo60)/(hi60-lo60):null,
     arr:ma5!=null&&ma20!=null&&ma60!=null?(ma5>ma20&&ma20>ma60?'多頭排列':ma5<ma20&&ma20<ma60?'空頭排列':'糾結'):'—'}}
 // 漲幅連點循環（2026-10-29）：日→週（5 日）→月（20 日），按鈕文字跟著變
 const CHGK=()=>CHGP==='w'?'chg5':CHGP==='m'?'chg20':'chg';
 function rows(){let R=ROWS.filter(r=>(!FL.ma20||(r.d20!=null&&r.d20>=0))&&(!FL.ma60||(r.d60!=null&&r.d60>=0))&&(!FL.ts3||r.ts>=3)&&(!FL.vr12||(r.vr!=null&&r.vr>=1.2)));
-  const ck=CHGK();const key={li:r=>-r.li,chg:r=>r[ck]??-9,vr:r=>r.vr??-9,ts:r=>r.ts,fs:r=>r.fs,d20:r=>r.d20??-9,h20:r=>(r.brk?10:0)+(r.hi20?r.px/r.hi20:0)}[sortK];
+  const ck=CHGK();const key={li:r=>-r.li,chg:r=>r.stale&&ck==='chg'?-99:(r[ck]??-9),vr:r=>r.stale?-99:(r.vr??-9),ts:r=>r.ts,fs:r=>r.fs,d20:r=>r.d20??-9,h20:r=>(r.brk?10:0)+(r.hi20?r.px/r.hi20:0)}[sortK];
   return R.sort((a,b)=>key(b)-key(a)||(b.chg??0)-(a.chg??0))}
 // 注意／處置標記：🟡 連 N 天注意、🟠 快達處置、🔴 處置中（剩 N 日）
 function nbadge(c){const m=PMAP?PMAP[c]:NMAP[c];if(!m)return '';return TLAB[m.k]?`<span class="tg" style="background:${TCOL[m.k]}" title="${esc(m.r)}">榜${m.n}</span>`:m.k==='g'?`<span class="tg" style="background:var(--accent)" title="處置剛結束">畢${m.n!=null?m.n:''}</span>`:m.k==='r'?`<span class="tg nr" title="處置中">處${m.n!=null?m.n:''}</span>`:m.k==='o'?`<span class="tg no" title="快達處置">快${m.n||''}</span>`:`<span class="tg ny" title="注意">注${m.n}</span>`}
 function badge(v,who){if(!v)return `<span class="tg n">${who}—</span>`;return `<span class="tg ${v>0?'b':'s'}">${who}${Math.min(Math.abs(v),9)}${v>0?'▲':'▼'}</span>`}
 function render(){
-  const R=rows();const all=ROWS.length;
-  $('cnt').innerHTML=all?`<b>${R.length}</b>／${all} 檔・最新 ${md(ROWS[0].bars[ROWS[0].bars.length-1].d)}・<b>${ROWS.filter(r=>r.d20!=null&&r.d20>=0).length}</b> 檔站上月線・<b>${ROWS.filter(r=>r.d60!=null&&r.d60>=0).length}</b> 檔站上季線・投信連買≥3 <b>${ROWS.filter(r=>r.ts>=3).length}</b> 檔・點小卡放大`:'';
-  if(!R.length){$('grid').innerHTML=`<div class="empty">${all?'沒有符合篩選條件的股票':'這個清單讀不到日K'}</div>`;return}
+  const DK=ROWS.reduce((m,r)=>r.d>m?r.d:m,'');ROWS.forEach(r=>r.stale=r.d<DK);   // 2026-10-30：以清單裡最新那天為基準，還停在前一天的＝昨收
+  const mn=c=>NAME[c]||(/^\d{5}$/.test(c)&&NAME[c.slice(0,4)]?NAME[c.slice(0,4)]+'可轉債'+c.slice(4):c);   // 5 碼＝可轉債（注意股名單常見），本站不收日K
+  const missTxt=MISS.length?`・<span class="miss">${MISS.length} 檔無日K</span>（${MISS.slice(0,6).map(c=>esc(mn(c))).join('、')}${MISS.length>6?'…':''}）`:'';
+  $('cnt').innerHTML=all?`<b>${R.length}</b>／${all} 檔${missTxt}・最新 ${md(DK)}${nSt?`・<b>${nSt}</b> 檔仍為昨收（排最後）`:''}・<b>${ROWS.filter(r=>r.d20!=null&&r.d20>=0).length}</b> 檔站上月線・<b>${ROWS.filter(r=>r.d60!=null&&r.d60>=0).length}</b> 檔站上季線・投信連買≥3 <b>${ROWS.filter(r=>r.ts>=3).length}</b> 檔・點小卡放大`:'';
+  if(!R.length){$('grid').innerHTML=`<div class="empty">${all?'沒有符合篩選條件的股票':'這個清單讀不到日K'+(MISS.length?'（'+MISS.map(c=>esc(mn(c))).join('、')+'）':'')}</div>`;return}
   $('grid').innerHTML=R.map((r,i)=>`<article class="km${r.brk&&r.chg>0?' hot':''}" data-i="${i}" role="button" tabindex="0">
     <div class="km-h"><span class="rk">${i+1}</span><b>${esc(r.n)}</b><span class="cd">${esc(r.c)}</span>${r.split?'<span class="cd" title="近 130 日有分割／股數變動，價位概略還原">⚠</span>':''}${liveTag(r)}${nbadge(r.c)}</div>
-    <div class="km-s"><span class="${cls(r.chg)}">${pct(r.chg)}</span>${CHGP!=='d'?`<span class="${cls(r[CHGK()])}">${CHGP==='w'?'週':'月'}${pct(r[CHGK()])}</span>`:''}<span class="vr${r.vr>=1.5?' hi':''}">量${r.vr==null?'—':r.vr.toFixed(1)+'×'}</span>${badge(r.ts,'投')}${badge(r.fs,'外')}</div>
+    <div class="km-s"><span class="${cls(r.chg)}${r.stale?' st':''}" title="${r.stale?'昨天收盤的漲跌幅':''}">${r.stale?'昨':''}${pct(r.chg)}</span>${CHGP!=='d'?`<span class="${cls(r[CHGK()])}">${CHGP==='w'?'週':'月'}${pct(r[CHGK()])}</span>`:''}<span class="vr${r.vr>=1.5?' hi':''}">量${r.vr==null?'—':r.vr.toFixed(1)+'×'}</span>${badge(r.ts,'投')}${badge(r.fs,'外')}</div>
     <canvas class="km-cv"></canvas></article>`).join('');
   const io=new IntersectionObserver(es=>{es.forEach(e=>{if(!e.isIntersecting)return;const el=e.target,cv=el.querySelector('canvas');if(!cv.dataset.done){drawK(cv,R[+el.dataset.i],N,{mini:true});cv.dataset.done=1}io.unobserve(el)})},{rootMargin:'300px 0px'});
   if(window.VIO)VIO.disconnect();window.VIO=new IntersectionObserver(es=>{es.forEach(e=>{const c=R[+e.target.dataset.i]&&R[+e.target.dataset.i].c;if(!c)return;e.isIntersecting?VISIBLE.add(c):VISIBLE.delete(c)})},{rootMargin:'120px 0px'});
   $('grid').querySelectorAll('.km').forEach(el=>{io.observe(el);VIO.observe(el);el.onclick=()=>openSheet(R,+el.dataset.i);el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openSheet(R,+el.dataset.i)}}});
-  $('foot').innerHTML=`小卡＝近 ${N} 根日K（<span class="num" style="color:var(--ma20)">━</span> 20日線、<span class="num" style="color:var(--ma60)">━</span> 60日線、紅虛線＝前 20 日最高），下面兩條＝投信／外資每日買賣超（紅買綠賣）。「榜序」＝照名單原本順序（買超前 20 的第 1～20 名、注意股連續天數、處置剩餘日），只在這些名單出現、進入時預設；「日漲」鈕連點循環日／週（5 日）／月（20 日）漲幅排序；量比＝今日量 ÷ 前 5 日均量；投／外＝連續買（▲）賣（▼）天數；紅框＝今天上漲且觸及前 20 日高；⚠＝近 130 日有分割（價位概略還原，未還原除權息）。<b>注N</b>＝連 N 天列注意、<b>快N</b>＝快達處置、<b>處N</b>＝處置中剩 N 個交易日（名單每日 17:25 更新）；K 棒底下 <span style="color:#e0a800">●</span>＝那天被列注意、<span style="color:var(--up)">●</span>＝處置期間（上市 9/14 起、上櫃 10/27 起有紀錄）。K 棒上<span style="background:var(--up);opacity:.25">　　</span>淡紅底＝處置期間（起迄來自官方公告，迄日當天算結束）。選注意／快達／處置／快結束／剛結束任一名單時，最左邊的日期選單可看前幾天的名單（K 棒照舊畫到最新交易日，虛線＝那天）；過去的快達處置名單為估算（近10日≥5次或近30日≥11次）；<b>畢N</b>＝處置結束後第 N 個交易日。投信／外資／土洋買超前 20 也可用日期選單看前幾天的名單（9/29 起累積），小卡 <b>榜N</b>＝連續 N 天上榜，K 棒底下的彩色點＝那天在這個榜上。盤中最右邊虛線框那根＝<b>今天即時 K 棒</b>（每 60 秒更新畫面上看得到的小卡；小卡右上 <span style="color:var(--warm)">●</span>＝即時、灰 ●＝延遲約 20 分、○＝這輪沒拿到報價），收盤後排程更新前也先顯示它。籌碼資料近 60 個交易日，K 線 130 日；分片資料與估值看板個股頁同一份。`;
+  $('foot').innerHTML=`小卡＝近 ${N} 根日K（<span class="num" style="color:var(--ma20)">━</span> 20日線、<span class="num" style="color:var(--ma60)">━</span> 60日線、紅虛線＝前 20 日最高），下面兩條＝投信／外資每日買賣超（紅買綠賣）。「榜序」＝照名單原本順序（買超前 20 的第 1～20 名、注意股連續天數、處置剩餘日），只在這些名單出現、進入時預設；「日漲」鈕連點循環日／週（5 日）／月（20 日）漲幅排序；量比＝今日量 ÷ 前 5 日均量；投／外＝連續買（▲）賣（▼）天數；紅框＝今天上漲且觸及前 20 日高；⚠＝近 130 日有分割（價位概略還原，未還原除權息）。<b>注N</b>＝連 N 天列注意、<b>快N</b>＝快達處置、<b>處N</b>＝處置中剩 N 個交易日（名單每日 17:25 更新）；K 棒底下 <span style="color:#e0a800">●</span>＝那天被列注意、<span style="color:var(--up)">●</span>＝處置期間（上市 9/14 起、上櫃 10/27 起有紀錄）。K 棒上<span style="background:var(--up);opacity:.25">　　</span>淡紅底＝處置期間（起迄來自官方公告，迄日當天算結束）。選注意／快達／處置／快結束／剛結束任一名單時，最左邊的日期選單可看前幾天的名單（K 棒照舊畫到最新交易日，虛線＝那天）；過去的快達處置名單為估算（近10日≥5次或近30日≥11次）；<b>畢N</b>＝處置結束後第 N 個交易日。投信／外資／土洋買超前 20 也可用日期選單看前幾天的名單（9/29 起累積），小卡 <b>榜N</b>＝連續 N 天上榜，K 棒底下的彩色點＝那天在這個榜上。盤中最右邊虛線框那根＝<b>今天即時 K 棒</b>（每 60 秒更新畫面上看得到的小卡；小卡右上小標 <b>即</b>＝即時、<b>延</b>＝Yahoo 延遲約 20 分、<b>未</b>＝今天還沒成交（漲停／跌停鎖死常見）、<b>昨</b>＝還是昨收、○＝這輪沒拿到報價；開盤初期「昨」的小卡漲幅顯示「昨▲x%」並排在最後，排序只比同一天的數字）。名單有股票讀不到日K（新掛牌、ETF、已下市）時統計列會標「N 檔無日K」並列出名稱，收盤後排程更新前也先顯示它。籌碼資料近 60 個交易日，K 線 130 日；分片資料與估值看板個股頁同一份。`;
 }
 // ---- 畫 K：mini（小卡）與 full（放大卡） ----
 function drawK(cv,r,NN,opt){
@@ -344,7 +350,12 @@ const LIVE_API='https://twse-live.jey2204.workers.dev';const LIVE=new Map();let 
 function tpe(){const d=new Date(Date.now()+8*3600e3);return {ymd:d.toISOString().slice(0,10).replace(/-/g,''),min:d.getUTCHours()*60+d.getUTCMinutes(),dow:d.getUTCDay()}}
 function marketOpenNow(){const t=tpe();return t.dow>=1&&t.dow<=5&&t.min>=8*60+59&&t.min<=13*60+36}
 function shardLatest(){let m='';Object.values(SHARD).forEach(s=>{if(s&&s.days&&s.days.length)m=s.days[s.days.length-1]>m?s.days[s.days.length-1]:m});return m}
-function liveTag(r){const lb=r.bars[r.bars.length-1];if(!lb||!lb.live){const q=LIVE.get(r.c);return q&&q.miss?'<span class="lvdot dl" title="這輪沒取得今天報價（Yahoo 查不到），下一輪再試">○</span>':''}return `<span class="lvdot${lb.live==='yahoo'?' dl':''}" title="${lb.live==='yahoo'?'Yahoo 延遲約 20 分':'即時'} ${esc((lb.lt||'').slice(0,5))}">●</span>`}
+// 2026-10-30：小卡狀態小標 即＝即時、延＝Yahoo 延遲、未＝今天還沒成交（常見於開盤即漲停／跌停鎖死）、昨＝還是昨收（等下一輪）、○＝這輪沒拿到報價
+function liveTag(r){const lb=r.bars[r.bars.length-1];
+  if(lb&&lb.live)return `<span class="lv${lb.live==='yahoo'?' dl':''}" title="${lb.live==='yahoo'?'Yahoo 延遲約 20 分':'即時'} ${esc((lb.lt||'').slice(0,5))}">${lb.live==='yahoo'?'延':'即'}</span>`;
+  const q=LIVE.get(r.c);if(q&&q.miss)return '<span class="lv dl" title="這輪沒取得今天報價，下一輪再試">○</span>';
+  if(q&&q.d&&lb&&q.d>lb.d)return '<span class="lv dl" title="今天還沒有成交（開盤即漲停／跌停鎖死時常見），K 棒仍是昨收">未</span>';
+  if(r.stale)return '<span class="lv st" title="還是昨天的收盤，等即時更新">昨</span>';return ''}
 function liveWant(){const t=tpe();if(document.visibilityState!=='visible')return false;if(marketOpenNow())return true;
   // 收盤後：分片最新日 < 今天（排程還沒跑）就補問一次
   return t.dow>=1&&t.dow<=5&&t.min>13*60+36&&shardLatest()<t.ymd&&!liveAfterClose}
