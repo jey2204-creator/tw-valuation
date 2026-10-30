@@ -259,6 +259,7 @@ function nbadge(c){const m=PMAP?PMAP[c]:NMAP[c];if(!m)return '';return TLAB[m.k]
 function badge(v,who){if(!v)return `<span class="tg n">${who}—</span>`;return `<span class="tg ${v>0?'b':'s'}">${who}${Math.min(Math.abs(v),9)}${v>0?'▲':'▼'}</span>`}
 function render(){
   const DK=ROWS.reduce((m,r)=>r.d>m?r.d:m,'');ROWS.forEach(r=>r.stale=r.d<DK);   // 2026-10-30：以清單裡最新那天為基準，還停在前一天的＝昨收
+  const R=rows();const all=ROWS.length,nSt=ROWS.filter(r=>r.stale).length;
   const mn=c=>NAME[c]||(/^\d{5}$/.test(c)&&NAME[c.slice(0,4)]?NAME[c.slice(0,4)]+'可轉債'+c.slice(4):c);   // 5 碼＝可轉債（注意股名單常見），本站不收日K
   const missTxt=MISS.length?`・<span class="miss">${MISS.length} 檔無日K</span>（${MISS.slice(0,6).map(c=>esc(mn(c))).join('、')}${MISS.length>6?'…':''}）`:'';
   $('cnt').innerHTML=all?`<b>${R.length}</b>／${all} 檔${missTxt}・最新 ${md(DK)}${nSt?`・<b>${nSt}</b> 檔仍為昨收（排最後）`:''}・<b>${ROWS.filter(r=>r.d20!=null&&r.d20>=0).length}</b> 檔站上月線・<b>${ROWS.filter(r=>r.d60!=null&&r.d60>=0).length}</b> 檔站上季線・投信連買≥3 <b>${ROWS.filter(r=>r.ts>=3).length}</b> 檔・點小卡放大`:'';
