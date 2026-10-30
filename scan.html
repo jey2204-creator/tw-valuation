@@ -346,8 +346,8 @@ addEventListener('keydown',e=>{if(openI<0)return;if(e.key==='Escape')closeSheet(
 let rt;addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>{render();if(openI>=0)fillSheet()},150)});
 addEventListener('hashchange',()=>{const h=decodeURIComponent(location.hash.slice(1));if(h.startsWith('n/')){const id='n'+h.slice(2);if(!cur||cur.kind!=='t'||cur.id!==id)pick(THEMES.some(t=>t.id===id)?{kind:'t',id}:{kind:'n',id:h.slice(2)})}else if(h.startsWith('i/')){if(!cur||cur.kind!=='i'||cur.id!==h.slice(2))pick({kind:'i',id:h.slice(2)})}else if(THEMES.some(t=>t.id===h)&&(!cur||cur.kind!=='t'||cur.id!==h))pick({kind:'t',id:h})});
 // ---- 即時 K 棒（2026-10-29）：用投本比頁同一個 Cloudflare Worker（MIS→富果→Yahoo），只在頁面前景＋盤中才問，
-//      每 60 秒一輪、只問畫面上看得到的小卡（≤25 檔），不帶 p=1（讓投本比頁優先用富果額度）；收盤後分片還沒更新時只補問一次。
-const LIVE_API='https://twse-live.jey2204.workers.dev';const LIVE=new Map();let liveTimer=null,liveBusy=false,liveAfterClose=false,VISIBLE=new Set();
+//      每 60 秒一輪、只問畫面上看得到的小卡（≤25 檔），不帶 p=1（讓投本比頁優先用富果額度）；收盤後分片還沒更新時持續補問到可視小卡都拿到今天報價（最多 12 輪）。
+const LIVE_API='https://twse-live.jey2204.workers.dev';const LIVE=new Map();let liveTimer=null,liveBusy=false,liveAfterClose=0,VISIBLE=new Set();
 function tpe(){const d=new Date(Date.now()+8*3600e3);return {ymd:d.toISOString().slice(0,10).replace(/-/g,''),min:d.getUTCHours()*60+d.getUTCMinutes(),dow:d.getUTCDay()}}
 function marketOpenNow(){const t=tpe();return t.dow>=1&&t.dow<=5&&t.min>=8*60+59&&t.min<=13*60+36}
 function shardLatest(){let m='';Object.values(SHARD).forEach(s=>{if(s&&s.days&&s.days.length)m=s.days[s.days.length-1]>m?s.days[s.days.length-1]:m});return m}
@@ -359,7 +359,13 @@ function liveTag(r){const lb=r.bars[r.bars.length-1];
   if(r.stale)return '<span class="lv st" title="還是昨天的收盤，等即時更新">昨</span>';return ''}
 function liveWant(){const t=tpe();if(document.visibilityState!=='visible')return false;if(marketOpenNow())return true;
   // 收盤後：分片最新日 < 今天（排程還沒跑）就補問一次
-  return t.dow>=1&&t.dow<=5&&t.min>13*60+36&&shardLatest()<t.ymd&&!liveAfterClose}
+  // 2026-10-30：以前只補問「一次」，那一輪若只拿到部分報價（MIS 偶爾漏股、富果額度用完、Yahoo 查不到），其他小卡就整個下午卡在「昨」。
+  //             改成：可視小卡還有人沒拿到今天的報價就繼續每 60 秒問，最多 12 輪（約 12 分鐘）；全部拿到就停。
+  if(!(t.dow>=1&&t.dow<=5&&t.min>13*60+36&&shardLatest()<t.ymd))return false;
+  if(liveAfterClose>=12)return false;
+  return CUR_IDS.some(c=>VISIBLE.has(c)&&MKT[c]&&!liveHasToday(c))}
+function liveHasToday(c){const q=LIVE.get(c);return !!(q&&!q.miss&&q.d===tpe().ymd&&(q.o!=null||q.z!=null||q.pz!=null))}
+let LIVE_DBG=null;
 async function liveRefresh(){if(liveBusy||!liveWant())return;const ids=CUR_IDS.filter(c=>VISIBLE.has(c)&&MKT[c]).slice(0,25);if(!ids.length)return;liveBusy=true;
   try{const ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),20000);
     // 投本比即時頁 90 秒內有刷新（localStorage 心跳）→ 讓它優先用富果；否則這頁帶 p=1 自己優先
@@ -367,13 +373,19 @@ async function liveRefresh(){if(liveBusy||!liveWant())return;const ids=CUR_IDS.f
     const res=await fetch(LIVE_API+'/?s='+ids.map(c=>(MKT[c]==='上櫃'?'otc_':'tse_')+c).join(',')+(pri?'&p=1':''),{signal:ctl.signal,cache:'no-store'});clearTimeout(to);
     const j=await res.json();if(j&&j.q){const now=Date.now();const got=new Set(j.q.map(q=>q&&q.c));ids.forEach(c=>{if(!got.has(c)&&!LIVE.get(c))LIVE.set(c,{c,miss:true,_at:now})});j.q.forEach(q=>{if(!q||!q.c)return;const old=LIVE.get(q.c);if(q.src==='yahoo'&&old&&old.src!=='yahoo'&&now-old._at<15*60000)return;
         if(q.z==null&&q.pz==null&&old&&!old.miss&&old.d===q.d&&(old.z??old.pz)!=null)q.pz=old.z??old.pz;   // 這輪沒成交價就沿用上一輪的最後成交價
+        // 2026-10-30：收盤後拿到的報價若日期不是今天（來源回舊快照），視同沒拿到→小標 ○、下一輪再問，不再默默停在「昨」
+        if(!marketOpenNow()&&q.d&&q.d<tpe().ymd){LIVE.set(q.c,{c:q.c,miss:true,_at:now,_old:q});return}
         q._at=now;LIVE.set(q.c,q)});
-      if(!marketOpenNow())liveAfterClose=true;
+      if(!marketOpenNow())liveAfterClose++;
+      LIVE_DBG={at:new Date().toTimeString().slice(0,8),ask:ids,n:j.n,src:j.src,fb:j.fb,err:j.err,q:j.q.map(q=>q&&[q.c,q.d,q.t,q.z??q.pz,q.src].join('|'))};if(location.search.includes('dbg=1'))liveDbgShow();
       const top=scrollY;ROWS=CUR_IDS.map(c=>build(c)).filter(Boolean);render();scrollTo(0,top);if(openI>=0){SHR=rows();fillSheet()}}
   }catch(e){}
   liveBusy=false}
+function liveDbgShow(){let el=document.getElementById('livedbg');if(!el){el=document.createElement('pre');el.id='livedbg';el.style.cssText='font-size:11px;white-space:pre-wrap;word-break:break-all;background:var(--card,#fff);border:1px solid #c33;padding:8px;margin:8px;border-radius:8px';document.body.appendChild(el)}
+  el.textContent='即時除錯（?dbg=1）'+(LIVE_DBG?JSON.stringify(LIVE_DBG,null,1):'：還沒問過（盤外且分片已是今天，或頁面不在前景）')+'\n輪數='+liveAfterClose+' 可視='+[...VISIBLE].join(',')}
 function liveKick(){clearInterval(liveTimer);liveTimer=setInterval(liveRefresh,60000);setTimeout(liveRefresh,1500)}
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')liveRefresh()});
+if(location.search.includes('dbg=1'))setTimeout(liveDbgShow,2500);
 init();
 </script>
 </body>
