@@ -230,7 +230,7 @@ async function loadShard(g){if(SHARD[g]!==undefined)return SHARD[g];SHARD[g]=nul
 function build(c){const s=SHARD[c.slice(0,2)];if(!s||!s.d||!s.d[c])return null;const days=s.days,rows=s.d[c];
   const bars=[];rows.forEach((r,i)=>{if(!r||r[0]==null)return;const cl=r[0],o=r[8]??cl,h=r[9]??Math.max(o,cl),l=r[10]??Math.min(o,cl);bars.push({d:days[i],o,h,l,c:cl,v:r[1]||0,f:r[2],t:r[3],m240:r[11]})});
   // 即時（2026-10-29）：盤中把今天那根 K 棒接在日 K 最後（資料來自 twse-live Worker；收盤後排程更新分片前也先用它）
-  const q=LIVE.get(c);if(q&&!q.miss&&q.d&&bars.length&&q.d>bars[bars.length-1].d&&(q.o!=null||q.z!=null)){const o=q.o??q.z,z=q.z??q.pz??o;bars.push({d:q.d,o,h:q.h??Math.max(o,z),l:q.l??Math.min(o,z),c:z,v:q.v||0,f:null,t:null,m240:null,live:q.src||'live',lt:q.t})}
+  const q=LIVE.get(c);if(q&&!q.miss&&q.d&&bars.length&&q.d>bars[bars.length-1].d&&(q.o!=null||q.z!=null)){const o=q.o??q.z??q.pz,z=q.z??q.pz??q.b1??q.a1??o;/* 2026-10-30：MIS 快照沒成交價（z='-'）時依序用前一筆成交價→最佳買價→賣價，最後才用開盤價（以前直接用開盤價，麗臺 109 vs 實際 103.5） */bars.push({d:q.d,o,h:q.h??Math.max(o,z),l:q.l??Math.min(o,z),c:z,v:q.v||0,f:null,t:null,m240:null,live:q.src||'live',lt:q.t})}
   if(bars.length<6)return null;
   // 分割／減資等大跳空（台股漲跌幅 10%，單日變動超過 ±35% 視為股數變動）：把之前的價位概略還原，否則小卡會被壓扁
   let split=false;for(let i=1;i<bars.length;i++){const k=bars[i].o/bars[i-1].c;if(k<0.65||k>1.55){split=true;for(let j=0;j<i;j++){const b=bars[j];b.o*=k;b.h*=k;b.l*=k;b.c*=k;b.v=Math.round(b.v/k)}}}
@@ -365,7 +365,9 @@ async function liveRefresh(){if(liveBusy||!liveWant())return;const ids=CUR_IDS.f
     // 投本比即時頁 90 秒內有刷新（localStorage 心跳）→ 讓它優先用富果；否則這頁帶 p=1 自己優先
     let hb=0;try{hb=+localStorage.getItem('live_hb')||0}catch(e){}const pri=Date.now()-hb>90000;
     const res=await fetch(LIVE_API+'/?s='+ids.map(c=>(MKT[c]==='上櫃'?'otc_':'tse_')+c).join(',')+(pri?'&p=1':''),{signal:ctl.signal,cache:'no-store'});clearTimeout(to);
-    const j=await res.json();if(j&&j.q){const now=Date.now();const got=new Set(j.q.map(q=>q&&q.c));ids.forEach(c=>{if(!got.has(c)&&!LIVE.get(c))LIVE.set(c,{c,miss:true,_at:now})});j.q.forEach(q=>{if(!q||!q.c)return;const old=LIVE.get(q.c);if(q.src==='yahoo'&&old&&old.src!=='yahoo'&&now-old._at<15*60000)return;q._at=now;LIVE.set(q.c,q)});
+    const j=await res.json();if(j&&j.q){const now=Date.now();const got=new Set(j.q.map(q=>q&&q.c));ids.forEach(c=>{if(!got.has(c)&&!LIVE.get(c))LIVE.set(c,{c,miss:true,_at:now})});j.q.forEach(q=>{if(!q||!q.c)return;const old=LIVE.get(q.c);if(q.src==='yahoo'&&old&&old.src!=='yahoo'&&now-old._at<15*60000)return;
+        if(q.z==null&&q.pz==null&&old&&!old.miss&&old.d===q.d&&(old.z??old.pz)!=null)q.pz=old.z??old.pz;   // 這輪沒成交價就沿用上一輪的最後成交價
+        q._at=now;LIVE.set(q.c,q)});
       if(!marketOpenNow())liveAfterClose=true;
       const top=scrollY;ROWS=CUR_IDS.map(c=>build(c)).filter(Boolean);render();scrollTo(0,top);if(openI>=0){SHR=rows();fillSheet()}}
   }catch(e){}
