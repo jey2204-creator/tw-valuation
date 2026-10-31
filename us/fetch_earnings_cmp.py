@@ -141,11 +141,8 @@ def main():
     lo = cmp.get("since") or (dt.date.today() - dt.timedelta(days=92)).isoformat()
     try:
         idx = [s["id"] for s in json.loads((ROOT / "data" / "index.json").read_text())] + MEGA
-        ecal = json.loads((ROOT / "data" / "earnings.json").read_text()).get("e", {})
-        hi = dt.date.today().isoformat()
-        for tk in idx:
-            if tk in tickers: continue
-            if any(lo <= (x[0] or "") <= hi for x in ecal.get(tk, [])):
+        for tk in idx:   # 全部都問 Finnhub（日曆只回溯 7 天，不能靠它篩），公布日早於 since 的在下面丟掉；約 75 檔 × 2 次呼叫 ≈ 3 分鐘
+            if tk not in tickers:
                 tickers.append(tk); overrides[tk] = {"_theme": True}
     except Exception as e:  # noqa
         print(f"[warn] 主題股名單: {e}", file=sys.stderr)
