@@ -538,10 +538,8 @@ def card(i):
     e = s.get("eps")
     arrow = "🔴" if (i.get("epsYoy") or 0) > 0 or i.get("epsYoyT") == "轉盈" or i.get("epsYoyT") == ">+300%" else \
             "🟢" if (i.get("epsYoy") or 0) < 0 or i.get("epsYoyT") in ("轉虧", "虧損") else "⚪"
-    L = [f"{arrow} <b>{esc(i['c'])} {esc(i['n'])}</b>　{i['q'][2:]} {kind}",
-         f"EPS <b>{e if e is not None else '—'}</b> 元（年增 {gtxt(i.get('epsYoy'), i.get('epsYoyT'))}・去年 {(i.get('ly') or {}).get('eps', '—')}）"]
-    if s.get("ni") is not None:
-        L.append(f"淨利 {s['ni']:,.1f} 億（年增 {gtxt(i.get('yoy'), i.get('yoyT'))}・季增 {gtxt(i.get('qoq'), i.get('qoqT'))}）")
+    # 順序跟網頁卡片一致（2026/10/31）：營收 → 三率 → 淨利 → EPS → 近四季
+    L = [f"{arrow} <b>{esc(i['c'])} {esc(i['n'])}</b>　{i['q'][2:]} {kind}"]
     if s.get("rev") is not None:
         L.append(f"營收 {s['rev']:,.1f} 億（年增 {gtxt(i.get('rvYoy'), None)}）")
     m = []
@@ -549,10 +547,15 @@ def card(i):
         m.append(f"毛 {i['gm']:.1f}%")
     if i.get("om") is not None:
         m.append(f"營 {i['om']:.1f}%")
-    if i.get("nonop") is not None:
-        m.append(("⚠️ " if i["nonop"] >= 30 else "") + f"業外 {i['nonop']:.0f}%")
+    if i.get("nm") is not None:
+        m.append(f"淨 {i['nm']:.1f}%")
+    if i.get("nonop") is not None and i["nonop"] >= 30:
+        m.append(f"⚠️ 業外 {i['nonop']:.0f}%")
     if m:
         L.append("・".join(m))
+    if s.get("ni") is not None:
+        L.append(f"淨利 {s['ni']:,.1f} 億（年增 {gtxt(i.get('yoy'), i.get('yoyT'))}・季增 {gtxt(i.get('qoq'), i.get('qoqT'))}）")
+    L.append(f"EPS <b>{e if e is not None else '—'}</b> 元（年增 {gtxt(i.get('epsYoy'), i.get('epsYoyT'))}・去年 {(i.get('ly') or {}).get('eps', '—')}{'*' if i.get('adj') else ''}）")
     if i.get("ttm") is not None:
         L.append(f"近四季 EPS {i['ttm']}" + (f" → 本益比 {i['pe']}" if i.get("pe") else ""))
     L.append(f'<a href="{SITE}#{i["c"]}">個股頁</a>　<a href="{SITE}flash.html">快訊</a>')
