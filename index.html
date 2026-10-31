@@ -855,11 +855,13 @@ function renderCf(){
   const o=base(),ch=mk('cCf');o.xAxis.data=S.map(x=>x.l);o.yAxis.scale=false;
   // 盈餘品質線：淨利接近 0 時比率會暴衝 → 圖上截在 3 倍（提示框顯示實際值）
   o.yAxis=[o.yAxis,{...o.yAxis,scale:false,max:3,min:v=>Math.min(0,Math.floor(v.min*2)/2),splitLine:{show:false},axisLabel:{...o.yAxis.axisLabel,formatter:'{value}倍'}}];
-  o.series=[{name:'營業現金流',type:'bar',data:S.map(x=>x.ocf),itemStyle:{color:acc,borderRadius:[2,2,0,0]},barGap:'10%',barCategoryGap:'30%'},
-    {name:'自由現金流',type:'bar',data:S.map(x=>({value:+x.fcf.toFixed(1),itemStyle:{color:x.fcf<0?up:css('--accent2')}})),itemStyle:{color:css('--accent2'),borderRadius:[2,2,0,0]}},
+  const FL=D.cfFl,ac2=css('--accent2'),fl=(c,v)=>({value:v,itemStyle:{color:rgba(c,.3),borderColor:c,borderWidth:1.5,borderType:'dashed'}});
+  o.series=[{name:'營業現金流',type:'bar',data:S.map(x=>x.l===FL?fl(acc,x.ocf):x.ocf),itemStyle:{color:acc,borderRadius:[2,2,0,0]},barGap:'10%',barCategoryGap:'30%',
+      markArea:FL&&S.some(x=>x.l===FL)?{silent:true,itemStyle:{color:rgba(warm,.14)},label:{show:true,position:'insideTop',fontSize:9,color:warm,formatter:'快訊'},data:[[{xAxis:FL},{xAxis:FL}]]}:undefined},
+    {name:'自由現金流',type:'bar',data:S.map(x=>x.l===FL?fl(x.fcf<0?up:ac2,+x.fcf.toFixed(1)):({value:+x.fcf.toFixed(1),itemStyle:{color:x.fcf<0?up:ac2}})),itemStyle:{color:ac2,borderRadius:[2,2,0,0]}},
     {name:'盈餘品質(近四季)',type:'line',yAxisIndex:1,data:S.map(x=>x.qr==null?null:+Math.min(x.qr,3).toFixed(2)),symbol:'none',connectNulls:false,lineStyle:{width:2,color:warm},itemStyle:{color:warm},
       markLine:{silent:true,symbol:'none',label:{show:false},lineStyle:{color:warm,type:'dashed',opacity:.6},data:[{yAxis:1}]}}];
-  o.tooltip.formatter=ps=>{const x=S[ps[0].dataIndex];return `<b>${x.l}</b><br>營業現金流 ${f(x.ocf)} 億<br>− 資本支出 ${f(x.cx)} 億<br>= 自由現金流 <b>${f(x.fcf)}</b> 億<br>稅後淨利 ${f(x.ni)} 億`+
+  o.tooltip.formatter=ps=>{const x=S[ps[0].dataIndex];return `<b>${x.l}</b>${x.l===FL?'（快訊）':''}<br>營業現金流 ${f(x.ocf)} 億<br>− 資本支出 ${f(x.cx)} 億<br>= 自由現金流 <b>${f(x.fcf)}</b> 億<br>稅後淨利 ${f(x.ni)} 億`+
     (x.qr!=null?`<br>近四季 營業現金流 ÷ 淨利 ${x2(x.qr)} 倍`:x.n4!=null&&x.n4<=0?'<br>近四季淨利虧損，品質比不適用':'')};
   ch.setOption(o,true);ch.resize();
   // 結論
@@ -870,6 +872,7 @@ function renderCf(){
     bad:'帳面賺錢但現金收不回來，扣掉資本支出後也是負的 → EPS 的含金量要打折'}[X.v];
   $('tCf').innerHTML=`<span class="pill ${V[0]}">${V[1]}</span> ${why}<br>近四季 營業現金流 <strong>${f(r.o4)} 億</strong> − 資本支出 <strong>${f(r.c4)} 億</strong> = 自由現金流 <strong>${f(r.f4)} 億</strong>`+
     (r.v4?`（占營收 ${fmt(r.f4/r.v4*100,1)}%）`:'')+(D.shares?`・每股 <strong>${fmt(r.f4/D.shares,2)} 元</strong>`:'')+
+    (r.l===FL?`<br><span class="pill">財報快訊</span> ${r.l} 是董事會通過財報後觀測站剛上傳的現金流量表（${(D.invFlOn||D.cxFlOn||'').slice(5).replace('-','/')} 取得），財報資料庫更新前先帶入，圖上以虛線框標示`:'')+
     (D.cyclical?'<br><span class="pill">循環股</span> 擴產期自由現金流轉負很常見；危險的是「營業現金流也開始下滑」時資本支出還在加碼':'');
   // 檢查清單
   const LT={R:'🔴',A:'🟡',G:'🟢',na:'⚪',loss:'⚪'};
@@ -888,7 +891,9 @@ function renderCx(){
   const acc=css('--accent'),pad=a=>[...a,...E.map(()=>null)],nul=X.map(()=>null);
   const o=base(),c=mk('cCx'),hasDp=X.some(x=>x[2]!=null);o.xAxis.data=[...X.map(x=>x[0]),...E.map(e=>e[0])];o.yAxis.scale=false;
   o.yAxis=[o.yAxis,{...o.yAxis,scale:true,splitLine:{show:false},axisLabel:{...o.yAxis.axisLabel,formatter:'{value}%'}}];
-  o.series=[{name:'資本支出',type:'bar',stack:'cx',data:pad(X.map(x=>x[1])),itemStyle:{color:acc,borderRadius:[2,2,0,0]},barGap:'10%'}];
+  const CF=D.cxFl;
+  o.series=[{name:'資本支出',type:'bar',stack:'cx',data:pad(X.map(x=>x[0]===CF?{value:x[1],itemStyle:{color:rgba(acc,.3),borderColor:acc,borderWidth:1.5,borderType:'dashed'}}:x[1])),itemStyle:{color:acc,borderRadius:[2,2,0,0]},barGap:'10%',
+    markArea:CF&&X.some(x=>x[0]===CF)?{silent:true,itemStyle:{color:rgba(css('--warm'),.14)},label:{show:true,position:'insideTop',fontSize:9,color:css('--warm'),formatter:'快訊'},data:[[{xAxis:CF},{xAxis:CF}]]}:undefined}];
   if(hasDp)o.series.push({name:'折舊',type:'bar',data:pad(X.map(x=>x[2])),itemStyle:{color:css('--est'),borderRadius:[2,2,0,0]}});
   o.series.push({name:'占營收',type:'line',yAxisIndex:1,data:pad(X.map(x=>x[3])),symbol:'none',lineStyle:{width:2,color:css('--warm')},itemStyle:{color:css('--warm')}});
   if(E.length){const lc=rgba(acc,.12); // 空心柱（淡底＋外框）：跟實心的資本支出、淡藍的折舊分得開
@@ -897,7 +902,7 @@ function renderCx(){
     o.legend.data=['資本支出',...(hasDp?['折舊']:[]),'占營收',{name:'指引隱含',itemStyle:{color:lc,borderColor:acc,borderWidth:1.5}}]}
   o.tooltip.formatter=ps=>{const i=ps[0].dataIndex;
     if(i>=X.length){const e=E[i-X.length];return `<b>${e[0]} 公司指引隱含</b><br>${fmt(cg.uLo,1)}～${fmt(cg.uHi,1)} 億美元<br>≈ ${fmt(e[1])}～${fmt(e[2])} 億元（匯率 ${cg.fx}）<br>全年指引 ${cg.lo}～${cg.hi} 億美元`}
-    const x=X[i];return `<b>${x[0]}</b><br>資本支出 ${fmt(x[1],x[1]<100?1:0)} 億<br>`+(x[2]!=null?`折舊 ${fmt(x[2],x[2]<100?1:0)} 億<br>`:'')+`占營收 ${x[3]??'—'}%`+(x[0]===D.injCx?'<br>（公司法說公布；折舊為折舊及攤銷）':'')};
+    const x=X[i];return `<b>${x[0]}</b><br>資本支出 ${fmt(x[1],x[1]<100?1:0)} 億<br>`+(x[2]!=null?`折舊 ${fmt(x[2],x[2]<100?1:0)} 億<br>`:'')+`占營收 ${x[3]??'—'}%`+(x[0]===D.injCx?'<br>（公司法說公布；折舊為折舊及攤銷）':x[0]===CF?'<br>（財報快訊：觀測站現金流量表）':'')};
   c.setOption(o,true);c.resize();
   const A=D.capex,l=A[A.length-1],ly=A.find(x=>x[0]===(+l[0].slice(0,2)-1)+l[0].slice(2)),f=v=>fmt(v,v<100?1:0);
   const l4=A.slice(-4),s4=sum(l4.map(x=>x[1])),q4=Q.filter(x=>l4.some(z=>z[0]===x[0])),r4=sum(q4.map(x=>x[1]));
@@ -906,6 +911,7 @@ function renderCx(){
     (d4?`<br>資本支出 ÷ 折舊 <strong>${(s4/d4).toFixed(2)} 倍</strong>（&gt;1 代表產能仍在擴張，未來折舊會增加，壓抑毛利率）`:'');
   if(cg)$('tCx').innerHTML+=`<br><span class="pill">公司指引</span> ${cg.y} 全年 <strong>${cg.lo}～${cg.hi} 億美元</strong>；${cg.done.map(h=>h.q.slice(2)).join('+')} 已花 ${fmt(cg.usd,1)} 億美元（${fmt(cg.usd/cg.hi*100,0)}～${fmt(cg.usd/cg.lo*100,0)}%）→ ${cg.rem.join('、')} 隱含 <strong>${fmt(cg.uLo*cg.rem.length,1)}～${fmt(cg.uHi*cg.rem.length,1)} 億美元</strong>（≈ ${fmt(cg.uLo*cg.rem.length*cg.fx)}～${fmt(cg.uHi*cg.rem.length*cg.fx)} 億元）`;
   if(D.injCx)$('tCx').innerHTML+=`<br><span class="pill">財報速報</span> ${D.injCx} 是公司法說公布的數字，財報資料庫更新前先帶入`;
+  if(D.cxFl)$('tCx').innerHTML+=`<br><span class="pill">財報快訊</span> ${D.cxFl} 是董事會通過財報後觀測站剛上傳的現金流量表（${(D.cxFlOn||'').slice(5).replace('-','/')} 取得），財報資料庫更新前先帶入，圖上以虛線框標示`;
   $('fCx').textContent=`柱：單季資本支出（現金流量表「取得不動產、廠房及設備」，不含預付設備款）${hasDp?'、折舊':''}　線：資本支出 ÷ 營收（右軸 %）。若財報為年初累計數，單季已自動以相鄰兩季相減。`+(E.length?`空心柱：公司全年指引扣掉已公布季度後，剩下季度要花的金額（實線框＝低標、虛線框頂＝高標，以匯率 ${cg.fx} 換成台幣）。`:'');
 }
 // ---- 逐日籌碼（chip.json）：每天 [收盤, 成交張, 外資, 投信, 自營, 融資增減, 融券增減, 融資餘額] ----
@@ -1248,6 +1254,16 @@ async function injectFlash(d){
     if(b.ocfC!=null){const yr=nq.slice(0,2),n=+nq[3],prev=I.filter(x=>x[0].slice(0,2)===yr&&+x[0][3]<n);
       if(prev.length===n-1&&prev.every(x=>x[6]!=null))ocf=+(b.ocfC-sum(prev.map(x=>x[6]))).toFixed(2)}
     I.push([nq,b.inv,+cogs.toFixed(2),b.ar,b.cl,it.s.ni,ocf]);d.invFl=nq;d.invFlOn=b.on||'';
+  }
+  // 現金流／資本支出補季：年初累計 − 同年前幾季單季（缺任一季 → 不補）
+  if(b){
+    const yr=nq.slice(0,2),n=+nq[3],sgl=(cum,rows,i)=>{if(cum==null||!rows)return null;const pv=rows.filter(x=>x[0].slice(0,2)===yr&&+x[0][3]<n);return pv.length===n-1&&pv.every(x=>x[i]!=null)?+(cum-sum(pv.map(x=>x[i]))).toFixed(2):null};
+    const C=d.cf;
+    if(C&&C.length&&qNext(C[C.length-1][0])===nq){const o=sgl(b.ocfC,C,1);if(o!=null){C.push([nq,o,it.s.ni]);d.cfFl=nq}}
+    else if(!(C&&C.length)&&d.invFl===nq&&I[I.length-1][6]!=null)d.cfFl=nq;          // 沒有 cf 欄位的舊資料：現金流卡從 inv 取
+    const X=d.capex;
+    if(X&&X.length&&qNext(X[X.length-1][0])===nq&&b.capexC!=null){const cx=sgl(b.capexC,X,1);
+      if(cx!=null){const dp=X.every(x=>x[0].slice(0,2)!==yr||x[2]!=null)?sgl(b.depC,X,2):null;X.push([nq,+cx.toFixed(1),dp==null?null:+dp.toFixed(1),+(cx/r*100).toFixed(1)]);d.cxFl=nq;d.cxFlOn=b.on||''}}
   }
 }
 // 公司已在法說公布、FinMind 財報還沒進來的那一季 → 先用公司數字補進季資料與資本支出（只補緊接的下一季）
