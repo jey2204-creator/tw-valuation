@@ -221,19 +221,26 @@ def one(tk, override, since=""):
                     h[2] = g
                     if len(h) < 8: h.append("sec")
         pxall = finmind_px(tk, (today - dt.timedelta(days=760)).isoformat(), today.isoformat())
-        for h in hist:
-            rx = reaction(tk, h[4], h[5], pxall) if pxall and h[4] else None
-            h[6] = rx and rx.get("react")
     else:
+        pxall = []
         for h in hist:
             if len(h) < 5:
                 h.extend([None, "", None])
     date = override.get("date") or last.get("date")
+    if not date and hist and hist[-1][4]:
+        date = hist[-1][4]   # Finnhub 日曆（免費方案只有最近約一個月）沒有時，用 8-K 申報日
     if not date or (since and date < since and not override.get("date")):
         return None   # 還沒公布本季（watch 名單用）
     hour = override.get("hour") or last.get("hour") or ""
     if hist and date and hist[-1][4] == date and hour:
         hist[-1][5] = hour   # 最新一季的盤前盤後以 Finnhub 為準（8-K 接收時間只是推估）
+    if hist and hour:
+        for h in hist[:-1]:
+            if h[5] == "dmh":
+                h[5] = hour   # 8-K 接收時間落在盤中（13:00～16:00）的舊季，依公司慣例用最新一季的盤前／盤後
+    for h in hist:   # 近 8 季的首日反應（股價整段只抓一次）
+        rx = reaction(tk, h[4], h[5], pxall) if pxall and h[4] else None
+        h[6] = rx and rx.get("react")
     eps_est = override.get("epsEst", last.get("epsEstimate"))
     eps_act = override.get("epsAct", last.get("epsActual"))
     if eps_act is None and hist:
