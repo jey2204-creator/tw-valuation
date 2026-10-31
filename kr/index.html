@@ -426,7 +426,7 @@ html{scroll-behavior:smooth}
 <style>
 #calPage .top{padding-top:12px}#calPage h1{font-size:22px;font-weight:900;margin:6px 0 0;line-height:1.3}
 #caTbl td.co{font-family:var(--f-body);white-space:normal;min-width:6.5em}#caTbl th:nth-child(2),#caTbl td:nth-child(2){text-align:left}#caTbl .ind{font-size:11px;color:var(--muted);display:block}
-#caTbl th,#caTbl td{padding-inline:4px}#caTbl td:not(.co) .sub{white-space:nowrap}#caTbl td b.soon{color:var(--warm)}#caTbl td b.today{color:var(--down)}#caTbl .pre{color:var(--accent)}
+#caTbl th,#caTbl td{padding-inline:4px}#caTbl td:not(.co) .sub{white-space:nowrap;line-height:1.3}#caTbl td.co{min-width:5.5em}#caTbl td.co .nmw{white-space:normal}#caTbl td b.soon{color:var(--warm)}#caTbl td b.today{color:var(--down)}#caTbl .pre{color:var(--accent)}
 .lst .sub i.pre{font-style:normal;color:var(--accent);font-size:9.5px;border:1px solid var(--accent);border-radius:3px;padding:0 2px;margin-left:2px;vertical-align:1px}
 </style>
 
@@ -1349,8 +1349,8 @@ function renderCal(){
   }else{
     rows=wait.slice().sort((x,y)=>x.est===y.est?(x.due<y.due?-1:1):x.est<y.est?-1:1);th='<th>預計公布</th><th>法定底線</th>';
     cell=r=>{const n=dDays(r.est),nd=dDays(r.due),st=stockOf(r.id);
-      const dT=r.st==='late'?`<b class="today">逾期</b><span class="sub">底線 ${mdT(r.due)} 已過</span>`:`<b class="${n<=0?'today':n<=7?'soon':''}">${mdT(r.est)}<small style="font-weight:400">（${wdT(r.est)}）</small></b><span class="sub">${n<0?`預計日已過 ${-n} 天`:n===0?'今天':n+' 天後'}・${esc(r.b||'')}</span>`;
-      return `<td>${dT}</td><td>${mdT(r.due)}<span class="sub ${nd<0?'vd':''}">${nd<0?'已過':nd+' 天'}・${r.q}${st.pe?'・PE '+fmt(st.pe,1):''}</span></td>`};
+      const dT=r.st==='late'?`<b class="today">逾期</b><span class="sub">底線 ${mdT(r.due)} 已過</span>`:`<b class="${n<=0?'today':n<=7?'soon':''}">${mdT(r.est)}<small style="font-weight:400">（${wdT(r.est)}）</small></b><span class="sub">${n<0?`已過 ${-n} 天`:n===0?'今天':n+' 天後'}<br>${esc(r.b||'')}</span>`;
+      return `<td>${dT}</td><td>${mdT(r.due)}<span class="sub ${nd<0?'vd':''}">${nd<0?'已過':nd+' 天'}<br>${r.q}${st.pe?' PE'+fmt(st.pe,1):''}</span></td>`};
     $('caHead').innerHTML='依預計公布日排序（<b style="color:var(--warm)">橘</b>＝7 天內、<b style="color:var(--down)">紅</b>＝今天、預計日已過或逾期）。小字＝預估依據：「去年暫定」＝去年同季暫定業績公告日 +1 年（大型股準，誤差多在 ±3 天）；「去年季報」＝沒發暫定業績的公司，只能看去年季報申報日，通常壓線';
   }
   $('caTbl').innerHTML=`<thead><tr><th>#</th><th>股票</th>${th}</tr></thead><tbody>`+rows.map((r,i)=>`<tr data-id="${r.id}"><td>${i+1}</td>${co(r)}${cell(r)}</tr>`).join('')+'</tbody>';
