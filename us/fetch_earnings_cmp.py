@@ -93,14 +93,88 @@ def reaction(tk, date, hour, px=None):
             "react": pct(first[0][1], prev[0][1])}
 
 
+SEC_UA = os.environ.get("SEC_UA", "").strip()
+_TICK = {}
+
+
+def cik_of(tk):
+    for f in (ROOT / "data" / f"{tk}.json", ROOT / "data" / "all" / f"{tk}.json"):
+        try:
+            c = json.loads(f.read_text()).get("cik")
+            if c: return int(c)
+        except Exception:
+            pass
+    if not _TICK:
+        js = http("https://www.sec.gov/files/company_tickers.json", {"User-Agent": SEC_UA or UA["User-Agent"]}) or {}
+        for v in js.values():
+            _TICK[v["ticker"].upper()] = int(v["cik_str"])
+    return _TICK.get(tk.upper().replace("-", "."), _TICK.get(tk.upper()))
+
+
+def sec_releases(tk):
+    """近兩年 8-K Item 2.02（業績發布）→ [(申報日, 盤前/盤後)]，舊→新。接收時間美東 09:30 前＝bmo、16:00 後＝amc、其他＝dmh。"""
+    if not SEC_UA:
+        return []
+    cik = cik_of(tk)
+    if not cik:
+        return []
+    time.sleep(0.15)   # SEC 10 次/秒
+    js = http(f"https://data.sec.gov/submissions/CIK{cik:010d}.json", {"User-Agent": SEC_UA}) or {}
+    rec = js.get("filings", {}).get("recent", {})
+    out = []
+    lo = (dt.date.today() - dt.timedelta(days=760)).isoformat()
+    for form, d, acc, items in zip(rec.get("form", []), rec.get("filingDate", []), rec.get("acceptanceDateTime", []), rec.get("items", [])):
+        if form not in ("8-K", "8-K/A") or "2.02" not in (items or "") or d < lo:
+            continue
+        hm = (acc or "")[11:16]
+        hr = "bmo" if hm < "09:30" else ("amc" if hm >= "16:00" else "dmh")
+        if out and out[-1][0] == d:
+            continue   # 同日多份（8-K/A）只留一份
+        out.append((d, hr))
+    out.sort()
+    return out
+
+
+def fq_table(tk):
+    """回傳 函式(公布日)→季別：用 SEC 財報檔的季末日（公布日前 0～100 天內最近的一季），沒有財報檔就用日曆季。"""
+    ends = []
+    for f in (ROOT / "data" / f"{tk}.json", ROOT / "data" / "all" / f"{tk}.json"):
+        try:
+            for r in json.loads(f.read_text()).get("q", []):
+                if r[0] and r[9]:
+                    ends.append((r[9], r[0]))
+            if ends: break
+        except Exception:
+            pass
+    ends.sort()
+
+    def fq(d8):
+        c = [e for e in ends if e[0] < d8 and (dt.date.fromisoformat(d8) - dt.date.fromisoformat(e[0])).days <= 100]
+        if c:
+            return c[-1][1]
+        dd = dt.date.fromisoformat(d8) - dt.timedelta(days=20)   # 日曆季：公布日往前 20 天所在的上一季
+        q = (dd.month - 1) // 3   # 0..3 = 目前日曆季，上一季 = q-1
+        y, pq = (dd.year, q) if q > 0 else (dd.year - 1, 4)
+        return f"{str(y)[-2:]}Q{pq}"
+
+    def relabel(period, label):
+        if not period or not ends:
+            return label
+        pd = dt.date.fromisoformat(period)
+        near = [(abs((dt.date.fromisoformat(e) - pd).days), lab) for e, lab in ends]
+        near.sort()
+        return near[0][1] if near and near[0][0] <= 10 else label
+    return fq, relabel
+
+
 def one(tk, override, since=""):
     today = dt.date.today()
     # 1. 歷史驚喜（含最新一季）
-    hist_raw = fh("stock/earnings", symbol=tk, limit=8) or []
-    hist = []
+    hist_raw = fh("stock/earnings", symbol=tk, limit=8) or []   # 免費方案實際只回 4 季
+    hist, periods = [], {}
     for r in sorted(hist_raw, key=lambda x: x.get("period") or ""):
         if r.get("period") and r.get("actual") is not None:
-            p = r["period"]
+            p = r["period"]; periods[f"{p[2:4]}Q{r.get('quarter') or ''}"] = p
             hist.append([f"{p[2:4]}Q{r.get('quarter') or ''}", r.get("estimate"), r.get("actual"),
                          surprise(r.get("actual"), r.get("estimate"))])
     # 2. 最新一季日曆（營收）
@@ -109,17 +183,34 @@ def one(tk, override, since=""):
     rows = [r for r in (cal.get("earningsCalendar") or []) if r.get("date") and r["date"] <= today.isoformat()]
     rows.sort(key=lambda r: r["date"])
     last = rows[-1] if rows else {}
-    # 近 8 季每季補公布日／盤前盤後／首日反應（給財報公布日頁的個股搜尋）：hist 列 = [fq, est, act, surp, date, hour, react]
-    # 日曆列用 year+quarter 對上 hist 的 fq；整段股價只抓一次
-    if hist:
-        byq = {f"{str(r.get('year'))[-2:]}Q{r.get('quarter')}": r for r in rows if r.get("year") and r.get("quarter")}
-        pxall = finmind_px(tk, (today - dt.timedelta(days=760)).isoformat(), today.isoformat()) if any(h[0] in byq for h in hist) else []
+    # 近 8 季每季的公布日／盤前盤後／首日反應（給財報公布日頁的個股搜尋）：
+    # Finnhub 免費方案日曆只有最近一季、驚喜率只有 4 季，所以公布日改用 SEC 8-K（Item 2.02 業績發布）的申報日，
+    # 盤前／盤後看 8-K 的接收時間（美東 09:30 前＝盤前、16:00 後＝盤後）；季別用 SEC 財報檔（data/{T}.json 或 data/all/{T}.json）
+    # 的季末日對上，沒有財報檔就用日曆季；首日反應整段股價只抓一次。hist 列 = [fq, est, act, surp, date, hour, react]
+    rels = sec_releases(tk)[-8:]
+    if rels:
+        fqof, relabel = fq_table(tk)
+        for h in hist:   # Finnhub 的季別是會計年度（AAPL 的 26Q3＝曆年 26Q2），改成 SEC 財報檔的標籤，才對得上 8-K
+            h[0] = relabel(periods.get(h[0]), h[0])
+        byfq = {h[0]: h for h in hist}
+        rows8 = []
+        for d8, hr in rels:
+            fq = fqof(d8)
+            h = byfq.get(fq) or [fq, None, None, None]
+            if len(h) < 5:
+                h.extend([d8, hr, None])
+            else:
+                h[4], h[5] = d8, hr
+            rows8.append(h)
+        hist = rows8
+        pxall = finmind_px(tk, (today - dt.timedelta(days=760)).isoformat(), today.isoformat())
         for h in hist:
-            r = byq.get(h[0])
-            if not r:
-                h.extend([None, "", None]); continue
-            rx = reaction(tk, r["date"], r.get("hour") or "", pxall) if pxall else None
-            h.extend([r["date"], r.get("hour") or "", rx and rx.get("react")])
+            rx = reaction(tk, h[4], h[5], pxall) if pxall and h[4] else None
+            h[6] = rx and rx.get("react")
+    else:
+        for h in hist:
+            if len(h) < 5:
+                h.extend([None, "", None])
     date = override.get("date") or last.get("date")
     if not date or (since and date < since and not override.get("date")):
         return None   # 還沒公布本季（watch 名單用）
