@@ -18,8 +18,8 @@ import urllib.request, urllib.parse, http.cookiejar
 ROOT = Path(__file__).resolve().parent
 OUT = ROOT / "data"
 DIR = OUT / "tdcc"
-KEEP = 30                     # 保留最近 30 週
-BACKFILL_WEEKS = 5            # 主題股回補幾週
+KEEP = 60                     # 保留最近 60 週（個股頁「大戶持股」卡要畫 1 年）
+BACKFILL_WEEKS = 52           # 主題股回補幾週（2026/11/01 起 52 週，每次最多 8 分鐘，分幾天補完）
 BUDGET = 8 * 60
 T0 = time.time()
 UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124 Safari/537.36"
@@ -206,6 +206,30 @@ def backfill(latest):
     diag["web_got"] = n
 
 
+def shards(weeks):
+    """個股頁「大戶持股」卡用：data/tdcc_s/<代號前兩碼>.json = {weeks:[...], d:{代號:[[≥400張%, ≥1000張%, 股東人數] 或 null, ...]}}
+    （FinMind 的集保分級是付費資料集，瀏覽器抓不到，所以由這裡每天產生）"""
+    SD = OUT / "tdcc_s"
+    SD.mkdir(exist_ok=True)
+    W = []
+    for f in sorted(DIR.glob("*.json")):
+        try:
+            W.append((f.stem, json.loads(f.read_text("utf-8"))))
+        except Exception:
+            pass
+    by = {}
+    for d, w in W:
+        for c, v in w.items():
+            if c.startswith("_") or not v or not c[:2].isdigit():
+                continue
+            by.setdefault(c[:2], {}).setdefault(c, {})[d] = v
+    ws = [d for d, _ in W]
+    for g, m in by.items():
+        out = {c: [h.get(d) for d in ws] for c, h in m.items()}
+        (SD / f"{g}.json").write_text(json.dumps({"weeks": ws, "d": out}, ensure_ascii=False, separators=(",", ":")), "utf-8")
+    diag["shards"] = len(by)
+
+
 def prune():
     fs = sorted(DIR.glob("*.json"))
     for f in fs[:-KEEP]:
@@ -261,6 +285,10 @@ def main():
     except Exception:
         pass
     d, weeks = compute()
+    try:
+        shards(weeks)
+    except Exception as e:
+        errs.append(f"集保分片: {str(e)[:100]}")
     if not d:
         print("沒有集保資料，不輸出", errs, diag, file=sys.stderr)
         sys.exit(0)

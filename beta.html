@@ -988,40 +988,19 @@ function renderCx(){
   if(D.cxFl)$('tCx').innerHTML+=`<br><span class="pill">財報快訊</span> ${D.cxFl} 是董事會通過財報後觀測站剛上傳的現金流量表（${(D.cxFlOn||'').slice(5).replace('-','/')} 取得），財報資料庫更新前先帶入，圖上以虛線框標示`;
   $('fCx').textContent=`柱：單季資本支出（現金流量表「取得不動產、廠房及設備」，不含預付設備款）${hasDp?'、折舊':''}　線：資本支出 ÷ 營收（右軸 %）。若財報為年初累計數，單季已自動以相鄰兩季相減。`+(E.length?`空心柱：公司全年指引扣掉已公布季度後，剩下季度要花的金額（實線框＝低標、虛線框頂＝高標，以匯率 ${cg.fx} 換成台幣）。`:'');
 }
-// ---- 大戶持股（集保週資料）：滑到卡片才向 FinMind 抓 TaiwanStockHoldingSharesPer（1 次請求），算好存手機 24 小時 ----
+// ---- 大戶持股（集保週資料）：讀本站 data/tdcc_s/<前兩碼>.json 分片（fetch_tdcc.py 每天產生；FinMind 集保分級是付費資料集，瀏覽器抓不到） ----
 let TDW=null,TDWID=null,TDWIO=null,TDWL=null,TDWN=(()=>{try{return +localStorage.getItem('tdwN')||52}catch(e){return 52}})();
-const tdwLo=l=>{l=String(l||'').replace(/,/g,'');if(/more/i.test(l))return 1000001;const m=l.match(/^\s*(\d+)/);return m?+m[1]:null};   // 分級字串 → 下限股數；total／差異數 → null
-function buildTdw(rows){
-  const W={};rows.forEach(r=>{const w=W[r.date]=W[r.date]||{d:r.date,b4:0,b10:0,ppl:null,n:0};const lo=tdwLo(r.HoldingSharesLevel),pc=+r.percent||0;
-    if(/total/i.test(r.HoldingSharesLevel||'')){w.ppl=+r.people||null;return}
-    if(lo==null)return;w.n++;if(lo>=400001)w.b4+=pc;if(lo>=1000001)w.b10+=pc});
-  const A=Object.values(W).filter(w=>w.n>=10).sort((a,b)=>a.d.localeCompare(b.d)).map(w=>({d:w.d,b4:+w.b4.toFixed(2),b10:+w.b10.toFixed(2),ppl:w.ppl}));
-  return A.length>=4?A:null;
-}
 async function loadTdw(id){
-  const k='tdw1_'+id,c=store.get(k);
-  if(c&&Date.now()-c.t<24*3600e3&&c.v){TDW=c.v;TDWL=null;renderTdw();return}
   if(TDWL===id)return;TDWL=id;
-  $('tTdw').innerHTML='<div class="y10msg">⏳ 正在向 FinMind 抓集保週資料（約 3 秒）…</div>';
+  $('tTdw').innerHTML='<div class="y10msg">⏳ 載入集保週資料…</div>';
   try{
-    const st=new Date(Date.now()-3.2*365*86400e3).toISOString().slice(0,10);
-    let v=null,src='fm';
-    try{const rows=await fm('TaiwanStockHoldingSharesPer',id,st);v=buildTdw(rows)}catch(e){v=null;window.__tdwErr=e.message}
-    if(TDWID!==id)return;
-    if(!v){src='site';v=await buildTdwSite(id);if(TDWID!==id)return}   // FinMind 這個資料集瀏覽器直連常失敗 → 用網站每週累積的 data/tdcc/*.json
-    TDWL=null;if(v)v.src=src;
-    if(!v){$('tTdw').innerHTML='<div class="y10msg">沒有集保分級資料（新上市或 ETF）</div>';return}
-    TDW=v;try{store.set(k,{t:Date.now(),v})}catch(e){}
-    if(!localStorage.getItem(k))try{Object.keys(localStorage).filter(x=>x.startsWith('tdw1_')).forEach(x=>localStorage.removeItem(x));store.set(k,{t:Date.now(),v})}catch(e){}
-    renderTdw();
+    const g=String(id).slice(0,2);let v=null;
+    if(/^\d\d$/.test(g)){const r=await fetch(`data/tdcc_s/${g}.json?t=${Math.floor(Date.now()/3e5)}`);if(r.ok){const j=await r.json(),h=j.d&&j.d[id];
+      if(h){v=j.weeks.map((w,i)=>h[i]?{d:`${w.slice(0,4)}-${w.slice(4,6)}-${w.slice(6)}`,b4:h[i][0],b10:h[i][1],ppl:h[i][2]}:null).filter(Boolean);if(v.length<2)v=null}}}
+    if(TDWID!==id)return;TDWL=null;
+    if(!v){$('tTdw').innerHTML='<div class="y10msg">這檔還沒有集保分級資料（新上市、ETF，或資料回補中）</div>';return}
+    TDW=v;renderTdw();
   }catch(e){TDWL=null;if(TDWID!==id)return;$('tTdw').innerHTML=`<div class="y10msg">⚠️ ${e.message}<br><button type="button" id="tdwRe">重試</button></div>`;$('tdwRe').onclick=()=>loadTdw(id)}
-}
-async function buildTdwSite(id){
-  try{const r=await fetch('data/tdcc.json?t='+Math.floor(Date.now()/3e5));if(!r.ok)return null;const t=await r.json();
-    const wk=[...new Set([...(t.weeks||[]),t.asof].filter(Boolean))].sort();
-    const out=[];for(const w of wk){try{const q=await fetch(`data/tdcc/${w}.json`);if(!q.ok)continue;const j=await q.json();const x=j[id];if(!x)continue;
-      out.push({d:`${w.slice(0,4)}-${w.slice(4,6)}-${w.slice(6)}`,b4:x[0],b10:x[1],ppl:x[2]})}catch(e){}}
-    const v=out.length>=2?out:null;return v}catch(e){return null}
 }
 function tdwInit(id){
   if(TDWID===id&&(TDW||TDWL===id)){if(TDW)renderTdw();return}
@@ -1061,7 +1040,7 @@ function renderTdw(){
   o.tooltip.formatter=ps=>{const x=R[ps[0].dataIndex];return `<b>${x.d}</b><br>400 張以上 ${fmt(x.b4,2)}%<br>千張以上 ${fmt(x.b10,2)}%<br>股東人數 ${fmt(x.ppl)} 人`};
   ch.setOption(o,true);ch.resize();spreadEnd(ch,o,[0,1,2]);
   $('tdwSeg').hidden=A.length<=52;$('tdwSeg').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.n===TDWN));
-  $('fTdw').textContent=(A.src==='site'?`FinMind 的集保資料集瀏覽器直連失敗（${window.__tdwErr||''}），改用本站每週累積的集保資料（目前 ${A.length} 週，之後每週自動變長）。`:'')+`集保戶股權分散表每週六更新（本週 ${r.d}），400 張以上＝持股 40 萬股以上的人（含法人、董監），千張以上＝100 萬股以上；股東人數（右軸）＝所有集保戶。四週規則：大戶比 +0.3 點且人數 −1%＝集中、大戶比 +0.3 且人數 +3%＝散戶追進、大戶比 −0.3 且人數 +1%＝分散。注意：除權息前後、法人換倉、ETF 成份調整都會讓大戶比短期跳動，看 4～13 週趨勢比單週可靠。資料：FinMind，進這一頁才即時抓，手機快取 24 小時。`;
+  $('fTdw').textContent=(A.length<52?`本站目前累積 ${A.length} 週（主題成份股正在回補到 52 週，其他股票每週自動變長）。`:'')+`集保戶股權分散表每週六更新（本週 ${r.d}），400 張以上＝持股 40 萬股以上的人（含法人、董監），千張以上＝100 萬股以上；股東人數（右軸）＝所有集保戶。四週規則：大戶比 +0.3 點且人數 −1%＝集中、大戶比 +0.3 且人數 +3%＝散戶追進、大戶比 −0.3 且人數 +1%＝分散。注意：除權息前後、法人換倉、ETF 成份調整都會讓大戶比短期跳動，看 4～13 週趨勢比單週可靠。資料：集保結算所（本站每日排程抓，FinMind 的集保分級為付費資料集）。`;
 }
 $('tdwSeg').addEventListener('click',e=>{const b=e.target.closest('button[data-n]');if(!b||!TDW)return;TDWN=+b.dataset.n;try{localStorage.setItem('tdwN',TDWN)}catch(_){}renderTdw()});
 // ---- 逐日籌碼（chip.json）：每天 [收盤, 成交張, 外資, 投信, 自營, 融資增減, 融券增減, 融資餘額] ----

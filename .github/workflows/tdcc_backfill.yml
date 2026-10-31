@@ -1,0 +1,36 @@
+name: 集保回補
+on:
+  schedule:
+    - cron: "10 2 * * 6,0"    # 週六、日台北 10:10（集保週六更新；平日由 update.yml 跑）
+    - cron: "10 6 * * 6,0"    # 週六、日台北 14:10 再補一次（回補 52 週要分幾次）
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: update-data         # 跟 update.yml 同一組，避免同時改 data/tdcc
+  cancel-in-progress: false
+jobs:
+  tdcc:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: 集保大戶持股（開放資料＋主題股回補）
+        timeout-minutes: 12
+        run: python fetch_tdcc.py
+      - name: 提交
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/tdcc.json data/tdcc data/tdcc_s
+          git diff --cached --quiet && exit 0
+          git commit -m "tdcc: $(TZ=Asia/Taipei date '+%F %H:%M')"
+          for i in 1 2 3; do
+            git pull --rebase -X theirs origin main && git push && exit 0
+            sleep 10
+          done
+          exit 1
