@@ -99,8 +99,8 @@ def num(s):
     s = str(s).replace(",", "").strip()
     if s in ("", "-"):
         return None
-    neg = s.startswith("(") and s.endswith(")")
-    s = s.strip("()")
+    neg = (s.startswith("(") and s.endswith(")")) or s.startswith("△") or s.startswith("▲")
+    s = s.strip("()△▲")
     try:
         v = float(s)
     except ValueError:
@@ -481,6 +481,49 @@ def dart_prelim(corp, cache):
     return cache
 
 
+DOC_ROWS = {"rev": ["매출액", "매출", "영업수익", "수익(매출액)"], "op": ["영업이익", "영업이익(손실)"],
+            "ni": ["당기순이익", "당기순이익(손실)", "분기순이익", "반기순이익"],
+            "nip": ["지배기업소유주지분순이익", "지배기업의소유주에게귀속되는당기순이익", "지배주주지분순이익", "지배기업소유주지분당기순이익", "지배기업지분순이익"]}
+
+
+def dart_doc_prelim(rno):
+    """OpenDART 公告原文（document.xml → zip 內 XML）→ 暫定業績表的「당해실적（本季）」欄：{rev, op, ni, nip}（億韓元）
+    表格每個科目兩列：당해실적（單季）／누계실적（累計），取 당해실적 列第一個數字；單位看表頭「(단위 : 백만원)」"""
+    b = http(f"https://opendart.fss.or.kr/api/document.xml?crtfc_key={KEY}&rcept_no={rno}", raw=True, tries=2, timeout=60)
+    if not b.startswith(b"PK"):
+        raise RuntimeError("document.xml 不是 zip：" + b[:80].decode("utf-8", "replace"))
+    z = zipfile.ZipFile(io.BytesIO(b))
+    raw = b"".join(z.read(n) for n in z.namelist() if n.lower().endswith((".xml", ".html", ".htm")))
+    txt = None
+    for enc in ("utf-8", "euc-kr", "cp949"):
+        try:
+            txt = raw.decode(enc)
+            break
+        except UnicodeDecodeError:
+            pass
+    txt = txt or raw.decode("utf-8", "replace")
+    txt = re.sub(r"<!--.*?-->", "", txt, flags=re.S)
+    m = re.search(r"단위\s*[:：]?\s*(백만원|억원|천원|원)", re.sub(r"<[^>]+>", " ", txt))
+    k = {"백만원": 1e-2, "억원": 1.0, "천원": 1e-5, "원": 1e-8}[m[1]] if m else 1e-2   # 沒寫單位當百萬韓元（KIND 表單預設）
+    out = {}
+    for tr in re.findall(r"<TR\b.*?</TR>", txt, flags=re.S | re.I):
+        cells = [re.sub(r"\s", "", re.sub(r"<[^>]+>", "", c)) for c in re.findall(r"<T[DH]\b.*?</T[DH]>", tr, flags=re.S | re.I)]
+        cells = [c for c in cells if c]
+        if not cells or any("누계" in c for c in cells[:3]):
+            continue
+        for key, names in DOC_ROWS.items():
+            if key in out:
+                continue
+            idx = next((i for i, c in enumerate(cells[:3]) if c.replace("(손실)", "") in [n.replace("(손실)", "") for n in names]), None)
+            if idx is None:
+                continue
+            start = next((i + 1 for i, c in enumerate(cells) if "당해" in c), idx + 1)
+            v = next((num(c) for c in cells[start:] if num(c) is not None), None)
+            if v is not None:
+                out[key] = round(v * k, 1)
+    return out
+
+
 def earn_info(code, corp, Q, fin):
     """→ (earn 摘要, 暫定季列 or None)。earn = {q 待公布季, st pre|wait|late, pre 暫定公布日, est 預計日, due 法定底線, b 預估依據, ...}"""
     p = OUT / "earn" / f"{code}.json"
@@ -499,11 +542,13 @@ def earn_info(code, corp, Q, fin):
         err.append(f"Naver 季表：{str(e)[:60]}")
     p.write_text(json.dumps(cache, ensure_ascii=False, separators=(",", ":")), "utf-8")
     # 暫定公告日：每季取最早的一次（三星 10/8 暫定、10/30 正式都掛「잠정」）
-    pre_dt = {}
+    pre_dt, last_rno = {}, {}
     for d, rno, nm in cache.get("ann", []):
         cal = q_of_date(dt.date.fromisoformat(d))
         if cal not in pre_dt or d < pre_dt[cal][0]:
             pre_dt[cal] = [d, rno]
+        if cal not in last_rno or rno > last_rno[cal]:
+            last_rno[cal] = rno   # 三星 10/8 暫定只有營收／營益，10/29 正式（含 기재정정）才有淨利 → 數字取最新一份
     if not Q:
         return dict(err=err) if err else {}, None
     last = Q[-1]["cal"]
@@ -528,13 +573,28 @@ def earn_info(code, corp, Q, fin):
             e["est"], e["b"] = due.isoformat(), "法定期限"
     if e["est"] > e["due"]:
         e["est"] = e["due"]
-    # 這一季的暫定：DART 有公告 or Naver 季表已有數字
+    # 這一季的暫定：DART 有公告（數字從公告原文解析，快取在 doc）or Naver 季表已有數字
     nv = (cache.get("nv") or {}).get(pend)
     row = None
+    if pend in pre_dt:
+        rno = last_rno[pend]
+        doc = (cache.get("doc") or {}).get(rno)
+        if doc is None or not doc.get("rev") and not doc.get("op"):   # 沒抓過、或上次沒解析到 → 再試
+            try:
+                doc = dart_doc_prelim(rno)
+            except Exception as ex:
+                err.append(f"公告原文：{str(ex)[:60]}")
+                doc = {}
+            cache.setdefault("doc", {})[rno] = doc
+            p.write_text(json.dumps(cache, ensure_ascii=False, separators=(",", ":")), "utf-8")
+        if doc and (doc.get("rev") is not None or doc.get("op") is not None):
+            nv = dict(rev=doc.get("rev"), op=doc.get("op"), ni=doc.get("ni"), nip=doc.get("nip"), eps=None)
+            e["src"] = "dart"
     if pend in pre_dt or nv:
         e["st"] = "pre"
         if pend in pre_dt:
             e["pre"], e["rno"] = pre_dt[pend]
+            e["rno2"] = last_rno[pend]
         else:
             e["pre"], e["src"] = cache.get("nv_at") or TODAY.isoformat(), "naver"
         if nv:
@@ -556,7 +616,7 @@ def earn_info(code, corp, Q, fin):
             if py and py.get("opa") and nv.get("op") is not None and py["opa"] > 0:
                 e["oy"] = round((nv["op"] / py["opa"] - 1) * 100, 1)
         else:
-            e["nonum"] = True   # DART 有暫定公告但 Naver 還沒更新數字
+            e["nonum"] = True   # DART 有暫定公告但原文解析不到數字、Naver 也沒有
     else:
         e["st"] = "late" if TODAY > due else "wait"
     if err:
@@ -591,7 +651,7 @@ def build(code, corps):
         earn, prow = {}, None
     if prow and prow.get("rev"):
         Q.append(prow)
-        note.append(f"{prow['cal']} 為暫定業績（Naver 季表，{earn.get('pre', '')[5:].replace('-', '/')} 公布）：只有營收、營業利益、淨利"
+        note.append(f"{prow['cal']} 為暫定業績（{'OpenDART 公告原文' if earn.get('src') == 'dart' else 'Naver 季表'}，{earn.get('pre', '')[5:].replace('-', '/')} 公布）：只有營收、營業利益、淨利"
                     f"{'，EPS 以淨利 ÷ 前季股數推算' if prow.get('eps_est') else ''}；正式季報申報後自動取代")
     try:
         px = naver_price(code)

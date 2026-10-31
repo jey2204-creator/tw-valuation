@@ -839,7 +839,7 @@ function renderFin(){
     L.push(`EPS ${ap()}${won(x.eps)} ${cur()}（年增 ${x.et||(x.ey==null?'—':pct(x.ey,0))}）`+(x.po!=null?`・配息率 ${fmt(x.po,0)}%`:''));
     L.push(`ROE ${x.roe==null?'—':fmt(x.roe,1)+'%'}・負債比 ${x.debt==null?'—':fmt(x.debt,1)+'%'}`);if(x.ocf!=null)L.push(`營業現金流 ${ap()}${fa(x.ocf,0)}・自由現金流 ${ap()}${fa(x.fcf,0)}`);return L.join('<br>')};
   ch.setOption(o,true);ch.resize();
-  $('fFin').textContent=foot+fxFoot()+' 資料：OpenDART 連結財報（年報第四季＝全年 − 前三季）'+(X.Q.some(x=>x.pre)?'；「暫」＝暫定業績（Naver 季表，只有營收、營業利益、淨利，EPS 推算），正式季報後取代':'')+'。';
+  $('fFin').textContent=foot+fxFoot()+' 資料：OpenDART 連結財報（年報第四季＝全年 − 前三季）'+(X.Q.some(x=>x.pre)?'；「暫」＝暫定業績（從 OpenDART 公告原文解析，只有營收、營業利益、淨利，EPS 推算），正式季報後取代':'')+'。';
   // 明細表
   const c=(v,d)=>v==null?'—':fmt(v,d),cp=v=>v==null?'—':`<span class="${sg(v)}">${pct(v,0)}</span>`,m0=v=>v==null?'—':money(v,0);
   const rows=Qm?[...X.Q].reverse():[...A].reverse();
@@ -1365,7 +1365,7 @@ function earnSub(id,lq,dense){const s=stockOf(id),e=s.earn;let t=lq?(dense?lq.sl
   return t}
 function earnNote(d){const e=d.earn;if(!e||!e.q)return null;
   const link=e.rno?` <a href="https://dart.fss.or.kr/dsaf001/main.do?rcpNo=${esc(e.rno)}" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none">公告 ↗</a>`:'';
-  if(e.st==='pre'){const num=e.rev!=null?`：營收 ${ap()}${amt(e.rev,fxOn()?undefined:U.k>1?2:0)}${e.ry!=null?`（年增 ${pct(e.ry,0)}）`:''}${e.op!=null?`、營業利益 ${ap()}${amt(e.op,fxOn()?undefined:U.k>1?2:0)}${e.oy!=null?`（${e.oy>300?'>+300%':pct(e.oy,0)}）`:''}`:''}`:e.nonum?'（Naver 季表尚未更新數字）':'';
+  if(e.st==='pre'){const num=e.rev!=null?`：營收 ${ap()}${amt(e.rev,fxOn()?undefined:U.k>1?2:0)}${e.ry!=null?`（年增 ${pct(e.ry,0)}）`:''}${e.op!=null?`、營業利益 ${ap()}${amt(e.op,fxOn()?undefined:U.k>1?2:0)}${e.oy!=null?`（${e.oy>300?'>+300%':pct(e.oy,0)}）`:''}`:''}`:e.nonum?'（公告原文解析不到數字，點公告看）':'';
     return [`📅 ${e.q} 暫定業績 ${mdT(e.pre)} 公布${num}；正式季報 ${mdT(e.due)} 前申報${link}`,'']}
   const n=dDays(e.est);
   if(e.st==='late')return [`⚠️ ${e.q} 財報已超過法定期限 ${mdT(e.due)} 尚未申報`,'w'];
