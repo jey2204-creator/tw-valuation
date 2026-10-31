@@ -390,6 +390,180 @@ def naver_cons(code):
     return out
 
 
+# ---------- 📅 財報公布：暫定業績（잠정실적）＋公布日預估 ----------
+# 韓國大型股在季末後 1～4 週先發「營業（暫定）實績」公正公示（只有營收、營業利益、淨利），正式季報（OpenDART）要到季末後 45 天
+# （年報 90 天）才出。這裡：1) Naver 季度表抓暫定數字（FnGuide 在暫定公布當天更新）；2) OpenDART 公示搜尋抓暫定公告日，
+# 去年同季的公告日 + 1 年 = 今年預計公布日；3) 法定期限 = 底線。快取 kr/data/earn/{代號}.json
+QMAP = {1: 4, 2: 4, 3: 4, 4: 1, 5: 1, 6: 1, 7: 2, 8: 2, 9: 2, 10: 3, 11: 3, 12: 3}   # 公告月份 → 屬於哪一季的業績
+
+
+def q_of_date(d):
+    """暫定業績公告日 → 季別 'YYQn'（1～3 月公告的是去年 Q4）"""
+    qn = QMAP[d.month]
+    y = d.year - 1 if qn == 4 else d.year
+    return f"{str(y)[2:]}Q{qn}"
+
+
+def q_end(cal):
+    y, qn = 2000 + int(cal[:2]), int(cal[3])
+    return dt.date.fromisoformat(f"{y}-{dict((q, md) for _, q, md, _ in REPORTS)[qn]}")
+
+
+def next_cal(cal):
+    y, qn = int(cal[:2]), int(cal[3]) + 1
+    if qn > 4:
+        y, qn = y + 1, 1
+    return f"{y:02d}Q{qn}"
+
+
+def weekday(d):
+    while d.weekday() >= 5:
+        d += dt.timedelta(days=1)
+    return d
+
+
+def naver_quarter(code):
+    """Naver 季度財務表 → {'26Q3': dict(rev=億, op=億, ni=億, nip=億(母公司), eps=韓元)}，只收非共識（已公布）的季度"""
+    j = http(f"https://m.stock.naver.com/api/stock/{code}/finance/quarter")
+    fi = j.get("financeInfo") or {}
+    rows = {re.sub(r"\s", "", str(r.get("title") or "")): r.get("columns") or {} for r in fi.get("rowList") or []}
+
+    def pick(k, *names):
+        for n in names:   # 先找完全相同的列名，再找開頭相同的（「당기순이익」別抓到「당기순이익(지배)」）
+            for t, cols in sorted(rows.items(), key=lambda kv_: 0 if kv_[0] == n else 1):
+                if t.startswith(n) and "(E)" not in t:
+                    v = kv((cols.get(k) or {}).get("value"))
+                    if v is not None:
+                        return v
+        return None
+    out = {}
+    for t in fi.get("trTitleList") or []:
+        title, k = str(t.get("title", "")), t.get("key")
+        m = re.search(r"(\d{4})\D?(\d{1,2})", title)
+        if not m or t.get("isConsensus") == "Y" or "(E)" in title or "E" == title.strip()[-1:]:
+            continue
+        y, mo = int(m[1]), int(m[2])
+        if mo not in (3, 6, 9, 12):
+            continue
+        cal = f"{str(y)[2:]}Q{mo // 3}"
+        rev, op = pick(k, "매출액"), pick(k, "영업이익")
+        if rev is None and op is None:
+            continue
+        out[cal] = dict(rev=rev, op=op, ni=pick(k, "당기순이익"), nip=pick(k, "당기순이익(지배", "지배주주순이익", "지배기업"),
+                        eps=pick(k, "EPS", "주당순이익"))
+    return out
+
+
+def dart_prelim(corp, cache):
+    """OpenDART 公示搜尋：營業（暫定）實績公正公示 → cache['ann'] = [[公告日, rcept_no, 公告名]]，只補 upto 之後的新公告"""
+    ann = {a[1]: a for a in cache.get("ann", [])}
+    upto = cache.get("upto")
+    bgn = (dt.date.fromisoformat(upto) - dt.timedelta(days=3)) if upto else TODAY - dt.timedelta(days=430)
+    for page in range(1, 4):
+        q = urllib.parse.urlencode(dict(crtfc_key=KEY, corp_code=corp, bgn_de=bgn.strftime("%Y%m%d"), end_de=TODAY.strftime("%Y%m%d"),
+                                        pblntf_ty="I", page_no=page, page_count=100))
+        j = http(f"https://opendart.fss.or.kr/api/list.json?{q}", tries=2, timeout=30)
+        st = j.get("status")
+        if st == "013":
+            break
+        if st != "000":
+            raise RuntimeError(f"OpenDART list {st} {j.get('message')}")
+        for x in j.get("list", []):
+            nm = re.sub(r"\s", "", x.get("report_nm") or "")
+            if "잠정" in nm and "실적" in nm and "정정" not in nm[:4]:
+                d = x.get("rcept_dt") or ""
+                ann[x.get("rcept_no")] = [f"{d[:4]}-{d[4:6]}-{d[6:8]}", x.get("rcept_no"), x.get("report_nm")]
+        if page >= int(j.get("total_page") or 1):
+            break
+        time.sleep(0.3)
+    cache["ann"] = sorted(ann.values())
+    cache["upto"] = TODAY.isoformat()
+    return cache
+
+
+def earn_info(code, corp, Q, fin):
+    """→ (earn 摘要, 暫定季列 or None)。earn = {q 待公布季, st pre|wait|late, pre 暫定公布日, est 預計日, due 法定底線, b 預估依據, ...}"""
+    p = OUT / "earn" / f"{code}.json"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    cache = json.loads(p.read_text("utf-8")) if p.exists() else {}
+    err = []
+    if corp:
+        try:
+            cache = dart_prelim(corp, cache)
+        except Exception as e:
+            err.append(f"DART 公示：{str(e)[:60]}")
+    try:
+        cache["nv"] = naver_quarter(code)
+        cache["nv_at"] = TODAY.isoformat()
+    except Exception as e:
+        err.append(f"Naver 季表：{str(e)[:60]}")
+    p.write_text(json.dumps(cache, ensure_ascii=False, separators=(",", ":")), "utf-8")
+    # 暫定公告日：每季取最早的一次（三星 10/8 暫定、10/30 正式都掛「잠정」）
+    pre_dt = {}
+    for d, rno, nm in cache.get("ann", []):
+        cal = q_of_date(dt.date.fromisoformat(d))
+        if cal not in pre_dt or d < pre_dt[cal][0]:
+            pre_dt[cal] = [d, rno]
+    if not Q:
+        return dict(err=err) if err else {}, None
+    last = Q[-1]["cal"]
+    pend = next_cal(last)
+    end = q_end(pend)   # 待公布季還沒結束（剛申報完）時，一樣顯示它的預計日
+    y, qn = 2000 + int(pend[:2]), int(pend[3])
+    rc, due_days = next((r, du) for r, q, md, du in REPORTS if q == qn)
+    due = weekday(end + dt.timedelta(days=due_days))   # 期限遇假日順延到下個工作日
+    e = dict(q=pend, end=end.isoformat(), due=due.isoformat())
+    # 預計公布日：去年同季暫定公告日 → 去年同季季報申報日 → 法定底線
+    ly = f"{int(pend[:2]) - 1:02d}Q{qn}"
+    if ly in pre_dt:
+        d0 = dt.date.fromisoformat(pre_dt[ly][0])
+        e["est"], e["b"] = weekday(d0.replace(year=d0.year + 1)).isoformat(), f"去年暫定 {d0.month}/{d0.day}"
+    else:
+        r = fin.get(f"{y - 1}-{rc}") or {}
+        f = r.get("rcept") or ""
+        if len(f) == 8:
+            d0 = dt.date(int(f[:4]), int(f[4:6]), int(f[6:]))
+            e["est"], e["b"] = weekday(d0.replace(year=d0.year + 1)).isoformat(), f"去年季報 {d0.month}/{d0.day}"
+        else:
+            e["est"], e["b"] = due.isoformat(), "法定期限"
+    if e["est"] > e["due"]:
+        e["est"] = e["due"]
+    # 這一季的暫定：DART 有公告 or Naver 季表已有數字
+    nv = (cache.get("nv") or {}).get(pend)
+    row = None
+    if pend in pre_dt or nv:
+        e["st"] = "pre"
+        if pend in pre_dt:
+            e["pre"], e["rno"] = pre_dt[pend]
+        else:
+            e["pre"], e["src"] = cache.get("nv_at") or TODAY.isoformat(), "naver"
+        if nv:
+            ni = nv.get("nip") if nv.get("nip") is not None else nv.get("ni")
+            sh = next((q["sh"] for q in reversed(Q) if q.get("sh")), None)
+            eps = nv.get("eps")
+            if eps is None and ni is not None and sh:
+                eps = round(ni * 1e8 / (sh * 1e6), 1)
+            pct = lambda v: None if v is None or not nv.get("rev") else round(v / nv["rev"] * 100, 1)
+            row = dict(cal=pend, end=end.isoformat(), filed=e["pre"], rev=nv.get("rev"), gm=None, om=pct(nv.get("op")), nm=pct(ni),
+                       eps=eps, capex=None, sh=sh, eq=None, fs=None, ni=None if ni is None else ni * 1e8,
+                       opa=nv.get("op"), nia=ni, ocf=None, divp=None, assets=None, liab=None, cash=None, pre=True,
+                       eps_est=nv.get("eps") is None)
+            e.update(rev=nv.get("rev"), op=nv.get("op"), ni=ni, eps=eps)
+            # 年增（對去年同季正式財報）
+            py = next((q for q in Q if q["cal"] == ly), None)
+            if py and py.get("rev") and nv.get("rev"):
+                e["ry"] = round((nv["rev"] / py["rev"] - 1) * 100, 1)
+            if py and py.get("opa") and nv.get("op") is not None and py["opa"] > 0:
+                e["oy"] = round((nv["op"] / py["opa"] - 1) * 100, 1)
+        else:
+            e["nonum"] = True   # DART 有暫定公告但 Naver 還沒更新數字
+    else:
+        e["st"] = "late" if TODAY > due else "wait"
+    if err:
+        e["err"] = err
+    return e, row
+
+
 # ---------- 組裝 ----------
 FIN_COLS = ["cal", "rev", "gm", "om", "nm", "eps", "opa", "nia", "capex", "ocf", "divp", "eq", "assets", "liab", "cash"]
 # fin 欄位：0季別 1營收(億) 2毛利率 3營益率 4淨利率 5EPS 6營業利益(億) 7母公司淨利(億) 8資本支出(億) 9營業現金流(億)
@@ -397,18 +571,28 @@ FIN_COLS = ["cal", "rev", "gm", "om", "nm", "eps", "opa", "nia", "capex", "ocf",
 
 
 def fin_rows(Q):
-    return [[x.get(k) for k in FIN_COLS] for x in Q]
+    return [[x.get(k) for k in FIN_COLS] + ([1] if x.get("pre") else []) for x in Q]   # 第 16 欄 1 = 暫定業績（Naver 季表，待正式季報取代）
 
 
 def build(code, corps):
     cfg = CFG.get(code, dict(theme="", zh="", flags="", tw=[]))
     corp, kname = corps.get(code, [None, ""])
-    note, Q, n_new = [], [], (0, 0)
+    note, Q, n_new, cache = [], [], (0, 0), {}
     if corp:
         cache, n_new = fin_cache(code, corp)
         Q = quarters(cache)
     else:
         note.append("OpenDART 查無此代號，沒有財報資料")
+    # 📅 暫定業績：正式季報還沒出、Naver 季表已有數字 → 接在最後一季後面（本益比、年增、財報明細都會用到；正式季報抓到後自動取代）
+    try:
+        earn, prow = earn_info(code, corp, Q, cache)
+    except Exception as e:
+        print(f"  暫定業績失敗：{e}")
+        earn, prow = {}, None
+    if prow and prow.get("rev"):
+        Q.append(prow)
+        note.append(f"{prow['cal']} 為暫定業績（Naver 季表，{earn.get('pre', '')[5:].replace('-', '/')} 公布）：只有營收、營業利益、淨利"
+                    f"{'，EPS 以淨利 ÷ 前季股數推算' if prow.get('eps_est') else ''}；正式季報申報後自動取代")
     try:
         px = naver_price(code)
         src = "Naver"
@@ -462,15 +646,15 @@ def build(code, corps):
                 mcap=nv.get("mcap"), dy=nv.get("dy"))
     cut = (TODAY - dt.timedelta(days=365 * 3)).isoformat()
     fr = [[r["date"], r["c"], r["fr"]] for r in px if r["date"] >= cut and r["fr"] is not None]
-    q = [[x["cal"], x["cal"], x["rev"], x["gm"], x["om"], x["nm"], x["eps"], x["capex"], x["sh"], x["end"], x["filed"]]
-         for x in Q]
+    q = [[x["cal"], x["cal"], x["rev"], x["gm"], x["om"], x["nm"], x["eps"], x["capex"], x["sh"], x["end"], x["filed"]] + ([1] if x.get("pre") else [])
+         for x in Q]   # 第 12 欄 1 = 暫定業績
     fin = fin_rows(Q)
     sp = [f"{x['cal']} {x['split']}" for x in Q if x.get("split")]
     if sp:
         note.append("股票分割：" + "、".join(sp) + "，之前各季 EPS 已依比例調整")
     if n_new[1]:
         note.append(f"財報回補中：還有 {n_new[1]} 份報告未抓，下次排程補齊")
-    est = [x["cal"] for x in Q if x.get("eps_est")]
+    est = [x["cal"] for x in Q if x.get("eps_est") and not x.get("pre")]
     if est:
         note.append(f"{est[0]}～{est[-1]} 共 {len(est)} 季財報未列 EPS，以淨利 ÷ 鄰近季股數推算")
     if Q and len(Q) < 4:
@@ -482,7 +666,7 @@ def build(code, corps):
     return dict(id=code, name=cfg["zh"] or nv.get("name") or kname, kname=kname, theme=cfg["theme"],
                 cyclical="C" in cfg["flags"], tw=cfg["tw"], freq="Q", fye=f"{TODAY.year - 1}-12-31", corp=corp,
                 updated=dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%MZ"), last=last, q=q, riv=riv,
-                fr=fr, cons=cons, fin=fin, note=note, _nv_name=nv.get("name")), n_new
+                fr=fr, cons=cons, fin=fin, earn=earn, note=note, _nv_name=nv.get("name")), n_new
 
 
 def write_diag(diag):
@@ -511,7 +695,8 @@ def main():
             ok.append(dict(id=code, name=d["name"], kname=d["kname"], theme=d["theme"], n=len(d["q"]),
                            close=L["close"], chg=round((L["close"] / L["prev"] - 1) * 100, 2) if L["prev"] else None,
                            pe=L["pe"], pb=L["pb"], fr=L["fr"], cpe=L["cns_per"], lq=lq[0] if lq else None,
-                           cyc=d["cyclical"], tw=d["tw"], date=L["date"]))
+                           cyc=d["cyclical"], tw=d["tw"], date=L["date"], pre=bool(lq and len(lq) > 11 and lq[11]),
+                           earn={k: v for k, v in (d.get("earn") or {}).items() if k in ("q", "st", "pre", "est", "due", "b", "ry", "oy", "nonum")}))
             Qs = d["q"]
             diag[code] = dict(zh=d["name"], kname=d["kname"], nv=nvn, n=len(Qs), sec=round(time.time() - t0),
                               first=Qs[0][0] if Qs else None, last=lq[0] if lq else None, new=n_new,

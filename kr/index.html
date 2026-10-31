@@ -363,6 +363,7 @@ html{scroll-behavior:smooth}
     <div class="tgrid" id="tgrid"></div>
     <p class="legend" id="tLeg" hidden>各主題中位數。<span id="tLegC"><i class="cv">5/7</i>＝7 檔裡只有 5 檔有值（虧損、資料不足不算），檔數少時別當成整個主題。</span>營收年增＝最新一季對比去年同季；EPS 年增＝近四季合計對比前四季；PEG＝本益比 ÷ EPS 年增，<span class="cheap">&lt;1</span>、<span class="pricey">&gt;2</span>；本月至今＝收盤對比上月底；外資持股＝主題內中位數，外資是韓股主力，持股比轉折常領先股價。</p>
   </div>
+  <a class="srlink" id="caLink" href="#calendar" hidden><b>📅 財報公布倒數</b><span id="caSub"></span></a>
   <a class="srlink" id="srLink" href="#salary" hidden><b>💰 薪資排行</b><span id="srSub"></span></a>
   <div id="groups"></div>
   <p class="legend" id="gLegend" hidden>清單欄位：收盤價（日漲跌，台幣模式為固定匯率換算）　本益比／淨值比。<span class="pill">循環</span> 循環股以淨值比為主；外資持股比在主題頁與個股頁</p>
@@ -411,6 +412,23 @@ html{scroll-behavior:smooth}
   <div class="panel"><div class="tbl"><table class="lst" id="sTbl"></table></div></div>
   <p class="legend" id="sFoot"></p>
 </div>
+
+<!-- ===== 財報公布倒數：#calendar（資料來自 index.json 的 earn 欄：fetch_kr.py 以 OpenDART 公示搜尋的去年同季暫定業績公告日 ＋ 季報申報日推算） ===== -->
+<div id="calPage" hidden>
+  <div class="top"><a href="#">← 全部主題</a><span class="meta" id="caAsof" style="margin-left:auto"></span></div>
+  <h1>📅 財報公布倒數</h1>
+  <p class="tsum" id="caTake">載入中…</p>
+  <div class="mrow"><span class="segm" id="caTabs"></span></div>
+  <p id="caHead"></p>
+  <div class="panel"><div class="tbl"><table class="lst" id="caTbl"></table></div></div>
+  <p class="legend" id="caFoot"></p>
+</div>
+<style>
+#calPage .top{padding-top:12px}#calPage h1{font-size:22px;font-weight:900;margin:6px 0 0;line-height:1.3}
+#caTbl td.co{font-family:var(--f-body);white-space:normal;min-width:6.5em}#caTbl th:nth-child(2),#caTbl td:nth-child(2){text-align:left}#caTbl .ind{font-size:11px;color:var(--muted);display:block}
+#caTbl th,#caTbl td{padding-inline:4px}#caTbl td:not(.co) .sub{white-space:nowrap}#caTbl td b.soon{color:var(--warm)}#caTbl td b.today{color:var(--down)}#caTbl .pre{color:var(--accent)}
+.lst .sub i.pre{font-style:normal;color:var(--accent);font-size:9.5px;border:1px solid var(--accent);border-radius:3px;padding:0 2px;margin-left:2px;vertical-align:1px}
+</style>
 
 <!-- ===== 編輯主題：#edit 清單（排序／隱藏／新增）、#edit/{id} 單一主題（名稱、成份股、細分）。只存在這支手機 ===== -->
 <div id="editList" class="ed" hidden>
@@ -646,8 +664,8 @@ function base(){
     xAxis:{type:'category',axisLine:{lineStyle:{color:css('--line')}},axisTick:{show:false},axisLabel:t},
     yAxis:{type:'value',scale:true,splitLine:{lineStyle:{color:css('--grid')}},axisLabel:{...t}},animationDuration:500};
 }
-const qlbl=x=>D.freq==='Q'?x[0]:x[1];
-const qtip=i=>D.freq==='Q'?`${Q[i][0]}（${Q[i][1]?Q[i][1]+'，':''}季末 ${Q[i][9]}）`:`${Q[i][1]}（年底 ${Q[i][9]}）`;
+const qlbl=x=>(D.freq==='Q'?x[0]:x[1])+(x[11]?'暫':'');   // 第 12 欄 1＝暫定業績
+const qtip=i=>D.freq==='Q'?`${Q[i][0]}${Q[i][11]?'（暫定業績）':''}（${Q[i][1]?Q[i][1]+'，':''}季末 ${Q[i][9]}）`:`${Q[i][1]}（年底 ${Q[i][9]}）`;
 const MONTHS=['','1','2','3','4','5','6','7','8','9','10','11','12'];
 
 function header(){
@@ -669,8 +687,9 @@ function header(){
   if(D.cyclical)notes.push(['循環股：EPS 高峰時 PE 偏低，以 PB 為主','w']);
   if(L.ttm!=null&&L.ttm<=0)notes.push(['近四季虧損：PE 不適用，看 PB 與營收','w']);
   if(L.mcap)notes.push([`市值 ${ap()}${capT(L.mcap,true)}${cur()}${L.dy?`・殖利率 ${L.dy}%`:''}`,'']);
+  {const en=earnNote(D);if(en)notes.push(en)}
   (D.note||[]).forEach(n=>notes.push([n,'']));
-  $('notes').innerHTML=notes.map(([n,c])=>`<p${c?` class="${c}"`:''}>${esc(n)}</p>`).join('')+((D.theme||'').includes('記憶體')?expNote():'');
+  $('notes').innerHTML=notes.map(([n,c])=>`<p${c?` class="${c}"`:''}>${n.startsWith('📅')||n.startsWith('⚠️ ')?n:esc(n)}</p>`).join('')+((D.theme||'').includes('記憶體')?expNote():'');
   // 營收
   const yy=yoyOf(qn-1);
   $('tRev').innerHTML=`${q1[0]} 營收 <strong>${ap()}${amt(q1[2],fxOn()?undefined:U.k>1?2:0)}</strong>${yy!=null?`，年增 <strong>${yy}%</strong>`:''}${isPrevQ(q0,q1)?`，季增 <strong>${((q1[2]/q0[2]-1)*100).toFixed(1)}%</strong>`:''}`;
@@ -724,7 +743,7 @@ let FINP='y',FINT='g';try{FINP=localStorage.getItem('finP')||'y';FINT=localStora
 function finRows(){
   const F=D.fin||[];if(!F.length)return null;
   const r=(k,v)=>v==null?null:+v.toFixed(k);
-  const Qr=F.map(x=>({l:x[0],y:2000+ +x[0].slice(0,2),n:+x[0][3],rev:x[1],gm:x[2],om:x[3],nm:x[4],eps:x[5],op:x[6],ni:x[7],capex:x[8],ocf:x[9],divp:x[10],eq:x[11],assets:x[12],liab:x[13],cash:x[14]}));
+  const Qr=F.map(x=>({l:x[0],pre:!!x[15],y:2000+ +x[0].slice(0,2),n:+x[0][3],rev:x[1],gm:x[2],om:x[3],nm:x[4],eps:x[5],op:x[6],ni:x[7],capex:x[8],ocf:x[9],divp:x[10],eq:x[11],assets:x[12],liab:x[13],cash:x[14]}));
   Qr.forEach((x,i)=>{const p=Qr.find(z=>z.y===x.y-1&&z.n===x.n);
     x.ry=p&&p.rev>0&&x.rev!=null?r(1,(x.rev/p.rev-1)*100):null;
     x.ey=p&&p.eps>0&&x.eps!=null?r(1,(x.eps/p.eps-1)*100):(p&&p.eps!=null&&p.eps<=0&&x.eps>0?null:null);x.et=p&&p.eps!=null&&x.eps!=null&&p.eps<=0&&x.eps>0?'轉盈':p&&p.eps>0&&x.eps!=null&&x.eps<=0?'轉虧':null;
@@ -782,7 +801,7 @@ function renderFin(){
   $('uFin').textContent=Qm?`${R.length}季`:`${F.length}年${T?'+近4季':''}`;
   $('finPer').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.p===FINP));
   $('finTab').querySelectorAll('button').forEach(b=>{b.setAttribute('aria-pressed',b.dataset.t===FINT);b.hidden=NR&&['g','p','c'].includes(b.dataset.t)});
-  const ch=mk('cFin'),o=base();o.xAxis.data=R.map(x=>Qm?x.l:(x.ttm?'近4季':"'"+x.l.slice(2)));o.yAxis.scale=false;
+  const ch=mk('cFin'),o=base();o.xAxis.data=R.map(x=>Qm?x.l+(x.pre?'暫':''):(x.ttm?'近4季':"'"+x.l.slice(2)));o.yAxis.scale=false;
   const N=R.length,show=i=>Qm?(i>=N-4):true,fa=(v,d)=>v==null?'—':money(v,d);   // 億 → 顯示幣別／單位
   const lab=(fm,col)=>({show:true,position:'top',fontSize:9,color:col||mu,fontFamily:'IBM Plex Mono',formatter:p=>show(p.dataIndex)&&p.value!=null?fm(p.value):''});
   const bar=(name,k,col,fm,conv)=>({name,type:'bar',barCategoryGap:Qm?'22%':'30%',label:lab(fm),itemStyle:{color:typeof col==='function'?up:col},
@@ -814,18 +833,18 @@ function renderFin(){
     o.series=[bar('營業現金流','ocf',acc,big,mval),{...bar('自由現金流','fcf',acc2,big,mval),label:{show:false}},{...line('母公司淨利','ni',fg),endLabel:{show:false},data:R.map(x=>mval(x.ni))}];
     foot='自由現金流＝營業現金流 − 資本支出（取得有形資產）。長期淨利有、自由現金流卻常是負的＝賺的錢都要再投資或卡在應收／存貨'+(hasCf?'。':'。現金流資料回補中，排程重抓後補齊。');
   }
-  o.tooltip.formatter=ps=>{const x=R[ps[0].dataIndex],L=[`<b>${x.ttm?'近四季':x.l}</b>`];
+  o.tooltip.formatter=ps=>{const x=R[ps[0].dataIndex],L=[`<b>${x.ttm?'近四季':x.l}${x.pre?'（暫定業績）':''}</b>`];
     if(x.rev!=null)L.push(`營收 ${ap()}${fa(x.rev,0)}（年增 ${pct(x.ry,1)}）`);if(x.op!=null)L.push(`營業利益 ${ap()}${fa(x.op,0)}・母公司淨利 ${ap()}${fa(x.ni,0)}`);
     if(x.gm!=null||x.om!=null||x.nm!=null)L.push(`毛利率 ${x.gm==null?'—':fmt(x.gm,1)+'%'}・營益率 ${x.om==null?'—':fmt(x.om,1)+'%'}・淨利率 ${x.nm==null?'—':fmt(x.nm,1)+'%'}`);
     L.push(`EPS ${ap()}${won(x.eps)} ${cur()}（年增 ${x.et||(x.ey==null?'—':pct(x.ey,0))}）`+(x.po!=null?`・配息率 ${fmt(x.po,0)}%`:''));
     L.push(`ROE ${x.roe==null?'—':fmt(x.roe,1)+'%'}・負債比 ${x.debt==null?'—':fmt(x.debt,1)+'%'}`);if(x.ocf!=null)L.push(`營業現金流 ${ap()}${fa(x.ocf,0)}・自由現金流 ${ap()}${fa(x.fcf,0)}`);return L.join('<br>')};
   ch.setOption(o,true);ch.resize();
-  $('fFin').textContent=foot+fxFoot()+' 資料：OpenDART 連結財報（年報第四季＝全年 − 前三季）。';
+  $('fFin').textContent=foot+fxFoot()+' 資料：OpenDART 連結財報（年報第四季＝全年 − 前三季）'+(X.Q.some(x=>x.pre)?'；「暫」＝暫定業績（Naver 季表，只有營收、營業利益、淨利，EPS 推算），正式季報後取代':'')+'。';
   // 明細表
   const c=(v,d)=>v==null?'—':fmt(v,d),cp=v=>v==null?'—':`<span class="${sg(v)}">${pct(v,0)}</span>`,m0=v=>v==null?'—':money(v,0);
   const rows=Qm?[...X.Q].reverse():[...A].reverse();
   $('tbFin').innerHTML=`<thead><tr><th>${Qm?'季別':'年度'}</th>${NR?'':`<th>營收${un()}</th><th>年增</th><th>毛利率</th><th>營益率</th><th>淨利率</th><th>營業利益</th>`}<th>母公司淨利</th><th>EPS</th><th>EPS年增</th>${Qm?'':'<th>股利發放</th><th>配息率</th>'}<th>ROE</th><th>負債比</th><th>營業現金流</th><th>資本支出</th><th>自由現金流</th><th>現金</th><th>母公司權益</th></tr></thead><tbody>`+
-    rows.map(x=>`<tr class="${x.ttm?'ttm':''}"><td>${x.ttm?'近四季':x.l}</td>${NR?'':`<td>${m0(x.rev)}</td><td>${cp(x.ry)}</td><td>${c(x.gm,1)}</td><td>${c(x.om,1)}</td><td>${c(x.nm,1)}</td><td>${m0(x.op)}</td>`}<td>${m0(x.ni)}</td><td>${won(x.eps)}</td><td>${x.et?`<span class="${x.et==='轉盈'?'up':'dn'}">${x.et}</span>`:cp(x.ey)}</td>${Qm?'':`<td>${m0(x.divp)}</td><td>${c(x.po,0)}${x.po!=null?'%':''}</td>`}<td>${c(x.roe,1)}</td><td>${c(x.debt,1)}</td><td>${m0(x.ocf)}</td><td>${m0(x.capex)}</td><td>${m0(x.fcf)}</td><td>${m0(x.cash)}</td><td>${m0(x.eq)}</td></tr>`).join('')+'</tbody>';
+    rows.map(x=>`<tr class="${x.ttm?'ttm':''}"><td>${x.ttm?'近四季':x.l}${x.pre?'<i class="pre" style="font-style:normal;color:var(--accent);font-size:9.5px;border:1px solid var(--accent);border-radius:3px;padding:0 2px;margin-left:3px">暫</i>':''}</td>${NR?'':`<td>${m0(x.rev)}</td><td>${cp(x.ry)}</td><td>${c(x.gm,1)}</td><td>${c(x.om,1)}</td><td>${c(x.nm,1)}</td><td>${m0(x.op)}</td>`}<td>${m0(x.ni)}</td><td>${won(x.eps)}</td><td>${x.et?`<span class="${x.et==='轉盈'?'up':'dn'}">${x.et}</span>`:cp(x.ey)}</td>${Qm?'':`<td>${m0(x.divp)}</td><td>${c(x.po,0)}${x.po!=null?'%':''}</td>`}<td>${c(x.roe,1)}</td><td>${c(x.debt,1)}</td><td>${m0(x.ocf)}</td><td>${m0(x.capex)}</td><td>${m0(x.fcf)}</td><td>${m0(x.cash)}</td><td>${m0(x.eq)}</td></tr>`).join('')+'</tbody>';
 }
 $('fin').addEventListener('click',e=>{if(!e.target.closest('#finK,[data-fint],#tFin .pill'))return;const o=$('fin').classList.toggle('open');const t=$('fin').querySelector('[data-fint]');if(t)t.textContent=o?'收起 ▴':'依據 ▾'});
 $('finPer').addEventListener('click',e=>{const b=e.target.closest('button[data-p]');if(!b)return;FINP=b.dataset.p;try{localStorage.setItem('finP',FINP)}catch(_){}renderFin()});
@@ -1159,11 +1178,11 @@ function themeRender(tid){
   const b=(a,f,c)=>a.v==null?(ST_OK?'—':'…'):`<b class="${c||''}">${f(a.v)}</b>${cvT(a)}`;
   const lqs=[...new Set(ids.map(i=>(ST[i]||{}).lq).filter(l=>l&&/^\d\dQ\d$/.test(l)))].sort();
   $('tSum').innerHTML=`${it.length} 檔${it.length>1?'中位數':''}：營收年增 ${b(A.ry,v=>pct(v),sgc(A.ry.v))}・EPS 年增（四季）${b(A.ey,v=>pct(v),sgc(A.ey.v))}・本益比 ${b(A.pe,v=>fmt(v,1))}・PEG ${b(A.peg,v=>fmt(v,2),pegc(A.peg.v))}・淨值比 ${b(A.pb,v=>fmt(v,2))}・外資持股 ${b(A.fr,v=>fmt(v,1)+'%')}・本月至今 ${b(A.mtd,v=>pct(v,1),sgc(A.mtd.v))}`+
-    (lqs.length>1?`<br>最新季 ${lqs[0]}～${lqs[lqs.length-1]}：財報季各家進度不同，中位數會混到兩季`:lqs.length?`<br>最新季 ${lqs[0]}`:'');
+    (lqs.length>1?`<br>最新季 ${lqs[0]}～${lqs[lqs.length-1]}：財報季各家進度不同，中位數會混到兩季`:lqs.length?`<br>最新季 ${lqs[0]}`:'')+(it.some(s=>s.pre)?`（${it.filter(s=>s.pre).length} 檔為暫定業績）`:'')+(it.some(s=>s.earn&&s.earn.q&&s.earn.st!=='pre')?` <a href="#calendar" style="color:var(--accent);text-decoration:none">📅 公布倒數 →</a>`:'');
   $('tTw').innerHTML=t.tw.length?'<span class="lb">對應台股</span>'+t.tw.map(([c,n])=>`<a href="../#${c}"><b>${c}</b>${esc(n)}</a>`).join('')+(!t.custom?`<a class="all" href="../#t/${t.id}">台股同主題 →</a><a class="all" href="../us/#t/${t.id}">美股同主題 →</a>`:''):'';
   if(LAST_TS!==tid){TS=tsGet(tid);LAST_TS=tid}
   tTable(t);
-  $('tFoot').innerHTML=`營收＝最新一季對比去年同季；EPS＝近四季合計對比前四季（「虧損」＝近四季合計 ≤ 0，「轉盈」＝前四季是虧損）；PEG＝本益比 ÷ EPS 年增，年增 &gt;300% 低基期不算${it.some(s=>s.cyc)?'；<span class="pill">循環</span> 股 PEG 參考性低，以淨值比河流為主':''}；本月＝最新收盤對比上月底；外資＝外資持股比（%），外資是韓股主力，持股比轉折常領先股價。收盤${fxOn()?`以 1 台幣 = ${FX.rate} 韓元固定匯率換成台幣`:'為韓元'}；市值＝Naver 市值${fxOn()?'，同樣換算':''}。${DENSE?'緊湊模式：本益比下方一行＝近四季 EPS 年增與 P＝PEG；本月漲跌、備註看完整模式。':''}點欄位標題可排序，每個主題會記住上次的排序（本益比連點：本益比 → EPS年增 → PEG；淨值比連點：淨值比 → 外資持股）。`}
+  $('tFoot').innerHTML=`營收＝最新一季對比去年同季；EPS＝近四季合計對比前四季（「虧損」＝近四季合計 ≤ 0，「轉盈」＝前四季是虧損）；PEG＝本益比 ÷ EPS 年增，年增 &gt;300% 低基期不算${it.some(s=>s.cyc)?'；<span class="pill">循環</span> 股 PEG 參考性低，以淨值比河流為主':''}；本月＝最新收盤對比上月底；外資＝外資持股比（%），外資是韓股主力，持股比轉折常領先股價。收盤${fxOn()?`以 1 台幣 = ${FX.rate} 韓元固定匯率換成台幣`:'為韓元'}；市值＝Naver 市值${fxOn()?'，同樣換算':''}。${DENSE?'緊湊模式：本益比下方一行＝近四季 EPS 年增與 P＝PEG；本月漲跌、備註看完整模式。':''}營收欄小字＝最新季，<i class="pre" style="font-style:normal;color:var(--accent)">暫</i>＝暫定業績（正式季報未出，EPS 推算）、⏳日期＝下一季財報預計公布日（7 天內橘色）。點欄位標題可排序，每個主題會記住上次的排序（本益比連點：本益比 → EPS年增 → PEG；淨值比連點：淨值比 → 外資持股）。`}
 // ---------- 主題頁個股表（排版同台股站）----------
 // 市值＝Naver 市值（億韓元），存在個股檔 last.mcap
 const capM=id=>(ST[id]||{}).mcap||null;
@@ -1205,11 +1224,11 @@ function tTable(t){const el=$('tList'),[k,dir]=TS.split(':');let rows=t.stocks.s
       return `<tr data-id="${id}"><td class="sk">${k==='cap'&&cm!=null?`<span class="rk">#${++RK}</span>`:''}<span class="nmw" title="${esc(s.name||id)} ${id}"><span class="nm" style="font-family:var(--f-body)">${esc(s.name||id)}</span></span><span class="dl"><span class="c">${id}</span>${cv}${pd}</span></td>`+
         (tr?`<td>${pxT(s.close)}<span class="sub ${sgc(s.chg)}">${s.chg==null?'—':pct(s.chg,2)}</span></td>`:'<td>—</td>')+
         `<td>${s.pe?fmt(s.pe,s.pe>=100?0:1):'—'}<span class="sub" title="近四季 EPS 年增；P＝PEG（本益比÷EPS 年增）">${d}</span></td><td>${s.pb?fmt(s.pb,2):'—'}<span class="sub">外${s.fr!=null?fmt(s.fr,0)+'%':'—'}</span></td>`+
-        `<td class="${sgc(o.ry)}">${o.ry!=null?pct(o.ry,0):'—'}<span class="sub"${o.lq&&o.lq!==LQ?' style="color:var(--warm)" title="跟其他檔不同季"':''}>${o.lq?o.lq.slice(2):''}</span></td></tr>`}
+        `<td class="${sgc(o.ry)}">${o.ry!=null?pct(o.ry,0):'—'}<span class="sub"${o.lq&&o.lq!==LQ?' style="color:var(--warm)" title="跟其他檔不同季"':''}>${earnSub(id,o.lq,true)}</span></td></tr>`}
     return `<tr data-id="${id}"><td class="sk">${k==='cap'&&cm!=null?`<span class="rk">#${++RK}</span>`:''}<span class="nmw"><span class="nm" style="font-family:var(--f-body)">${esc(s.name||id)}</span><span class="cd">${id}</span></span>${cm?`<span class="cap">${capT(cm)}</span>`:''}${salCell(id)}${pills||note?`<div class="role">${pills}${esc(note||'')}</div>`:''}</td>`+
       (tr?`<td>${pxT(s.close)}<span class="sub ${sgc(s.chg)}">${s.chg==null?'—':pct(s.chg,2)}</span>${o.mtd!=null?`<span class="sub sm">本月 <span class="${sgc(o.mtd)}">${pct(o.mtd,1)}</span></span>`:''}</td>`:'<td>—</td>')+
       `<td>${s.pe?fmt(s.pe,1):'—'}${e}</td><td>${s.pb?fmt(s.pb,2):'—'}<span class="sub sm">外資${s.fr!=null?fmt(s.fr,1)+'%':'—'}</span></td>`+
-      `<td class="${sgc(o.ry)}">${o.ry!=null?pct(o.ry,1):'—'}<span class="sub"${o.lq&&o.lq!==LQ?' style="color:var(--warm)" title="跟其他檔不同季"':''}>${o.lq||''}</span></td></tr>`}).join('')+'</tbody>';
+      `<td class="${sgc(o.ry)}">${o.ry!=null?pct(o.ry,1):'—'}<span class="sub"${o.lq&&o.lq!==LQ?' style="color:var(--warm)" title="跟其他檔不同季"':''}>${earnSub(id,o.lq,false)}</span></td></tr>`}).join('')+'</tbody>';
   el.onclick=e=>{const h=e.target.closest('th[data-k]');if(h){const nk=h.dataset.k,cur=TS.split(':');
       if(nk==='pe'){const i=TPE.indexOf(TS);TS=TPE[i<0?0:(i+1)%TPE.length]}else if(nk==='pb'){const i=TPB.indexOf(TS);TS=TPB[i<0?0:(i+1)%TPB.length]}else TS=cur[0]===nk?(cur[1]==='-1'?nk+':1':''):nk+':-1';tsSet(t.id,TS);tTable(t);return}
     const r=e.target.closest('tr[data-id]');if(r)location.hash=r.dataset.id}}
@@ -1219,23 +1238,24 @@ function backPaint(id){const t=themeOfStock(id);$('back').href=t?'#t/'+t.id:'#';
 let HOMEY=0;
 function route(){
   const raw=decodeURIComponent(location.hash.slice(1)),id=raw.toUpperCase();
-  const em=/^edit(?:\/([a-z0-9_-]+))?$/.exec(raw),rk=raw.toLowerCase()==='rank',sr=raw.toLowerCase()==='salary';   // 編輯頁 #edit、#edit/{主題}（小寫，跟代號 EDIT 分開）
-  if(!em&&!rk&&!sr&&ALIAS[id]&&!IDX.some(s=>s.id===id)){location.replace('#'+ALIAS[id]);return}   // #FB → #META
-  const tm=/^t\/([a-z0-9_-]+)$/i.exec(raw),tid=tm?tm[1].toLowerCase():null,h=em?raw:rk?'rank':sr?'salary':tid?'t/'+tid:id;   // 主題頁 #t/pcb
+  const em=/^edit(?:\/([a-z0-9_-]+))?$/.exec(raw),rk=raw.toLowerCase()==='rank',sr=raw.toLowerCase()==='salary',ca=raw.toLowerCase()==='calendar';   // 編輯頁 #edit、#edit/{主題}（小寫，跟代號 EDIT 分開）
+  if(!em&&!rk&&!sr&&!ca&&ALIAS[id]&&!IDX.some(s=>s.id===id)){location.replace('#'+ALIAS[id]);return}   // #FB → #META
+  const tm=/^t\/([a-z0-9_-]+)$/i.exec(raw),tid=tm?tm[1].toLowerCase():null,h=em?raw:rk?'rank':sr?'salary':ca?'calendar':tid?'t/'+tid:id;   // 主題頁 #t/pcb
   bkTrack(h);
-  $('themePage').hidden=!tid;$('rankPage').hidden=!rk;$('srank').hidden=!sr;$('editList').hidden=!em||!!em[1];$('editTheme').hidden=!em||!em[1];const stk=!tid&&!em&&!rk&&!sr&&isStk(id);
+  $('themePage').hidden=!tid;$('rankPage').hidden=!rk;$('srank').hidden=!sr;$('calPage').hidden=!ca;$('editList').hidden=!em||!!em[1];$('editTheme').hidden=!em||!em[1];const stk=!tid&&!em&&!rk&&!sr&&!ca&&isStk(id);
   if(!stk){$('pnav').hidden=true;document.body.classList.remove('pn');pnShut();qToggle(false)}
-  if((tid||rk||sr)&&VPREV==='home')HOMEY=scrollY;   // 從首頁點卡片進主題：記住首頁捲到哪
+  if((tid||rk||sr||ca)&&VPREV==='home')HOMEY=scrollY;   // 從首頁點卡片進主題：記住首頁捲到哪
   if(em){$('stock').hidden=true;$('home').hidden=true;document.title='編輯主題';if(em[1])openEditor(em[1],HPREV);else renderOrder();scrollTo(0,0)}
   else if(tid){$('stock').hidden=true;$('home').hidden=true;themeRender(tid);scrollTo(0,0)}
   else if(sr){$('stock').hidden=true;$('home').hidden=true;document.title='韓股員工薪資排行';renderSal();scrollTo(0,0)}
+  else if(ca){$('stock').hidden=true;$('home').hidden=true;document.title='韓股財報公布倒數';renderCal();scrollTo(0,0)}
   else if(rk){$('stock').hidden=true;$('home').hidden=true;document.title='韓股市值排行';rkLoad().then(rkRender);scrollTo(0,0)}
   else if(stk){const k=KEEP;KEEP=null;if(!D||D.id!==id){if(!k)scrollTo(0,0);load(id).then(()=>{if(k)requestAnimationFrame(()=>goSec(k))})}else{$('home').hidden=true;$('stock').hidden=false;pnPaint(id);setTimeout(()=>Object.values(charts).forEach(c=>c.resize()),0);k?goSec(k):scrollTo(0,0)}}
   else{$('stock').hidden=true;$('home').hidden=false;document.title='韓股估值看板';if(!$('q').value.trim())cardsRender();Object.values(charts).forEach(c=>c.resize());
     if(id==='EXP')requestAnimationFrame(()=>{if(!$('exp').hidden)$('exp').scrollIntoView()});   // 個股頁「看趨勢 →」：回首頁捲到出口卡
     if(VPREV==='edit')requestAnimationFrame(()=>scrollTo(0,$('tsec').getBoundingClientRect().top+scrollY-8));   // 編輯完回首頁：停在主題卡
     if(VPREV==='theme'){const y=HOMEY,pt=HPREV;requestAnimationFrame(()=>{scrollTo(0,y);const c=document.querySelector(`a.tcard[href="#${pt}"]`)||document.querySelector(`.tlt tr[data-t="${pt.replace(/^t\//,'')}"]`);if(c){c.classList.remove('bkflash');void c.offsetWidth;c.classList.add('bkflash')}})}}
-  bkRestore(h);VPREV=stk?'stock':em?'edit':tid||rk||sr?'theme':'home';HPREV=h;
+  bkRestore(h);VPREV=stk?'stock':em?'edit':tid||rk||sr||ca?'theme':'home';HPREV=h;
 }
 // ---------- 💰 員工薪資（data/salary.json，kr/fetch_salary.py 從 OpenDART 年報「직원 현황」等抓）----------
 // d[代號] = {avg 平均薪資(韓元), avgPrev, avgChg %, emp 員工數, empPrev, ten 平均年資, tot 薪資總額(億韓元), ctr 約聘%, m 男平均, f 女平均,
@@ -1301,6 +1321,55 @@ function renderSal(){
 }
 document.addEventListener('click',e=>{const b=e.target.closest('#sTabs button[data-tab]');if(b){SR.tab=b.dataset.tab;renderSal();return}
   const r=e.target.closest('#sTbl tr[data-id]');if(r)location.hash=r.dataset.id});
+// ---------- 📅 財報公布倒數 #calendar：index.json 每檔 earn = {q 待公布季, st pre|wait|late, pre 暫定公布日, est 預計公布日, due 法定底線, b 預估依據, ry 暫定營收年增, oy 暫定營益年增, nonum DART 有公告但 Naver 還沒數字} ----------
+// 韓國大型股季末後 1～4 週先發「營業（暫定）實績」（只有營收、營業利益、淨利），正式季報（OpenDART）45 天內、年報 90 天內。預計日＝去年同季暫定公告日 → 去年同季季報申報日 → 法定底線。
+const TODAY_=(()=>{const d=new Date(Date.now()+9*3600e3);return d.toISOString().slice(0,10)})();   // 韓國日期
+const dDays=s=>Math.round((Date.parse(s)-Date.parse(TODAY_))/864e5);
+const mdT=s=>s?`${+s.slice(5,7)}/${+s.slice(8)}`:'—';
+const WD=['日','一','二','三','四','五','六'];const wdT=s=>s?WD[new Date(s+'T00:00:00').getDay()]:'';
+const earnOf=id=>{const s=stockOf(id);return s&&s.earn&&s.earn.q?s.earn:null};
+function caAll(){return IDX.filter(s=>s.earn&&s.earn.q).map(s=>({id:s.id,...s.earn,th:srTheme(s.id)}))}
+function caHome(){const el=$('caLink');if(!el)return;const a=caAll();if(!a.length){el.hidden=true;return}
+  const w=a.filter(r=>r.st!=='pre'),soon=w.filter(r=>dDays(r.est)<=7&&dDays(r.est)>=0),nx=w.slice().sort((x,y)=>x.est<y.est?-1:1)[0];
+  $('caSub').innerHTML=`${a.filter(r=>r.st==='pre').length}檔已出暫定・${w.length}檔待公布${soon.length?`・7天內 <b style="color:var(--warm)">${soon.length}</b> 檔`:''}${nx?`・最近 ${esc(stockOf(nx.id).name||nx.id)} ${mdT(nx.est)}`:''} →`;el.hidden=false}
+const CA={tab:'wait'};
+function renderCal(){
+  const a=caAll();$('caAsof').textContent=`今天 ${mdT(TODAY_)}（韓國）`;
+  if(!a.length){$('caTake').textContent='還沒有財報日資料（等 Actions「更新韓股資料」跑完）';$('caTabs').innerHTML='';$('caTbl').innerHTML='';$('caFoot').textContent='';return}
+  const pre=a.filter(r=>r.st==='pre'),wait=a.filter(r=>r.st!=='pre'),soon=wait.filter(r=>{const n=dDays(r.est);return n>=0&&n<=7}),late=wait.filter(r=>r.st==='late');
+  const qs=[...new Set(a.map(r=>r.q))].sort(),qT=qs.length>1?qs.join('／'):qs[0]||'';
+  $('caTake').innerHTML=`追蹤 <strong>${a.length}</strong> 檔・待公布季 <strong>${qT}</strong>：已出暫定業績 <strong>${pre.length}</strong> 檔、待公布 <strong>${wait.length}</strong> 檔${soon.length?`（7 天內 <strong style="color:var(--warm)">${soon.length}</strong> 檔）`:''}${late.length?`、<strong style="color:var(--down)">逾期 ${late.length}</strong> 檔`:''}`;
+  $('caTabs').innerHTML=[['wait',`⏳ 待公布 ${wait.length}`],['pre',`✅ 已出暫定 ${pre.length}`]].map(([k,l])=>`<button type="button" data-tab="${k}" aria-pressed="${CA.tab===k}">${l}</button>`).join('');
+  const co=r=>{const st=stockOf(r.id);return `<td class="co"><span class="nmw"><span class="nm" style="font-family:var(--f-body)">${esc(st.name||r.id)}</span><span class="cd">${r.id}</span></span><span class="ind">${esc(r.th)}${ROLE[r.id]?'・'+esc(ROLE[r.id]):''}</span></td>`};
+  let rows,th,cell;
+  if(CA.tab==='pre'){
+    rows=pre.slice().sort((x,y)=>x.pre<y.pre?1:-1);th='<th>暫定公布</th><th>營收年增</th><th>營益年增</th>';
+    cell=r=>`<td><b class="pre">${mdT(r.pre)}</b><span class="sub">${r.q}${r.nonum?'・數字待更新':''}</span></td><td class="${sgc(r.ry)}">${r.ry==null?'—':pct(r.ry,0)}</td><td class="${sgc(r.oy)}">${r.oy==null?'—':r.oy>300?'>+300%':pct(r.oy,0)}</td>`;
+    $('caHead').innerHTML='已發「營業（暫定）實績」公正公示，數字已併入個股頁與主題表（標 <i class="pre" style="font-style:normal;color:var(--accent)">暫</i>）；正式季報申報後自動取代。年增＝對去年同季正式財報';
+  }else{
+    rows=wait.slice().sort((x,y)=>x.est===y.est?(x.due<y.due?-1:1):x.est<y.est?-1:1);th='<th>預計公布</th><th>法定底線</th><th>本益比</th>';
+    cell=r=>{const n=dDays(r.est),nd=dDays(r.due),st=stockOf(r.id);
+      const dT=r.st==='late'?`<b class="today">逾期</b><span class="sub">底線 ${mdT(r.due)} 已過</span>`:`<b class="${n<=0?'today':n<=7?'soon':''}">${mdT(r.est)}<small style="font-weight:400">（${wdT(r.est)}）</small></b><span class="sub">${n<=0?'今天':n+' 天後'}・${esc(r.b||'')}</span>`;
+      return `<td>${dT}</td><td>${mdT(r.due)}<span class="sub ${nd<0?'vd':''}">${nd<0?'已過':nd+' 天'}</span></td><td>${st.pe?fmt(st.pe,1):'—'}<span class="sub">${r.q}</span></td>`};
+    $('caHead').innerHTML='依預計公布日排序（<b style="color:var(--warm)">橘</b>＝7 天內、<b style="color:var(--down)">紅</b>＝今天或逾期）。小字＝預估依據：「去年暫定」＝去年同季暫定業績公告日 +1 年（大型股準，誤差多在 ±3 天）；「去年季報」＝沒發暫定業績的公司，只能看去年季報申報日，通常壓線';
+  }
+  $('caTbl').innerHTML=`<thead><tr><th>#</th><th>股票</th>${th}</tr></thead><tbody>`+rows.map((r,i)=>`<tr data-id="${r.id}"><td>${i+1}</td>${co(r)}${cell(r)}</tr>`).join('')+'</tbody>';
+  $('caFoot').innerHTML='韓國沒有統一的財報日曆：三星、海力士等大型股在季末後 1～4 週先發「연결재무제표기준영업(잠정)실적」公正公示（只有營收、營業利益、淨利，不含資產負債），正式分期報告（분기보고서）要到季末後 45 天、年報（사업보고서）90 天內才申報到 OpenDART，期限遇假日順延。預計日由 OpenDART 公示搜尋的去年同季公告日推算，公司可能改期；法定底線是最晚日期。暫定業績的 EPS 由淨利 ÷ 前季股數推算，正式季報申報後整列自動取代。本頁不構成投資建議。';
+}
+document.addEventListener('click',e=>{const b=e.target.closest('#caTabs button[data-tab]');if(b){CA.tab=b.dataset.tab;renderCal();return}
+  const r=e.target.closest('#caTbl tr[data-id]');if(r)location.hash=r.dataset.id});
+// 主題表「營收」欄小字：最新季 + 暫定／預計公布日；個股頁說明一行
+function earnSub(id,lq,dense){const s=stockOf(id),e=s.earn;let t=lq?(dense?lq.slice(2):lq):'';
+  if(s.pre)t+='<i class="pre" title="暫定業績（正式季報未出）">暫</i>';
+  else if(e&&e.q&&e.st!=='pre'&&e.est){const n=dDays(e.est);t+=` <span title="${e.q} 預計 ${mdT(e.est)} 公布（${esc(e.b||'')}）" style="${n<=7?'color:var(--warm)':''}">${e.st==='late'?'逾期':'⏳'+mdT(e.est)}</span>`}
+  return t}
+function earnNote(d){const e=d.earn;if(!e||!e.q)return null;
+  const link=e.rno?` <a href="https://dart.fss.or.kr/dsaf001/main.do?rcpNo=${esc(e.rno)}" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none">公告 ↗</a>`:'';
+  if(e.st==='pre'){const num=e.rev!=null?`：營收 ${ap()}${amt(e.rev,fxOn()?undefined:U.k>1?2:0)}${e.ry!=null?`（年增 ${pct(e.ry,0)}）`:''}${e.op!=null?`、營業利益 ${ap()}${amt(e.op,fxOn()?undefined:U.k>1?2:0)}${e.oy!=null?`（${e.oy>300?'>+300%':pct(e.oy,0)}）`:''}`:''}`:e.nonum?'（Naver 季表尚未更新數字）':'';
+    return [`📅 ${e.q} 暫定業績 ${mdT(e.pre)} 公布${num}；正式季報 ${mdT(e.due)} 前申報${link}`,'']}
+  const n=dDays(e.est);
+  if(e.st==='late')return [`⚠️ ${e.q} 財報已超過法定期限 ${mdT(e.due)} 尚未申報`,'w'];
+  return [`📅 ${e.q} 財報預計 ${mdT(e.est)}（${wdT(e.est)}）公布，${n<=0?'就是今天':'還有 '+n+' 天'}・${e.b||''}・法定底線 ${mdT(e.due)}`,n<=7?'w':'']}
 // ---------- 🏆 市值排行 #rank：rows 欄位 0代號 1中文名 2韓文名 3市場 4市值(億韓元) 5收盤 6日漲跌% 7本益比 8淨值比 9殖利率% 10外資持股% ----------
 let RK=null,RK_P=null,RKS='cap:-1';
 const rkLoad=()=>RK_P||(RK_P=fetch(`data/rank.json?t=${Date.now()}`).then(r=>r.ok?r.json():null).catch(()=>null).then(j=>{RK=j;rkLink();return j}));
@@ -1570,7 +1639,7 @@ addEventListener('hashchange',route);
   try{const r=await fetch('data/salary.json?t='+Date.now());if(r.ok)SA=await r.json()}catch(e){}
   fetch('../data/salary.json?t='+Date.now()).then(r=>r.ok?r.json():null).then(j=>{if(j){TWSA=j;if(D&&!$('stock').hidden)salLine(D.id)}}).catch(()=>{});   // 台股薪資：對應台股旁小字
   BASE=baseThemes();applyCfg();syStat();syncRun();
-  homeRender();srHome();try{expRender()}catch(e){console.error(e)}route();
+  homeRender();srHome();caHome();try{expRender()}catch(e){console.error(e)}route();
   // 主題卡的年增／PEG／本月至今／市值要讀各個股檔（各約 30KB）；讀完重畫卡片與主題頁
   loadStats().then(statsRefresh);
 })();
