@@ -58,7 +58,11 @@ new = """  }else if(Y10T==='r'){
     o.yAxis.axisLabel.formatter='{value}%';o.grid.right=34;
     const hasCov=R.some(x=>x.cov!=null),CAP=50;
     const cvs=R.map(x=>x.cov).filter(v=>v!=null),cmx=cvs.length?Math.max(...cvs):0,cmax=cmx>=CAP?CAP*1.1:Math.max(8,Math.ceil(cmx*1.25));
-    o.yAxis=[o.yAxis,{...o.yAxis,scale:false,min:0,max:cmax,splitLine:{show:false},axisLabel:{show:false}}];o.grid.right=40;
+    // 左軸（ROE、負債比 %）自己定上下限，右軸（倍）依同比例設負的下限，讓兩軸的 0 對齊（ROE 為負時右軸的 0 才不會掉到圖底）
+    const lv=R.flatMap(x=>[x.roe,x.debt]).filter(v=>v!=null),nice=v=>{const e=Math.pow(10,Math.floor(Math.log10(v||1)));return [1,2,2.5,5,10].map(k=>k*e).find(k=>k>=v)};
+    const lhi=lv.length?Math.max(...lv,15):15,llo=lv.length?Math.min(...lv,0):0,st=nice(Math.max(lhi*1.12-Math.min(llo,0),10)/5),lmax=Math.ceil(lhi*1.12/st)*st,lmin=llo<0?-Math.ceil(-llo*1.1/st)*st:0;
+    o.yAxis={...o.yAxis,scale:false,min:lmin,max:lmax,interval:st};
+    o.yAxis=[o.yAxis,{...o.yAxis,min:lmin/lmax*cmax,max:cmax,interval:undefined,splitLine:{show:false},axisLabel:{show:false}}];o.grid.right=40;
     o.series=[line('ROE','roe',acc),line('負債比','debt',warm,0,true)];
     o.series[0].markLine={silent:true,symbol:'none',label:{show:true,position:'insideStartTop',formatter:'15%',color:mu,fontSize:9},lineStyle:{color:mu,type:'dotted'},data:[{yAxis:15}]};
     if(hasCov){const cl=line('利息保障(倍)','cov',acc2,1);cl.data=R.map(x=>x.cov==null?null:Math.max(0,Math.min(x.cov,CAP)));cl.endLabel.formatter=p=>p.value==null?'':(p.value>=CAP?'>'+CAP:p.value<1?'<1':fmt(p.value,0))+'倍';cl.lineStyle.width=1.5;o.series.push(cl)}
