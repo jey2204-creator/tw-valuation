@@ -1,0 +1,28 @@
+name: probe inv（探路，用完即刪）
+on:
+  workflow_dispatch:
+    inputs:
+      codes:
+        description: "代號（空白分隔）"
+        required: false
+        default: "2454 2330"
+permissions:
+  contents: write
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python probe_inv.py ${{ inputs.codes }}
+      - run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/flash/probe_inv.json
+          git diff --cached --quiet && exit 0
+          git commit -m "probe inv"
+          for i in 1 2 3; do git pull --rebase origin main && git push origin HEAD:main && exit 0; sleep 10; done
+          exit 1
