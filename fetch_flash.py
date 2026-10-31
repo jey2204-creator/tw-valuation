@@ -14,6 +14,10 @@
 原始明細存 data/flash/raw.json（同一則不重抓，保留 200 天），每次由 raw 重算 flash.json
 推播：設 Secret TELEGRAM_TOKEN 才會送（Telegram 機器人；chat id 自動抓，存 data/flash/tg.json），只送追蹤股（fetch.py STOCKS＋themes.json 成份股＋data/flash_watch.json）
       且發言時間在 6 小時內的新公告，避免回補時洗版
+資產負債補季（存貨健康度卡用）：董事會通過財報的公司，再向觀測站個別財報 API 要同季的資產負債表（t164sb03）與
+  現金流量表（t164sb05）→ 存貨、應收帳款（含關係人）、合約負債－流動、營業活動現金流（年初累計）→ 項目欄位 bs（億）
+  XBRL 通常在董事會後 1～3 個工作天才上觀測站，查無就先記下，每天再試一次（最多 30 天）；快取 data/flash/bs.json
+  每次執行最多 INV_MAX 家（預設 40；追蹤股優先、再按公告新舊），營業成本單季由快訊的營收－毛利換算（手機端）
 環境變數：BACKFILL_FROM=YYYY-MM-DD（回補起日）、BUDGET_MIN（時間預算，預設 12 分）、GAP（每次請求間隔秒，預設 0.9）
 """
 import json, os, re, time, datetime as dt, urllib.request, urllib.parse
@@ -23,6 +27,8 @@ ROOT = Path(__file__).resolve().parent
 DATA = ROOT / "data"
 RAW = DATA / "flash" / "raw.json"
 OUT = DATA / "flash.json"
+BSF = DATA / "flash" / "bs.json"
+INV_MAX = int(os.environ.get("INV_MAX") or 40)
 API = "https://mops.twse.com.tw/mops/api/"
 UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15"
 TZ = dt.timezone(dt.timedelta(hours=8))
@@ -30,7 +36,7 @@ NOW = dt.datetime.now(TZ)
 T0 = time.time()
 BUDGET = float(os.environ.get("BUDGET_MIN") or 12) * 60
 GAP = float(os.environ.get("GAP") or 0.9)
-DIAG = {"req": 0, "fail": [], "days": {}, "newDetail": 0, "parsed": 0, "notified": 0, "stop": None}
+DIAG = {"req": 0, "fail": [], "days": {}, "newDetail": 0, "parsed": 0, "notified": 0, "stop": None, "bs": {}}
 
 FIN = re.compile(r"財務報告|財務報表|財報|每股盈餘|自結")
 SKIP = re.compile(r"法人說明會|法說會|補正|背書|資金貸與|主管|異動|注意交易|應收帳款|負債比率|淨值百分|淨值\d|盈餘分配|分派|除息|股利|iXBRL|附註|"
@@ -474,6 +480,69 @@ def trading_days(n):
     return out[:n]
 
 
+# ---------------------------------------------------------------- 資產負債補季（存貨健康度卡）
+def stmt_rows(res):
+    """新版 API 財報：reportList 每列 [科目, 本期金額, %, …] → {科目(去空白): 本期金額(仟元)}，同名取第一個"""
+    out = {}
+    for row in (res or {}).get("reportList") or []:
+        if not row:
+            continue
+        k = re.sub(r"[\s\u3000]", "", row[0])
+        if k and k not in out and len(row) > 1:
+            out[k] = num(row[1])
+    return out
+
+
+def fetch_bs(items):
+    """董事會通過財報的項目 → 向觀測站要同季資產負債表／現金流量表，結果放進 item['bs']（億），快取 bs.json"""
+    cache = load(BSF, {})
+    today = NOW.date().isoformat()
+    watch = watch_codes()
+    cand = sorted((i for i in items if i.get("k") == "board"), key=lambda i: i["t"], reverse=True)   # 新公告優先
+    cand.sort(key=lambda i: 0 if i["c"] in watch else 1)                                             # 追蹤股優先（穩定排序）
+    n_try = 0
+    for i in cand:
+        key = f"{i['c']}|{i['q']}"
+        rec = cache.get(key)
+        if rec and rec.get("bs"):
+            i["bs"] = rec["bs"]
+            continue
+        if rec and rec.get("miss") == today:
+            continue                                           # 今天已試過查無
+        try:
+            y, mo, d = [int(x) for x in i["t"][:9].split("/")]
+            age = (NOW.date() - dt.date(y + 1911, mo, d)).days
+        except Exception:
+            age = 0
+        if age > 30:
+            continue
+        if n_try >= INV_MAX or DIAG["stop"]:
+            break
+        n_try += 1
+        yr, sn = int(i["q"][:4]) - 1911, i["q"][5]
+        body = {"companyId": i["c"], "dataType": "2", "season": sn, "year": str(yr), "subsidiaryCompanyId": ""}
+        bs = post("t164sb03", body)
+        if not bs or not (bs.get("reportList")):
+            cache[key] = {"miss": today, "n": (rec or {}).get("n", 0) + 1}
+            continue
+        B = stmt_rows(bs)
+        inv = B.get("存貨")
+        if inv is None:                                        # 金融股等沒有存貨 → 記成無資料，不再查
+            cache[key] = {"bs": None, "on": today}
+            continue
+        cf = post("t164sb05", body)
+        C = stmt_rows(cf) if cf else {}
+        ar = (B.get("應收帳款淨額") or 0) + (B.get("應收帳款－關係人淨額") or 0) if B.get("應收帳款淨額") is not None else None
+        a = lambda v: None if v is None else round(v / 1e5, 2)  # noqa: E731  仟元 → 億
+        i["bs"] = {"inv": a(inv), "ar": a(ar), "cl": a(B.get("合約負債－流動")),
+                   "ocfC": a(C.get("營業活動之淨現金流入（流出）")), "on": today}
+        cache[key] = {"bs": i["bs"]}
+    keep = (NOW.date() - dt.timedelta(days=200)).isoformat()
+    cache = {k: v for k, v in cache.items() if (v.get("on") or v.get("miss") or (v.get("bs") or {}).get("on") or today) >= keep}  # 200 天後清掉
+    BSF.write_text(json.dumps(cache, ensure_ascii=False, separators=(",", ":")))
+    DIAG["bs"] = {"tried": n_try, "have": sum(1 for i in items if i.get("bs"))}
+
+
 # ---------------------------------------------------------------- 推播（選用）
 SITE = "https://jey2204-creator.github.io/tw-valuation/"
 
@@ -641,6 +710,7 @@ def main():
     RAW.parent.mkdir(parents=True, exist_ok=True)
     RAW.write_text(json.dumps(raw, ensure_ascii=False, separators=(",", ":")))
     out = build(raw)
+    fetch_bs(out["items"])
     notify(out, raw)
     OUT.write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")))
     print(json.dumps({k: v for k, v in DIAG.items() if k != "days"}, ensure_ascii=False))

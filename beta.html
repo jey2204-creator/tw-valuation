@@ -773,7 +773,9 @@ function invCalc(){
   const dm=med(R.slice(Math.max(0,L-8),L).map(x=>x.dio)),dr=r.dio/dm,up=r.dio>p.dio;
   c.d=dr>1.2&&up?'R':dr>1.2||(dr>1.1&&up)?'A':'G';
   // ③ 營業現金流 ÷ 稅後淨利（近四季）
-  const l4=R.slice(L-3,L+1),okC=l4.every(x=>x.ocf!=null&&x.ni!=null),sN=okC?sum(l4.map(x=>x.ni)):null,sO=okC?sum(l4.map(x=>x.ocf)):null,cr=okC&&sN>0?sO/sN:null;
+  let l4=R.slice(L-3,L+1),okC=l4.every(x=>x.ocf!=null&&x.ni!=null),cTo=null;
+  if(!okC&&D.invFl===r.l&&L>=4){const w=R.slice(L-4,L);if(w.every(x=>x.ocf!=null&&x.ni!=null)){l4=w;okC=true;cTo=p.l}}   // 快訊季算不出單季現金流 → 用到上季的四季
+  const sN=okC?sum(l4.map(x=>x.ni)):null,sO=okC?sum(l4.map(x=>x.ocf)):null,cr=okC&&sN>0?sO/sN:null;
   c.c=!okC?'na':sN<=0?'loss':cr<0.7?'R':cr<1?'A':'G';
   // ⑤ 應收天數 vs 前 8 季中位數
   const sm=r.dso==null?null:med(R.slice(Math.max(0,L-8),L).map(x=>x.dso)),sr=sm?r.dso/sm:null;
@@ -783,17 +785,19 @@ function invCalc(){
   const stock=gmc!=null&&gmc>=1&&(cly==null||cly>0),weak=gmc!=null&&gmc<=-1&&(cly==null||cly<=0);
   const n=['g','d','c'].filter(k=>c[k]==='R').length,na=['g','d','c','s'].filter(k=>c[k]==='A').length;
   const v=n>=2?(stock?'stock':'hoard'):n===1?(stock?'stock':'watch'):na>=2&&weak?'watch':'ok';
-  return {R,L,r,p,a,c,dm,dr,cr,sN,sO,sm,sr,gmc,cly,stock,weak,n,na,v};
+  return {R,L,r,p,a,c,dm,dr,cr,cTo,sN,sO,sm,sr,gmc,cly,stock,weak,n,na,v};
 }
 function renderInv(){
   const X=invCalc(),has=!!X;$('inv').hidden=!has;$('chipInv').hidden=!has;if(!has)return;
   const {R,L,r,p,a,c}=X,S=R.slice(-20),acc=css('--accent'),warm=css('--warm'),acc2=css('--accent2'),f=v=>fmt(v,Math.abs(v)<100?1:0),d0=v=>v==null?'—':fmt(v,0);
   const o=base(),ch=mk('cInv');o.xAxis.data=S.map(x=>x.l);o.yAxis.scale=false;
   o.yAxis=[o.yAxis,{...o.yAxis,scale:true,splitLine:{show:false},axisLabel:{...o.yAxis.axisLabel,formatter:'{value}天'}}];
-  o.series=[{name:'存貨(億)',type:'bar',data:S.map(x=>x.inv),itemStyle:{color:acc,borderRadius:[2,2,0,0]},barCategoryGap:'30%'},
+  const FL=D.invFl;
+  o.series=[{name:'存貨(億)',type:'bar',data:S.map(x=>x.l===FL?{value:x.inv,itemStyle:{color:rgba(acc,.3),borderColor:acc,borderWidth:1.5,borderType:'dashed'}}:x.inv),itemStyle:{color:acc,borderRadius:[2,2,0,0]},barCategoryGap:'30%',
+    markArea:FL&&S.some(x=>x.l===FL)?{silent:true,itemStyle:{color:rgba(warm,.14)},label:{show:true,position:'insideTop',fontSize:9,color:warm,formatter:'快訊'},data:[[{xAxis:FL},{xAxis:FL}]]}:undefined},
     {name:'存貨天數',type:'line',yAxisIndex:1,data:S.map(x=>Math.round(x.dio)),symbol:'none',lineStyle:{width:2,color:warm},itemStyle:{color:warm}}];
   if(S.some(x=>x.dso!=null))o.series.push({name:'應收天數',type:'line',yAxisIndex:1,data:S.map(x=>x.dso==null?null:Math.round(x.dso)),symbol:'none',lineStyle:{width:1.5,type:'dashed',color:acc2},itemStyle:{color:acc2}});
-  o.tooltip.formatter=ps=>{const x=S[ps[0].dataIndex];return `<b>${x.l}</b><br>存貨 ${f(x.inv)} 億${x.invY!=null?`（年增 ${pct(x.invY,0)}）`:''}<br>營收 ${f(x.rev)} 億${x.revY!=null?`（年增 ${pct(x.revY,0)}）`:''}<br>存貨天數 ${d0(x.dio)} 天・應收天數 ${d0(x.dso)} 天`+
+  o.tooltip.formatter=ps=>{const x=S[ps[0].dataIndex];return `<b>${x.l}</b>${x.l===FL?'（快訊）':''}<br>存貨 ${f(x.inv)} 億${x.invY!=null?`（年增 ${pct(x.invY,0)}）`:''}<br>營收 ${f(x.rev)} 億${x.revY!=null?`（年增 ${pct(x.revY,0)}）`:''}<br>存貨天數 ${d0(x.dio)} 天・應收天數 ${d0(x.dso)} 天`+
     (x.cl!=null?`<br>合約負債 ${f(x.cl)} 億`:'')+(x.ocf!=null?`<br>營業現金流 ${f(x.ocf)} 億／淨利 ${f(x.ni)} 億`:'')+(x.gm!=null?`<br>毛利率 ${x.gm}%`:'')};
   ch.setOption(o,true);ch.resize();
   // 結論
@@ -803,6 +807,7 @@ function renderInv(){
     stock:`有 ${X.n} 項亮紅燈，但毛利率${X.gmc!=null?` ${ppt(X.gmc)}`:''}${X.cly!=null?`、合約負債 ${pct(X.cly,0)}`:''} 一起往上，比較像接單後主動備料`,
     hoard:`${X.n} 項亮紅燈`+(X.weak?'，而且毛利率也在往下 → 賣不掉的機率較高':X.gmc!=null&&X.gmc>=1?'；毛利率有上升，但合約負債沒有跟著增加，備貨的證據不夠':'；看不出是接單備料')}[X.v];
   $('tInv').innerHTML=`<span class="pill ${V[0]}">${V[1]}</span> ${why}<br>${r.l} 存貨 <strong>${f(r.inv)} 億</strong>${r.invY!=null?`（年增 <strong>${pct(r.invY,0)}</strong>）`:''}・存貨天數 <strong>${d0(r.dio)} 天</strong>`+
+    (r.l===FL?`<br><span class="pill">財報快訊</span> ${r.l} 是董事會通過財報後觀測站剛上傳的資產負債表／現金流量表（${(D.invFlOn||'').slice(5).replace('-','/')} 取得），財報資料庫更新前先帶入，圖上以虛線框標示；營業成本由快訊的營收－毛利換算`:'')+
     (D.cyclical?'<br><span class="pill">循環股</span> 漲價初期囤貨常是策略；真正危險的是「天數上升＋毛利率開始下滑」':'')+
     (/建材營造/.test(indOfStock())?'<br><span class="pill">營建業</span> 存貨是土地與在建工程，天數本來就很長，本卡不適用':'');
   // 檢查清單
@@ -810,12 +815,12 @@ function renderInv(){
   const row=(lt,t,txt)=>`<div class="ir"><span class="il">${lt}</span><div class="ix"><b>${t}</b><span>${txt}</span></div></div>`;
   const g1=r.gap==null?'去年同季資料不足':`存貨 <strong>${pct(r.invY,0)}</strong>、營收 <strong>${pct(r.revY,0)}</strong>，差 <strong>${ppt(r.gap,0)}</strong>${p.gap!=null?`（上季差 ${ppt(p.gap,0)}）`:''}；連 2 季差 &gt; 10 點亮紅燈`;
   const g2=`<strong>${d0(r.dio)} 天</strong>（前 8 季中位數 ${d0(X.dm)} 天，${X.dr>=1?'高':'低'} ${fmt(Math.abs(X.dr-1)*100,0)}%；上季 ${d0(p.dio)} 天）；高 20% 以上且還在上升亮紅燈`;
-  const g3={na:'現金流量表資料不足',loss:`近四季淨利 ${f(X.sN)} 億（虧損），不適用`}[c.c]||`近四季營業現金流 ${f(X.sO)} 億 ÷ 淨利 ${f(X.sN)} 億 = <strong>${fmt(X.cr,2)} 倍</strong>；&lt; 0.7 代表帳面賺錢、現金卡在存貨或應收`;
+  const g3={na:'現金流量表資料不足',loss:`近四季淨利 ${f(X.sN)} 億（虧損），不適用`}[c.c]||`近四季${X.cTo?`（到 ${X.cTo}，快訊季缺前幾季單季現金流）`:''}營業現金流 ${f(X.sO)} 億 ÷ 淨利 ${f(X.sN)} 億 = <strong>${fmt(X.cr,2)} 倍</strong>；&lt; 0.7 代表帳面賺錢、現金卡在存貨或應收`;
   const g4=(X.gmc==null?'沒有毛利率資料':`毛利率年變化 <strong>${ppt(X.gmc)}</strong>`)+'・'+(X.cly!=null?`合約負債（客戶預收）年增 <strong>${pct(X.cly,0)}</strong>`:'合約負債未單獨揭露')+
     `<br>→ ${X.stock?'偏向<strong>接單備料</strong>':X.weak?'偏向<strong>賣不掉</strong>':'看不出明確方向'}`;
   const g5=c.s==='na'?'沒有應收帳款資料':`<strong>${d0(r.dso)} 天</strong>（前 8 季中位數 ${d0(X.sm)} 天）${c.s==='G'?'；高 20% 以上亮燈':'；應收天數拉長，要留意是不是把貨塞給客戶（存貨會變好看）'}`;
   $('iChk').innerHTML=row(LT[c.g],'① 存貨年增 vs 營收年增',g1)+row(LT[c.d],'② 存貨天數',g2)+row(LT[c.c],'③ 現金有沒有收回來',g3)+row('🧭','④ 原因：備貨還是賣不掉',g4)+row(LT[c.s],'⑤ 應收天數（補充）',g5);
-  $('fInv').textContent=`存貨天數＝季底存貨 ÷ 單季營業成本 × 91；應收天數＝季底應收帳款（含關係人）÷ 單季營收 × 91。紅燈 2 項以上＝疑似囤積，但毛利率上升且合約負債增加（或未揭露）時改判為主動備貨。資料是季報，最新一季財報約在季後 45 天公布；存貨組成（原料／在製品／成品）與跌價損失要看財報附註。`;
+  $('fInv').textContent=`存貨天數＝季底存貨 ÷ 單季營業成本 × 91；應收天數＝季底應收帳款（含關係人）÷ 單季營收 × 91。紅燈 2 項以上＝疑似囤積，但毛利率上升且合約負債增加（或未揭露）時改判為主動備貨。公司法說多用「平均存貨」算天數，數字會比本卡低（約 1～2 成），看趨勢即可。資料是季報，最新一季財報約在季後 45 天公布；董事會通過後觀測站上傳資產負債表（通常 1～3 個工作天）即以快訊先帶入；存貨組成（原料／在製品／成品）與跌價損失要看財報附註。`;
 }
 function indOfStock(){const it=LIST.find(s=>s[0]===D.id);return it?it[3]||'':''}
 function ppt(v,d=1){return v==null?'—':(v>0?'+':'')+fmt(v,d)+' 點'}
@@ -1235,6 +1240,15 @@ async function injectFlash(d){
   const r=it.s.rev,pc=v=>v==null?null:+(v/r*100).toFixed(1);
   d.q.push([nq,Math.round(r),pc(it.s.gp),pc(it.s.op),pc(it.s.ni),+(+it.s.eps).toFixed(2)]);
   d.inj=nq;d.injSrc='flash';d.injOn=(it.t||'').split(' ')[0].split('/').slice(1).join('/');
+  // 資產負債補季：觀測站已有同季資產負債表／現金流量表（item.bs）且 FinMind 的 inv 還停在上一季 → 補一列存貨資料
+  const b=it.bs,I=d.inv;
+  const gp=it.s.gp!=null?it.s.gp:(it.gm!=null?r*it.gm/100:null);          // 沒有單季毛利（例：台積電公告格式）→ 用毛利率換算
+  if(b&&b.inv!=null&&I&&I.length&&qNext(I[I.length-1][0])===nq&&gp!=null){
+    const cogs=r-gp;let ocf=null;
+    if(b.ocfC!=null){const yr=nq.slice(0,2),n=+nq[3],prev=I.filter(x=>x[0].slice(0,2)===yr&&+x[0][3]<n);
+      if(prev.length===n-1&&prev.every(x=>x[6]!=null))ocf=+(b.ocfC-sum(prev.map(x=>x[6]))).toFixed(2)}
+    I.push([nq,b.inv,+cogs.toFixed(2),b.ar,b.cl,it.s.ni,ocf]);d.invFl=nq;d.invFlOn=b.on||'';
+  }
 }
 // 公司已在法說公布、FinMind 財報還沒進來的那一季 → 先用公司數字補進季資料與資本支出（只補緊接的下一季）
 function injectGuide(d){
