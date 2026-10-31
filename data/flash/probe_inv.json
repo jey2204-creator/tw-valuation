@@ -1,0 +1,38 @@
+{
+ "2454/t164sb03": {
+  "code": 406,
+  "message": "查無相符資料",
+  "result": null,
+  "datetime": "115/10/31 20:52:50"
+ },
+ "2454/t164sb04": {
+  "code": 406,
+  "message": "查無相符資料",
+  "result": null,
+  "datetime": "115/10/31 20:52:52"
+ },
+ "2454/t164sb05": {
+  "code": 406,
+  "message": "查無相符資料",
+  "result": null,
+  "datetime": "115/10/31 20:52:55"
+ },
+ "2330/t164sb03": {
+  "code": 406,
+  "message": "查無相符資料",
+  "result": null,
+  "datetime": "115/10/31 20:52:58"
+ },
+ "2330/t164sb04": {
+  "code": 406,
+  "message": "查無相符資料",
+  "result": null,
+  "datetime": "115/10/31 20:53:01"
+ },
+ "2330/t164sb05": {
+  "code": 406,
+  "message": "查無相符資料",
+  "result": null,
+  "datetime": "115/10/31 20:53:03"
+ }
+}
