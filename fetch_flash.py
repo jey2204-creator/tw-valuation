@@ -444,7 +444,34 @@ def build(raw):
         cnt[i["q"]] = cnt.get(i["q"], 0) + 1
     seasons = sorted((q for q, n in cnt.items() if n >= 5), reverse=True)
     return {"updated": NOW.isoformat(timespec="minutes"), "today": today, "seasons": seasons, "unit": "億元",
-            "items": items, "cal": cal, "diag": DIAG}
+            "tdays": trading_days(20), "items": items, "cal": cal, "diag": DIAG}
+
+
+def trading_days(n):
+    """最近 n 個交易日（YYYY-MM-DD，新的在前）：data/hist 有收盤檔且沒標 closed 的日子；今天是平日且尚無檔也算
+    （快訊頁「近 N 交易日」篩選用，週末／連假不佔名額）。"""
+    out = []
+    hist = DATA / "hist"
+    try:
+        files = sorted(hist.glob("2*.json"), reverse=True)
+    except Exception:
+        files = []
+    td = NOW.date()
+    if td.weekday() < 5 and not (hist / f"{td:%Y%m%d}.json").exists():
+        out.append(td.isoformat())
+    for f in files:
+        try:
+            if json.loads(f.read_text()).get("closed"):
+                continue
+        except Exception:
+            continue
+        d = f.stem
+        if len(d) != 8 or not d.isdigit():
+            continue
+        out.append(f"{d[:4]}-{d[4:6]}-{d[6:]}")
+        if len(out) >= n:
+            break
+    return out[:n]
 
 
 # ---------------------------------------------------------------- 推播（選用）
