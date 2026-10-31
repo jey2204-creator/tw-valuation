@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>美股財報 → 台股連動</title>
+<meta name="description" content="美股財報公布 → 台股供應鏈受惠／受害對照、公布日曆、反應時間差">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#f6f7fb" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b1220" media="(prefers-color-scheme: dark)">
+<meta name="format-detection" content="telephone=no">
+<link rel="apple-touch-icon" href="../icon-180.png">
+<style>
+:root{
+  --bg:#f6f7fb;--card:#ffffff;--text:#111827;--muted:#6b7280;--line:#e5e7eb;
+  --up:#dc2626;--down:#16a34a;--flat:#d97706;--accent:#2563eb;
+  --up-bg:#fef2f2;--down-bg:#ecfdf5;--flat-bg:#fffbeb;--acc-bg:#eff6ff;--soft:#f3f4f6;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0b1220;--card:#131c2e;--text:#e5e7eb;--muted:#9ca3af;--line:#243049;
+    --up:#f87171;--down:#22c55e;--flat:#fbbf24;--accent:#60a5fa;
+    --up-bg:#2e1515;--down-bg:#0f2a1e;--flat-bg:#2d2309;--acc-bg:#172238;--soft:#1a2438;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0b1220;--card:#131c2e;--text:#e5e7eb;--muted:#9ca3af;--line:#243049;
+  --up:#f87171;--down:#22c55e;--flat:#fbbf24;--accent:#60a5fa;
+  --up-bg:#2e1515;--down-bg:#0f2a1e;--flat-bg:#2d2309;--acc-bg:#172238;--soft:#1a2438;
+}
+*{box-sizing:border-box}
+html,body{overflow-x:hidden}
+body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"PingFang TC","Noto Sans TC",sans-serif;line-height:1.5}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:720px;margin:0 auto;padding:calc(6px + env(safe-area-inset-top)) 12px calc(40px + env(safe-area-inset-bottom))}
+.top{position:sticky;top:0;z-index:5;background:var(--bg);padding:6px 0;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.top .bk{color:var(--accent);font-weight:600;font-size:13px;white-space:nowrap}
+.top h1{font-size:17px;margin:0;flex:1;min-width:0}
+.top .meta{font-size:11px;color:var(--muted);white-space:nowrap}
+.srch{display:flex;gap:6px;margin:4px 0 6px}
+.srch input{flex:1;padding:7px 10px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--text);font-size:14px;min-width:0}
+.srch input::placeholder{color:var(--muted)}
+.srch button{padding:0 12px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--muted);font-size:13px;font-weight:600;white-space:nowrap;-webkit-tap-highlight-color:transparent}
+.srch button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:8px 0}
+.card.hid{display:none}
+h2{font-size:14.5px;margin:0;display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}
+h2 small{font-size:11px;color:var(--muted);font-weight:400}
+.thr{font-size:12px;color:var(--muted);background:var(--soft);border-radius:8px;padding:5px 8px;margin:6px 0 2px;line-height:1.4}
+.thr b{color:var(--text);font-weight:600}
+.row{border-top:1px solid var(--line);padding:8px 0 6px}
+.row.hid{display:none}
+.row.hl{background:var(--acc-bg);margin:0 -12px;padding-left:12px;padding-right:12px;border-radius:0}
+.us{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.uc{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line);border-radius:8px;padding:3px 7px;background:var(--card);line-height:1.2}
+.uc b{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;font-size:13px;font-weight:700}
+.uc .n{font-size:11.5px;color:var(--muted)}
+.uc small{font-size:10.5px;padding:1px 5px;border-radius:999px;font-weight:600;white-space:nowrap}
+.uc small.soon{background:var(--flat-bg);color:var(--flat)}
+.uc small.done{background:var(--down-bg);color:var(--down)}
+.uc small.far{background:var(--soft);color:var(--muted);font-weight:500}
+.uc.tg{border-color:var(--accent)}
+.lk{font-size:11px;color:var(--accent);font-weight:600;white-space:nowrap}
+.m{font-size:13px;margin:5px 0 4px;line-height:1.45}
+.m .lb,.r .lb,.tw .lb{font-size:11px;color:var(--muted);margin-right:4px}
+.tw{display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin:2px 0 4px}
+.tw a{display:inline-flex;gap:3px;align-items:baseline;border:1px solid var(--line);border-left:3px solid var(--down);border-radius:7px;padding:2px 7px;font-size:12.5px;background:var(--card)}
+.tw a b{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;font-size:12px}
+.tw a.hit{background:var(--down-bg);border-color:var(--down)}
+.r{font-size:12.5px;color:var(--muted);line-height:1.4}
+.r .lb{color:var(--up)}
+/* 日曆條 */
+.cal{display:flex;gap:6px;overflow-x:auto;padding:4px 0 6px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.cal::-webkit-scrollbar{display:none}
+.cal a{flex:none;border:1px solid var(--line);border-radius:10px;padding:5px 9px;background:var(--card);display:grid;line-height:1.2}
+.cal a b{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;font-size:13px}
+.cal a span{font-size:10.5px;color:var(--muted)}
+.cal a.soon{border-color:var(--flat)}
+.cal a.done{opacity:.75}
+.cal a small{font-size:10px;color:var(--muted)}
+.cal .d{color:var(--text);font-weight:600}
+.cal .mt{font-size:12px;padding:6px 2px 0;color:var(--muted);flex:none;align-self:start}
+details.card{padding:0}
+details.card>summary{list-style:none;cursor:pointer;padding:10px 12px;font-size:14px;font-weight:600;display:flex;align-items:center;gap:6px;-webkit-tap-highlight-color:transparent}
+details.card>summary::-webkit-details-marker{display:none}
+details.card>summary::after{content:'＋';margin-left:auto;color:var(--muted);font-weight:400}
+details.card[open]>summary::after{content:'－'}
+details.card>.body{padding:0 12px 10px}
+table{width:100%;border-collapse:collapse;font-size:12.5px;table-layout:fixed}
+th,td{padding:6px 4px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;line-height:1.4}
+th{color:var(--muted);font-weight:500;font-size:11.5px}
+tr:last-child td{border-bottom:0}
+td:first-child{font-weight:600}
+.note{font-size:11.5px;color:var(--muted);margin-top:6px;line-height:1.4}
+.empty{font-size:13px;color:var(--muted);padding:12px 0;text-align:center}
+.foot{display:flex;gap:10px;justify-content:center;margin-top:16px;font-size:12.5px}
+.foot a{color:var(--accent);font-weight:600}
+@keyframes fl{0%{background:var(--acc-bg)}100%{background:transparent}}
+.bkflash{animation:fl 1.6s ease-out}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top"><a class="bk" href="index.html">← 回首頁</a><h1>🔗 美股財報 → 台股連動</h1><span class="meta" id="upd"></span></div>
+  <div class="srch"><input id="q" type="search" placeholder="找美股代號／台股代號或名稱（如 MU、2344、華邦）" autocomplete="off" inputmode="search"><button type="button" id="fSoon">📅 近 30 天</button></div>
+
+  <div class="card" id="calCard">
+    <h2>📅 公布日曆 <small>美東日期・點代號跳到對應列・資料來自看板財報日曆</small></h2>
+    <div class="cal" id="cal"></div>
+  </div>
+
+  <div id="groups"></div>
+  <p class="empty" id="empty" hidden>沒有符合的美股或台股</p>
+
+  <details class="card"><summary>⏱️ 反應時間差（實戰節奏）</summary><div class="body"><table><thead><tr><th style="width:40%">情境</th><th style="width:18%">台股反應</th><th>操作含義</th></tr></thead><tbody id="lag"></tbody></table></div></details>
+  <details class="card"><summary>⚠️ 使用這張表的偏誤提醒</summary><div class="body"><table><thead><tr><th style="width:26%">偏誤</th><th style="width:34%">情境</th><th>對策</th></tr></thead><tbody id="bias"></tbody></table></div></details>
+  <p class="note">🟢 受惠台廠＝財報利多時最直接受惠；🔴 警訊＝該公司財報裡出現就要檢查台廠部位。對照表是手動維護的判斷框架，每季看完財報會修。</p>
+  <div class="foot"><a href="index.html#EARN">📅 財報公布日</a><a href="earnings.html">📊 預期 vs 實際</a><a href="../">🇹🇼 台股看板</a></div>
+</div>
+<script>
+const $=i=>document.getElementById(i);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const j=async(u)=>{try{const r=await fetch(u+'?v='+Date.now());return r.ok?await r.json():null}catch(e){return null}};
+// 美東今天（只拿日期字串比較，公布日曆本來就是美東日期）
+const TODAY=new Date(new Date().toLocaleString('en-US',{timeZone:'America/New_York'}));
+const ymd=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const T0=ymd(TODAY);
+const addD=(n)=>{const d=new Date(TODAY);d.setDate(d.getDate()+n);return ymd(d)};
+const T30=addD(30),TM10=addD(-10);
+const TM={bmo:'盤前',amc:'盤後',dmh:'盤中'};
+const md=s=>+s.slice(5,7)+'/'+ +s.slice(8,10);
+const wd=s=>'日一二三四五六'[new Date(s+'T12:00:00').getDay()];
+let L,E={},NM={},CMP=new Set(),SOON=false;
+
+function dateOf(t){const x=E[t];if(!x||!x[0])return null;const d=x[0][0];if(!d||d<TM10)return null;return {d,tm:TM[x[0][1]]||'',done:d<T0,soon:d>=T0&&d<=T30}}
+function badge(t){const x=dateOf(t);if(!x)return'';if(x.done)return`<small class="done">✅ ${md(x.d)} 已公布</small>`;return`<small class="${x.soon?'soon':'far'}">📅 ${md(x.d)}${x.tm?' '+x.tm:''}</small>`}
+const usChip=t=>`<a class="uc${CMP.has(t)?' tg':''}" href="index.html#${t}" title="看估值"><b>${t}</b><span class="n">${esc(NM[t]||'')}</span>${badge(t)}</a>`;
+const twChip=([c,n])=>`<a href="../#${c}" data-c="${c}" data-n="${esc(n)}" title="台股看板"><b>${c}</b>${esc(n)}</a>`;
+
+function render(){
+  $('upd').textContent='更新 '+(L.updated||'');
+  $('groups').innerHTML=L.groups.map(g=>`<section class="card" data-g="${g.id}"><h2>${esc(g.name)}<small>${esc(g.sub||'')}</small></h2>${g.thr?`<div class="thr">💡 ${esc(g.thr)}</div>`:''}${g.rows.map((r,i)=>`<div class="row" id="r-${g.id}-${i}" data-us="${r.us.join(' ')}" data-tw="${r.tw.map(x=>x[0]+' '+x[1]).join(' ')}"><div class="us">${r.us.map(usChip).join('')}${r.us.some(t=>CMP.has(t))?`<a class="lk" href="earnings.html#${r.us.find(t=>CMP.has(t))}">🎯 財報對照 →</a>`:''}</div><p class="m"><span class="lb">看什麼</span>${esc(r.metric)}</p><div class="tw"><span class="lb">🟢 受惠</span>${r.tw.map(twChip).join('')}</div><p class="r"><span class="lb">🔴 警訊</span>${esc(r.risk)}</p></div>`).join('')}</section>`).join('');
+  $('lag').innerHTML=(L.lag||[]).map(x=>`<tr><td>${esc(x.case)}</td><td>${esc(x.t)}</td><td>${esc(x.op)}</td></tr>`).join('');
+  $('bias').innerHTML=(L.bias||[]).map(x=>`<tr><td>${esc(x.b)}</td><td>${esc(x.s)}</td><td>${esc(x.fix)}</td></tr>`).join('');
+  renderCal();filter();
+}
+function renderCal(){
+  const seen=new Map();   // 代號 → 第一個出現的列 id
+  L.groups.forEach(g=>g.rows.forEach((r,i)=>r.us.forEach(t=>{if(!seen.has(t))seen.set(t,`r-${g.id}-${i}`)})));
+  const ev=[...seen].map(([t,rid])=>{const x=dateOf(t);return x?{t,rid,...x}:null}).filter(Boolean).sort((a,b)=>a.d<b.d?-1:1);
+  const up=ev.filter(x=>!x.done),dn=ev.filter(x=>x.done).reverse();
+  const chip=x=>`<a class="${x.done?'done':x.soon?'soon':''}" href="#${x.rid}" data-j="${x.rid}"><b>${x.t}</b><span><span class="d">${md(x.d)}</span>（${wd(x.d)}）${x.tm?' '+x.tm:''}</span><small>${esc(NM[x.t]||'')}</small></a>`;
+  $('cal').innerHTML=(up.length?up.map(chip).join(''):'')+(dn.length?`<span class="mt">已公布</span>`+dn.map(chip).join(''):'')||'<span class="mt">日曆資料還沒載入</span>';
+  $('cal').querySelectorAll('a[data-j]').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();jump(a.dataset.j)}));
+}
+function jump(id){$('q').value='';SOON=false;$('fSoon').classList.remove('on');filter();const r=$(id);if(!r)return;r.scrollIntoView({block:'center',behavior:'smooth'});r.classList.remove('bkflash');void r.offsetWidth;r.classList.add('bkflash')}
+function filter(){
+  const q=$('q').value.trim().toUpperCase();let any=false;
+  document.querySelectorAll('section.card').forEach(sec=>{let n=0;sec.querySelectorAll('.row').forEach(r=>{
+    let ok=true;
+    if(q)ok=(r.dataset.us+' '+r.dataset.tw).toUpperCase().includes(q);
+    if(ok&&SOON)ok=r.dataset.us.split(' ').some(t=>{const x=dateOf(t);return x&&x.soon});
+    r.classList.toggle('hid',!ok);r.classList.toggle('hl',!!q&&ok);
+    r.querySelectorAll('.tw a').forEach(a=>a.classList.toggle('hit',!!q&&(a.dataset.c+' '+a.dataset.n).toUpperCase().includes(q)));
+    if(ok)n++});
+    sec.classList.toggle('hid',!n);if(n)any=true});
+  $('empty').hidden=any;$('calCard').hidden=!!q;
+}
+$('q').addEventListener('input',filter);
+$('fSoon').addEventListener('click',()=>{SOON=!SOON;$('fSoon').classList.toggle('on',SOON);filter()});
+(async()=>{
+  const [l,e,idx,sn,cmp]=await Promise.all([j('data/link.json'),j('data/earnings.json'),j('data/index.json'),j('data/short_name.json'),j('data/earnings_cmp.json')]);
+  if(!l){$('groups').innerHTML='<p class="empty">讀不到 data/link.json</p>';return}
+  L=l;E=(e&&e.e)||{};
+  if(sn)for(const [k,v] of Object.entries(sn))if(k!=='_')NM[k]=v;
+  if(Array.isArray(idx))idx.forEach(s=>{if(s.cn)NM[s.id]=s.cn.replace(/ .*/,'')});
+  if(cmp&&Array.isArray(cmp.companies))cmp.companies.forEach(c=>{if(c&&c.ticker)CMP.add(c.ticker)});
+  render();
+  if(location.hash.length>1){const id=location.hash.slice(1);if($(id))setTimeout(()=>jump(id),50)}
+})();
+</script>
+</body>
+</html>
