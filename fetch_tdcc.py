@@ -11,6 +11,7 @@
 任何一步失敗都不會讓程式以錯誤結束（除非完全沒有資料）。
 用法：python fetch_tdcc.py
 """
+import os
 import csv, io, json, re, sys, time, datetime as dt
 from pathlib import Path
 import urllib.request, urllib.parse, http.cookiejar
@@ -20,7 +21,7 @@ OUT = ROOT / "data"
 DIR = OUT / "tdcc"
 KEEP = 60                     # 保留最近 60 週（個股頁「大戶持股」卡要畫 1 年）
 BACKFILL_WEEKS = 52           # 主題股回補幾週（2026/11/01 起 52 週，每次最多 8 分鐘，分幾天補完）
-BUDGET = 8 * 60
+BUDGET = int(os.environ.get("TDCC_BUDGET") or 8 * 60)   # 秒；tdcc_backfill.yml 給 11 分鐘
 T0 = time.time()
 UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124 Safari/537.36"
 diag, errs = {}, []
@@ -197,7 +198,7 @@ def backfill(latest):
                     w.init()
                 except Exception:
                     pass
-            time.sleep(0.8)
+            time.sleep(0.5)
         if got:
             save_week(d, got)
         if time.time() - T0 > BUDGET or fail >= 5:

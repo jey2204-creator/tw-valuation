@@ -19,7 +19,9 @@ jobs:
         with:
           python-version: "3.12"
       - name: 集保大戶持股（開放資料＋主題股回補）
-        timeout-minutes: 12
+        timeout-minutes: 13
+        env:
+          TDCC_BUDGET: "660"
         run: python fetch_tdcc.py
       - name: 提交
         if: always()
