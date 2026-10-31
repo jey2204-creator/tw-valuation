@@ -145,7 +145,7 @@ body.pn .wrap{padding-bottom:calc(84px + env(safe-area-inset-bottom))}
 .hrow .fx label{gap:2px}.hrow .fx input{width:3.6em;padding:2px 5px}
 .fxi{font:inherit;font-size:14px;line-height:1;border:0;background:none;color:var(--muted);padding:4px 2px;cursor:pointer}.fx.open .fxi{color:var(--accent)}
 .fxn{flex-basis:100%}.fxn[hidden]{display:none}
-.ecard h2{flex-wrap:nowrap;white-space:nowrap}.etab{display:inline-flex;flex:none;border:1px solid var(--line);border-radius:999px;overflow:hidden}.etab button{font:inherit;font-size:11px;font-weight:600;color:var(--muted);background:var(--bg);border:0;padding:2px 6px;cursor:pointer;white-space:nowrap}.ecard h2{gap:5px}.ecard h2 .more{font-size:11.5px}.etab button.on{color:#fff;background:var(--accent)}.ecal.mini .row.two{display:grid;grid-template-columns:1fr 1fr;gap:4px}.ecal.mini .mr:has(.row.two){grid-template-columns:62px 1fr;gap:6px}.ecal.mini .ec.dn small{display:inline;font-size:11px;font-family:var(--f-num)}.ecal.mini .ec.dn{padding:3px 6px;gap:3px;min-width:0;white-space:nowrap;overflow:hidden}.ecal.mini .ec.dn b{font-size:11.5px}.ecal.mini .ec.dn small{font-size:10.5px}.ecal.mini .ec.dn small+small{margin-left:auto}.ecal.mini .dnl{font-size:10.5px;margin:6px 0 0}.ec.dn.tg b{color:var(--accent)}.ec.dn small.up{color:var(--up,#c0392b);font-weight:600}.ec.dn small.dw{color:var(--down,#0a8f5b);font-weight:600}.ecard h2 small{min-width:0;overflow:hidden;text-overflow:ellipsis}.ecard h2 .more{flex:none}.ecard h2 .more+.more{margin-left:0}
+.ecard h2{flex-wrap:nowrap;white-space:nowrap}.ecard .etab{display:inline-flex;flex:none;border:1px solid var(--line);border-radius:999px;overflow:hidden;margin:0;gap:0}.ecard .etab button{font:inherit;font-size:11px;font-weight:600;color:var(--muted);background:var(--bg);border:0;padding:2px 6px;cursor:pointer;white-space:nowrap;border-radius:0}.ecard h2{gap:5px}.ecard h2 .more{font-size:11.5px}.ecard .etab button.on{color:#fff;background:var(--accent)}.ecal.mini .row.two{display:grid;grid-template-columns:1fr 1fr;gap:4px}.ecal.mini .mr:has(.row.two){grid-template-columns:62px 1fr;gap:6px}.ecal.mini .ec.dn small{display:inline;font-size:11px;font-family:var(--f-num)}.ecal.mini .ec.dn{padding:3px 6px;gap:3px;min-width:0;white-space:nowrap;overflow:hidden}.ecal.mini .ec.dn b{font-size:11.5px}.ecal.mini .ec.dn small{font-size:10.5px}.ecal.mini .ec.dn small+small{margin-left:auto}.ecal.mini .dnl{font-size:10.5px;margin:6px 0 0}.ec.dn.tg b{color:var(--accent)}.ec.dn small.up{color:var(--up,#c0392b);font-weight:600}.ec.dn small.dw{color:var(--down,#0a8f5b);font-weight:600}.ecard h2 small{min-width:0;overflow:hidden;text-overflow:ellipsis}.ecard h2 .more{flex:none}.ecard h2 .more+.more{margin-left:0}
 .fxseg{display:inline-flex}.fxseg button{font:inherit;font-size:12px;border:1px solid var(--line);background:var(--card);color:var(--muted);padding:3px 11px;cursor:pointer;margin-left:-1px}
 .fxseg button:first-child{border-radius:999px 0 0 999px;margin-left:0}.fxseg button:last-child{border-radius:0 999px 999px 0}.fxseg button.on{background:var(--accent);border-color:var(--accent);color:#fff}
 .fx label{display:inline-flex;align-items:center;gap:4px}.fx input{font-family:var(--f-num);font-size:13px;width:4.6em;padding:3px 6px;border:1px solid var(--line);border-radius:7px;background:var(--card);color:var(--fg)}
@@ -199,7 +199,7 @@ tr.e td{color:var(--accent)}
 .card h2 .more{margin-left:auto;font-size:12.5px;font-weight:500;color:var(--accent);text-decoration:none}
 .ecal .d{cursor:pointer;user-select:none}.ecal .d .ar{font-size:11px;color:var(--muted);margin-left:auto}.ecal .row.fold .ec small{display:none}.ecal .row.fold .ec .n{display:none}.ecal .row.fold .ec{padding:3px 9px}
 .ecal.mini .d{margin:8px 0 4px;font-size:13px}.ecal.mini .ec small,.ecal.mini .ec .n{display:none}.ecal.mini .ec{padding:3px 9px}.ec.pl{color:var(--muted);border-style:dashed}
-.etab{display:flex;gap:6px;margin-top:8px}.etab button{font:inherit;font-size:12.5px;border:1px solid var(--line);background:var(--bg);color:var(--muted);border-radius:999px;padding:4px 12px}.etab button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.etab{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.etab.erng{margin-top:6px}#eone .eh{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin:10px 0 4px}#eone .eh b{font-family:var(--f-num);font-size:18px;color:var(--accent)}#eone .eh .n{font-size:14px;font-weight:600}#eone .eh a{font-size:12.5px;color:var(--accent);text-decoration:none;font-weight:600}#eone .nx{font-size:12.5px;color:var(--muted);margin:2px 0 6px}#eone table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:6px}#eone th{font-weight:500;color:var(--muted);font-size:11px;text-align:right;padding:4px 4px;border-bottom:1px solid var(--line);white-space:nowrap}#eone td{padding:6px 4px;border-bottom:1px solid var(--line);text-align:right;font-family:var(--f-num);white-space:nowrap}#eone th:first-child,#eone td:first-child,#eone th:nth-child(2),#eone td:nth-child(2){text-align:left}#eone td small{color:var(--muted);font-size:11px}#eone td.up{color:var(--up,#c0392b);font-weight:600}#eone td.dw{color:var(--down,#0a8f5b);font-weight:600}#eone tr.cur td{background:var(--b4)}#eone .foot{margin-top:6px}.etab.erng button{font-size:11.5px;padding:3px 10px}.ecal .ec.dn small{font-family:var(--f-num);font-size:11px}.ecal .ec.dn small.up{color:var(--up,#c0392b);font-weight:600}.ecal .ec.dn small.dw{color:var(--down,#0a8f5b);font-weight:600}.ecal .row.fold .ec.dn small{display:inline}.etab button{font:inherit;font-size:12.5px;border:1px solid var(--line);background:var(--bg);color:var(--muted);border-radius:999px;padding:4px 12px}.etab button.on{background:var(--accent);border-color:var(--accent);color:#fff}
 .notes{margin-top:6px;display:flex;flex-wrap:wrap;gap:4px}
 .notes:empty{display:none}
 .notes p{margin:0;font-size:11.5px;line-height:1.5;background:var(--b1);border-radius:6px;padding:2px 8px}
@@ -444,7 +444,10 @@ html{scroll-behavior:smooth}
   <h1 style="font-size:22px;margin:6px 0 2px">📅 財報公布日</h1>
   <p class="meta" id="uEarn2"></p>
   <p class="meta"><a href="earnings.html" style="color:var(--accent);text-decoration:none;font-weight:600">📊 已公布財報：預期 vs 實際對照 →</a></p>
-  <div class="etab"><button data-m="focus">追蹤股＋大型股（3 週）</button><button data-m="all">全市場 7 天內</button></div>
+  <div class="search" role="search"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="eq" type="search" inputmode="search" autocomplete="off" autocapitalize="characters" placeholder="找一檔：代號、公司或台股代號（AMZN、亞馬遜）" aria-label="搜尋財報紀錄"></div>
+  <div id="eone" hidden></div>
+  <div class="etab"><button data-m="focus">追蹤股 3 週</button><button data-m="all">全市場 7 天</button><button data-m="done">✅ 已公布</button></div>
+  <div class="etab erng" id="erng" hidden><button data-r="7">近 7 天</button><button data-r="30">近 30 天</button><button data-r="season">本季</button></div>
   <div class="ecal" id="ecal"></div>
   <p class="foot">台灣時間：盤前 ≈ 當晚 19–20 點、盤後 ≈ 隔日清晨 4–5 點。資料來源 Nasdaq／Finnhub，日期在公司正式公告前為預估，請以公司 IR 為準。</p>
 </div>
@@ -591,18 +594,24 @@ const dhead=(d,t)=>`${mdw(d)}<small>盤後 ≈ 台灣 ${twTime(d,'amc').tw.split
 let EVIEW='week';try{EVIEW=localStorage.getItem('earnView')||'week'}catch(e){}
 let WATCH=new Set();   // 財報對照頁名單（earnings_cmp.json 的 companies＋watch），「已公布」頁籤除主題股外也列這些
 // 已公布：近 7 天（美東）已過公布時間的主題股＋對照頁名單，日期倒序；chip 顯示 EPS 驚喜率（手動分析層／Finnhub），🎯 = 有分析層，點進財報對照頁
-function doneRows(){const e=EARN.e,t=etToday(),nm=Object.fromEntries(ALL.map(s=>[s.id,s.name]));IDX.forEach(s=>nm[s.id]=s.cn||s.name);
-  const hot=new Set(IDX.map(s=>s.id)),pick=new Set([...hot,...WATCH]),by={};
+let SINCE='';   // 本季起算日（earnings_cmp.json 的 since）
+let ERANGE='7';try{ERANGE=localStorage.getItem('earnRange')||'7'}catch(e){}
+function doneRows(days=7,mega=false){const e=EARN.e,t=etToday(),nm=Object.fromEntries(ALL.map(s=>[s.id,s.name]));IDX.forEach(s=>nm[s.id]=s.cn||s.name);
+  const hot=new Set(IDX.map(s=>s.id)),pick=new Set([...hot,...WATCH,...(mega?MEGA:[])]),by={};
+  if(days==='season')days=SINCE?dayDiff(SINCE,t):92;
   const etH=+new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',hour:'2-digit',hour12:false}).format(new Date())%24;
-  for(const [id,ls] of Object.entries(e)){if(!pick.has(id))continue;for(const x of ls){const dd=dayDiff(x[0],t);if(dd<0||dd>7)continue;const aq=AUTOQ[id],hr=x[1]||(aq&&aq.date===x[0]?aq.hour:'');   // 日曆沒標盤前盤後時用自動層的
+  for(const [id,ls] of Object.entries(e)){if(!pick.has(id))continue;for(const x of ls){const dd=dayDiff(x[0],t);if(dd<0||dd>days)continue;const aq=AUTOQ[id],hr=x[1]||(aq&&aq.date===x[0]?aq.hour:'');   // 日曆沒標盤前盤後時用自動層的
     if(dd===0&&!(hr==='bmo'&&etH>=10||hr==='dmh'&&etH>=13||hr==='amc'&&etH>=17))continue;(by[x[0]]=by[x[0]]||[]).push([id,x])}}
+  // 日曆（earnings.json）只回溯 7 天；更早的用自動層（earnings_auto.json，本季起）補
+  for(const [id,aq] of Object.entries(AUTOQ)){if(!pick.has(id)||!aq.date)continue;const dd=dayDiff(aq.date,t);if(dd<=0||dd>days)continue;
+    if((by[aq.date]||[]).some(r=>r[0]===id))continue;(by[aq.date]=by[aq.date]||[]).push([id,[aq.date,aq.hour||'',aq.epsEst,aq.epsAct,aq.revEst,aq.revAct,aq.fq||'']])}
   return{t,hot,nm,ds:Object.keys(by).sort().reverse().map(d=>[d,by[d].sort((a,b)=>(hot.has(b[0])-hot.has(a[0]))||a[0].localeCompare(b[0]))])}}
-const dchip=(id,x,hot,nm)=>{const aq=AUTOQ[id],inCmp=WATCH.has(id)||(EARN_SET&&EARN_SET.has(id));let sp=aq&&aq.date===x[0]&&aq.epsSurp!=null?aq.epsSurp:(x[2]!=null&&x[3]!=null&&x[2]!==0?(x[3]/Math.abs(x[2])-1)*100:null);
+const dchip=(id,x,hot,nm,full)=>{const aq=AUTOQ[id],inCmp=WATCH.has(id)||(EARN_SET&&EARN_SET.has(id));let sp=aq&&aq.date===x[0]&&aq.epsSurp!=null?aq.epsSurp:(x[2]!=null&&x[3]!=null&&x[2]!==0?(x[3]/Math.abs(x[2])-1)*100:null);
   if(sp!=null&&x[3]==null&&!(aq&&aq.epsAct!=null))sp=null;   // 還沒有實際值就不算驚喜率（避免 Finnhub 預填）
   const rx=aq&&aq.date===x[0]&&aq.px&&aq.px.react!=null?aq.px.react:null;
-  const pm=v=>(v>=0?'+':'−')+Math.abs(v).toFixed(v==sp?0:1)+'%';   // 兩檔一行版：只放數字，意義見卡底說明
+  const pm=v=>(v>=0?'+':'−')+Math.abs(v).toFixed(v==sp&&Math.abs(v)>=1?0:1)+'%';   // 驚喜率整數，|值|<1 才留一位（避免「−0%」）   // 兩檔一行版：只放數字，意義見卡底說明
   const s=(sp==null?'<small>—</small>':`<small class="${sp>=0?'up':'dw'}" title="EPS 驚喜率">${pm(sp)}</small>`)+(rx==null?'':`<small class="${rx>=0?'up':'dw'}" title="首日漲跌">${pm(rx)}</small>`);
-  return `<a class="ec dn${hot.has(id)?' hot':''}${inCmp?' tg':''}" href="${inCmp?'earnings.html#'+id:'#'+id}" title="${esc(nm[id]||id)}${inCmp?'：看財報對照':''}">${EARN_SET&&EARN_SET.has(id)?'🎯':''}<b>${id}</b>${s}</a>`};   // 兩檔一行塞不下 🔴，主題股用橘框表示
+  return `<a class="ec dn${hot.has(id)?' hot':''}${inCmp?' tg':''}" href="${inCmp?'earnings.html#'+id:'#'+id}" title="${esc(nm[id]||id)}${inCmp?'：看財報對照':''}">${EARN_SET&&EARN_SET.has(id)?'🎯':full&&hot.has(id)?'🔴':''}<b>${id}</b>${full?`<span class="n">${esc(/[\u4e00-\u9fff]/.test(nm[id]||'')?nm[id].replace(/ .*/,''):(nm[id]||'').split(/[ ,]/)[0])}</span>`:''}${s}</a>`};   // 首頁兩檔一行塞不下 🔴，主題股用橘框表示；財報公布日頁（full）才放公司名
 function earnMini(){if(!Object.keys(EARN.e).length){$('earnCal').hidden=true;return}
   [...$('earnCal').querySelectorAll('.etab button')].forEach(b=>{b.classList.toggle('on',b.dataset.v===EVIEW);b.setAttribute('aria-selected',b.dataset.v===EVIEW)});
   const wk=earnRows('focus',7),wn=wk.ds.reduce((a,[,r])=>a+r.length,0),dn=doneRows(),dnn=dn.ds.reduce((a,[,r])=>a+r.length,0);
@@ -616,12 +625,42 @@ function earnMini(){if(!Object.keys(EARN.e).length){$('earnCal').hidden=true;ret
   $('ecalMini').innerHTML=ds.slice(0,2).map(([d,r])=>`<div class="mr">${mhead(d,t)}<div class="row">${r.slice(0,6).map(([id,x])=>chip(id,x,hot,nm)).join('')}${r.length>6?`<a class="ec pl" href="#EARN">+${r.length-6}</a>`:''}</div></div>`).join('')||'<p class="meta" style="margin-top:8px">本週沒有追蹤股財報</p>';
   $('earnCal').hidden=false}
 $('earnCal').addEventListener('click',e=>{const b=e.target.closest('.etab button');if(!b)return;EVIEW=b.dataset.v;try{localStorage.setItem('earnView',EVIEW)}catch(x){}earnMini()});
-function earnCal(){const {t,hot,nm,ds}=earnRows(EMODE,EMODE==='all'?7:21);
-  [...$('earnPage').querySelectorAll('button[data-m]')].forEach(b=>b.classList.toggle('on',b.dataset.m===EMODE));
+function earnCal(){[...$('earnPage').querySelectorAll('button[data-m]')].forEach(b=>b.classList.toggle('on',b.dataset.m===EMODE));
+  $('erng').hidden=EMODE!=='done';
+  if(EMODE==='done'){[...$('erng').querySelectorAll('button[data-r]')].forEach(b=>b.classList.toggle('on',b.dataset.r===ERANGE));
+    const {t,hot,nm,ds}=doneRows(ERANGE,true),n=ds.reduce((a,[,r])=>a+r.length,0);
+    $('ecal').innerHTML=ds.map(([d,r],i)=>{const op=OPEN.has(d)||(i<2&&!OPEN.size);return `<div class="d" data-d="${d}">${dhead(d,t)}<span class="ar">${r.length} 檔 ${op?'▾':'▸'}</span></div><div class="row${op?'':' fold'}">${r.map(([id,x])=>dchip(id,x,hot,nm,true)).join('')}</div>`}).join('')
+      ||`<p class="meta" style="margin-top:10px">${ERANGE==='season'?'本季':'近 '+ERANGE+' 天'}沒有已公布的財報</p>`;
+    $('uEarn2').textContent=`${ERANGE==='season'?'本季（'+(SINCE||'').slice(5).replace('-','/')+' 起）':'近 '+ERANGE+' 天'}已公布 ${n} 檔｜數字 = EPS 驚喜率｜首日漲跌（紅正綠負）｜🎯 有分析層，點進財報對照｜🔴 主題股`;return}
+  const {t,hot,nm,ds}=earnRows(EMODE,EMODE==='all'?7:21);
   $('ecal').innerHTML=ds.map(([d,r],i)=>{const op=OPEN.has(d)||(i===0&&!OPEN.size);return `<div class="d" data-d="${d}">${dhead(d,t)}<span class="ar">${r.length} 檔 ${op?'▾':'▸'}</span></div><div class="row${op?'':' fold'}">${r.map(([id,x])=>chip(id,x,hot,nm)).join('')}</div>`}).join('')
     ||`<p class="meta" style="margin-top:10px">${EMODE==='all'?'未來 7 天':'未來 3 週'}沒有財報</p>`;
   $('uEarn2').textContent=`更新 ${(EARN.updated||'').slice(0,10).replaceAll('-','/')}｜🔴 = 本站追蹤主題股｜展開後數字 = 預估 EPS`}
-$('earnPage').addEventListener('click',e=>{const b=e.target.closest('button[data-m]');if(b){EMODE=b.dataset.m;try{localStorage.setItem('earnMode',EMODE)}catch(x){}earnCal();return}
+// ---------- 財報公布日頁：搜一檔看近 8 季（自動層 hist：[fq, 預估, 實際, 驚喜%, 公布日, 盤前盤後, 首日%]） ----------
+let ESCOPE='year';try{ESCOPE=localStorage.getItem('earnScope')||'year'}catch(e){}
+const fqYear=fq=>fq&&/^\d{2}Q/.test(fq)?2000+ +fq.slice(0,2):null;
+function earnOne(id){const box=$('eone');const s=IDX.find(x=>x.id===id)||ALL.find(x=>x.id===id)||{id,name:id,tw:[]};
+  const aq=AUTOQ[id],ls=EARN.e[id]||[],t=etToday(),yr=+t.slice(0,4),fut=ls.find(x=>x[0]>=t);
+  const hist=(aq&&aq.hist||[]).map(h=>h.slice()).reverse();   // 新→舊
+  hist.forEach(h=>{if(h.length<5)h.push(null,'',null);if(aq&&(h[0]===aq.fq||h[4]===aq.date)){if(!h[4])h[4]=aq.date;if(aq.hour)h[5]=aq.hour;if(aq.px&&aq.px.react!=null)h[6]=aq.px.react;h.cur=true}});   // 最新一季以頂層（Finnhub 時間＋反應）為準
+  const rows=ESCOPE==='year'?hist.filter(h=>(h[4]?+h[4].slice(0,4):fqYear(h[0]))===yr):hist.slice(0,8);
+  const hr={bmo:'盤前',amc:'盤後',dmh:'盤中'};const pc=v=>v==null?'—':`${v>=0?'+':'−'}${Math.abs(v).toFixed(1)}%`;
+  const cnm=s.cn?s.cn.replace(/ .*/,''):(s.name||'').split(/[ ,]/)[0];
+  let h=`<div class="eh"><b>${esc(id)}</b><span class="n">${esc(cnm)}</span><a href="#${esc(id)}">📈 估值 →</a>${EARN_SET&&EARN_SET.has(id)?`<a href="earnings.html#${esc(id)}">🎯 財報對照 →</a>`:''}</div>`;
+  if(fut){const w=twTime(fut[0],fut[1]);h+=`<p class="nx">📅 下次 ${mdw(fut[0])} ${w.when}${w.tw?`（${w.tw}）`:''}${fut[2]!=null?`｜預估 EPS ${epsT(fut[2])}`:''}</p>`}
+  h+=`<div class="etab erng"><button data-s="year"${ESCOPE==='year'?' class="on"':''}>${yr} 年</button><button data-s="q8"${ESCOPE==='q8'?' class="on"':''}>近 8 季</button></div>`;
+  if(rows.length){h+=`<table><thead><tr><th>季</th><th>公布日</th><th>EPS 實際</th><th>vs 預估</th><th>首日</th></tr></thead><tbody>`+rows.map(h2=>`<tr${h2.cur?' class="cur"':''}><td>${esc(h2[0])}${h2.cur&&EARN_SET&&EARN_SET.has(id)?' 🎯':''}</td><td>${h2[4]?mdw(h2[4]):'—'}${h2[5]?`<small> ${hr[h2[5]]||''}</small>`:''}</td><td>${h2[2]!=null?epsT(h2[2]):'—'}${h2[7]==='sec'?'<small> GAAP</small>':`<small> ／${h2[1]!=null?epsT(h2[1]):'—'}</small>`}</td><td class="${h2[3]==null?'':h2[3]>=0?'up':'dw'}">${pc(h2[3])}</td><td class="${h2[6]==null?'':h2[6]>=0?'up':'dw'}">${pc(h2[6])}</td></tr>`).join('')+`</tbody></table>`;
+    h+=`<p class="foot">EPS、預估＝Finnhub（${fxOn()?'已換台幣':'美元'}）；首日＝財報後首個交易日收盤 vs 前一收盤（FinMind）；公布日＝SEC 8-K 申報日；Finnhub 只有近 4 季預估，更早的季標 GAAP＝SEC 財報 EPS、無預估；🎯＝本季有手動分析層，點上方「財報對照」。${hist.length<rows.length+1&&ESCOPE==='q8'?'':''}</p>`}
+  else h+=`<p class="meta" style="margin-top:8px">${aq?`${yr} 年還沒有已公布的季度`:'這檔不在追蹤名單（主題股＋大型股＋對照名單），只有公布日曆，沒有驚喜率與首日資料'}</p>`;
+  box.innerHTML=h;box.hidden=false}
+function earnSearch(){const v=$('eq').value.trim();const hit=v?matches(v)[0]:null;const on=!!hit;
+  ['erng','ecal','uEarn2'].forEach(k=>$(k).hidden=on||(k==='erng'&&EMODE!=='done'));$('earnPage').querySelector('.etab:not(.erng)').hidden=on;
+  if(on)earnOne(hit.id);else{$('eone').hidden=true;$('eone').innerHTML=''}}
+$('eq').addEventListener('input',earnSearch);
+$('eq').addEventListener('keydown',e=>{if(e.key==='Escape'){$('eq').value='';earnSearch()}});
+$('earnPage').addEventListener('click',e=>{const sb=e.target.closest('button[data-s]');if(sb){ESCOPE=sb.dataset.s;try{localStorage.setItem('earnScope',ESCOPE)}catch(x){}earnSearch();return}
+  const b=e.target.closest('button[data-m]');if(b){EMODE=b.dataset.m;OPEN.clear();try{localStorage.setItem('earnMode',EMODE)}catch(x){}earnCal();return}
+  const rb=e.target.closest('button[data-r]');if(rb){ERANGE=rb.dataset.r;OPEN.clear();try{localStorage.setItem('earnRange',ERANGE)}catch(x){}earnCal();return}
   const d=e.target.closest('.d[data-d]');if(d){const k=d.dataset.d;if(!OPEN.size)OPEN.add($('ecal').querySelector('.d').dataset.d);OPEN.has(k)?OPEN.delete(k):OPEN.add(k);earnCal()}});
 
 // ---------- 全市場（不在 45 檔時）：財報讀 data/all/{T}.json，股價由瀏覽器抓 FinMind，河流圖在前端算 ----------
@@ -1256,7 +1295,7 @@ function route(){
   if(!stk){$('pnav').hidden=true;document.body.classList.remove('pn');pnShut();qToggle(false)}
   if(tid&&VPREV==='home')HOMEY=scrollY;   // 從首頁點卡片進主題：記住首頁捲到哪
   if(em){$('stock').hidden=true;$('home').hidden=true;document.title='編輯主題';if(em[1])openEditor(em[1],HPREV);else renderOrder();scrollTo(0,0)}
-  else if(id==='EARN'){$('stock').hidden=true;$('home').hidden=true;$('earnPage').hidden=false;document.title='財報公布日';earnCal();scrollTo(0,0)}
+  else if(id==='EARN'){$('stock').hidden=true;$('home').hidden=true;$('earnPage').hidden=false;document.title='財報公布日';earnCal();earnSearch();scrollTo(0,0)}
   else if(id==='SALARY'){$('stock').hidden=true;$('home').hidden=true;$('srank').hidden=false;document.title='員工薪酬排行';renderSal();scrollTo(0,0)}
   else if(tid){$('stock').hidden=true;$('home').hidden=true;themeRender(tid);scrollTo(0,0)}
   else if(stk){const k=KEEP;KEEP=null;if(!D||D.id!==id){if(!k)scrollTo(0,0);load(id).then(()=>{if(k)requestAnimationFrame(()=>goSec(k))})}else{$('home').hidden=true;$('stock').hidden=false;pnPaint(id);setTimeout(()=>Object.values(charts).forEach(c=>c.resize()),0);k?goSec(k):scrollTo(0,0)}}
@@ -1271,7 +1310,7 @@ const nameOf=id=>{const s=IDX.find(x=>x.id===id);if(s)return s.cn||s.name||id;if
 let PN=null,KEEP=null,SHEET_SEC=null;
 // 個股頁頂列「🎯 看財報 →」：財報對照頁（earnings_cmp.json）有這檔才顯示，連到那頁的個股
 let EARN_SET=null;const CMP_P=fetch('data/earnings_cmp.json?t='+Math.floor(Date.now()/6e5)).then(r=>r.ok?r.json():null).catch(()=>null);
-CMP_P.then(j=>{EARN_SET=new Set(((j&&j.companies)||[]).map(c=>c.ticker));WATCH=new Set([...EARN_SET,...((j&&j.watch)||[])]);if(D&&!$('stock').hidden)earnLnk(D.id);if(EVIEW==='done'&&!$('earnCal').hidden)earnMini()});
+CMP_P.then(j=>{EARN_SET=new Set(((j&&j.companies)||[]).map(c=>c.ticker));WATCH=new Set([...EARN_SET,...((j&&j.watch)||[])]);SINCE=(j&&j.since)||'';if(!$('earnPage').hidden)earnCal();if(D&&!$('stock').hidden)earnLnk(D.id);if(EVIEW==='done'&&!$('earnCal').hidden)earnMini()});
 function earnLnk(id){const a=$('earnLnk'),on=!!(EARN_SET&&EARN_SET.has(id));a.hidden=!on;if(on)a.href='earnings.html#'+encodeURIComponent(id)}
 function pnPaint(id){
   earnLnk(id);
