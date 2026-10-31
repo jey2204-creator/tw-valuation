@@ -33,28 +33,14 @@ codes = sys.argv[1:] or ["2454"]
 res = {}
 for c in codes:
     # 新版 API 幾種參數組合
-    for ep in ("t164sb03",):
+    for ep in ("t164sb03", "t164sb04", "t164sb05"):
         for body in (
-            {"companyId": c, "dataType": "2", "season": "3", "year": "115", "subsidiaryCompanyId": ""},
             {"companyId": c, "dataType": "2", "season": "2", "year": "115", "subsidiaryCompanyId": ""},
-            {"companyId": c, "dataType": "1", "season": "3", "year": "115", "subsidiaryCompanyId": ""},
-            {"companyId": c, "dataType": "2", "season": "03", "year": "115", "subsidiaryCompanyId": ""},
-            {"companyId": c, "dataType": "2", "season": "3", "year": "2026", "subsidiaryCompanyId": ""},
-            {"companyId": c, "year": "115", "season": "3"},
+            {"companyId": c, "dataType": "2", "season": "1", "year": "115", "subsidiaryCompanyId": ""},
         ):
             time.sleep(2)
             s = post_json("https://mops.twse.com.tw/mops/api/" + ep, body)
             key = f"{c}/api/{ep}/{json.dumps(body, ensure_ascii=False)}"
             res[key] = s[:30000]
             print(key, s[:200])
-    # 舊版 ajax（兩個主機）
-    for h in ("https://mopsov.twse.com.tw", "https://mops.twse.com.tw"):
-        for ep in ("ajax_t164sb03", "ajax_t164sb04", "ajax_t164sb05"):
-            form = {"encodeURIComponent": "1", "step": "1", "firstin": "1", "off": "1", "queryName": "co_id",
-                    "inpuType": "co_id", "TYPEK": "all", "isnew": "false", "co_id": c, "year": "115", "season": "3"}
-            time.sleep(4)
-            s = post_form(f"{h}/mops/web/{ep}", form, f"{h}/mops/web/{ep.replace('ajax_', '')}")
-            key = f"{c}/{h}/{ep}"
-            res[key] = s[:60000]
-            print(key, len(s), s[:200].replace("\n", " "))
 OUT.write_text(json.dumps(res, ensure_ascii=False, indent=1))
