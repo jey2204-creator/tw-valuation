@@ -140,10 +140,10 @@ a.lnk{color:var(--accent);text-decoration:none;font-weight:600}
 
   // 把 auto 疊到 manual：營收／EPS KPI、反應；watch 名單只有 auto 的做成精簡公司
   function merged(){
-    const list=DATA.companies.map(c=>({...c, auto:AUTO.q[c.ticker]||null, manual:true}));
+    const list=DATA.companies.map(c=>({...c, auto:(AUTO.q[c.ticker]&&!AUTO.q[c.ticker].pre)?AUTO.q[c.ticker]:null, manual:true}));
     for(const tk of (DATA.watch||[])){
       if(list.some(c=>c.ticker===tk)) continue;
-      const a=AUTO.q[tk]; if(!a||a.epsAct==null) continue;
+      const a=AUTO.q[tk]; if(!a||a.epsAct==null||a.pre) continue;   // pre＝本季還沒公布（自動層為了個股搜尋保留近 8 季）
       list.push({ticker:tk,name:NAMES[tk]||tk,exchange:'',date:a.date,auto:a,manual:false,
         reaction:{text:'',dir:'flat',pct:null},kpi:[],charts:[],impact:[],other:[],sources:[['Finnhub（EPS 預估／實際）、FinMind（股價）','']]});
     }
