@@ -512,6 +512,12 @@ html{scroll-behavior:smooth}
   <div class="chart" id="cEps"></div>
   <p class="foot" id="fEps">柱：單季稀釋 EPS　線：近四季累計（右軸）。10-K 的第四季 = 全年 − 前三季</p>
 </section>
+<section class="card" id="fcf" hidden>
+  <h2>自由現金流 <small id="uFcf"></small></h2>
+  <p class="take" id="tFcf"></p>
+  <div class="chart" id="cFcf"></div>
+  <p class="foot" id="fFcf">柱：營業現金流 vs 資本支出（現金購置 PP&amp;E，不含融資租賃）　線：自由現金流 = 兩者相減，同一軸。紫柱高過綠柱＝投資燒掉的錢超過本業賺進來的</p>
+</section>
 <section class="card" id="fwd">
   <h2>預估 EPS <small>自建模型｜可調假設</small></h2>
   <p class="take" id="tFwd"></p>
@@ -634,14 +640,14 @@ async function loadAny(id){
   if(!fin.q.length)throw new Error(`${id} 在 SEC 有申報，但抓不到營收等科目（銀行、保險或非美元申報的外國公司），暫時無法繪圖`);
   return buildRiver(fin,px);
 }
-// q 欄位：0日曆季 1會計季 2營收(百萬) 3毛利率 4營益率 5淨利率 6EPS 7CapEx(百萬) 8稀釋股數(百萬) 9季末 10公布日
+// q 欄位：0日曆季 1會計季 2營收(百萬) 3毛利率 4營益率 5淨利率 6EPS 7CapEx(百萬) 8稀釋股數(百萬) 9季末 10公布日 11營業現金流(百萬)
 // 財報快訊（earnings_cmp.json 各公司的 flash：財報新聞稿 8-K 的 GAAP 數字，手動填）：公司已公布、SEC 10-Q XBRL 還沒進來 → 先補進季資料（只補緊接的下一季）；SEC 一有正式值就不再用
 const qNext=q=>{let y=+q.slice(0,2),n=+q[3]+1;if(n>4){n=1;y++}return `${y}Q${n}`};
 async function injectFlash(d){
   if(d.freq!=='Q'||!d.q.length)return;
   const j=await CMP_P,c=j&&(j.companies||[]).find(x=>x.ticker===d.id),f=c&&c.flash;
   if(!f||f.q!==qNext(d.q[d.q.length-1][0])||!(f.rev>0)||f.eps==null)return;
-  d.q.push([f.q,f.fq||null,f.rev,f.gm??null,f.om??null,f.nm??null,f.eps,f.capex??null,f.sh??null,f.end||'',f.on||'']);
+  d.q.push([f.q,f.fq||null,f.rev,f.gm??null,f.om??null,f.nm??null,f.eps,f.capex??null,f.sh??null,f.end||'',f.on||'',f.ocf??null]);
   d.inj=f.q;d.injOn=f.on||'';
 }
 // 折線末端數字避讓：終點像素距離不到 12px 就上下錯開（三率三條線常撞在一起）
@@ -763,7 +769,12 @@ function header(){
     if(last){const i=last[0],p=Q[prevYearIdx(i)],w=Q.slice(i-3,i+1),tt=(D.freq!=='Q'||w.every((x,j)=>!j||isPrevQ(w[j-1],x)))?w.map(x=>x[7]):[null];
       $('tCap').innerHTML=`${Q[i][0]} 資本支出 <strong>${ap()}${camt(Q[i][7])}</strong>${p&&p[7]?`，年增 <strong>${((Q[i][7]/p[7]-1)*100).toFixed(0)}%</strong>`:''}；占營收 <strong>${(Q[i][7]/Q[i][2]*100).toFixed(0)}%</strong>${tt.every(x=>x!=null)?`；近四季合計 <strong>${ap()}${camt(sum(tt))}</strong>`:''}`}
     $('uCap').textContent=`${capU()}｜日曆季`}
-  $('chips').innerHTML=(D.demand?'<a href="#capex" data-s>CapEx</a>':'')+'<a href="#rev" data-s>營收</a><a href="#margin" data-s>三率</a><a href="#eps" data-s>EPS</a><a href="#fwd" data-s>預估EPS</a><a href="#pe" data-s>本益比河流</a><a href="#pb" data-s>淨值比河流</a>';
+  // 自由現金流：有 OCF 與 CapEx 的季度才畫；銀行、保險沒有就整張隱藏
+  const FC=Q.map((x,i)=>[i,x[11],x[7]]).filter(x=>x[1]!=null&&x[2]!=null),hasF=FC.length>=2;$('fcf').hidden=!hasF;
+  if(hasF){const [i,o,cx]=FC[FC.length-1],f=o-cx,w=Q.slice(i-3,i+1),ok=D.freq==='Q'&&w.length===4&&w.every((x,j)=>(!j||isPrevQ(w[j-1],x))&&x[11]!=null&&x[7]!=null),t4=ok?sum(w.map(x=>x[11]-x[7])):null;
+    $('tFcf').innerHTML=`${qlbl(Q[i])} 營業現金流 <strong>${ap()}${camt(o)}</strong>、資本支出 <strong>${ap()}${camt(cx)}</strong> → 自由現金流 <strong>${ap()}${camt(f)}</strong>${t4!=null?`；近四季 <strong>${ap()}${camt(t4)}</strong>`:''}${f<0?'<span class="pill">轉負</span>':''}`;
+    $('uFcf').textContent=`${capU()}｜${D.freq==='Q'?'日曆季':'會計年度'}`}
+  $('chips').innerHTML=(D.demand?'<a href="#capex" data-s>CapEx</a>':'')+'<a href="#rev" data-s>營收</a><a href="#margin" data-s>三率</a><a href="#eps" data-s>EPS</a>'+(hasF?'<a href="#fcf" data-s>現金流</a>':'')+'<a href="#fwd" data-s>預估EPS</a><a href="#pe" data-s>本益比河流</a><a href="#pb" data-s>淨值比河流</a>';
 }
 function render(){
   const acc=css('--accent'),acc2=css('--accent2'),warm=css('--warm'),n=D.freq==='Q'?20:8,st=Math.max(0,Q.length-n),S=Q.slice(st);
@@ -788,6 +799,13 @@ function render(){
    o.tooltip.formatter=ps=>{const i=st+ps[0].dataIndex;return `<b>${qtip(i)}</b><br>CapEx ${ap()}${camt(Q[i][7],fxOn()?0:2)}<br>年增 ${cy(i)??'—'}%<br>占營收 ${Q[i][7]==null?'—':(Q[i][7]/Q[i][2]*100).toFixed(0)}%`};
    o.series=[{name:`CapEx(${capU()})`,type:'bar',data:S.map(x=>flashBar(x,cval(x[7]),css('--violet'))),itemStyle:{color:css('--violet'),borderRadius:[2,2,0,0]},barCategoryGap:'25%',markArea:D.inj?FLASH_AREA(warm,D.inj):undefined},
      {name:'年增率',type:'line',yAxisIndex:1,data:S.map((x,j)=>cy(st+j)),symbol:'none',lineStyle:{width:2,color:warm},itemStyle:{color:warm}}];
+   c.setOption(o,true)}
+  if(!$('fcf').hidden){const o=base(),c=mk('cFcf');o.xAxis.data=S.map(qlbl);o.yAxis.scale=false;
+   const f=x=>x[11]!=null&&x[7]!=null?x[11]-x[7]:null,down=css('--warm');
+   o.tooltip.formatter=ps=>{const i=st+ps[0].dataIndex,x=Q[i];return `<b>${qtip(i)}</b><br>營業現金流 ${ap()}${camt(x[11],fxOn()?0:2)}<br>資本支出 ${ap()}${camt(x[7],fxOn()?0:2)}<br>自由現金流 <b>${ap()}${camt(f(x),fxOn()?0:2)}</b>${x[11]>0?`<br>CapEx／OCF ${(x[7]/x[11]*100).toFixed(0)}%`:''}`};
+   o.series=[{name:'營業現金流',type:'bar',data:S.map(x=>flashBar(x,cval(x[11]),acc2)),itemStyle:{color:acc2,borderRadius:[2,2,0,0]},barCategoryGap:'30%',barGap:'-10%',markArea:D.inj?FLASH_AREA(warm,D.inj):undefined},
+     {name:'資本支出',type:'bar',data:S.map(x=>flashBar(x,cval(x[7]),css('--violet'))),itemStyle:{color:css('--violet'),borderRadius:[2,2,0,0]}},
+     {name:'自由現金流',type:'line',data:S.map(x=>cval(f(x))),symbol:'circle',symbolSize:4,z:5,lineStyle:{width:2,color:down},itemStyle:{color:down},markLine:{silent:true,symbol:'none',lineStyle:{color:down,type:'dashed',width:1,opacity:.6},label:{show:false},data:[{yAxis:0}]}}];
    c.setOption(o,true)}
   renderFwd();river('cPE',PEM,2,'倍 PE');river('cPB',PBM,3,'倍 PB');
 }
