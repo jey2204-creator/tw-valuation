@@ -496,6 +496,7 @@ details.ind.hot summary b{color:var(--up)}
 .kleg b{font-weight:600}
 .kp{position:relative;margin-right:-10px}   /* 價格軸內建右側留白約 10px → 往卡片內距延伸，讓刻度數字貼齊卡片內緣 */
 .kp+.kp{border-top:1px solid var(--line)}
+.kfl{position:absolute;inset:0;z-index:2;pointer-events:none;overflow:hidden}.kfl b{position:absolute;top:2px;transform:translateX(-50%);font-size:9px;font-weight:600;line-height:1.1;padding:1px 3px;border-radius:3px;color:#fff;background:var(--warm);white-space:nowrap;font-family:var(--f-num)}.kfl b.self{background:var(--accent)}.kfl b.next{background:var(--muted)}
 .klab{position:absolute;left:4px;top:2px;z-index:3;font-size:10px;color:var(--muted);pointer-events:none;background:color-mix(in srgb,var(--card) 75%,transparent);padding:0 3px;border-radius:3px}
 </style>
 <section class="card" id="chip">
@@ -1047,8 +1048,30 @@ async function renderKl(){
   try{await klLib()}catch(e){$('tKl').textContent='K 線繪圖程式載入失敗';return}
   if(id!==D.id)return;
   $('klBox').style.display=$('klVol').style.display=$('klF').style.display=$('klT').style.display='';
-  KL.rows=all;KL.days=dd;KL.id=id;klDraw();
+  KL.rows=all;KL.days=dd;KL.id=id;KL.fl=await klFlashMarks(id,dd);if(id!==D.id)return;klDraw();
 }
+// ---- 財報公布日（data/flash.json）：過去＝董事會通過財報（board）／法說自結（self）的公告日；下次＝公司公告的董事會日期（cal），沒有就用法定期限 Q1 5/15、Q2 8/14、Q3 11/14、Q4 3/31 ----
+async function klFlashMarks(id,dd){
+  if(!NPF)NPF=fetch('data/flash.json?t='+Math.floor(Date.now()/6e5)).then(r=>r.ok?r.json():null).catch(()=>null);
+  const F=await NPF;if(!F)return null;
+  const roc=t=>{const m=/^(\d{3})\/(\d{2})\/(\d{2})/.exec(t||'');return m?String(1911+ +m[1])+m[2]+m[3]:null};
+  const past={};(F.items||[]).filter(x=>x.c===id).forEach(x=>{const d=roc(x.t);if(!d)return;const k=x.k==='self'?'self':'board';if(!past[d]||k==='board')past[d]={d,k,q:x.q,eps:x.s&&x.s.eps}});
+  const P=Object.values(past).sort((a,b)=>a.d<b.d?-1:1);
+  // 下一季：最近一次董事會通過的季別 +1；只有自結的季（台積電 10/15 法說）→ 董事會財報還沒出，下次就是那一季
+  const bq=P.filter(x=>x.k==='board').map(x=>x.q).sort().pop();
+  let nq;if(bq){const y=+bq.slice(0,4),q=+bq[5];nq=q===4?`${y+1}Q1`:`${y}Q${q+1}`}
+  else{const sq=P.map(x=>x.q).sort().pop();if(sq)nq=sq}
+  const today=F.today||new Date().toISOString().slice(0,10);
+  let next=null;
+  if(nq){const y=+nq.slice(0,4),q=+nq[5];const cal=(F.cal||[]).find(x=>x.c===id&&x.q===nq);
+    const dl={1:`${y}-05-15`,2:`${y}-08-14`,3:`${y}-11-14`,4:`${y+1}-03-31`}[q];
+    const d=cal?cal.d:dl;if(d>=today)next={d:d.replace(/-/g,''),q:nq,legal:!cal,dl}}
+  return {past:P,next,today:today.replace(/-/g,'')};
+}
+// 今天之後到下次公布日的交易日（跳過週末，國定假日不算；最多 N 根）
+function klFutureDays(from,to,max){const out=[];let d=new Date(+from.slice(0,4),+from.slice(4,6)-1,+from.slice(6));
+  while(out.length<max){d.setDate(d.getDate()+1);const s=d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0');if(s>to)break;if(d.getDay()===0||d.getDay()===6)continue;out.push(s)}
+  return out}
 function klDraw(){
   const all=KL.rows,dd=KL.days;if(!all)return;
   const L=LightweightCharts,dk=isDark(),up=css('--up'),dn=css('--down'),fg=css('--fg'),mu=css('--muted'),line=css('--line'),card=css('--card');
@@ -1061,6 +1084,12 @@ function klDraw(){
     vs.push({time:tm,value:r[1]||0,color:(r[0]>=o?up:dn)+'99'});
     fs.push(r[2]!=null?{time:tm,value:r[2],color:r[2]>=0?up:dn}:{time:tm});ts.push(r[3]!=null?{time:tm,value:r[3],color:r[3]>=0?up:dn}:{time:tm});   // 沒籌碼的日子放空白點，讓四張圖的時間軸一樣長
     if(m5[i]!=null)l5.push({time:tm,value:m5[i]});if(m20[i]!=null)l20.push({time:tm,value:m20[i]});if(m60[i]!=null)l60.push({time:tm,value:m60[i]});if(m120[i]!=null)l120.push({time:tm,value:m120[i]});if(m240[i]!=null)l240.push({time:tm,value:m240[i]})}
+  // 下次財報在 12 個交易日內 → 右邊留白到那天（空白點讓四張圖一起延伸）
+  const FL=KL.fl||{past:[],next:null},lastD=dd[all.length-1];
+  const fut=FL.next&&FL.next.d>lastD?klFutureDays(lastD,FL.next.d,13):[];
+  const ft=s=>({year:+s.slice(0,4),month:+s.slice(4,6),day:+s.slice(6)});
+  if(fut.length>12)fut.length=0;   // 超過 12 根就不留白，只在摘要顯示（期限落在週末 → 線畫在前一個交易日）
+  fut.forEach(s=>{const tm=ft(s);cs.push({time:tm});vs.push({time:tm});fs.push({time:tm});ts.push({time:tm})});
   const opt={layout:{background:{type:'solid',color:'transparent'},attributionLogo:false,textColor:mu,fontFamily:getComputedStyle(document.body).fontFamily,fontSize:10},grid:{vertLines:{color:line},horzLines:{color:line}},
     rightPriceScale:{borderColor:line,scaleMargins:{top:.08,bottom:.05}},timeScale:{borderColor:line,rightOffset:1,barSpacing:Math.max(3,Math.floor(($('klBox').clientWidth-60)/n)),fixLeftEdge:true,fixRightEdge:true,timeVisible:false,tickMarkFormatter:(tt)=>tt.month+'/'+tt.day},
     crosshair:{mode:L.CrosshairMode.Normal,vertLine:{labelBackgroundColor:css('--accent'),style:2,color:mu},horzLine:{labelBackgroundColor:css('--accent'),style:2,color:mu}},handleScroll:{vertTouchDrag:false},handleScale:{axisPressedMouseMove:false}};
@@ -1093,8 +1122,9 @@ function klDraw(){
   // 四張圖右邊價格軸寬度不同（2600.00 vs 80K vs 0）→ 繪圖區寬度不同、虛線會錯位；量出最寬的那張，全部設成一樣寬
   const eqW=()=>{const w=Math.max(36,...[c,v,f,tc].map(x=>x.priceScale('right').width()));[c,v,f,tc].forEach(x=>x.applyOptions({rightPriceScale:{minimumWidth:w}}))};
   // 統一軸寬後繪圖區變寬／變窄，要重新 fitContent，否則最右邊一兩根 K 棒會被切掉
-  const refit=()=>{eqW();[c,v,f,tc].forEach(x=>x.timeScale().fitContent())};
+  const refit=()=>{eqW();[c,v,f,tc].forEach(x=>x.timeScale().fitContent());klFlOverlay(c,FL,fut,dd,from)};
   requestAnimationFrame(()=>{refit();requestAnimationFrame(refit)});
+  c.timeScale().subscribeVisibleLogicalRangeChange(()=>klFlOverlay(c,FL,fut,dd,from));
   // 兩張圖同步 + 圖例
   let lock=false;const sync=(a,b)=>a.timeScale().subscribeVisibleLogicalRangeChange(r=>{if(lock||!r)return;lock=true;b.timeScale().setVisibleLogicalRange(r);lock=false});[[c,v],[v,c],[c,f],[f,c],[c,tc],[tc,c]].forEach(([a,b])=>sync(a,b));
   const leg=(i)=>{const r=all[i],pv=i>0?all[i-1][0]:null,ch=pv?r[0]-pv:null,pc=pv?(ch/pv*100):null,cl=ch>0?'up':ch<0?'dn':'';
@@ -1116,15 +1146,31 @@ function klDraw(){
   const vr=vv?(r[1]/vv):null;
   const sm=(k,n)=>{const a=all.slice(-n).map(x=>x[k]).filter(x=>x!=null);return a.length?a.reduce((p,q)=>p+q,0):null},sg=x=>x==null?'—':(x>0?'+':'')+fmt(x),cl=x=>x>0?'up':x<0?'dn':'';
   const f5=sm(2,5),f20=sm(2,20),t5=sm(3,5),t20=sm(3,20);
-  $('tKl').innerHTML=`均線 <strong>${bull?'多頭排列（5＞20＞60）':bear?'空頭排列（5＜20＜60）':'糾結／轉折中'}</strong><br>價位 ${abv||'—'}（▲線上 ▼線下）${a240?`・距年線 <strong class="${r[0]>=a240?'up':'dn'}">${r[0]>=a240?'+':''}${((r[0]/a240-1)*100).toFixed(1)}%</strong>`:''}<br>60 日區間 ${lo>=1000?fmt(lo):fmt(lo,lo>=100?1:2)}～${hi>=1000?fmt(hi):fmt(hi,hi>=100?1:2)}（現價位於 ${((r[0]-lo)/(hi-lo||1)*100).toFixed(0)}% 處）・今量 ${vr?(vr>=1.5?'<strong class="up">放大 '+vr.toFixed(1)+'×</strong>':vr<=.6?'<strong>萎縮 '+vr.toFixed(1)+'×</strong>':vr.toFixed(1)+'×'):'—'} 5 日均量<br>外資 5 日 <strong class="${cl(f5)}">${sg(f5)}</strong>／20 日 <strong class="${cl(f20)}">${sg(f20)}</strong>・投信 5 日 <strong class="${cl(t5)}">${sg(t5)}</strong>／20 日 <strong class="${cl(t20)}">${sg(t20)}</strong> 張`;
+  const NX=KL.fl&&KL.fl.next,PP=(KL.fl&&KL.fl.past||[]).slice(-1)[0];
+  const tdLeft=NX?klFutureDays(dd[last],NX.d,400).length:null;
+  const flTxt=NX?`📅 下次財報 <strong>${NX.q.slice(2)}</strong>：${NX.legal?`最晚 ${+NX.d.slice(4,6)}/${+NX.d.slice(6)}（法定期限，公司尚未公告董事會日期）`:`${+NX.d.slice(4,6)}/${+NX.d.slice(6)}（公司公告董事會日）`}，距今 <strong>${tdLeft}</strong> 個交易日`:(PP?`📅 ${PP.q.slice(2)} 財報已於 ${+PP.d.slice(4,6)}/${+PP.d.slice(6)} 公布`:'');
+  $('tKl').innerHTML=(flTxt?flTxt+'<br>':'')+`均線 <strong>${bull?'多頭排列（5＞20＞60）':bear?'空頭排列（5＜20＜60）':'糾結／轉折中'}</strong><br>價位 ${abv||'—'}（▲線上 ▼線下）${a240?`・距年線 <strong class="${r[0]>=a240?'up':'dn'}">${r[0]>=a240?'+':''}${((r[0]/a240-1)*100).toFixed(1)}%</strong>`:''}<br>60 日區間 ${lo>=1000?fmt(lo):fmt(lo,lo>=100?1:2)}～${hi>=1000?fmt(hi):fmt(hi,hi>=100?1:2)}（現價位於 ${((r[0]-lo)/(hi-lo||1)*100).toFixed(0)}% 處）・今量 ${vr?(vr>=1.5?'<strong class="up">放大 '+vr.toFixed(1)+'×</strong>':vr<=.6?'<strong>萎縮 '+vr.toFixed(1)+'×</strong>':vr.toFixed(1)+'×'):'—'} 5 日均量<br>外資 5 日 <strong class="${cl(f5)}">${sg(f5)}</strong>／20 日 <strong class="${cl(f20)}">${sg(f20)}</strong>・投信 5 日 <strong class="${cl(t5)}">${sg(t5)}</strong>／20 日 <strong class="${cl(t20)}">${sg(t20)}</strong> 張`;
   // 近 10 日表
   const pz=x=>x==null?'—':fmt(x,x>=1000?0:x>=100?1:2),sz=x=>x==null?'—':(x>0?'+':'')+fmt(x),cz=x=>x>0?'up':x<0?'dn':'';
   $('tbKl').innerHTML='<tr><th>日期</th><th>收</th><th>漲跌%</th><th>量</th><th>外資</th><th>投信</th></tr>'+all.slice(-10).reverse().map((x,j)=>{const i=last-j,pv=i>0?all[i-1][0]:null,pc=pv?((x[0]/pv-1)*100):null,cl=cz(pc);
     return `<tr><td>${dd[i].slice(4,6)}/${dd[i].slice(6)}</td><td class="${cl}">${pz(x[0])}</td><td class="${cl}">${pc==null?'—':(pc>0?'+':'')+pc.toFixed(2)}</td><td>${fmt(x[1])}</td><td class="${cz(x[2])}">${sz(x[2])}</td><td class="${cz(x[3])}">${sz(x[3])}</td></tr>`}).join('');
   const miss=all.filter(x=>x[8]==null).length;
-  $('fKl').textContent='紅漲綠跌；量圖細線＝5 日均量；外資、投信紅買綠賣（近 60 日）。按住看當天數字，左右拖曳、雙指縮放。'+(l240.length?'灰色虛線＝240 日均線（年線）。':'240 日均線（年線）資料回補中，約 1～2 天補齊。')+(miss?`　⚠️ 尚有 ${miss} 天只有收盤、沒有開高低（當天 K 棒顯示為一字線），今晚排程補齊。`:'');
+  $('fKl').textContent='紅漲綠跌；量圖細線＝5 日均量；外資、投信紅買綠賣（近 60 日）。按住看當天數字，左右拖曳、雙指縮放。橘虛線＝董事會通過財報公告日、藍虛線＝法說自結公告日（多在盤後公告，股價反應看下一根 K 棒）、灰虛線＝下次財報（公司公告的董事會日，沒有就用法定期限，12 個交易日內才在右側留白）。'+(l240.length?'灰色虛線＝240 日均線（年線）。':'240 日均線（年線）資料回補中，約 1～2 天補齊。')+(miss?`　⚠️ 尚有 ${miss} 天只有收盤、沒有開高低（當天 K 棒顯示為一字線），今晚排程補齊。`:'');
   {const sm=$('klMore').querySelector('summary span');sm.textContent=miss?`⚠️ ${miss} 天缺開高低`:'▾'}
 }
+// 財報公布日 overlay：四張圖各一層，直虛線（橘＝董事會通過財報、藍＝法說自結、灰＝下次），標籤只放主圖
+function klFlOverlay(c,FL,fut,dd,from){
+  const pan=['klBox','klVol','klF','klT'].map(id=>{let o=$(id).querySelector('.kfl');if(!o){o=document.createElement('div');o.className='kfl';$(id).appendChild(o)}o.innerHTML='';return o});
+  if(!FL)return;const ts=c.timeScale(),pw=ts.width()||$('klBox').clientWidth-60,vis=new Set(dd.slice(from));fut.forEach(s=>vis.add(s));
+  const marks=FL.past.filter(x=>vis.has(x.d)).map(x=>({...x,cls:x.k==='self'?'self':'',lab:(x.k==='self'?'自結':'財報')+x.q.slice(4)}));
+  if(FL.next&&fut.length)marks.push({d:fut[fut.length-1],cls:'next',lab:FL.next.q.slice(4)+(FL.next.legal?'≤':' ')+(+FL.next.d.slice(4,6))+'/'+(+FL.next.d.slice(6))});
+  // 直線用 SVG 畫（iPhone Safari 對 0 寬 div 的虛線邊框不一定會畫），標籤用 div；標籤左右重疊就下移一行
+  const COL={'':css('--warm'),self:css('--accent'),next:css('--muted')},rows=[];
+  pan.forEach(o=>{const sv=document.createElementNS('http://www.w3.org/2000/svg','svg');sv.setAttribute('width','100%');sv.setAttribute('height','100%');sv.style.cssText='position:absolute;inset:0;display:block';o.appendChild(sv);o._sv=sv});
+  marks.forEach(m=>{const x=ts.timeToCoordinate({year:+m.d.slice(0,4),month:+m.d.slice(4,6),day:+m.d.slice(6)});if(x==null||x<0)return;
+    pan.forEach(o=>{const l=document.createElementNS('http://www.w3.org/2000/svg','line');l.setAttribute('x1',x);l.setAttribute('x2',x);l.setAttribute('y1',0);l.setAttribute('y2','100%');l.setAttribute('stroke',COL[m.cls]);l.setAttribute('stroke-width','1.5');l.setAttribute('stroke-dasharray','4 3');l.setAttribute('opacity',m.cls==='next'?'.9':'.8');o._sv.appendChild(l)});
+    const w=m.lab.length*6+8,lx=Math.max(w/2,Math.min(x,pw-w/2));let row=0;while(rows[row]!=null&&lx-w/2<rows[row]+2)row++;rows[row]=lx+w/2;
+    const b=document.createElement('b');b.className=m.cls;b.textContent=m.lab;b.style.left=lx+'px';b.style.top=(2+row*13)+'px';pan[0].appendChild(b)})}
 document.addEventListener('click',e=>{const b=e.target.closest('#klSeg button');if(!b)return;KL.n=+b.dataset.n;
   document.querySelectorAll('#klSeg button').forEach(x=>x.setAttribute('aria-pressed',x===b));klDraw()});
 addEventListener('resize',()=>{if(KL.c&&D){clearTimeout(KL.rt);KL.rt=setTimeout(klDraw,150)}});
