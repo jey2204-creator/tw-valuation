@@ -594,8 +594,8 @@ let WATCH=new Set();   // 財報對照頁名單（earnings_cmp.json 的 companie
 function doneRows(){const e=EARN.e,t=etToday(),nm=Object.fromEntries(ALL.map(s=>[s.id,s.name]));IDX.forEach(s=>nm[s.id]=s.cn||s.name);
   const hot=new Set(IDX.map(s=>s.id)),pick=new Set([...hot,...WATCH]),by={};
   const etH=+new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',hour:'2-digit',hour12:false}).format(new Date())%24;
-  for(const [id,ls] of Object.entries(e)){if(!pick.has(id))continue;for(const x of ls){const dd=dayDiff(x[0],t);if(dd<0||dd>7)continue;
-    if(dd===0&&!(x[1]==='bmo'&&etH>=10||x[1]==='dmh'&&etH>=13||x[1]==='amc'&&etH>=17))continue;(by[x[0]]=by[x[0]]||[]).push([id,x])}}
+  for(const [id,ls] of Object.entries(e)){if(!pick.has(id))continue;for(const x of ls){const dd=dayDiff(x[0],t);if(dd<0||dd>7)continue;const aq=AUTOQ[id],hr=x[1]||(aq&&aq.date===x[0]?aq.hour:'');   // 日曆沒標盤前盤後時用自動層的
+    if(dd===0&&!(hr==='bmo'&&etH>=10||hr==='dmh'&&etH>=13||hr==='amc'&&etH>=17))continue;(by[x[0]]=by[x[0]]||[]).push([id,x])}}
   return{t,hot,nm,ds:Object.keys(by).sort().reverse().map(d=>[d,by[d].sort((a,b)=>(hot.has(b[0])-hot.has(a[0]))||a[0].localeCompare(b[0]))])}}
 const dchip=(id,x,hot,nm)=>{const aq=AUTOQ[id],inCmp=WATCH.has(id)||(EARN_SET&&EARN_SET.has(id));let sp=aq&&aq.date===x[0]&&aq.epsSurp!=null?aq.epsSurp:(x[2]!=null&&x[3]!=null&&x[2]!==0?(x[3]/Math.abs(x[2])-1)*100:null);
   if(sp!=null&&x[3]==null&&!(aq&&aq.epsAct!=null))sp=null;   // 還沒有實際值就不算驚喜率（避免 Finnhub 預填）
