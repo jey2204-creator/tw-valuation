@@ -229,8 +229,13 @@ def one(tk, override, since=""):
     date = override.get("date") or last.get("date")
     if not date and hist and hist[-1][4]:
         date = hist[-1][4]   # Finnhub 日曆（免費方案只有最近約一個月）沒有時，用 8-K 申報日
-    if not date or (since and date < since and not override.get("date")):
-        return None   # 還沒公布本季（watch 名單用）
+    if not date:
+        if not hist:
+            return None
+        # 外國發行人（6-K，如 CAMT、ARM、TSM）沒有 8-K，Finnhub 日曆又只有最近一季：只留驚喜率歷史，沒有公布日與首日反應
+        return {"date": None, "hour": "", "fq": hist[-1][0], "epsEst": hist[-1][1], "epsAct": hist[-1][2],
+                "epsSurp": hist[-1][3], "revEst": None, "revAct": None, "revSurp": None, "hist": hist[-8:], "px": None, "pre": True}
+    pre = bool(since and date < since and not override.get("date"))   # 本季（since）還沒公布：財報對照頁不列，個股搜尋仍可看近 8 季
     hour = override.get("hour") or last.get("hour") or ""
     if hist and date and hist[-1][4] == date and hour:
         hist[-1][5] = hour   # 最新一季的盤前盤後以 Finnhub 為準（8-K 接收時間只是推估）
@@ -252,7 +257,7 @@ def one(tk, override, since=""):
     return {"date": date, "hour": hour, "fq": fq,
             "epsEst": eps_est, "epsAct": eps_act, "epsSurp": surprise(eps_act, eps_est),
             "revEst": rev_est, "revAct": rev_act, "revSurp": surprise(rev_act, rev_est),
-            "hist": hist[-8:], "px": px}
+            "hist": hist[-8:], "px": px, **({"pre": True} if pre else {})}
 
 
 def main():
