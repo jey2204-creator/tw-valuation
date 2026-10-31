@@ -140,10 +140,10 @@ a.lnk{color:var(--accent);text-decoration:none;font-weight:600}
 
   // 把 auto 疊到 manual：營收／EPS KPI、反應；watch 名單只有 auto 的做成精簡公司
   function merged(){
-    const list=DATA.companies.map(c=>({...c, auto:AUTO.q[c.ticker]||null, manual:true}));
+    const list=DATA.companies.map(c=>({...c, auto:(AUTO.q[c.ticker]&&!AUTO.q[c.ticker].pre)?AUTO.q[c.ticker]:null, manual:true}));
     for(const tk of (DATA.watch||[])){
       if(list.some(c=>c.ticker===tk)) continue;
-      const a=AUTO.q[tk]; if(!a||a.epsAct==null) continue;
+      const a=AUTO.q[tk]; if(!a||a.epsAct==null||a.pre) continue;   // pre＝本季還沒公布（自動層為了個股搜尋保留近 8 季）
       list.push({ticker:tk,name:NAMES[tk]||tk,exchange:'',date:a.date,auto:a,manual:false,
         reaction:{text:'',dir:'flat',pct:null},kpi:[],charts:[],impact:[],other:[],sources:[['Finnhub（EPS 預估／實際）、FinMind（股價）','']]});
     }
@@ -157,10 +157,11 @@ a.lnk{color:var(--accent);text-decoration:none;font-weight:600}
       if(!c.manual){ c.kpi=[kRev,kEps].filter(Boolean); }
       else { c.kpiAuto=[kRev,kEps].filter(Boolean); }
       // 近四季趨勢（auto）
-      if(a.hist&&a.hist.length>=2){
-        c.histChart={title:'📈 近四季 EPS 驚喜率（Finnhub）',open:!c.manual,type:'line',fmt:'pct',labels:a.hist.map(h=>h[0]),
-          datasets:[{label:'EPS 驚喜率',data:a.hist.map(h=>h[3]),color:'#f59e0b'}],
-          note:a.hist.map(h=>`${h[0]}：實際 ${h[2]} vs 預期 ${h[1]}`).join('；')};
+      const hs=(a.hist||[]).slice(-4);   // 自動層現在存近 8 季，這裡維持近四季
+      if(hs.length>=2){
+        c.histChart={title:'📈 近四季 EPS 驚喜率（Finnhub）',open:!c.manual,type:'line',fmt:'pct',labels:hs.map(h=>h[0]),
+          datasets:[{label:'EPS 驚喜率',data:hs.map(h=>h[3]),color:'#f59e0b'}],
+          note:hs.map(h=>`${h[0]}：實際 ${h[2]} vs 預期 ${h[1]}`).join('；')};
       }
     }
     return list;
