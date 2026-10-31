@@ -1005,13 +1005,23 @@ async function loadTdw(id){
   $('tTdw').innerHTML='<div class="y10msg">⏳ 正在向 FinMind 抓集保週資料（約 3 秒）…</div>';
   try{
     const st=new Date(Date.now()-3.2*365*86400e3).toISOString().slice(0,10);
-    const rows=await fm('TaiwanStockHoldingSharesPer',id,st);if(TDWID!==id)return;
-    const v=buildTdw(rows);TDWL=null;
+    let v=null,src='fm';
+    try{const rows=await fm('TaiwanStockHoldingSharesPer',id,st);v=buildTdw(rows)}catch(e){v=null;window.__tdwErr=e.message}
+    if(TDWID!==id)return;
+    if(!v){src='site';v=await buildTdwSite(id);if(TDWID!==id)return}   // FinMind 這個資料集瀏覽器直連常失敗 → 用網站每週累積的 data/tdcc/*.json
+    TDWL=null;if(v)v.src=src;
     if(!v){$('tTdw').innerHTML='<div class="y10msg">沒有集保分級資料（新上市或 ETF）</div>';return}
     TDW=v;try{store.set(k,{t:Date.now(),v})}catch(e){}
     if(!localStorage.getItem(k))try{Object.keys(localStorage).filter(x=>x.startsWith('tdw1_')).forEach(x=>localStorage.removeItem(x));store.set(k,{t:Date.now(),v})}catch(e){}
     renderTdw();
   }catch(e){TDWL=null;if(TDWID!==id)return;$('tTdw').innerHTML=`<div class="y10msg">⚠️ ${e.message}<br><button type="button" id="tdwRe">重試</button></div>`;$('tdwRe').onclick=()=>loadTdw(id)}
+}
+async function buildTdwSite(id){
+  try{const r=await fetch('data/tdcc.json?t='+Math.floor(Date.now()/3e5));if(!r.ok)return null;const t=await r.json();
+    const wk=[...new Set([...(t.weeks||[]),t.asof].filter(Boolean))].sort();
+    const out=[];for(const w of wk){try{const q=await fetch(`data/tdcc/${w}.json`);if(!q.ok)continue;const j=await q.json();const x=j[id];if(!x)continue;
+      out.push({d:`${w.slice(0,4)}-${w.slice(4,6)}-${w.slice(6)}`,b4:x[0],b10:x[1],ppl:x[2]})}catch(e){}}
+    const v=out.length>=2?out:null;return v}catch(e){return null}
 }
 function tdwInit(id){
   if(TDWID===id&&(TDW||TDWL===id)){if(TDW)renderTdw();return}
@@ -1037,7 +1047,7 @@ function renderTdw(){
   const why={'🟢 籌碼集中':'大戶比例上升、股東人數減少 → 散戶賣給大戶，籌碼往少數人手上集中','🟠 散戶追進':'大戶比例與股東人數同時增加 → 新進的人多，追價資金多、波動會變大','🔴 籌碼分散':'大戶比例下降、股東人數增加 → 大戶出貨給散戶，通常不是好事','🟢 大戶增持':'大戶比例上升、股東人數沒什麼變 → 大戶在市場上慢慢吸籌，但還沒看到散戶明顯退場','🟠 大戶減持':'大戶比例下降、股東人數沒什麼變 → 大戶在減碼，看是不是連續好幾週','⚪ 變化不大':'4 週內大戶比例與人數都沒有明顯變化','⚪ 資料不足':'還沒累積 4 週資料'}[tag[1]];
   const sg=(v,dd=2,u='')=>v==null?'—':`<strong class="${sign(v)}">${(v>0?'+':'')+fmt(v,dd)}${u}</strong>`;
   $('tTdw').innerHTML=`<span class="pill ${tag[0]}">${tag[1]}</span> ${why}<br>${r.d.slice(5).replace('-','/')} 週：400 張以上大戶 <strong>${fmt(r.b4,1)}%</strong>（週 ${sg(c1)}・4 週 ${sg(c4)}・13 週 ${sg(c13)}・52 週 ${sg(c52)} 點）`+
-    (st>=3?`，已連續 <strong>${st} 週${dir>0?'增加':'減少'}</strong>`:'')+(pos!=null?`；位在近一年 ${fmt(lo,1)}～${fmt(hi,1)}% 區間的 <strong>${fmt(pos,0)}%</strong> 位置`:'')+
+    (st>=3?`，已連續 <strong>${st} 週${dir>0?'增加':'減少'}</strong>`:'')+(pos!=null&&A.length>=20?`；位在近一年 ${fmt(lo,1)}～${fmt(hi,1)}% 區間的 <strong>${fmt(pos,0)}%</strong> 位置`:'')+
     `<br>千張以上 <strong>${fmt(r.b10,1)}%</strong>・股東人數 <strong>${fmt(r.ppl)}</strong> 人（4 週 ${sg(p4,1,'%')}）`+
     (D.cyclical?'<br><span class="pill">循環股</span> 高峰期大戶比例常先降、人數暴增（散戶接最後一棒），比財報更早反映':'');
   $('tdwK').hidden=false;$('tdwK').innerHTML=[['400張以上',fmt(r.b4,1)+'%',c4,'4週'],['千張以上',fmt(r.b10,1)+'%',d(r,w4,'b10'),'4週'],['股東人數',r.ppl>=10000?fmt(r.ppl/10000,1)+'萬':fmt(r.ppl),p4,'4週%']]
@@ -1050,8 +1060,8 @@ function renderTdw(){
   o.series=[line('400張以上%','b4',acc),line('千張以上%','b10',acc2,0,true),line('股東人數','ppl',warm,1,true)];
   o.tooltip.formatter=ps=>{const x=R[ps[0].dataIndex];return `<b>${x.d}</b><br>400 張以上 ${fmt(x.b4,2)}%<br>千張以上 ${fmt(x.b10,2)}%<br>股東人數 ${fmt(x.ppl)} 人`};
   ch.setOption(o,true);ch.resize();spreadEnd(ch,o,[0,1,2]);
-  $('tdwSeg').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.n===TDWN));
-  $('fTdw').textContent=`集保戶股權分散表每週六更新（本週 ${r.d}），400 張以上＝持股 40 萬股以上的人（含法人、董監），千張以上＝100 萬股以上；股東人數（右軸）＝所有集保戶。四週規則：大戶比 +0.3 點且人數 −1%＝集中、大戶比 +0.3 且人數 +3%＝散戶追進、大戶比 −0.3 且人數 +1%＝分散。注意：除權息前後、法人換倉、ETF 成份調整都會讓大戶比短期跳動，看 4～13 週趨勢比單週可靠。資料：FinMind，進這一頁才即時抓，手機快取 24 小時。`;
+  $('tdwSeg').hidden=A.length<=52;$('tdwSeg').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.n===TDWN));
+  $('fTdw').textContent=(A.src==='site'?`FinMind 的集保資料集瀏覽器直連失敗（${window.__tdwErr||''}），改用本站每週累積的集保資料（目前 ${A.length} 週，之後每週自動變長）。`:'')+`集保戶股權分散表每週六更新（本週 ${r.d}），400 張以上＝持股 40 萬股以上的人（含法人、董監），千張以上＝100 萬股以上；股東人數（右軸）＝所有集保戶。四週規則：大戶比 +0.3 點且人數 −1%＝集中、大戶比 +0.3 且人數 +3%＝散戶追進、大戶比 −0.3 且人數 +1%＝分散。注意：除權息前後、法人換倉、ETF 成份調整都會讓大戶比短期跳動，看 4～13 週趨勢比單週可靠。資料：FinMind，進這一頁才即時抓，手機快取 24 小時。`;
 }
 $('tdwSeg').addEventListener('click',e=>{const b=e.target.closest('button[data-n]');if(!b||!TDW)return;TDWN=+b.dataset.n;try{localStorage.setItem('tdwN',TDWN)}catch(_){}renderTdw()});
 // ---- 逐日籌碼（chip.json）：每天 [收盤, 成交張, 外資, 投信, 自營, 融資增減, 融券增減, 融資餘額] ----
