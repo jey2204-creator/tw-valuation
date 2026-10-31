@@ -2405,7 +2405,21 @@
      "The Register：PC 晶片跌掉四分之一市值",
      "https://www.theregister.com/systems/2026/10/30/pc-chip-plunge-wipes-out-a-quarter-of-intels-value/5306531"
     ]
-   ]
+   ],
+   "flash": {
+    "q": "26Q3",
+    "fq": "FY26Q3",
+    "rev": 16513,
+    "gm": 43.0,
+    "om": 15.3,
+    "nm": 20.1,
+    "eps": 0.6,
+    "capex": 4024,
+    "sh": 5307,
+    "end": "2026-09-26",
+    "on": "2026-10-29",
+    "src": "8-K 新聞稿 GAAP；CapEx＝九個月投資活動 PP&E 10,216 − 前兩季 6,192"
+   }
   }
  ]
 }
