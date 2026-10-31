@@ -58,6 +58,11 @@ select{margin-left:auto;font:inherit;font-size:12.5px;color:var(--fg);background
 .st{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:6px 8px;min-width:0}
 .st b{display:block;font-family:var(--f-num);font-size:17px;line-height:1.3}
 .st span{font-size:11px;color:var(--muted)}
+button.st{font:inherit;text-align:left;cursor:pointer;color:inherit;padding:6px 8px}
+button.st.on{border-color:var(--accent);background:var(--hi)}
+button.st.on b{color:var(--accent)}
+button.st span::after{content:" ▸";color:var(--accent)}
+.rhint{font-size:11.5px;color:var(--muted);margin:6px 2px 0}
 details.cal{background:var(--card);border:1px solid var(--line);border-radius:12px;margin-top:10px}
 details.cal summary{list-style:none;cursor:pointer;padding:9px 12px;font-size:14px;font-weight:700;display:flex;justify-content:space-between;gap:8px}
 details.cal summary::-webkit-details-marker{display:none}
@@ -123,6 +128,7 @@ a:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid var
   </div>
 
   <div class="stats" id="stats"></div>
+  <p class="rhint" id="rhint" hidden></p>
   <details class="cal" id="calBox"><summary><span><span class="tw">▸</span> 📅 即將公布</span><small id="calN"></small></summary><div id="cal"></div></details>
   <div class="list" id="list"></div>
   <button class="more" id="more" hidden>顯示更多</button>
@@ -132,13 +138,15 @@ a:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid var
     「法說」＝公司在董事會前自行公告的 EPS，董事會版出來後自動取代。<br>「分割還原」＝公司做過分割、面額變更（名稱帶 *），去年同季與近四季 EPS 已換算到目前股數基準，數字會跟新聞上的「官方 EPS 年增」不同但可比。<br>
     營收＝單季營收（億）＋年增；「營收淨利雙增」＝單季營收與淨利年增都 > 0（淨利大增但營收沒跟上，多半是業外或一次性毛利，可持續性要打折）；銀行、保險無營收科目顯示「—」。<br>
     業外占比＝(稅前 − 營業利益) ÷ 稅前，≥ 30% 標 ⚠️：淨利大增若來自業外，不宜直接推算未來 EPS。<br>
+    「今天」卡可點：今天 → 近3交易日 → 近7交易日 → 全部循環，只列那幾個交易日公布的（週末、休市日不佔名額），可跟篩選同時用。<br>
     ⭐ 追蹤＝首頁自選、自訂主題與內建主題成份股。點一列開個股頁。🔍 搜尋代號或名稱時不分季別、不套篩選，同一家各季都列出來。
   </p>
 </div>
 <script>
 const $=id=>document.getElementById(id);
 const store={get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
-let D=null,WATCH=new Set(),SEA=null,F='all',SORT=store.get('flSort')||'t',SHOW=60,QS='';
+let D=null,WATCH=new Set(),SEA=null,F='all',SORT=store.get('flSort')||'t',SHOW=60,QS='',RNG=store.get('flRange')||0;  // RNG：0 全部、1 今天、3／7 近 N 交易日
+const RCYC=[0,1,3,7];
 const fmt=(v,d=2)=>v==null?'—':v.toLocaleString('zh-TW',{minimumFractionDigits:d,maximumFractionDigits:d});
 const cls=v=>v==null?'mu':v>0?'up':v<0?'dn':'mu';
 function g(v,t){ // 成長率＋標籤
@@ -154,6 +162,16 @@ function loadWatch(){
   const cfg=store.get('themeCfg');
   if(cfg&&cfg.themes)Object.values(cfg.themes).forEach(t=>(t.stocks||[]).forEach(s=>WATCH.add(Array.isArray(s)?s[0]:s)));
 }
+// ---- 近 N 交易日：交易日清單由 fetch_flash.py 從 data/hist 算（週末、連假不佔名額）；沒有就退回平日 ----
+function tdays(){
+  if(D.tdays&&D.tdays.length)return D.tdays;
+  const o=[];let d=new Date(Date.now()+8*3600e3);
+  while(o.length<20){if(d.getUTCDay()%6)o.push(d.toISOString().slice(0,10));d=new Date(d-864e5)}
+  return o;
+}
+const rocDate=t=>{const p=t.slice(0,9).split('/');return `${+p[0]+1911}-${p[1]}-${p[2]}`};   // 115/10/30 → 2026-10-30
+function rangeStart(){if(!RNG)return null;const T=tdays();return T[Math.min(RNG,T.length)-1]}   // 窗內最早的交易日；公布日 ≥ 它就算（週末公告也會進來）
+function inRange(i,st){return !st||rocDate(i.t)>=st}
 function growthOf(i){return i.epsYoy!=null?i.epsYoy:i.epsYoyT==='轉盈'?9999:i.epsYoyT==='轉虧'?-9999:i.epsYoyT==='虧損'?-5000:null}
 function pass(i){
   if(F==='w')return WATCH.has(i.c);
@@ -193,17 +211,22 @@ function render(){
     $('list').innerHTML=L.slice(0,SHOW).map(row).join('');$('more').hidden=L.length<=SHOW;$('more').textContent=`顯示更多（還有 ${L.length-SHOW} 則）`;return}
   $('shint').hidden=true;$('stats').hidden=false;$('calBox').hidden=false;
   const all=D.items.filter(i=>i.q===SEA);
-  let L=all.filter(pass);
+  const md=d=>`${+d.slice(5,7)}/${+d.slice(8)}`,isT=tdays()[0]===new Date(Date.now()+8*3600e3).toISOString().slice(0,10);
+  const st=rangeStart(),rl=RNG<=1?(isT?'今天':md(tdays()[0])):`近${RNG}交易日`;   // 週末看：卡片標最近交易日的日期而不是「今天」
+  let L=all.filter(i=>inRange(i,st)&&pass(i));
   const key={t:i=>i.t,eg:i=>growthOf(i)??-1e9,rg:i=>i.rvYoy??-1e9,ni:i=>(i.s&&i.s.ni)??-1e9,pe:i=>i.pe==null?1e9:-i.pe}[SORT];
   L.sort((a,b)=>{const x=key(a),y=key(b);return x<y?1:x>y?-1:0});
-  $('list').innerHTML=L.slice(0,SHOW).map(row).join('')||`<div class="empty">${F==='w'?'追蹤的股票這一季還沒公布':'這個條件沒有公司'}</div>`;
+  $('list').innerHTML=L.slice(0,SHOW).map(row).join('')||`<div class="empty">${RNG?'這段期間'+(F==='w'?'追蹤的股票':'')+'沒有公布——點「'+rl+'」卡可放寬範圍':F==='w'?'追蹤的股票這一季還沒公布':'這個條件沒有公司'}</div>`;
   $('more').hidden=L.length<=SHOW;$('more').textContent=`顯示更多（還有 ${L.length-SHOW} 家）`;
   // 摘要
   const b=all.filter(i=>i.k==='board'),eg=b.map(growthOf).filter(v=>v!=null);
   const up=eg.filter(v=>v>0).length,lose=b.filter(i=>i.s&&i.s.ni<0).length,nx=b.filter(i=>i.nonop!=null&&i.nonop>=30).length;
-  const today=all.filter(i=>i.t.slice(0,9)===rocToday()).length;
-  $('stats').innerHTML=[[all.length,'已公布'],[today,'今天'],[eg.length?Math.round(up/eg.length*100)+'%':'—','EPS 年增 &gt;0'],[nx,'⚠️ 業外高']]
-    .map(([v,l])=>`<div class="st"><b>${v}</b><span>${l}</span></div>`).join('');
+  const T=tdays(),win=T.slice(0,Math.max(RNG,1)),wst=win[win.length-1];
+  const inWin=all.filter(i=>inRange(i,wst)).length;   // 全部模式時仍顯示「今天」幾家
+  $('stats').innerHTML=[[all.length,'已公布'],null,[eg.length?Math.round(up/eg.length*100)+'%':'—','EPS 年增 &gt;0'],[nx,'⚠️ 業外高']]
+    .map((x,k)=>k===1?`<button type="button" class="st${RNG?' on':''}" id="rbtn" aria-pressed="${!!RNG}" aria-label="公布日期範圍，點一下切換"><b>${inWin}</b><span>${rl}</span></button>`:`<div class="st"><b>${x[0]}</b><span>${x[1]}</span></div>`).join('');
+  $('rhint').hidden=!RNG;
+  if(RNG)$('rhint').innerHTML=`只列 <span class="num">${md(wst)}</span>${RNG>1?`～<span class="num">${md(win[0])}</span>`:''} 公布的（${rl}，週末、休市日不算；可再加上面的篩選）· 再點一下換範圍`;
   document.querySelectorAll('#chips button').forEach(x=>x.setAttribute('aria-pressed',x.dataset.f===F));
 }
 function rocToday(){const d=new Date(Date.now()+8*3600e3);return `${d.getUTCFullYear()-1911}/${String(d.getUTCMonth()+1).padStart(2,'0')}/${String(d.getUTCDate()).padStart(2,'0')}`}
@@ -234,6 +257,7 @@ async function main(){
 }
 $('seas').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;SEA=b.dataset.q;SHOW=60;
   document.querySelectorAll('#seas button').forEach(x=>x.setAttribute('aria-pressed',x===b));render()});
+$('stats').addEventListener('click',e=>{if(!e.target.closest('#rbtn'))return;RNG=RCYC[(RCYC.indexOf(RNG)+1)%RCYC.length];store.set('flRange',RNG);SHOW=60;render()});
 $('chips').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;F=b.dataset.f;SHOW=60;render()});
 $('sort').addEventListener('change',e=>{SORT=e.target.value;store.set('flSort',SORT);render()});
 $('sbtn').addEventListener('click',()=>{const on=!$('srow').classList.contains('on');$('srow').classList.toggle('on',on);$('sbtn').setAttribute('aria-pressed',on);
