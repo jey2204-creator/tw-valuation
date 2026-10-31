@@ -53,7 +53,7 @@ TODAY = dt.datetime.now(KST).date()
 # 報告代碼 → (季別, 季末月日, 法定申報期限天數)
 STATS = []   # 每次 OpenDART 呼叫：[代號, 報告, 秒, 結果]
 DEADLINE = time.time() + float(os.environ.get("KR_BUDGET_MIN", "45")) * 60   # 超過就先不抓新報告，下次排程接著補
-CACHE_V = 2   # 抽取規則改版就 +1：舊版快取會重抓
+CACHE_V = 3   # 抽取規則改版就 +1：舊版快取會重抓（v3：加營業現金流、股利、資產、負債、現金）
 REPORTS = [("11013", 1, "03-31", 45), ("11012", 2, "06-30", 45), ("11014", 3, "09-30", 45), ("11011", 4, "12-31", 90)]
 
 
@@ -124,6 +124,15 @@ ACC = {  # 科目：(報表, [標準科目 ID], [科目名稱（ID 找不到時�
     "capex": ("CF", ["ifrs-full_PurchaseOfPropertyPlantAndEquipmentClassifiedAsInvestingActivities",
                      "ifrs_PurchaseOfPropertyPlantAndEquipmentClassifiedAsInvestingActivities"],
               ["유형자산의 취득", "유형자산취득", "유형자산의취득"]),
+    # ---- v3 新增：財報明細頁（資產負債、現金流）；CF 為累計、BS 為期末餘額 ----
+    "ocf": ("CF", ["ifrs-full_CashFlowsFromUsedInOperatingActivities", "ifrs_CashFlowsFromUsedInOperatingActivities"],
+            ["영업활동현금흐름", "영업활동으로인한현금흐름", "영업활동으로 인한 현금흐름", "영업활동 현금흐름"]),
+    "divp": ("CF", ["ifrs-full_DividendsPaidClassifiedAsFinancingActivities", "ifrs_DividendsPaidClassifiedAsFinancingActivities",
+                    "dart_DividendsPaidClassifiedAsFinancingActivities"],
+             ["배당금지급", "배당금의 지급", "배당금의지급", "배당금 지급", "현금배당금의 지급", "현금배당금지급"]),
+    "assets": ("BS", ["ifrs-full_Assets", "ifrs_Assets"], ["자산총계"]),
+    "liab": ("BS", ["ifrs-full_Liabilities", "ifrs_Liabilities"], ["부채총계"]),
+    "cash": ("BS", ["ifrs-full_CashAndCashEquivalents", "ifrs_CashAndCashEquivalents"], ["현금및현금성자산", "현금 및 현금성자산"]),
 }
 
 
@@ -239,8 +248,9 @@ def quarters(cache):
                 for k in ("rev", "cost", "gp", "op", "ni", "nit", "eps"):
                     v[k] = r.get(k)
                 prev = R.get(qn - 1)
-                c, pc = r.get("capex"), (prev or {}).get("capex")
-                v["capex"] = c if qn == 1 else (c - pc if c is not None and pc is not None else None)
+                for k in ("capex", "ocf", "divp"):
+                    c, pc = r.get(k), (prev or {}).get(k)
+                    v[k] = c if qn == 1 else (c - pc if c is not None and pc is not None else None)
             else:
                 r3, parts = R.get(3), [R.get(1), R.get(2), R.get(3)]
                 for k in ("rev", "cost", "gp", "op", "ni", "nit", "eps"):
@@ -249,8 +259,9 @@ def quarters(cache):
                     if cum is None and all(p and p.get(k) is not None for p in parts):
                         cum = sum(p[k] for p in parts)
                     v[k] = fy - cum if fy is not None and cum is not None else None
-                c, pc = r.get("capex"), (r3 or {}).get("capex")
-                v["capex"] = c - pc if c is not None and pc is not None else None
+                for k in ("capex", "ocf", "divp"):
+                    c, pc = r.get(k), (r3 or {}).get(k)
+                    v[k] = c - pc if c is not None and pc is not None else None
             if not fin and (not v["rev"] or v["rev"] <= 0):
                 continue
             if fin:
@@ -272,7 +283,15 @@ def quarters(cache):
                              eps=None if v["eps"] is None else round(v["eps"], 1),
                              capex=None if v["capex"] is None else round(v["capex"] / 1e8, 1),
                              sh=None if not sh or sh <= 0 else round(sh / 1e6, 2),
-                             eq=None if eq is None else round(eq / 1e8, 1), fs=r.get("fs"), ni=ni))
+                             eq=None if eq is None else round(eq / 1e8, 1), fs=r.get("fs"), ni=ni,
+                             # 財報明細（億韓元）：營業利益、母公司淨利、營業現金流、股利發放（取絕對值）、總資產、總負債、現金
+                             opa=None if v["op"] is None else round(v["op"] / 1e8, 1),
+                             nia=None if ni is None else round(ni / 1e8, 1),
+                             ocf=None if v.get("ocf") is None else round(v["ocf"] / 1e8, 1),
+                             divp=None if v.get("divp") is None else round(abs(v["divp"]) / 1e8, 1),
+                             assets=None if r.get("assets") is None else round(r["assets"] / 1e8, 1),
+                             liab=None if r.get("liab") is None else round(r["liab"] / 1e8, 1),
+                             cash=None if r.get("cash") is None else round(r["cash"] / 1e8, 1)))
     # 股票分割／合併：股數（淨利 ÷ EPS）相鄰兩季跳成整數倍 → 之前各季 EPS、股數依倍數調整（Naver 股價已還原）
     near = lambda u, v: u and v and abs(u / v - 1) < 0.05
     for i in range(1, len(rows)):
@@ -372,6 +391,15 @@ def naver_cons(code):
 
 
 # ---------- 組裝 ----------
+FIN_COLS = ["cal", "rev", "gm", "om", "nm", "eps", "opa", "nia", "capex", "ocf", "divp", "eq", "assets", "liab", "cash"]
+# fin 欄位：0季別 1營收(億) 2毛利率 3營益率 4淨利率 5EPS 6營業利益(億) 7母公司淨利(億) 8資本支出(億) 9營業現金流(億)
+#           10股利發放(億) 11母公司權益(億) 12總資產(億) 13總負債(億) 14現金(億)　— 前端 #fin 財報明細頁用
+
+
+def fin_rows(Q):
+    return [[x.get(k) for k in FIN_COLS] for x in Q]
+
+
 def build(code, corps):
     cfg = CFG.get(code, dict(theme="", zh="", flags="", tw=[]))
     corp, kname = corps.get(code, [None, ""])
@@ -436,6 +464,7 @@ def build(code, corps):
     fr = [[r["date"], r["c"], r["fr"]] for r in px if r["date"] >= cut and r["fr"] is not None]
     q = [[x["cal"], x["cal"], x["rev"], x["gm"], x["om"], x["nm"], x["eps"], x["capex"], x["sh"], x["end"], x["filed"]]
          for x in Q]
+    fin = fin_rows(Q)
     sp = [f"{x['cal']} {x['split']}" for x in Q if x.get("split")]
     if sp:
         note.append("股票分割：" + "、".join(sp) + "，之前各季 EPS 已依比例調整")
@@ -453,7 +482,7 @@ def build(code, corps):
     return dict(id=code, name=cfg["zh"] or nv.get("name") or kname, kname=kname, theme=cfg["theme"],
                 cyclical="C" in cfg["flags"], tw=cfg["tw"], freq="Q", fye=f"{TODAY.year - 1}-12-31", corp=corp,
                 updated=dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%MZ"), last=last, q=q, riv=riv,
-                fr=fr, cons=cons, note=note, _nv_name=nv.get("name")), n_new
+                fr=fr, cons=cons, fin=fin, note=note, _nv_name=nv.get("name")), n_new
 
 
 def write_diag(diag):
