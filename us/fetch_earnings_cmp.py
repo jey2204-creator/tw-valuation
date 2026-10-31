@@ -135,12 +135,14 @@ def main():
     for t in cmp.get("watch", []):
         if t not in tickers:
             tickers.append(t)
-    # 主題股（data/index.json）近 10 天內已公布的也抓，給首頁「已公布」頁籤的驚喜率與首日漲跌用；
-    # 它們不在 earnings_cmp 名單，所以財報對照頁不會列出，只有 earnings_auto.json 多幾個鍵
+    # 主題股（data/index.json）＋首頁日曆的大型股（MEGA，與 index.html 同一份）本季已公布的也抓，
+    # 給首頁／財報公布日頁「已公布」頁籤的驚喜率與首日漲跌用；它們不在 earnings_cmp 名單，財報對照頁不會列出
+    MEGA = ['AAPL','TSLA','NFLX','ORCL','TSM','ASML','QCOM','INTC','TXN','IBM','COST','WMT','JPM','PLTR','CRWD','ANET','VRT','DELL','HPE','ADBE','CRM','NOW','UBER','V','MA','BRK-B','LLY','UNH','XOM']
+    lo = cmp.get("since") or (dt.date.today() - dt.timedelta(days=92)).isoformat()
     try:
-        idx = [s["id"] for s in json.loads((ROOT / "data" / "index.json").read_text())]
+        idx = [s["id"] for s in json.loads((ROOT / "data" / "index.json").read_text())] + MEGA
         ecal = json.loads((ROOT / "data" / "earnings.json").read_text()).get("e", {})
-        today = dt.date.today(); lo = (today - dt.timedelta(days=10)).isoformat(); hi = today.isoformat()
+        hi = dt.date.today().isoformat()
         for tk in idx:
             if tk in tickers: continue
             if any(lo <= (x[0] or "") <= hi for x in ecal.get(tk, [])):
@@ -157,8 +159,8 @@ def main():
         try:
             ov = overrides.get(tk, {})
             r = one(tk, {} if ov.get("_theme") else ov, "" if ov.get("_theme") else cmp.get("since", ""))
-            if r and ov.get("_theme") and dt.date.fromisoformat(r["date"]) < dt.date.today() - dt.timedelta(days=10):
-                r = None   # 主題股只留近 10 天公布的
+            if r and ov.get("_theme") and r["date"] < lo:
+                r = None   # 主題股／大型股只留本季（since 之後）公布的
         except Exception as e:  # noqa
             print(f"[warn] {tk}: {e}", file=sys.stderr); r = None
         if r:
