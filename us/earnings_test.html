@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>美股財報對照</title>
+<meta name="description" content="美股重要公司財報：市場預期 vs 實際公布、驚喜率、股價影響因子（多檔版）">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="美股財報">
+<meta name="theme-color" content="#f6f7fb" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b1220" media="(prefers-color-scheme: dark)">
+<meta name="format-detection" content="telephone=no">
+<link rel="manifest" href="manifest_earnings.json">
+<link rel="apple-touch-icon" href="../icon-180.png">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#f6f7fb;--card:#ffffff;--text:#111827;--muted:#6b7280;--line:#e5e7eb;
+  /* 台股慣例：紅漲綠跌 */
+  --up:#dc2626;--down:#16a34a;--flat:#d97706;--accent:#2563eb;
+  --up-bg:#fef2f2;--down-bg:#ecfdf5;--flat-bg:#fffbeb;--est:#9ca3af;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0b1220;--card:#131c2e;--text:#e5e7eb;--muted:#9ca3af;--line:#243049;
+    --up:#f87171;--down:#22c55e;--flat:#fbbf24;--accent:#60a5fa;
+    --up-bg:#2e1515;--down-bg:#0f2a1e;--flat-bg:#2d2309;--est:#6b7280;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0b1220;--card:#131c2e;--text:#e5e7eb;--muted:#9ca3af;--line:#243049;
+  --up:#f87171;--down:#22c55e;--flat:#fbbf24;--accent:#60a5fa;
+  --up-bg:#2e1515;--down-bg:#0f2a1e;--flat-bg:#2d2309;--est:#6b7280;
+}
+*{box-sizing:border-box}
+html,body{overflow-x:hidden}
+body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"PingFang TC","Noto Sans TC",sans-serif;line-height:1.5}
+.wrap{max-width:720px;margin:0 auto;padding:calc(8px + env(safe-area-inset-top)) 12px calc(40px + env(safe-area-inset-bottom))}
+.top{position:sticky;top:0;z-index:5;background:var(--bg);padding:4px 0 6px}
+.sel{display:flex;gap:6px;align-items:center}
+.sel select{flex:1;padding:9px 10px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--text);font-size:15px;font-weight:600;-webkit-appearance:none;appearance:none}
+.sel .q{font-size:11px;color:var(--muted);white-space:nowrap}
+.tabs{display:flex;gap:4px;margin-top:6px}
+.tabs button{flex:1;padding:8px 4px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--muted);font-size:13px;font-weight:600;-webkit-tap-highlight-color:transparent}
+.tabs button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.panel{display:none}.panel.on{display:block}
+header{padding:6px 0 4px;display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px}
+.tk{font-size:11px;color:var(--muted);width:100%}
+h1{font-size:18px;margin:0}
+.react{display:inline-block;padding:2px 8px;border-radius:999px;font-weight:600;font-size:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:8px 0}
+h2{font-size:14px;margin:0 0 8px;display:flex;align-items:center;gap:6px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.grid>*{min-width:0}
+canvas{max-width:100%}
+.kpi{border:1px solid var(--line);border-radius:10px;padding:8px 10px;display:grid;grid-template-columns:1fr auto;grid-template-areas:'n n' 'v d' 'e d';align-items:center;column-gap:6px}
+.kpi .n{grid-area:n;font-size:11px;color:var(--muted)}
+.kpi .v{grid-area:v;font-size:19px;font-weight:700;line-height:1.1}
+.kpi .e{grid-area:e;font-size:11px;color:var(--muted)}
+.kpi .d{grid-area:d;display:inline-block;padding:2px 6px;border-radius:999px;font-size:11px;font-weight:600;white-space:nowrap}
+.up{background:var(--up-bg);color:var(--up)}
+.down{background:var(--down-bg);color:var(--down)}
+.flat{background:var(--flat-bg);color:var(--flat)}
+.chart{position:relative;width:100%;height:190px}
+.note{font-size:11.5px;color:var(--muted);margin-top:6px;line-height:1.4}
+details.card{padding:0}
+details.card>summary{list-style:none;cursor:pointer;padding:10px 12px;font-size:14px;font-weight:600;display:flex;align-items:center;gap:6px;-webkit-tap-highlight-color:transparent}
+details.card>summary::-webkit-details-marker{display:none}
+details.card>summary::after{content:'＋';margin-left:auto;color:var(--muted);font-weight:400}
+details.card[open]>summary::after{content:'－'}
+details.card>.body{padding:0 12px 10px}
+.toolbar{display:flex;gap:8px;margin:0 0 6px}
+.toolbar button{flex:1;padding:5px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--text);font-size:12px}
+table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
+th,td{padding:6px 4px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:500;font-size:12px}
+table.impact td:first-child{width:64px;padding-top:8px}
+table.ov td:first-child{width:52px;font-weight:600}
+.nfo{font:inherit;font-size:14px;line-height:1;border:0;background:none;color:var(--muted);padding:2px 4px;cursor:pointer;margin-left:auto}.nfo[aria-expanded=true]{color:var(--accent)}
+.ovn{margin:0 0 8px;line-height:1.6}
+table.ov .when{font-size:11px;font-weight:400;color:var(--muted);line-height:1.2;margin-top:1px}
+table.ov .when.est{color:#d97706;font-weight:600}
+table.ov td,table.ov th{text-align:right;white-space:nowrap}
+table.ov td:first-child,table.ov th:first-child{text-align:left}
+.tag{display:inline-block;padding:1px 7px;border-radius:999px;font-size:11px;font-weight:600;white-space:nowrap}
+.why{font-size:11.5px;color:var(--muted)}
+.kv .row{padding:7px 0;border-bottom:1px solid var(--line)}
+.kv .row:last-child{border-bottom:0}
+.kv .t{font-size:13px;font-weight:600;margin-bottom:2px}
+.kv .c{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center;font-size:13px;font-variant-numeric:tabular-nums}
+.kv .c small{display:block;font-size:11px;color:var(--muted);font-weight:400;line-height:1.2}
+.src{font-size:11px;color:var(--muted);line-height:1.7}
+.src a{color:var(--accent);text-decoration:none}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;color:var(--muted);margin-bottom:6px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:-1px}
+a.lnk{color:var(--accent);text-decoration:none;font-weight:600}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="top">
+  <div class="sel">
+    <select id="company"></select>
+    <span class="q" id="qlabel"></span>
+  </div>
+  <div class="tabs" role="tablist">
+    <button type="button" data-tab="result" class="on">🎯 結果</button>
+    <button type="button" data-tab="charts">📈 圖表</button>
+    <button type="button" data-tab="factors">🧭 因子</button>
+  </div>
+</div>
+
+<div id="app"></div>
+
+</div>
+
+
+<script>
+(async function(){
+  const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+  const C = {up:css('--up'),down:css('--down'),flat:css('--flat'),muted:css('--muted'),line:css('--line'),accent:css('--accent'),text:css('--text'),est:css('--est')};
+  const col = c => C[c] || c || C.accent;
+  const esc = s => String(s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+  const pct = v=>v==null?'—':(v>0?'+':'')+v+'%';
+  const FMT = {pct, num:v=>String(v), usd:v=>'$'+v};
+  const dirOf = s => s==null?'flat':(s>0.5?'up':(s<-0.5?'down':'flat'));
+  const bil = v => v==null?'—':(v/1e8).toFixed(1);   // 美元 → 億
+  const app=document.getElementById('app'), sel=document.getElementById('company'), qlabel=document.getElementById('qlabel');
+  const tabBtns=[...document.querySelectorAll('.tabs button')];
+
+  // ---------- 載入：manual（Claude 每季填）＋ auto（Finnhub／FinMind，Action 每日） ----------
+  const T=Date.now();
+  let DATA={season:'',companies:[],watch:[]}, AUTO={q:{}};
+  try{ DATA=await (await fetch('data/earnings_cmp.json?t='+T)).json(); }catch(e){ app.innerHTML='<div class="card">讀不到 data/earnings_cmp.json</div>'; return; }
+  try{ AUTO=await (await fetch('data/earnings_auto.json?t='+T)).json(); }catch(e){}
+  const NAMES={GOOGL:'Alphabet',MSFT:'Microsoft',AMZN:'Amazon',AAPL:'Apple',NVDA:'NVIDIA',AMD:'AMD',AVGO:'Broadcom',MU:'Micron',TSM:'台積電 ADR',NFLX:'Netflix',ORCL:'Oracle'};
+
+  // 把 auto 疊到 manual：營收／EPS KPI、反應；watch 名單只有 auto 的做成精簡公司
+  function merged(){
+    const list=DATA.companies.map(c=>({...c, auto:AUTO.q[c.ticker]||null, manual:true}));
+    for(const tk of (DATA.watch||[])){
+      if(list.some(c=>c.ticker===tk)) continue;
+      const a=AUTO.q[tk]; if(!a||a.epsAct==null) continue;
+      list.push({ticker:tk,name:NAMES[tk]||tk,exchange:'',date:a.date,auto:a,manual:false,
+        reaction:{text:'',dir:'flat',pct:null},kpi:[],charts:[],impact:[],other:[],sources:[['Finnhub（EPS 預估／實際）、FinMind（股價）','']]});
+    }
+    for(const c of list){
+      const a=c.auto; if(!a) continue;
+      // 反應：財報後首個交易日收盤
+      if(a.px&&a.px.react!=null){ c.reaction={text:`首日收盤 ${pct(a.px.react)}（$${a.px.first}，${a.px.firstDate.slice(5).replace('-','/')}）`,dir:dirOf(a.px.react),pct:a.px.react,auto:true}; }
+      // KPI：以 auto 的 EPS 覆蓋第 2 格（調整後 EPS），營收第 1 格只在 auto 有值時覆蓋
+      const kEps={n:'EPS（Finnhub）',v:a.epsAct!=null?a.epsAct.toFixed(2):'—',e:'預期 '+(a.epsEst!=null?a.epsEst.toFixed(2):'—'),s:a.epsSurp,auto:true};
+      const kRev=a.revAct!=null?{n:'營收（億，Finnhub）',v:bil(a.revAct),e:'預期 '+bil(a.revEst),s:a.revSurp,auto:true}:null;
+      if(!c.manual){ c.kpi=[kRev,kEps].filter(Boolean); }
+      else { c.kpiAuto=[kRev,kEps].filter(Boolean); }
+      // 近四季趨勢（auto）
+      if(a.hist&&a.hist.length>=2){
+        c.histChart={title:'📈 近四季 EPS 驚喜率（Finnhub）',open:!c.manual,type:'line',fmt:'pct',labels:a.hist.map(h=>h[0]),
+          datasets:[{label:'EPS 驚喜率',data:a.hist.map(h=>h[3]),color:'#f59e0b'}],
+          note:a.hist.map(h=>`${h[0]}：實際 ${h[2]} vs 預期 ${h[1]}`).join('；')};
+      }
+    }
+    return list;
+  }
+  let LIST=merged();
+  // 公布時間判斷（美東）：盤前 9:30、盤中 12:00、盤後 16:00、未定 23:59 之後才算已公布
+  const HR={bmo:'盤前',amc:'盤後',dmh:'盤中'}, HT={bmo:'09:30',dmh:'12:00',amc:'16:00'};
+  const fmtET=t=>new Intl.DateTimeFormat('sv-SE',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(t).replace(',','');
+  const nowET=fmtET(new Date()), updET=AUTO.updated?fmtET(new Date(AUTO.updated)):'';
+  for(const c of LIST){
+    const a=c.auto; let d=a&&a.date?a.date:null, hk=a&&a.hour?a.hour:'';
+    if(!d&&c.date){const m=String(c.date).match(/(\d{4})\D(\d{1,2})\D(\d{1,2})/); if(m) d=`${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;}
+    if(!hk&&c.date){const k=Object.keys(HR).find(x=>String(c.date).includes(HR[x])); if(k) hk=k;}
+    // 待公布：還沒到公布時間；待更新：時間到了但自動層最後更新早於公布時間（數字可能是 Finnhub 預填值）
+    const T=d?`${d} ${HT[hk]||'23:59'}`:'', notYet=!!d&&nowET<T, stale=!c.manual&&!!d&&!notYet&&!!a&&updET<T;   // 手動分析層的數字已人工核對，不受自動層更新時間影響
+    c.rel={d,hk,notYet,stale,pending:notYet||stale};
+  }
+  const revS=c=>c.rel&&c.rel.pending?null:c.manual?c.kpi[0].s:(c.kpi[0]&&c.kpi[0].n.startsWith('營收')?c.kpi[0].s:null);
+  const rxS=c=>c.rel&&c.rel.pending?null:c.reaction.pct;
+  const epsS=c=>c.rel&&c.rel.pending?null:c.manual?c.kpi[1].s:(c.auto&&c.auto.epsSurp!=null?c.auto.epsSurp:null);   // 手動分析層優先（Finnhub 共識／營收口徑常不準）
+
+  Chart.defaults.color = C.muted;
+  Chart.defaults.font.family = '-apple-system,BlinkMacSystemFont,"PingFang TC","Noto Sans TC",sans-serif';
+  Chart.defaults.font.size = 12;
+  Chart.register({
+    id:'valueLabels',
+    afterDatasetsDraw(chart,_a,opts){
+      if(!opts||!opts.fmt) return;
+      const {ctx}=chart; const horizontal=chart.options.indexAxis==='y';
+      ctx.save(); ctx.font='600 11px -apple-system,BlinkMacSystemFont,"PingFang TC","Noto Sans TC",sans-serif'; ctx.fillStyle=C.text;
+      chart.data.datasets.forEach((ds,di)=>{
+        const meta=chart.getDatasetMeta(di); if(meta.hidden) return;
+        meta.data.forEach((el,i)=>{
+          const v=ds.data[i]; if(v==null) return;
+          const s=opts.fmt(opts.real?opts.real[di][i]:v); const p=el.tooltipPosition();
+          if(chart.config.type==='line'){ctx.textAlign='center';ctx.textBaseline='bottom';ctx.fillText(s,p.x,p.y-7);}
+          else if(horizontal){ctx.textBaseline='middle'; if(v>=0){ctx.textAlign='left';ctx.fillText(s,p.x+5,p.y);} else {ctx.textAlign='right';ctx.fillText(s,p.x-5,p.y);}}
+          else {ctx.textAlign='center';ctx.textBaseline='bottom';ctx.fillText(s,p.x,p.y-4);}
+        });
+      });
+      ctx.restore();
+    }
+  });
+  let charts=[];
+  const destroyCharts=()=>{charts.forEach(c=>c.destroy());charts=[];};
+  const mkChart=(el,cfg)=>{const c=new Chart(el,cfg);charts.push(c);return c;};
+
+  // ---------- 片段 ----------
+  function kpiHtml(k){
+    const d=dirOf(k.s), arrow=d==='up'?'▲':(d==='down'?'▼':'●');
+    const word=k.label||(k.s==null?'待更新':(d==='up'?pct(k.s)+' 勝':(d==='down'?pct(k.s)+' 低':pct(k.s)+' 持平')));
+    return `<div class="kpi"><div class="n">${esc(k.n)}</div><div class="v">${esc(k.v)}</div><div class="e">${esc(k.e)}</div><span class="d ${d}">${arrow} ${esc(word)}</span></div>`;
+  }
+  const kvHtml=rows=>`<div class="kv">`+rows.map(r=>`<div class="row"><div class="t">${esc(r.t)}</div><div class="c">`+
+      r.c.map(x=>x[0]==='tag'?`<span class="tag ${x[1]}">${esc(x[2])}</span>`:`<span><small>${esc(x[0])}</small>${esc(x[1])}</span>`).join('')+`</div></div>`).join('')+`</div>`;
+  function chartCard(ch,i){
+    const legend=ch.datasets.length>1?`<div class="legend">`+ch.datasets.map(d=>`<span><i style="background:${col(d.color)}"></i>${esc(d.label)}</span>`).join('')+`</div>`:'';
+    return `<details class="card"${ch.open?' open':''}><summary>${esc(ch.title)}</summary><div class="body">${legend}<div class="chart"><canvas id="ch${i}"></canvas></div>${ch.note?`<div class="note">${esc(ch.note)}</div>`:''}</div></details>`;
+  }
+  const impactHtml=list=>{const tag={up:'🔴 正面',down:'🟢 負面',flat:'🟡 中性'};
+    return `<table class="impact"><tbody>`+list.map(r=>`<tr><td><span class="tag ${r.d}">${tag[r.d]}</span></td><td>${esc(r.t)}<div class="why">${esc(r.w)}</div></td></tr>`).join('')+`</tbody></table>`;};
+  const srcHtml=list=>`<div class="src">`+list.map(s=>s[1]?`<a href="${esc(s[1])}" target="_blank" rel="noopener">${esc(s[0])}</a>`:esc(s[0])).join('<br>')+`</div>`;
+  const autoNote=()=>AUTO.updated?`自動層更新 ${AUTO.updated.slice(0,10).replaceAll('-','/')}（Finnhub／FinMind）`:'自動層尚未產生';
+
+  // 盤前／盤後說明：依目前美東是否夏令，自動換算台灣時間
+  function hourNote(){
+    const d=new Date(), utcH=d.getUTCHours(), etH=+new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',hour:'2-digit',hour12:false}).format(d)%24;
+    const dst=((utcH-etH+24)%24)===4, o=dst?'21:30':'22:30', c=dst?'04:00':'05:00';
+    return `<b>🌅 盤前</b>：美東開盤 9:30 前公布（台灣當晚 ${dst?'19:00–21:00':'20:00–22:00'} 前後），首日反應＝當天。<br>`+
+      `<b>🌙 盤後</b>：美東收盤 16:00 後公布（台灣隔天清晨 ${c} 後），首日反應＝隔天；大型科技股多選盤後。<br>`+
+      `<b>☀️ 盤中</b>：交易時間內公布，少見。<br>`+
+      `目前${dst?'美國夏令':'美國冬令'}：台灣 ${o} 開盤、${c} 收盤（夏令 3 月第二個週日～11 月第一個週日，冬令各晚 1 小時）。<br>`+
+      `<b>待公布</b>＝還沒到公布時間；<b>待更新</b>＝已公布但自動層尚未重抓（台北週二～六 06:40 排程）。兩者都不顯示數字。`;
+  }
+  function overviewHtml(){
+    const cell=s=>`<span class="tag ${dirOf(s)}">${pct(s)}</span>`;
+    const when=c=>{const r=c.rel; if(!r||!r.d) return '';
+      const md=r.d.slice(5).replace('-','/').replace(/^0/,''), h=HR[r.hk]||'';
+      return `<div class="when${r.pending?' est':''}">${md}${h?' '+h:''}${r.notYet?' · 待公布':(r.stale?' · 待更新':'')}</div>`;};
+    const rows=LIST.map((c,i)=>`<tr><td><a class="lnk" href="#${esc(c.ticker)}">${esc(c.ticker)}</a>${c.manual?'':'<small style="color:var(--muted)"> 自動</small>'}${when(c)}</td><td>${cell(revS(c))}</td><td>${cell(epsS(c))}</td><td>${cell(rxS(c))}</td></tr>`).join('');
+    return `<header><div class="tk">${esc(DATA.season)} · 美股財報季總覽</div><h1>本季誰勝誰敗</h1></header>
+    <div class="card"><h2>📋 驚喜率一覽<button type="button" class="nfo" id="ovI" aria-expanded="false" aria-controls="ovN" aria-label="盤前盤後說明">ⓘ</button></h2>
+    <div class="note ovn" id="ovN" hidden>${hourNote()}</div><table class="ov"><thead><tr><th>公司</th><th>營收</th><th>EPS</th><th>首日</th></tr></thead><tbody>${rows}</tbody></table>
+    <div class="note">EPS 驚喜率優先用 Finnhub；公司下方為公布日（美東，ⓘ 看盤前／盤後與待公布說明）；首日 = 財報後首個交易日收盤 vs 前一收盤（FinMind）。「自動」= 只有自動層，尚無分析。${autoNote()}</div></div>
+    <div class="card"><h2>📊 驚喜率 vs 首日反應</h2><div class="chart"><canvas id="ovchart"></canvas></div>
+    <div class="note">超過 ±40% 的長條截斷顯示，數字為真實值。理想情況是三根同向；「EPS 勝但首日跌」代表市場看的是別的東西（例如 CapEx 指引）。</div></div>`;
+  }
+  function companyHtml(c){
+    const valLink=`<a class="lnk" href="index_test.html#${esc(c.ticker)}" data-val="${esc(c.ticker)}">📈 看估值 →</a>`;
+    const head=`<header><div class="tk">${esc(c.exchange||'')}${c.exchange?': ':''}${esc(c.ticker)} · ${esc(c.manual?DATA.season:(c.auto&&c.auto.fq||DATA.season))} · 公布日 ${esc(c.date||'')}</div><h1>${esc(c.name)} 財報對照</h1>${c.reaction.text?`<div class="react ${c.reaction.dir}">${esc(c.reaction.text)}</div>`:''}${valLink}</header>`;
+    if(!c.manual){
+      return head+`<section class="panel on" id="tab-result">
+        <div class="card"><h2>🎯 一眼看結果（自動層）</h2><div class="grid">${c.kpi.map(kpiHtml).join('')}</div><div class="note">只有 Finnhub／FinMind 自動資料，尚未做分析；${autoNote()}</div></div>
+        ${c.histChart?chartCard(c.histChart,'H'):''}</section>
+        <section class="panel" id="tab-charts"><div class="card"><div class="note">尚無自訂圖表。</div></div></section>
+        <section class="panel" id="tab-factors"><div class="card"><h2>🔗 資料來源</h2>${srcHtml(c.sources)}</div></section>`;
+    }
+    const autoKpi=c.kpiAuto&&c.kpiAuto.length?`<div class="note" style="margin-top:8px">自動層：${c.kpiAuto.map(k=>`${k.n.replace('（Finnhub）','')} ${k.v}（${k.e}，${pct(k.s)}）`).join('；')}。${autoNote()}</div>`:'';
+    return head+`
+    <section class="panel on" id="tab-result">
+      <div class="card"><h2>🎯 一眼看結果</h2><div class="grid">${c.kpi.map(kpiHtml).join('')}</div>${c.kpiNote?`<div class="note">${esc(c.kpiNote)}</div>`:''}${autoKpi}</div>
+      <div class="card"><h2>📊 驚喜率（實際 − 預期）÷ 預期</h2><div class="chart" style="height:200px"><canvas id="surprise"></canvas></div><div class="note">${esc(c.surprise.note||'')}</div></div>
+      <div class="card"><h2>📋 其他數字</h2>${kvHtml(c.other)}</div>
+    </section>
+    <section class="panel" id="tab-charts">
+      <div class="toolbar"><button type="button" id="expAll">全部展開</button><button type="button" id="colAll">全部收合</button></div>
+      ${c.charts.map(chartCard).join('')}${c.histChart?chartCard(c.histChart,'H'):''}
+    </section>
+    <section class="panel" id="tab-factors">
+      <div class="card"><h2>🧭 會影響股價的項目</h2>${impactHtml(c.impact)}</div>
+      <div class="card"><h2>🔗 資料來源</h2>${srcHtml(c.sources)}</div>
+    </section>`;
+  }
+  function drawCustom(ch,id){
+    const fmt=FMT[ch.fmt]||FMT.num;
+    const datasets=ch.datasets.map(d=>{const base={label:d.label,data:d.data};
+      if(ch.type==='line') Object.assign(base,{borderColor:col(d.color),backgroundColor:col(d.color),tension:.3,pointRadius:4,fill:false});
+      else Object.assign(base,{backgroundColor:ch.signColor?d.data.map(v=>v>=0?C.up:C.down):col(d.color),borderRadius:6});
+      return base;});
+    const valueAxis={grid:{color:C.line},ticks:{callback:v=>ch.fmt==='pct'?v+'%':(ch.fmt==='usd'?'$'+v:v)}};
+    if(ch.min!=null) valueAxis.min=ch.min; else valueAxis.beginAtZero=true;
+    if(ch.max!=null) valueAxis.max=ch.max; else valueAxis.grace='18%';
+    const catAxis={grid:{display:false},ticks:{color:C.text}};
+    const el=document.getElementById(id); if(!el) return;
+    mkChart(el,{type:ch.type,data:{labels:ch.labels,datasets},
+      options:{indexAxis:ch.horizontal?'y':'x',responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false},valueLabels:{fmt},tooltip:{callbacks:{label:x=>(x.dataset.label?x.dataset.label+'：':'')+fmt(x.raw)}}},
+        scales:ch.horizontal?{x:valueAxis,y:catAxis}:{x:catAxis,y:valueAxis}}});
+  }
+  function drawCompanyCharts(c){
+    if(c.manual){
+      const sv=c.surprise.data;
+      mkChart(document.getElementById('surprise'),{type:'bar',
+        data:{labels:c.surprise.labels,datasets:[{data:sv,backgroundColor:sv.map(v=>v>=0?C.up:C.down),borderRadius:6,barThickness:18}]},
+        options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+          plugins:{legend:{display:false},valueLabels:{fmt:pct},tooltip:{callbacks:{label:x=>pct(x.raw)}}},
+          scales:{x:{grid:{color:C.line},ticks:{callback:v=>v+'%'},min:c.surprise.min,max:c.surprise.max},y:{grid:{display:false},ticks:{color:C.text}}}}});
+      c.charts.forEach((ch,i)=>drawCustom(ch,'ch'+i));
+    }
+    if(c.histChart) drawCustom(c.histChart,'chH');
+  }
+  function drawOverview(){
+    const CAP=40, real=[LIST.map(revS),LIST.map(epsS),LIST.map(rxS)];
+    const clip=a=>a.map(v=>v==null?null:Math.max(-CAP,Math.min(CAP,v)));
+    const el=document.getElementById('ovchart'); el.parentElement.style.height=(90+LIST.length*58)+'px';
+    mkChart(el,{type:'bar',
+      data:{labels:LIST.map(c=>c.ticker),datasets:[
+        {label:'營收驚喜率',data:clip(real[0]),backgroundColor:C.est,borderRadius:4},
+        {label:'EPS 驚喜率',data:clip(real[1]),backgroundColor:C.accent,borderRadius:4},
+        {label:'首日漲跌',data:clip(real[2]),backgroundColor:real[2].map(v=>(v??0)>=0?C.up:C.down),borderRadius:4}]},
+      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{position:'bottom'},valueLabels:{fmt:pct,real},tooltip:{callbacks:{label:x=>x.dataset.label+'：'+pct(real[x.datasetIndex][x.dataIndex])}}},
+        scales:{x:{grid:{color:C.line},min:-CAP-15,max:CAP+15,ticks:{callback:v=>Math.abs(v)>CAP?'':v+'%'}},y:{grid:{display:false},ticks:{color:C.text,font:{weight:'700'}}}}}});
+  }
+
+  document.addEventListener('click',e=>{const b=e.target.closest('#ovI');if(!b)return;const n=document.getElementById('ovN');n.hidden=!n.hidden;b.setAttribute('aria-expanded',String(!n.hidden))});
+  // ---------- 路由：#TICKER 或 #（總覽） ----------
+  let current='ALL', tab='result';
+  function render(){
+    destroyCharts();
+    const c=LIST.find(x=>x.ticker===current);
+    document.querySelector('.tabs').style.display=c?'flex':'none';
+    if(!c){ app.innerHTML=overviewHtml(); drawOverview(); document.title='美股財報對照'; }
+    else {
+      app.innerHTML=companyHtml(c); drawCompanyCharts(c); document.title=c.ticker+' 財報對照';
+      app.querySelectorAll('details.card').forEach(d=>d.addEventListener('toggle',()=>{if(d.open) requestAnimationFrame(()=>charts.forEach(x=>x.resize()));}));
+      const ea=document.getElementById('expAll'), ca=document.getElementById('colAll');
+      if(ea) ea.onclick=()=>app.querySelectorAll('details.card').forEach(d=>d.open=true);
+      if(ca) ca.onclick=()=>app.querySelectorAll('details.card').forEach(d=>d.open=false);
+      showTab(tab);
+    }
+    qlabel.textContent=DATA.season; sel.value=current;
+  }
+  function showTab(name){
+    tab=name;
+    tabBtns.forEach(b=>b.classList.toggle('on',b.dataset.tab===name));
+    app.querySelectorAll('.panel').forEach(p=>p.classList.toggle('on',p.id==='tab-'+name));
+    requestAnimationFrame(()=>charts.forEach(c=>c.resize()));
+    try{localStorage.setItem('us_earn_tab',name);}catch(e){}
+  }
+  tabBtns.forEach(b=>b.onclick=()=>{showTab(b.dataset.tab);window.scrollTo({top:0});});
+  sel.innerHTML=`<option value="ALL">📋 本季總覽</option>`+LIST.map(c=>`<option value="${c.ticker}">${c.ticker} · ${esc(c.name)}${c.manual?'':'（自動）'}</option>`).join('');
+  sel.onchange=()=>{location.hash=sel.value==='ALL'?'':sel.value;};
+  document.addEventListener('click',e=>{const a=e.target.closest('a[data-val]');if(!a)return;try{sessionStorage.setItem('origin',JSON.stringify({h:'@earn',ext:'earnings_test.html',id:a.dataset.val,y:0}))}catch(_){}});   // 估值頁 ↩ 回財報對照
+  function route(){const h=decodeURIComponent(location.hash.slice(1)).toUpperCase();current=LIST.some(c=>c.ticker===h)?h:'ALL';render();window.scrollTo({top:0});}
+  window.addEventListener('hashchange',route);
+  try{const t=localStorage.getItem('us_earn_tab'); if(t) tab=t;}catch(e){}
+  route();
+})();
+</script>
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "1d5b7d7f9e9b4171b25487fae2dfeea9"}'></script><!-- End Cloudflare Web Analytics -->
+</body>
+</html>

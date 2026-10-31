@@ -249,7 +249,7 @@ a.lnk{color:var(--accent);text-decoration:none;font-weight:600}
     <div class="note">超過 ±40% 的長條截斷顯示，數字為真實值。理想情況是三根同向；「EPS 勝但首日跌」代表市場看的是別的東西（例如 CapEx 指引）。</div></div>`;
   }
   function companyHtml(c){
-    const valLink=`<a class="lnk" href="index.html#${esc(c.ticker)}" data-val="${esc(c.ticker)}">📈 看估值 →</a>`;
+    const valLink=`<a class="lnk" href="index.html#${esc(c.ticker)}">📈 看估值 →</a>`;
     const head=`<header><div class="tk">${esc(c.exchange||'')}${c.exchange?': ':''}${esc(c.ticker)} · ${esc(c.manual?DATA.season:(c.auto&&c.auto.fq||DATA.season))} · 公布日 ${esc(c.date||'')}</div><h1>${esc(c.name)} 財報對照</h1>${c.reaction.text?`<div class="react ${c.reaction.dir}">${esc(c.reaction.text)}</div>`:''}${valLink}</header>`;
     if(!c.manual){
       return head+`<section class="panel on" id="tab-result">
@@ -344,7 +344,6 @@ a.lnk{color:var(--accent);text-decoration:none;font-weight:600}
   tabBtns.forEach(b=>b.onclick=()=>{showTab(b.dataset.tab);window.scrollTo({top:0});});
   sel.innerHTML=`<option value="ALL">📋 本季總覽</option>`+LIST.map(c=>`<option value="${c.ticker}">${c.ticker} · ${esc(c.name)}${c.manual?'':'（自動）'}</option>`).join('');
   sel.onchange=()=>{location.hash=sel.value==='ALL'?'':sel.value;};
-  document.addEventListener('click',e=>{const a=e.target.closest('a[data-val]');if(!a)return;try{sessionStorage.setItem('origin',JSON.stringify({h:'@earn',ext:'earnings.html',id:a.dataset.val,y:0}))}catch(_){}});   // 估值頁 ↩ 回財報對照
   function route(){const h=decodeURIComponent(location.hash.slice(1)).toUpperCase();current=LIST.some(c=>c.ticker===h)?h:'ALL';render();window.scrollTo({top:0});}
   window.addEventListener('hashchange',route);
   try{const t=localStorage.getItem('us_earn_tab'); if(t) tab=t;}catch(e){}

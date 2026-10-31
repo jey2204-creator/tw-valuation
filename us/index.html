@@ -39,7 +39,7 @@ body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--f-body);fon
 header.quote{padding-block:10px 0}
 .top{display:flex;align-items:center;gap:8px;font-size:13px}
 .top a{color:var(--accent);text-decoration:none}
-.top .sp{margin-left:auto}#earnLnk+.fxm{margin-left:0}
+.top .sp{margin-left:auto}
 .code{font-family:var(--f-num);font-weight:600;font-size:13px;color:var(--muted);letter-spacing:.06em}
 .name{font-weight:900;font-size:22px;line-height:1.25}.name small{display:block;font-weight:500;font-size:12.5px;color:var(--muted);line-height:1.3}
 .it .n small,.sug .n small,.qs small{color:var(--muted);font-weight:400;font-size:11px;margin-left:4px}
@@ -461,7 +461,7 @@ html{scroll-behavior:smooth}
 
 <div id="stock" hidden>
 <header class="quote">
-  <div class="top"><a href="#" id="back">← 全部主題</a><span class="meta" id="theme"></span><a class="sp" id="earnLnk" hidden>🎯 看財報 →</a><span class="fxm" data-fx="mini"></span><button type="button" class="qbtn" id="qBtn" aria-label="搜尋股票" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button></div>
+  <div class="top"><a href="#" id="back">← 全部主題</a><span class="meta" id="theme"></span><span class="fxm" data-fx="mini"></span><button type="button" class="qbtn" id="qBtn" aria-label="搜尋股票" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button></div>
   <div id="qBox" hidden>
     <div class="search" role="search">
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
@@ -1211,11 +1211,7 @@ function route(){
 const isStk=h=>/^[A-Z][A-Z.\-]{0,5}$/.test(h)&&h!=='EARN'&&h!=='SALARY';
 const nameOf=id=>{const s=IDX.find(x=>x.id===id);if(s)return s.cn||s.name||id;if(D&&D.id===id)return cnOf(D)||D.name||id;const a=ALLM[id];return a&&a.name||id};
 let PN=null,KEEP=null,SHEET_SEC=null;
-// 個股頁頂列「🎯 看財報 →」：財報對照頁（earnings_cmp.json）有這檔才顯示，連到那頁的個股
-let EARN_SET=null;fetch('data/earnings_cmp.json?t='+Date.now()).then(r=>r.json()).then(j=>{EARN_SET=new Set((j.companies||[]).map(c=>c.ticker));if(D&&!$('stock').hidden)earnLnk(D.id)}).catch(()=>{});
-function earnLnk(id){const a=$('earnLnk'),on=!!(EARN_SET&&EARN_SET.has(id));a.hidden=!on;if(on)a.href='earnings.html#'+encodeURIComponent(id)}
 function pnPaint(id){
-  earnLnk(id);
   const t=themeOfStock(id),ids=t?t.stocks.map(x=>x[0]):[],i=ids.indexOf(id);
   PN=t&&ids.length>1?{ids,i,tid:t.id,theme:t.name}:null;
   $('pnav').hidden=false;document.body.classList.add('pn');$('pnav').classList.toggle('solo',!PN);bkPaint();if(!PN)return;
@@ -1254,11 +1250,10 @@ $('pnPrev').addEventListener('click',()=>pnGo(-1));$('pnNext').addEventListener(
 let ORIGIN=null,VPREV=null,HPREV=null;const BK_SVG='<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>';
 try{ORIGIN=JSON.parse(sessionStorage.getItem('origin')||'null')}catch(e){}
 try{history.scrollRestoration='manual'}catch(e){}   // 捲動位置由 bkRestore 自己管，避免瀏覽器事後又把它拉回去
-const bkLabel=h=>h==='EARN'?'財報公布日':h==='@earn'?'財報對照':h&&h.startsWith('t/')?(themeName(h.slice(2))||'主題'):'全部主題';
+const bkLabel=h=>h==='EARN'?'財報公布日':h&&h.startsWith('t/')?(themeName(h.slice(2))||'主題'):'全部主題';
 function bkPaint(){const lb=bkLabel(ORIGIN?ORIGIN.h:'');$('pnBk').setAttribute('aria-label','回到 '+lb);$('pnBk').title='回到 '+lb;
   $('pnBk').innerHTML=$('pnav').classList.contains('solo')?`${BK_SVG} <span>${esc(lb)}</span>`:BK_SVG}
-function bkGo(){pnShut();if(ORIGIN&&ORIGIN.ext){location.href=ORIGIN.ext+'#'+encodeURIComponent(ORIGIN.id||'');return}   // 來自財報對照頁：回那頁同一檔
-  if(ORIGIN&&ORIGIN.push){history.back();return}if(ORIGIN)ORIGIN.y=0;location.hash=ORIGIN&&ORIGIN.h||''}
+function bkGo(){pnShut();if(ORIGIN&&ORIGIN.push){history.back();return}if(ORIGIN)ORIGIN.y=0;location.hash=ORIGIN&&ORIGIN.h||''}
 $('pnBk').addEventListener('click',bkGo);
 function bkTrack(h){
   if(isStk(h)&&VPREV&&VPREV!=='stock'){ORIGIN={h:HPREV||'',y:scrollY,push:1,id:h};try{sessionStorage.setItem('origin',JSON.stringify(ORIGIN))}catch(e){}}
