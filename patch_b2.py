@@ -98,7 +98,7 @@ rep("L.push(`ROE ${f(x.roe,1)}%・負債比 ${f(x.debt,1)}%`);",
 rep("<th>現金股利</th><th>配息率</th><th>ROE</th><th>負債比</th><th>自由現金流</th><th>年均PE</th></tr></thead>",
     "<th>現金股利</th><th>配息率</th><th>殖利率</th><th>ROE</th><th>負債比</th><th>利息保障</th><th>自由現金流</th><th>年均PE</th></tr></thead>")
 rep("<td>${c(x.po,0)}${x.po!=null?'%':''}</td><td>${c(x.roe,1)}</td><td>${c(x.debt,1)}</td><td>${c(x.fcf,0)}</td>",
-    "<td>${c(x.po,0)}${x.po!=null?'%':''}</td><td>${c(x.yld,1)}${x.yld!=null?'%':''}</td><td>${c(x.roe,1)}</td><td>${c(x.debt,1)}</td><td>${x.cov==null?'—':x.cov>=50?'>50':x.cov<1?'<span class="dn">&lt;1</span>':c(x.cov,1)}</td><td>${c(x.fcf,0)}</td>")
+    "<td>${c(x.po,0)}${x.po!=null?'%':''}</td><td>${c(x.yld,1)}${x.yld!=null?'%':''}</td><td>${c(x.roe,1)}</td><td>${c(x.debt,1)}</td><td>${x.cov==null?'—':x.cov>=50?'>50':x.cov<1?'<span class=\"dn\">&lt;1</span>':c(x.cov,1)}</td><td>${c(x.fcf,0)}</td>")
 
 # ---------- ④ 同業對照（標頭一行） ----------
 rep('<div class="peers" id="peers"></div>', '<div class="meta" id="indCmp" hidden></div>\n  <div class="peers" id="peers"></div>')

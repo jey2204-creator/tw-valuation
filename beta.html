@@ -1834,13 +1834,14 @@ function renderY10(){
   }else if(Y10T==='r'){
     o.yAxis.axisLabel.formatter='{value}%';o.grid.right=34;
     const hasCov=R.some(x=>x.cov!=null),CAP=50;
-    o.yAxis=[o.yAxis,{...o.yAxis,scale:false,min:0,max:CAP*1.1,splitLine:{show:false},axisLabel:{show:false}}];o.grid.right=40;
+    const cvs=R.map(x=>x.cov).filter(v=>v!=null),cmx=cvs.length?Math.max(...cvs):0,cmax=cmx>=CAP?CAP*1.1:Math.max(8,Math.ceil(cmx*1.25));
+    o.yAxis=[o.yAxis,{...o.yAxis,scale:false,min:0,max:cmax,splitLine:{show:false},axisLabel:{show:false}}];o.grid.right=40;
     o.series=[line('ROE','roe',acc),line('負債比','debt',warm,0,true)];
     o.series[0].markLine={silent:true,symbol:'none',label:{show:true,position:'insideStartTop',formatter:'15%',color:mu,fontSize:9},lineStyle:{color:mu,type:'dotted'},data:[{yAxis:15}]};
-    if(hasCov){const cl=line('利息保障(倍)','cov',acc2,1);cl.data=R.map(x=>x.cov==null?null:Math.min(x.cov,CAP));cl.endLabel.formatter=p=>p.value==null?'':(p.value>=CAP?'>'+CAP:fmt(p.value,0))+'倍';cl.lineStyle.width=1.5;o.series.push(cl)}
+    if(hasCov){const cl=line('利息保障(倍)','cov',acc2,1);cl.data=R.map(x=>x.cov==null?null:Math.max(0,Math.min(x.cov,CAP)));cl.endLabel.formatter=p=>p.value==null?'':(p.value>=CAP?'>'+CAP:p.value<1?'<1':fmt(p.value,0))+'倍';cl.lineStyle.width=1.5;o.series.push(cl)}
     const lc=[...R].reverse().find(x=>x.cov!=null),ld=[...R].reverse().find(x=>x.debt!=null);
     foot=`ROE＝母公司淨利 ÷ 平均股東權益${Q?'（近四季淨利）':''}，長期 ≥15% 算優秀；負債比＝總負債 ÷ 總資產（虛線），金融業天生很高不適用。`+
-      (hasCov?`利息保障倍數＝(稅前淨利＋利息費用) ÷ 利息費用（${Y10.intSrc==='cf'?'利息費用取現金流量表「支付之利息」；':''}右軸，圖上截在 ${CAP} 倍）：${lc?`${lc.ttm?'近四季':lc.l} ${lc.cov>=CAP?'>'+CAP:fmt(lc.cov,1)} 倍`:''}；<3 倍代表獲利只夠付利息，景氣轉差時借新還舊會有壓力，>10 倍很安全。`:'財報沒有利息費用（財務成本）科目或為零，無法算利息保障倍數。'+(window.__y10dbg?' 【偵錯】含「利息／財務」的科目：'+(window.__y10dbg.length?window.__y10dbg.join('；'):'一個都沒有'):''))+
+      (hasCov?`利息保障倍數＝(稅前淨利＋利息費用) ÷ 利息費用（${Y10.intSrc==='cf'?'利息費用取現金流量表「支付之利息」；':''}右軸，圖上截在 ${CAP} 倍）：${lc?`${lc.ttm?'近四季':lc.l} ${lc.cov>=CAP?'>'+CAP:lc.cov<1?'<1（稅前虧損或不夠付利息）':fmt(lc.cov,1)} 倍`:''}${R.some(x=>x.cov!=null&&x.cov<1)?'；虧損年份算出來為負，圖上壓在 0':''}；<3 倍代表獲利只夠付利息，景氣轉差時借新還舊會有壓力，>10 倍很安全。`:'財報沒有利息費用（財務成本）科目或為零，無法算利息保障倍數。'+(window.__y10dbg?' 【偵錯】含「利息／財務」的科目：'+(window.__y10dbg.length?window.__y10dbg.join('；'):'一個都沒有'):''))+
       (ld&&ld.debt!=null&&ld.debt>=60&&!/金融/.test(indOfStock())?`負債比 ${fmt(ld.debt,0)}% 偏高，要看負債是有息借款還是客戶預收／應付帳款（財報附註）。`:'');
   }else if(Y10T==='d'){
     o.yAxis.scale=false;o.grid.right=40;o.yAxis=[o.yAxis,{...o.yAxis,scale:false,min:0,splitLine:{show:false},axisLabel:{show:false}}];
@@ -1880,7 +1881,7 @@ function renderY10(){
   // 明細表（年度）
   const c=(v,d)=>v==null?'—':fmt(v,d),cp=v=>v==null?'—':`<span class="${sg(v)}">${pct(v,0)}</span>`;
   $('tbY10').innerHTML='<thead><tr><th>年度</th><th>營收億</th><th>年增</th><th>毛利率</th><th>營益率</th><th>淨利率</th><th>EPS</th><th>EPS年增</th><th>現金股利</th><th>配息率</th><th>殖利率</th><th>ROE</th><th>負債比</th><th>利息保障</th><th>自由現金流</th><th>年均PE</th></tr></thead><tbody>'+
-    [...A].reverse().map(x=>`<tr class="${x.ttm?'ttm':''}"><td>${x.ttm?'近四季':x.l}</td><td>${c(x.rev,0)}</td><td>${cp(x.ry)}</td><td>${c(x.gm,1)}</td><td>${c(x.om,1)}</td><td>${c(x.nm,1)}</td><td>${c(x.eps,2)}</td><td>${x.et?`<span class="${x.et==='轉盈'?'up':'dn'}">${x.et}</span>`:cp(x.ey)}</td><td>${c(x.div,2)}${x.sdiv?`<sup title="另配股票股利 ${x.sdiv} 元">+股</sup>`:''}</td><td>${c(x.po,0)}${x.po!=null?'%':''}</td><td>${c(x.yld,1)}${x.yld!=null?'%':''}</td><td>${c(x.roe,1)}</td><td>${c(x.debt,1)}</td><td>${x.cov==null?'—':x.cov>=50?'>50':c(x.cov,1)}</td><td>${c(x.fcf,0)}</td><td>${c(x.pe,1)}</td></tr>`).join('')+'</tbody>';
+    [...A].reverse().map(x=>`<tr class="${x.ttm?'ttm':''}"><td>${x.ttm?'近四季':x.l}</td><td>${c(x.rev,0)}</td><td>${cp(x.ry)}</td><td>${c(x.gm,1)}</td><td>${c(x.om,1)}</td><td>${c(x.nm,1)}</td><td>${c(x.eps,2)}</td><td>${x.et?`<span class="${x.et==='轉盈'?'up':'dn'}">${x.et}</span>`:cp(x.ey)}</td><td>${c(x.div,2)}${x.sdiv?`<sup title="另配股票股利 ${x.sdiv} 元">+股</sup>`:''}</td><td>${c(x.po,0)}${x.po!=null?'%':''}</td><td>${c(x.yld,1)}${x.yld!=null?'%':''}</td><td>${c(x.roe,1)}</td><td>${c(x.debt,1)}</td><td>${x.cov==null?'—':x.cov>=50?'>50':x.cov<1?'<span class="dn">&lt;1</span>':c(x.cov,1)}</td><td>${c(x.fcf,0)}</td><td>${c(x.pe,1)}</td></tr>`).join('')+'</tbody>';
 }
 $('y10').addEventListener('click',e=>{if(!Y10||!e.target.closest('#y10K,[data-y10t],#tY10 .pill'))return;const o=$('y10').classList.toggle('open');const t=$('y10').querySelector('[data-y10t]');if(t)t.textContent=o?'收起 ▴':'依據 ▾'});
 $('y10Per').addEventListener('click',e=>{const b=e.target.closest('button[data-p]');if(!b)return;Y10P=b.dataset.p;try{localStorage.setItem('y10P',Y10P)}catch(_){}renderY10()});
