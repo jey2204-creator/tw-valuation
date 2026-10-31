@@ -76,6 +76,8 @@ EQ = ["StockholdersEquity", "EquityAttributableToOwnersOfParent",
       "StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest"]
 CAPEX = ["PaymentsToAcquirePropertyPlantAndEquipment", "PaymentsToAcquireProductiveAssets",
          "PurchaseOfPropertyPlantAndEquipmentClassifiedAsInvestingActivities"]
+OCF = ["NetCashProvidedByUsedInOperatingActivities", "CashFlowsFromUsedInOperatingActivities",
+       "NetCashProvidedByUsedInOperatingActivitiesContinuingOperations"]   # 營業現金流（自由現金流 = OCF − CapEx）
 QFORMS = {"10-Q", "10-Q/A", "10-K", "10-K/A", "6-K", "6-K/A"}
 AFORMS = {"20-F", "20-F/A", "40-F", "40-F/A"}
 
@@ -332,6 +334,7 @@ def build_fin(cik):
     shr_a = merged(cf, SHR, annuals, sh, adj=shr_adj)
     shr = {**shr_a, **shr_q} if freq == "Q" else shr_a
     capex = merged(cf, CAPEX, pick)
+    ocf = merged(cf, OCF, pick)
     eq = merged(cf, EQ, instants)
     fyes = sorted(revA) or sorted(merged(cf, NI, annuals))
     fye = fyes[-1] if fyes else None
@@ -362,7 +365,8 @@ def build_fin(cik):
                          fis=fiscal_label(e, fye) if freq == "Q" else f"FY{e[2:4]}",
                          rev=round(r / 1e6, 1), gm=pct(g), om=pct(opi.get(e, (None,))[0]), nm=pct(n),
                          eps=None if ep is None else round(ep, 3), sh=None if not shares else round(shares / 1e6, 2),
-                         capex=None if cx is None else round(cx / 1e6, 1), ni=None if n is None else round(n / 1e6, 1)))
+                         capex=None if cx is None else round(cx / 1e6, 1), ni=None if n is None else round(n / 1e6, 1),
+                         ocf=None if (oc := ocf.get(e, (None,))[0]) is None else round(oc / 1e6, 1)))
     eqs = sorted((e, v / 1e6, f) for e, (v, f, _, _) in eq.items())
     return dict(name=cf.get("entityName", ""), freq=freq, fye=fye, splits=splits, q=rows,
                 eq=[[e, round(v, 1), f] for e, v, f in eqs if e >= rows[0]["end"][:4] + "-01-01"] if rows else [])
@@ -435,7 +439,7 @@ def build(tk, cik_map, today=None):
                 ttm=None if t is None else round(t, 3), bvps=None if b is None else round(b, 2),
                 pe=round(last_r["c"] / t, 1) if t and t >= 0.01 else None,
                 pb=round(last_r["c"] / b, 2) if b and b > 0 else None)
-    q = [[x["cal"], x["fis"], x["rev"], x["gm"], x["om"], x["nm"], x["eps"], x["capex"], x["sh"], x["end"], x["filed"]]
+    q = [[x["cal"], x["fis"], x["rev"], x["gm"], x["om"], x["nm"], x["eps"], x["capex"], x["sh"], x["end"], x["filed"], x.get("ocf")]
          for x in Q if x["end"] >= f"{today.year - YEARS - 1}-01-01"]
     note = []
     if not cik:

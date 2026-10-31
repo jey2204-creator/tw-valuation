@@ -88,7 +88,7 @@ def fin_from_cf(cf):
 
 def pack(tk, cik, fin):
     today = dt.date.today()
-    q = [[x["cal"], x["fis"], x["rev"], x["gm"], x["om"], x["nm"], x["eps"], x["capex"], x["sh"], x["end"], x["filed"]]
+    q = [[x["cal"], x["fis"], x["rev"], x["gm"], x["om"], x["nm"], x["eps"], x["capex"], x["sh"], x["end"], x["filed"], x.get("ocf")]
          for x in fin["q"] if x["end"] >= f"{today.year - YEARS - 1}-01-01"]
     note = []
     if fin["freq"] == "A":
