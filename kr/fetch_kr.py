@@ -481,6 +481,7 @@ def dart_prelim(corp, cache):
     return cache
 
 
+DOC_V = 2   # 解析規則改版就 +1：舊版快取會重新抓公告原文
 DOC_ROWS = {"rev": ["매출액", "매출", "영업수익", "수익(매출액)"], "op": ["영업이익", "영업이익(손실)"],
             "ni": ["당기순이익", "당기순이익(손실)", "분기순이익", "반기순이익"],
             "nip": ["지배기업소유주지분순이익", "지배기업의소유주에게귀속되는당기순이익", "지배주주지분순이익", "지배기업소유주지분당기순이익", "지배기업지분순이익"]}
@@ -503,12 +504,14 @@ def dart_doc_prelim(rno):
             pass
     txt = txt or raw.decode("utf-8", "replace")
     txt = re.sub(r"<!--.*?-->", "", txt, flags=re.S)
-    m = re.search(r"단위\s*[:：]?\s*(백만원|억원|천원|원)", re.sub(r"<[^>]+>", " ", txt))
-    k = {"백만원": 1e-2, "억원": 1.0, "천원": 1e-5, "원": 1e-8}[m[1]] if m else 1e-2   # 沒寫單位當百萬韓元（KIND 表單預設）
-    out = {}
+    m = re.search(r"단위\s*[:：]?\s*(조원|십억원|백만원|억원|천원|원)", re.sub(r"<[^>]+>", " ", txt))
+    k = {"조원": 1e4, "십억원": 10.0, "백만원": 1e-2, "억원": 1.0, "천원": 1e-5, "원": 1e-8}[m[1]] if m else 1e-2   # 沒寫單位當百萬韓元（KIND 表單預設）；三星用兆韓元
+    out, rows = {}, []
     for tr in re.findall(r"<TR\b.*?</TR>", txt, flags=re.S | re.I):
         cells = [re.sub(r"\s", "", re.sub(r"<[^>]+>", "", c)) for c in re.findall(r"<T[DH]\b.*?</T[DH]>", tr, flags=re.S | re.I)]
         cells = [c for c in cells if c]
+        if cells and len(rows) < 40:
+            rows.append([c[:24] for c in cells[:8]])   # 留表格內容供核對（kr/data/earn/*.json doc.rows）
         if not cells or any("누계" in c for c in cells[:3]):
             continue
         for key, names in DOC_ROWS.items():
@@ -521,6 +524,7 @@ def dart_doc_prelim(rno):
             v = next((num(c) for c in cells[start:] if num(c) is not None), None)
             if v is not None:
                 out[key] = round(v * k, 1)
+    out["unit"], out["rows"], out["v"] = (m[1] if m else None), rows, DOC_V
     return out
 
 
@@ -579,7 +583,7 @@ def earn_info(code, corp, Q, fin):
     if pend in pre_dt:
         rno = last_rno[pend]
         doc = (cache.get("doc") or {}).get(rno)
-        if doc is None or not doc.get("rev") and not doc.get("op"):   # 沒抓過、或上次沒解析到 → 再試
+        if doc is None or doc.get("v") != DOC_V or not doc.get("rev") and not doc.get("op"):   # 沒抓過、規則改版、或上次沒解析到 → 再試
             try:
                 doc = dart_doc_prelim(rno)
             except Exception as ex:
