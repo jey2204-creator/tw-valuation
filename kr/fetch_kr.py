@@ -546,13 +546,12 @@ def earn_info(code, corp, Q, fin):
         err.append(f"Naver 季表：{str(e)[:60]}")
     p.write_text(json.dumps(cache, ensure_ascii=False, separators=(",", ":")), "utf-8")
     # 暫定公告日：每季取最早的一次（三星 10/8 暫定、10/30 正式都掛「잠정」）
-    pre_dt, last_rno = {}, {}
+    pre_dt, rnos = {}, {}
     for d, rno, nm in cache.get("ann", []):
         cal = q_of_date(dt.date.fromisoformat(d))
         if cal not in pre_dt or d < pre_dt[cal][0]:
             pre_dt[cal] = [d, rno]
-        if cal not in last_rno or rno > last_rno[cal]:
-            last_rno[cal] = rno   # 三星 10/8 暫定只有營收／營益，10/29 正式（含 기재정정）才有淨利 → 數字取最新一份
+        rnos.setdefault(cal, []).append(rno)   # 三星 10/8 暫定只有營收／營益，10/29 正式才有淨利 → 從最新一份往回讀，缺的科目用較早的補
     if not Q:
         return dict(err=err) if err else {}, None
     last = Q[-1]["cal"]
@@ -581,24 +580,31 @@ def earn_info(code, corp, Q, fin):
     nv = (cache.get("nv") or {}).get(pend)
     row = None
     if pend in pre_dt:
-        rno = last_rno[pend]
-        doc = (cache.get("doc") or {}).get(rno)
-        if doc is None or doc.get("v") != DOC_V or not doc.get("rev") and not doc.get("op"):   # 沒抓過、規則改版、或上次沒解析到 → 再試
-            try:
-                doc = dart_doc_prelim(rno)
-            except Exception as ex:
-                err.append(f"公告原文：{str(ex)[:60]}")
-                doc = {}
-            cache.setdefault("doc", {})[rno] = doc
-            p.write_text(json.dumps(cache, ensure_ascii=False, separators=(",", ":")), "utf-8")
-        if doc and (doc.get("rev") is not None or doc.get("op") is not None):
-            nv = dict(rev=doc.get("rev"), op=doc.get("op"), ni=doc.get("ni"), nip=doc.get("nip"), eps=None)
+        got = {}
+        for rno in sorted(rnos[pend], reverse=True)[:3]:
+            doc = (cache.get("doc") or {}).get(rno)
+            if doc is None or doc.get("v") != DOC_V or not doc.get("rev") and not doc.get("op"):   # 沒抓過、規則改版、或上次沒解析到 → 再試
+                try:
+                    doc = dart_doc_prelim(rno)
+                except Exception as ex:
+                    err.append(f"公告原文：{str(ex)[:60]}")
+                    doc = {}
+                cache.setdefault("doc", {})[rno] = doc
+                p.write_text(json.dumps(cache, ensure_ascii=False, separators=(",", ":")), "utf-8")
+            for k2 in ("rev", "op", "ni", "nip"):
+                if got.get(k2) is None and (doc or {}).get(k2) is not None:
+                    got[k2] = doc[k2]
+            if all(got.get(k2) is not None for k2 in ("rev", "op", "ni")):
+                break
+        if got.get("rev") is not None or got.get("op") is not None:
+            nv = dict(rev=got.get("rev"), op=got.get("op"), ni=got.get("ni"), nip=got.get("nip"), eps=None)
             e["src"] = "dart"
+            if Q[-1].get("rev") is None and Q[-1].get("ni") is not None:   # 金融股：正式財報沒有營收科目 → 暫定也不列營收／營益率（跟 quarters() 一致）
+                nv["rev"] = None
     if pend in pre_dt or nv:
         e["st"] = "pre"
         if pend in pre_dt:
             e["pre"], e["rno"] = pre_dt[pend]
-            e["rno2"] = last_rno[pend]
         else:
             e["pre"], e["src"] = cache.get("nv_at") or TODAY.isoformat(), "naver"
         if nv:
@@ -617,8 +623,15 @@ def earn_info(code, corp, Q, fin):
             py = next((q for q in Q if q["cal"] == ly), None)
             if py and py.get("rev") and nv.get("rev"):
                 e["ry"] = round((nv["rev"] / py["rev"] - 1) * 100, 1)
-            if py and py.get("opa") and nv.get("op") is not None and py["opa"] > 0:
-                e["oy"] = round((nv["op"] / py["opa"] - 1) * 100, 1)
+            if py and py.get("opa") is not None and nv.get("op") is not None:
+                if py["opa"] > 0:
+                    e["oy"] = round((nv["op"] / py["opa"] - 1) * 100, 1)
+                elif nv["op"] > 0:
+                    e["ot"] = "轉盈"
+                elif nv["op"] < 0:
+                    e["ot"] = "續虧"
+            if py and py.get("nia") is not None and ni is not None and py["nia"] > 0:
+                e["ny"] = round((ni / py["nia"] - 1) * 100, 1)
         else:
             e["nonum"] = True   # DART 有暫定公告但原文解析不到數字、Naver 也沒有
     else:
@@ -653,7 +666,7 @@ def build(code, corps):
     except Exception as e:
         print(f"  暫定業績失敗：{e}")
         earn, prow = {}, None
-    if prow and prow.get("rev"):
+    if prow and (prow.get("rev") or prow.get("nia") is not None):
         Q.append(prow)
         note.append(f"{prow['cal']} 為暫定業績（{'OpenDART 公告原文' if earn.get('src') == 'dart' else 'Naver 季表'}，{earn.get('pre', '')[5:].replace('-', '/')} 公布）：只有營收、營業利益、淨利"
                     f"{'，EPS 以淨利 ÷ 前季股數推算' if prow.get('eps_est') else ''}；正式季報申報後自動取代")
@@ -760,7 +773,7 @@ def main():
                            close=L["close"], chg=round((L["close"] / L["prev"] - 1) * 100, 2) if L["prev"] else None,
                            pe=L["pe"], pb=L["pb"], fr=L["fr"], cpe=L["cns_per"], lq=lq[0] if lq else None,
                            cyc=d["cyclical"], tw=d["tw"], date=L["date"], pre=bool(lq and len(lq) > 11 and lq[11]),
-                           earn={k: v for k, v in (d.get("earn") or {}).items() if k in ("q", "st", "pre", "est", "due", "b", "ry", "oy", "nonum")}))
+                           earn={k: v for k, v in (d.get("earn") or {}).items() if k in ("q", "st", "pre", "est", "due", "b", "ry", "oy", "ot", "ny", "nonum")}))
             Qs = d["q"]
             diag[code] = dict(zh=d["name"], kname=d["kname"], nv=nvn, n=len(Qs), sec=round(time.time() - t0),
                               first=Qs[0][0] if Qs else None, last=lq[0] if lq else None, new=n_new,
