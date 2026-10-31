@@ -15,7 +15,8 @@
 推播：設 Secret TELEGRAM_TOKEN 才會送（Telegram 機器人；chat id 自動抓，存 data/flash/tg.json），只送追蹤股（fetch.py STOCKS＋themes.json 成份股＋data/flash_watch.json）
       且發言時間在 6 小時內的新公告，避免回補時洗版
 資產負債補季（存貨健康度卡用）：董事會通過財報的公司，再向觀測站個別財報 API 要同季的資產負債表（t164sb03）與
-  現金流量表（t164sb05）→ 存貨、應收帳款（含關係人）、合約負債－流動、營業活動現金流（年初累計）→ 項目欄位 bs（億）
+  現金流量表（t164sb05）→ 存貨、應收帳款（含關係人）、合約負債－流動、營業活動現金流、取得不動產廠房設備、折舊（三者年初累計）
+  → 項目欄位 bs（億）；存貨卡、現金流卡、資本支出卡在 FinMind 進資料前先用這些補季（v:2）
   XBRL 通常在董事會後 1～3 個工作天才上觀測站，查無就先記下，每天再試一次（最多 30 天）；快取 data/flash/bs.json
   每次執行最多 INV_MAX 家（預設 40；追蹤股優先、再按公告新舊），營業成本單季由快訊的營收－毛利換算（手機端）
 環境變數：BACKFILL_FROM=YYYY-MM-DD（回補起日）、BUDGET_MIN（時間預算，預設 12 分）、GAP（每次請求間隔秒，預設 0.9）
@@ -504,9 +505,9 @@ def fetch_bs(items):
     for i in cand:
         key = f"{i['c']}|{i['q']}"
         rec = cache.get(key)
-        if rec and rec.get("bs"):
+        if rec and rec.get("bs") and rec["bs"].get("v") == 2:
             i["bs"] = rec["bs"]
-            continue
+            continue                                           # v1 快取（只有存貨）→ 重抓一次補資本支出、折舊
         if rec and rec.get("miss") == today:
             continue                                           # 今天已試過查無
         try:
@@ -534,8 +535,10 @@ def fetch_bs(items):
         C = stmt_rows(cf) if cf else {}
         ar = (B.get("應收帳款淨額") or 0) + (B.get("應收帳款－關係人淨額") or 0) if B.get("應收帳款淨額") is not None else None
         a = lambda v: None if v is None else round(v / 1e5, 2)  # noqa: E731  仟元 → 億
+        cx = C.get("取得不動產、廠房及設備")
         i["bs"] = {"inv": a(inv), "ar": a(ar), "cl": a(B.get("合約負債－流動")),
-                   "ocfC": a(C.get("營業活動之淨現金流入（流出）")), "on": today}
+                   "ocfC": a(C.get("營業活動之淨現金流入（流出）")),
+                   "capexC": None if cx is None else a(abs(cx)), "depC": a(C.get("折舊費用")), "on": today, "v": 2}
         cache[key] = {"bs": i["bs"]}
     keep = (NOW.date() - dt.timedelta(days=200)).isoformat()
     cache = {k: v for k, v in cache.items() if (v.get("on") or v.get("miss") or (v.get("bs") or {}).get("on") or today) >= keep}  # 200 天後清掉
