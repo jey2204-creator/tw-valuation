@@ -127,12 +127,22 @@ def sec_releases(tk):
         if form not in ("8-K", "8-K/A") or "2.02" not in (items or "") or d < lo:
             continue
         hm = (acc or "")[11:16]
-        hr = "bmo" if hm < "09:30" else ("amc" if hm >= "16:00" else "dmh")
+        hr = "bmo" if hm < "13:00" else ("amc" if hm >= "16:00" else "dmh")   # 盤前發布的公司常到上午才申報，13:00 前都算盤前
         if out and out[-1][0] == d:
             continue   # 同日多份（8-K/A）只留一份
         out.append((d, hr))
     out.sort()
     return out
+
+
+def sec_eps(tk):
+    """SEC 財報檔各季 GAAP EPS：{季別: EPS}"""
+    for f in (ROOT / "data" / f"{tk}.json", ROOT / "data" / "all" / f"{tk}.json"):
+        try:
+            return {r[0]: r[6] for r in json.loads(f.read_text()).get("q", []) if r[0] and r[6] is not None}
+        except Exception:
+            pass
+    return {}
 
 
 def fq_table(tk):
@@ -203,6 +213,13 @@ def one(tk, override, since=""):
                 h[4], h[5] = d8, hr
             rows8.append(h)
         hist = rows8
+        # Finnhub 只有 4 季的預估／實際，更早的季實際 EPS 用 SEC 財報檔的 GAAP EPS 補（第 8 欄標 sec，前端標示）
+        for h in hist:
+            if h[2] is None:
+                g = sec_eps(tk).get(h[0])
+                if g is not None:
+                    h[2] = g
+                    if len(h) < 8: h.append("sec")
         pxall = finmind_px(tk, (today - dt.timedelta(days=760)).isoformat(), today.isoformat())
         for h in hist:
             rx = reaction(tk, h[4], h[5], pxall) if pxall and h[4] else None
@@ -215,6 +232,8 @@ def one(tk, override, since=""):
     if not date or (since and date < since and not override.get("date")):
         return None   # 還沒公布本季（watch 名單用）
     hour = override.get("hour") or last.get("hour") or ""
+    if hist and date and hist[-1][4] == date and hour:
+        hist[-1][5] = hour   # 最新一季的盤前盤後以 Finnhub 為準（8-K 接收時間只是推估）
     eps_est = override.get("epsEst", last.get("epsEstimate"))
     eps_act = override.get("epsAct", last.get("epsActual"))
     if eps_act is None and hist:
@@ -260,8 +279,7 @@ def main():
         try:
             ov = overrides.get(tk, {})
             r = one(tk, {} if ov.get("_theme") else ov, "" if ov.get("_theme") else cmp.get("since", ""))
-            if r and ov.get("_theme") and r["date"] < lo:
-                r = None   # 主題股／大型股只留本季（since 之後）公布的
+            # 主題股／大型股不以 since 篩（財報公布日頁的個股搜尋要看近 8 季；已公布頁籤由前端依日期篩）
         except Exception as e:  # noqa
             print(f"[warn] {tk}: {e}", file=sys.stderr); r = None
         if r:
