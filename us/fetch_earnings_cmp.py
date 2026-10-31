@@ -71,10 +71,12 @@ def surprise(act, est):
     return round((act - est) / abs(est) * 100, 1)
 
 
-def reaction(tk, date, hour):
-    """財報後首個交易日收盤 vs 財報前收盤。amc／未定 → 前=當天收盤、後=下一交易日；bmo → 前=前一交易日、後=當天。"""
+def reaction(tk, date, hour, px=None):
+    """財報後首個交易日收盤 vs 財報前收盤。amc／未定 → 前=當天收盤、後=下一交易日；bmo → 前=前一交易日、後=當天。
+    px 可傳入已抓好的整段股價（近 8 季共用一次 FinMind 呼叫）。"""
     d = dt.date.fromisoformat(date)
-    px = finmind_px(tk, (d - dt.timedelta(days=10)).isoformat(), (d + dt.timedelta(days=10)).isoformat())
+    if px is None:
+        px = finmind_px(tk, (d - dt.timedelta(days=10)).isoformat(), (d + dt.timedelta(days=10)).isoformat())
     if not px:
         return None
     before = [p for p in px if p[0] <= date]
@@ -94,7 +96,7 @@ def reaction(tk, date, hour):
 def one(tk, override, since=""):
     today = dt.date.today()
     # 1. 歷史驚喜（含最新一季）
-    hist_raw = fh("stock/earnings", symbol=tk, limit=4) or []
+    hist_raw = fh("stock/earnings", symbol=tk, limit=8) or []
     hist = []
     for r in sorted(hist_raw, key=lambda x: x.get("period") or ""):
         if r.get("period") and r.get("actual") is not None:
@@ -102,11 +104,22 @@ def one(tk, override, since=""):
             hist.append([f"{p[2:4]}Q{r.get('quarter') or ''}", r.get("estimate"), r.get("actual"),
                          surprise(r.get("actual"), r.get("estimate"))])
     # 2. 最新一季日曆（營收）
-    cal = fh("calendar/earnings", symbol=tk, **{"from": (today - dt.timedelta(days=120)).isoformat(),
+    cal = fh("calendar/earnings", symbol=tk, **{"from": (today - dt.timedelta(days=740)).isoformat(),
                                                "to": (today + dt.timedelta(days=5)).isoformat()}) or {}
     rows = [r for r in (cal.get("earningsCalendar") or []) if r.get("date") and r["date"] <= today.isoformat()]
     rows.sort(key=lambda r: r["date"])
     last = rows[-1] if rows else {}
+    # 近 8 季每季補公布日／盤前盤後／首日反應（給財報公布日頁的個股搜尋）：hist 列 = [fq, est, act, surp, date, hour, react]
+    # 日曆列用 year+quarter 對上 hist 的 fq；整段股價只抓一次
+    if hist:
+        byq = {f"{str(r.get('year'))[-2:]}Q{r.get('quarter')}": r for r in rows if r.get("year") and r.get("quarter")}
+        pxall = finmind_px(tk, (today - dt.timedelta(days=760)).isoformat(), today.isoformat()) if any(h[0] in byq for h in hist) else []
+        for h in hist:
+            r = byq.get(h[0])
+            if not r:
+                h.extend([None, "", None]); continue
+            rx = reaction(tk, r["date"], r.get("hour") or "", pxall) if pxall else None
+            h.extend([r["date"], r.get("hour") or "", rx and rx.get("react")])
     date = override.get("date") or last.get("date")
     if not date or (since and date < since and not override.get("date")):
         return None   # 還沒公布本季（watch 名單用）
@@ -122,7 +135,7 @@ def one(tk, override, since=""):
     return {"date": date, "hour": hour, "fq": fq,
             "epsEst": eps_est, "epsAct": eps_act, "epsSurp": surprise(eps_act, eps_est),
             "revEst": rev_est, "revAct": rev_act, "revSurp": surprise(rev_act, rev_est),
-            "hist": hist[-4:], "px": px}
+            "hist": hist[-8:], "px": px}
 
 
 def main():
