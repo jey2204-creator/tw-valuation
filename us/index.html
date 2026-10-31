@@ -145,7 +145,7 @@ body.pn .wrap{padding-bottom:calc(84px + env(safe-area-inset-bottom))}
 .hrow .fx label{gap:2px}.hrow .fx input{width:3.6em;padding:2px 5px}
 .fxi{font:inherit;font-size:14px;line-height:1;border:0;background:none;color:var(--muted);padding:4px 2px;cursor:pointer}.fx.open .fxi{color:var(--accent)}
 .fxn{flex-basis:100%}.fxn[hidden]{display:none}
-.ecard h2{flex-wrap:nowrap;white-space:nowrap}.ecard h2 small{min-width:0;overflow:hidden;text-overflow:ellipsis}.ecard h2 .more{flex:none}.ecard h2 .more+.more{margin-left:0}
+.ecard h2{flex-wrap:nowrap;white-space:nowrap}.etab{display:inline-flex;flex:none;border:1px solid var(--line);border-radius:999px;overflow:hidden}.etab button{font:inherit;font-size:11px;font-weight:600;color:var(--muted);background:var(--bg);border:0;padding:2px 6px;cursor:pointer;white-space:nowrap}.ecard h2{gap:5px}.ecard h2 .more{font-size:11.5px}.etab button.on{color:#fff;background:var(--accent)}.ecal.mini .row.two{display:grid;grid-template-columns:1fr 1fr;gap:4px}.ecal.mini .mr:has(.row.two){grid-template-columns:62px 1fr;gap:6px}.ecal.mini .ec.dn small{display:inline;font-size:11px;font-family:var(--f-num)}.ecal.mini .ec.dn{padding:3px 6px;gap:3px;min-width:0;white-space:nowrap;overflow:hidden}.ecal.mini .ec.dn b{font-size:11.5px}.ecal.mini .ec.dn small{font-size:10.5px}.ecal.mini .ec.dn small+small{margin-left:auto}.ecal.mini .dnl{font-size:10.5px;margin:6px 0 0}.ec.dn.tg b{color:var(--accent)}.ec.dn small.up{color:var(--up,#c0392b);font-weight:600}.ec.dn small.dw{color:var(--down,#0a8f5b);font-weight:600}.ecard h2 small{min-width:0;overflow:hidden;text-overflow:ellipsis}.ecard h2 .more{flex:none}.ecard h2 .more+.more{margin-left:0}
 .fxseg{display:inline-flex}.fxseg button{font:inherit;font-size:12px;border:1px solid var(--line);background:var(--card);color:var(--muted);padding:3px 11px;cursor:pointer;margin-left:-1px}
 .fxseg button:first-child{border-radius:999px 0 0 999px;margin-left:0}.fxseg button:last-child{border-radius:0 999px 999px 0}.fxseg button.on{background:var(--accent);border-color:var(--accent);color:#fff}
 .fx label{display:inline-flex;align-items:center;gap:4px}.fx input{font-family:var(--f-num);font-size:13px;width:4.6em;padding:3px 6px;border:1px solid var(--line);border-radius:7px;background:var(--card);color:var(--fg)}
@@ -360,7 +360,7 @@ html{scroll-behavior:smooth}
     <div class="sug" id="sug" role="listbox" hidden></div>
   </header>
   <section class="card ecard" id="earnCal" hidden>
-    <h2>📅 財報 <small id="uEarn"></small><a class="more" href="earnings.html">📊 預期vs實際</a><a class="more" href="#EARN">全部 →</a></h2>
+    <h2>📅 財報 <span class="etab" role="tablist"><button type="button" data-v="week" role="tab">本週</button><button type="button" data-v="done" role="tab">已公布</button></span><small id="uEarn"></small><a class="more" href="earnings.html">📊 預期vs實際</a><a class="more" href="#EARN">全部→</a></h2>
     <div class="ecal mini" id="ecalMini"></div>
   </section>
   <div id="tsec">
@@ -576,7 +576,7 @@ function earnBox(id){const el=$('earn'),ls=EARN.e[id];if(!ls||!ls.length){el.hid
   if(fut){const w=twTime(fut[0],fut[1]);h+=`<p><span class="lb">📅 下次財報</span><b>${mdw(fut[0])} ${w.when}</b>${w.tw?`<small>${w.tw}</small>`:''}${fut[6]?`<small>${fut[6]}</small>`:''}${fut[2]!=null?`<small>預估 EPS ${epsT(fut[2])}${fut[4]?`｜營收 ${bil(fut[4])}`:''}</small>`:''}</p>`}
   if(past&&dayDiff(past[0],t)<=10){const aq=AUTOQ[id];if(past[3]==null&&aq&&aq.date===past[0]&&aq.epsAct!=null){past=[...past];past[3]=aq.epsAct;if(aq.epsEst!=null)past[2]=aq.epsEst}
     const bt=past[2]!=null&&past[3]!=null?(past[3]>=past[2]?`優於預估 ${epsT(past[2])}`:`低於預估 ${epsT(past[2])}`):'';
-    h+=`<p class="done"><span class="lb">✅ 已公布</span><b>${mdw(past[0])}</b>${CMPSET.has(id)?`<a href="earnings.html#${id}" style="color:var(--accent);text-decoration:none;font-weight:600">📊 預期對照 →</a>`:''}${past[6]?`<small>${past[6]}</small>`:''}<small>${past[3]!=null?`EPS ${epsT(past[3])}${bt?`（${bt}）`:''}`:`預估 EPS ${epsT(past[2])}｜實際值待更新`}${past[5]?`｜營收 ${bil(past[5])}`:''}</small></p>`}
+    h+=`<p class="done"><span class="lb">✅ 已公布</span><b>${mdw(past[0])}</b>${WATCH.has(id)?`<a href="earnings.html#${id}" style="color:var(--accent);text-decoration:none;font-weight:600">📊 預期對照 →</a>`:''}${past[6]?`<small>${past[6]}</small>`:''}<small>${past[3]!=null?`EPS ${epsT(past[3])}${bt?`（${bt}）`:''}`:`預估 EPS ${epsT(past[2])}｜實際值待更新`}${past[5]?`｜營收 ${bil(past[5])}`:''}</small></p>`}
   el.innerHTML=h;el.hidden=!h}
 let EMODE='focus';try{EMODE=localStorage.getItem('earnMode')||'focus'}catch(e){}
 const OPEN=new Set();
@@ -588,11 +588,34 @@ const chip=(id,x,hot,nm)=>`<a class="ec${hot.has(id)?' hot':''}" href="#${id}">$
 // 首頁小卡（第 2 步省高度）：日期縮成左欄，代號 chip 排同一行右側，多檔自動換行；台灣時間縮成「台 10/27 晨」，完整說明放 title
 const mhead=(d,t)=>{const tw=twTime(d,'amc').tw.split(' 約')[0].replace('台灣 ',''),md=tw.replace(/（.*/,'');return `<div class="md" title="美東 ${mdw(d)} 盤後 ≈ 台灣 ${tw} 清晨"><b>${+d.slice(5,7)}/${+d.slice(8)}<span>（${WD[new Date(d+'T12:00:00Z').getUTCDay()]}）</span></b><small>${d===t?'<i>今天</i>':''}台 ${md} 晨</small></div>`};
 const dhead=(d,t)=>`${mdw(d)}<small>盤後 ≈ 台灣 ${twTime(d,'amc').tw.split(' 約')[0].replace('台灣 ','')} 清晨${d===t?'　← 今天':''}</small>`;
+let EVIEW='week';try{EVIEW=localStorage.getItem('earnView')||'week'}catch(e){}
+let WATCH=new Set();   // 財報對照頁名單（earnings_cmp.json 的 companies＋watch），「已公布」頁籤除主題股外也列這些
+// 已公布：近 7 天（美東）已過公布時間的主題股＋對照頁名單，日期倒序；chip 顯示 EPS 驚喜率（手動分析層／Finnhub），🎯 = 有分析層，點進財報對照頁
+function doneRows(){const e=EARN.e,t=etToday(),nm=Object.fromEntries(ALL.map(s=>[s.id,s.name]));IDX.forEach(s=>nm[s.id]=s.cn||s.name);
+  const hot=new Set(IDX.map(s=>s.id)),pick=new Set([...hot,...WATCH]),by={};
+  const etH=+new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',hour:'2-digit',hour12:false}).format(new Date())%24;
+  for(const [id,ls] of Object.entries(e)){if(!pick.has(id))continue;for(const x of ls){const dd=dayDiff(x[0],t);if(dd<0||dd>7)continue;const aq=AUTOQ[id],hr=x[1]||(aq&&aq.date===x[0]?aq.hour:'');   // 日曆沒標盤前盤後時用自動層的
+    if(dd===0&&!(hr==='bmo'&&etH>=10||hr==='dmh'&&etH>=13||hr==='amc'&&etH>=17))continue;(by[x[0]]=by[x[0]]||[]).push([id,x])}}
+  return{t,hot,nm,ds:Object.keys(by).sort().reverse().map(d=>[d,by[d].sort((a,b)=>(hot.has(b[0])-hot.has(a[0]))||a[0].localeCompare(b[0]))])}}
+const dchip=(id,x,hot,nm)=>{const aq=AUTOQ[id],inCmp=WATCH.has(id)||(EARN_SET&&EARN_SET.has(id));let sp=aq&&aq.date===x[0]&&aq.epsSurp!=null?aq.epsSurp:(x[2]!=null&&x[3]!=null&&x[2]!==0?(x[3]/Math.abs(x[2])-1)*100:null);
+  if(sp!=null&&x[3]==null&&!(aq&&aq.epsAct!=null))sp=null;   // 還沒有實際值就不算驚喜率（避免 Finnhub 預填）
+  const rx=aq&&aq.date===x[0]&&aq.px&&aq.px.react!=null?aq.px.react:null;
+  const pm=v=>(v>=0?'+':'−')+Math.abs(v).toFixed(v==sp?0:1)+'%';   // 兩檔一行版：只放數字，意義見卡底說明
+  const s=(sp==null?'<small>—</small>':`<small class="${sp>=0?'up':'dw'}" title="EPS 驚喜率">${pm(sp)}</small>`)+(rx==null?'':`<small class="${rx>=0?'up':'dw'}" title="首日漲跌">${pm(rx)}</small>`);
+  return `<a class="ec dn${hot.has(id)?' hot':''}${inCmp?' tg':''}" href="${inCmp?'earnings.html#'+id:'#'+id}" title="${esc(nm[id]||id)}${inCmp?'：看財報對照':''}">${EARN_SET&&EARN_SET.has(id)?'🎯':''}<b>${id}</b>${s}</a>`};   // 兩檔一行塞不下 🔴，主題股用橘框表示
 function earnMini(){if(!Object.keys(EARN.e).length){$('earnCal').hidden=true;return}
-  const {t,hot,nm,ds}=earnRows('focus',7),n=ds.reduce((a,[,r])=>a+r.length,0),h=ds.reduce((a,[,r])=>a+r.filter(([id])=>hot.has(id)).length,0);
-  $('uEarn').textContent=`本週 ${n}｜🔴 ${h}`;$('uEarn').title=`本週 ${n} 檔財報，其中 🔴 ${h} 檔是追蹤股`;
+  [...$('earnCal').querySelectorAll('.etab button')].forEach(b=>{b.classList.toggle('on',b.dataset.v===EVIEW);b.setAttribute('aria-selected',b.dataset.v===EVIEW)});
+  const wk=earnRows('focus',7),wn=wk.ds.reduce((a,[,r])=>a+r.length,0),dn=doneRows(),dnn=dn.ds.reduce((a,[,r])=>a+r.length,0);
+  $('earnCal').querySelector('[data-v=week]').textContent=EVIEW==='week'?`本週 ${wn}`:'本週';$('earnCal').querySelector('[data-v=done]').textContent=EVIEW==='done'?`已公布 ${dnn}`:'已公布';   // 檔數只標在選中的頁籤，標題才塞得進一行
+  if(EVIEW==='done'){const {t,hot,nm,ds}=dn,n=dnn;
+    $('uEarn').textContent='';$('uEarn').title=`近 7 天已公布 ${n} 檔（主題股＋財報對照名單）；🎯 = 有分析層，點代號進財報對照頁`;
+    $('ecalMini').innerHTML=(ds.map(([d,r])=>`<div class="mr">${mhead(d,t)}<div class="row two">${r.map(([id,x])=>dchip(id,x,hot,nm)).join('')}</div></div>`).join('')||'<p class="meta" style="margin-top:8px">近 7 天沒有追蹤股公布財報</p>')+(ds.length?'<p class="meta dnl">數字＝EPS 驚喜率 ｜ 首日漲跌（紅正綠負）；🎯 有分析層，點進財報對照</p>':'');
+    $('earnCal').hidden=false;return}
+  const {t,hot,nm,ds}=wk,n=wn,h=ds.reduce((a,[,r])=>a+r.filter(([id])=>hot.has(id)).length,0);
+  $('uEarn').textContent='';$('uEarn').title=`本週 ${n} 檔財報，其中 🔴 ${h} 檔是追蹤股`;
   $('ecalMini').innerHTML=ds.slice(0,2).map(([d,r])=>`<div class="mr">${mhead(d,t)}<div class="row">${r.slice(0,6).map(([id,x])=>chip(id,x,hot,nm)).join('')}${r.length>6?`<a class="ec pl" href="#EARN">+${r.length-6}</a>`:''}</div></div>`).join('')||'<p class="meta" style="margin-top:8px">本週沒有追蹤股財報</p>';
   $('earnCal').hidden=false}
+$('earnCal').addEventListener('click',e=>{const b=e.target.closest('.etab button');if(!b)return;EVIEW=b.dataset.v;try{localStorage.setItem('earnView',EVIEW)}catch(x){}earnMini()});
 function earnCal(){const {t,hot,nm,ds}=earnRows(EMODE,EMODE==='all'?7:21);
   [...$('earnPage').querySelectorAll('button[data-m]')].forEach(b=>b.classList.toggle('on',b.dataset.m===EMODE));
   $('ecal').innerHTML=ds.map(([d,r],i)=>{const op=OPEN.has(d)||(i===0&&!OPEN.size);return `<div class="d" data-d="${d}">${dhead(d,t)}<span class="ar">${r.length} 檔 ${op?'▾':'▸'}</span></div><div class="row${op?'':' fold'}">${r.map(([id,x])=>chip(id,x,hot,nm)).join('')}</div>`}).join('')
@@ -1248,7 +1271,7 @@ const nameOf=id=>{const s=IDX.find(x=>x.id===id);if(s)return s.cn||s.name||id;if
 let PN=null,KEEP=null,SHEET_SEC=null;
 // 個股頁頂列「🎯 看財報 →」：財報對照頁（earnings_cmp.json）有這檔才顯示，連到那頁的個股
 let EARN_SET=null;const CMP_P=fetch('data/earnings_cmp.json?t='+Math.floor(Date.now()/6e5)).then(r=>r.ok?r.json():null).catch(()=>null);
-CMP_P.then(j=>{EARN_SET=new Set(((j&&j.companies)||[]).map(c=>c.ticker));if(D&&!$('stock').hidden)earnLnk(D.id)});
+CMP_P.then(j=>{EARN_SET=new Set(((j&&j.companies)||[]).map(c=>c.ticker));WATCH=new Set([...EARN_SET,...((j&&j.watch)||[])]);if(D&&!$('stock').hidden)earnLnk(D.id);if(EVIEW==='done'&&!$('earnCal').hidden)earnMini()});
 function earnLnk(id){const a=$('earnLnk'),on=!!(EARN_SET&&EARN_SET.has(id));a.hidden=!on;if(on)a.href='earnings.html#'+encodeURIComponent(id)}
 function pnPaint(id){
   earnLnk(id);

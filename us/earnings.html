@@ -178,6 +178,8 @@ a.lnk{color:var(--accent);text-decoration:none;font-weight:600}
     const T=d?`${d} ${HT[hk]||'23:59'}`:'', notYet=!!d&&nowET<T, stale=!c.manual&&!!d&&!notYet&&!!a&&updET<T;   // 手動分析層的數字已人工核對，不受自動層更新時間影響
     c.rel={d,hk,notYet,stale,pending:notYet||stale};
   }
+  // 一覽、圖、下拉同一順序：已公布者公布日倒序（最新在上），待公布者排最後、日期正序
+  LIST.sort((a,b)=>(a.rel.notYet-b.rel.notYet)||(a.rel.notYet?String(a.rel.d).localeCompare(String(b.rel.d)):String(b.rel.d||'').localeCompare(String(a.rel.d||''))));
   const revS=c=>c.rel&&c.rel.pending?null:c.manual?c.kpi[0].s:(c.kpi[0]&&c.kpi[0].n.startsWith('營收')?c.kpi[0].s:null);
   const rxS=c=>c.rel&&c.rel.pending?null:c.reaction.pct;
   const epsS=c=>c.rel&&c.rel.pending?null:c.manual?c.kpi[1].s:(c.auto&&c.auto.epsSurp!=null?c.auto.epsSurp:null);   // 手動分析層優先（Finnhub 共識／營收口徑常不準）
