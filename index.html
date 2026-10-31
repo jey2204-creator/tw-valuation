@@ -1736,7 +1736,7 @@ function buildY10(fs,bs,cf,dv,px,star){
   return {A:A.slice(-12).map(rr),Q:Qr.slice(-40).map(rr),asof:lq.l,adj:adjK?Math.round(adjK*100)/100:null,intSrc:INTSRC};
 }
 async function loadY10(id){
-  const k='y10v5_'+id,c=store.get(k);
+  const k='y10v6_'+id,c=store.get(k);
   if(c&&Date.now()-c.t<12*3600e3&&c.v){Y10=c.v;Y10L=null;renderY10();return}
   if(Y10L===id)return;Y10L=id;
   $('cY10').hidden=true;$('tY10').innerHTML='<div class="y10msg">⏳ 正在向 FinMind 抓 11 年財報（約 5–10 秒）…</div>';
@@ -1749,7 +1749,7 @@ async function loadY10(id){
     const v=buildY10(fs,bs,cf,dv,px,nm.includes('*'));Y10L=null;
     if(!v){$('tY10').innerHTML='<div class="y10msg">歷史財報不足 4 季，無法顯示</div>';return}
     Y10=v;try{store.set(k,{t:Date.now(),v})}catch(e){}
-    if(!localStorage.getItem(k))try{Object.keys(localStorage).filter(x=>x.startsWith('y10v2_')||x.startsWith('y10v3_')||x.startsWith('y10v4_')||x.startsWith('y10v5_')).forEach(x=>localStorage.removeItem(x));store.set(k,{t:Date.now(),v})}catch(e){}
+    if(!localStorage.getItem(k))try{Object.keys(localStorage).filter(x=>x.startsWith('y10v2_')||x.startsWith('y10v3_')||x.startsWith('y10v4_')||x.startsWith('y10v5_')||x.startsWith('y10v6_')).forEach(x=>localStorage.removeItem(x));store.set(k,{t:Date.now(),v})}catch(e){}
     renderY10();
   }catch(e){Y10L=null;if(Y10ID!==id)return;
     $('tY10').innerHTML=`<div class="y10msg">⚠️ ${e.message}<br><button type="button" id="y10Re">重試</button></div>`;
