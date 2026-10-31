@@ -1330,13 +1330,13 @@ const WD=['日','一','二','三','四','五','六'];const wdT=s=>s?WD[new Date(
 const earnOf=id=>{const s=stockOf(id);return s&&s.earn&&s.earn.q?s.earn:null};
 function caAll(){return IDX.filter(s=>s.earn&&s.earn.q).map(s=>({id:s.id,...s.earn,th:srTheme(s.id)}))}
 function caHome(){const el=$('caLink');if(!el)return;const a=caAll();if(!a.length){el.hidden=true;return}
-  const w=a.filter(r=>r.st!=='pre'),soon=w.filter(r=>dDays(r.est)<=7&&dDays(r.est)>=0),nx=w.slice().sort((x,y)=>x.est<y.est?-1:1)[0];
+  const w=a.filter(r=>r.st!=='pre'),soon=w.filter(r=>dDays(r.est)<=7),nx=w.filter(r=>dDays(r.est)>=0).sort((x,y)=>x.est<y.est?-1:1)[0];
   $('caSub').innerHTML=`${a.filter(r=>r.st==='pre').length}檔已出暫定・${w.length}檔待公布${soon.length?`・7天內 <b style="color:var(--warm)">${soon.length}</b> 檔`:''}${nx?`・最近 ${esc(stockOf(nx.id).name||nx.id)} ${mdT(nx.est)}`:''} →`;el.hidden=false}
 const CA={tab:'wait'};
 function renderCal(){
   const a=caAll();$('caAsof').textContent=`今天 ${mdT(TODAY_)}（韓國）`;
   if(!a.length){$('caTake').textContent='還沒有財報日資料（等 Actions「更新韓股資料」跑完）';$('caTabs').innerHTML='';$('caTbl').innerHTML='';$('caFoot').textContent='';return}
-  const pre=a.filter(r=>r.st==='pre'),wait=a.filter(r=>r.st!=='pre'),soon=wait.filter(r=>{const n=dDays(r.est);return n>=0&&n<=7}),late=wait.filter(r=>r.st==='late');
+  const pre=a.filter(r=>r.st==='pre'),wait=a.filter(r=>r.st!=='pre'),soon=wait.filter(r=>dDays(r.est)<=7),late=wait.filter(r=>r.st==='late');
   const qs=[...new Set(a.map(r=>r.q))].sort(),qT=qs.length>1?qs.join('／'):qs[0]||'';
   $('caTake').innerHTML=`追蹤 <strong>${a.length}</strong> 檔・待公布季 <strong>${qT}</strong>：已出暫定業績 <strong>${pre.length}</strong> 檔、待公布 <strong>${wait.length}</strong> 檔${soon.length?`（7 天內 <strong style="color:var(--warm)">${soon.length}</strong> 檔）`:''}${late.length?`、<strong style="color:var(--down)">逾期 ${late.length}</strong> 檔`:''}`;
   $('caTabs').innerHTML=[['wait',`⏳ 待公布 ${wait.length}`],['pre',`✅ 已出暫定 ${pre.length}`]].map(([k,l])=>`<button type="button" data-tab="${k}" aria-pressed="${CA.tab===k}">${l}</button>`).join('');
@@ -1347,11 +1347,11 @@ function renderCal(){
     cell=r=>`<td><b class="pre">${mdT(r.pre)}</b><span class="sub">${r.q}${r.nonum?'・數字待更新':''}</span></td><td class="${sgc(r.ry)}">${r.ry==null?'—':pct(r.ry,0)}</td><td class="${r.ot?(r.ot==='轉盈'?'vu':'vd'):sgc(r.oy)}">${r.ot?r.ot:r.oy==null?(r.ny!=null?`<span class="sub">淨利 ${pct(r.ny,0)}</span>`:'—'):r.oy>300?'>+300%':pct(r.oy,0)}</td>`;
     $('caHead').innerHTML='已發「營業（暫定）實績」公正公示，數字已併入個股頁與主題表（標 <i class="pre" style="font-style:normal;color:var(--accent)">暫</i>）；正式季報申報後自動取代。年增＝對去年同季正式財報';
   }else{
-    rows=wait.slice().sort((x,y)=>x.est===y.est?(x.due<y.due?-1:1):x.est<y.est?-1:1);th='<th>預計公布</th><th>法定底線</th><th>本益比</th>';
+    rows=wait.slice().sort((x,y)=>x.est===y.est?(x.due<y.due?-1:1):x.est<y.est?-1:1);th='<th>預計公布</th><th>法定底線</th>';
     cell=r=>{const n=dDays(r.est),nd=dDays(r.due),st=stockOf(r.id);
-      const dT=r.st==='late'?`<b class="today">逾期</b><span class="sub">底線 ${mdT(r.due)} 已過</span>`:`<b class="${n<=0?'today':n<=7?'soon':''}">${mdT(r.est)}<small style="font-weight:400">（${wdT(r.est)}）</small></b><span class="sub">${n<=0?'今天':n+' 天後'}・${esc(r.b||'')}</span>`;
-      return `<td>${dT}</td><td>${mdT(r.due)}<span class="sub ${nd<0?'vd':''}">${nd<0?'已過':nd+' 天'}</span></td><td>${st.pe?fmt(st.pe,1):'—'}<span class="sub">${r.q}</span></td>`};
-    $('caHead').innerHTML='依預計公布日排序（<b style="color:var(--warm)">橘</b>＝7 天內、<b style="color:var(--down)">紅</b>＝今天或逾期）。小字＝預估依據：「去年暫定」＝去年同季暫定業績公告日 +1 年（大型股準，誤差多在 ±3 天）；「去年季報」＝沒發暫定業績的公司，只能看去年季報申報日，通常壓線';
+      const dT=r.st==='late'?`<b class="today">逾期</b><span class="sub">底線 ${mdT(r.due)} 已過</span>`:`<b class="${n<=0?'today':n<=7?'soon':''}">${mdT(r.est)}<small style="font-weight:400">（${wdT(r.est)}）</small></b><span class="sub">${n<0?`預計日已過 ${-n} 天`:n===0?'今天':n+' 天後'}・${esc(r.b||'')}</span>`;
+      return `<td>${dT}</td><td>${mdT(r.due)}<span class="sub ${nd<0?'vd':''}">${nd<0?'已過':nd+' 天'}・${r.q}${st.pe?'・PE '+fmt(st.pe,1):''}</span></td>`};
+    $('caHead').innerHTML='依預計公布日排序（<b style="color:var(--warm)">橘</b>＝7 天內、<b style="color:var(--down)">紅</b>＝今天、預計日已過或逾期）。小字＝預估依據：「去年暫定」＝去年同季暫定業績公告日 +1 年（大型股準，誤差多在 ±3 天）；「去年季報」＝沒發暫定業績的公司，只能看去年季報申報日，通常壓線';
   }
   $('caTbl').innerHTML=`<thead><tr><th>#</th><th>股票</th>${th}</tr></thead><tbody>`+rows.map((r,i)=>`<tr data-id="${r.id}"><td>${i+1}</td>${co(r)}${cell(r)}</tr>`).join('')+'</tbody>';
   $('caFoot').innerHTML='韓國沒有統一的財報日曆：三星、海力士等大型股在季末後 1～4 週先發「연결재무제표기준영업(잠정)실적」公正公示（只有營收、營業利益、淨利，不含資產負債），正式分期報告（분기보고서）要到季末後 45 天、年報（사업보고서）90 天內才申報到 OpenDART，期限遇假日順延。預計日由 OpenDART 公示搜尋的去年同季公告日推算，公司可能改期；法定底線是最晚日期。暫定業績的 EPS 由淨利 ÷ 前季股數推算，正式季報申報後整列自動取代。本頁不構成投資建議。';
@@ -1366,10 +1366,10 @@ function earnSub(id,lq,dense){const s=stockOf(id),e=s.earn;let t=lq?(dense?lq.sl
 function earnNote(d){const e=d.earn;if(!e||!e.q)return null;
   const link=e.rno?` <a href="https://dart.fss.or.kr/dsaf001/main.do?rcpNo=${esc(e.rno)}" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none">公告 ↗</a>`:'';
   if(e.st==='pre'){const num=e.rev!=null?`：營收 ${ap()}${amt(e.rev,fxOn()?undefined:U.k>1?2:0)}${e.ry!=null?`（年增 ${pct(e.ry,0)}）`:''}${e.op!=null?`、營業利益 ${ap()}${amt(e.op,fxOn()?undefined:U.k>1?2:0)}${e.ot?`（${e.ot}）`:e.oy!=null?`（${e.oy>300?'>+300%':pct(e.oy,0)}）`:''}`:''}${e.ni!=null?`、淨利 ${ap()}${amt(e.ni,fxOn()?undefined:U.k>1?2:0)}${e.ny!=null?`（${pct(e.ny,0)}）`:''}`:''}`:e.nonum?'（公告原文解析不到數字，點公告看）':'';
-    return [`📅 ${e.q} 暫定業績 ${mdT(e.pre)} 公布${num}；正式季報 ${mdT(e.due)} 前申報${link}`,'']}
+    return [`📅 ${e.q} 暫定業績 ${mdT(e.pre)} 公布${num}；EPS 以淨利 ÷ 前季股數推算，正式季報（${mdT(e.due)} 前申報）出來後自動取代${link}`,'']}
   const n=dDays(e.est);
   if(e.st==='late')return [`⚠️ ${e.q} 財報已超過法定期限 ${mdT(e.due)} 尚未申報`,'w'];
-  return [`📅 ${e.q} 財報預計 ${mdT(e.est)}（${wdT(e.est)}）公布，${n<=0?'就是今天':'還有 '+n+' 天'}・${e.b||''}・法定底線 ${mdT(e.due)}`,n<=7?'w':'']}
+  return [`📅 ${e.q} 財報預計 ${mdT(e.est)}（${wdT(e.est)}）公布，${n<0?`預計日已過 ${-n} 天、尚未公布`:n===0?'就是今天':'還有 '+n+' 天'}・${e.b||''}・法定底線 ${mdT(e.due)}`,n<=7?'w':'']}
 // ---------- 🏆 市值排行 #rank：rows 欄位 0代號 1中文名 2韓文名 3市場 4市值(億韓元) 5收盤 6日漲跌% 7本益比 8淨值比 9殖利率% 10外資持股% ----------
 let RK=null,RK_P=null,RKS='cap:-1';
 const rkLoad=()=>RK_P||(RK_P=fetch(`data/rank.json?t=${Date.now()}`).then(r=>r.ok?r.json():null).catch(()=>null).then(j=>{RK=j;rkLink();return j}));

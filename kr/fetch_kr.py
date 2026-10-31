@@ -667,7 +667,8 @@ def build(code, corps):
         print(f"  暫定業績失敗：{e}")
         earn, prow = {}, None
     if prow and (prow.get("rev") or prow.get("nia") is not None):
-        Q.append(prow)
+        Q.append(prow)   # 說明文字由前端 earnNote() 依 earn 產生，這裡不重複
+    if False:
         note.append(f"{prow['cal']} 為暫定業績（{'OpenDART 公告原文' if earn.get('src') == 'dart' else 'Naver 季表'}，{earn.get('pre', '')[5:].replace('-', '/')} 公布）：只有營收、營業利益、淨利"
                     f"{'，EPS 以淨利 ÷ 前季股數推算' if prow.get('eps_est') else ''}；正式季報申報後自動取代")
     try:
