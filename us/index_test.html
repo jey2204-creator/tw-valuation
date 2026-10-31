@@ -644,6 +644,11 @@ async function injectFlash(d){
   d.q.push([f.q,f.fq||null,f.rev,f.gm??null,f.om??null,f.nm??null,f.eps,f.capex??null,f.sh??null,f.end||'',f.on||'']);
   d.inj=f.q;d.injOn=f.on||'';
 }
+// 折線末端數字避讓：終點像素距離不到 12px 就上下錯開（三率三條線常撞在一起）
+function spreadEnd(c,o){const ss=o.series.map((s,k)=>{const v=[...s.data].reverse().find(x=>x!=null);return v==null?null:{k,y:c.convertToPixel({yAxisIndex:0},v),off:0}}).filter(Boolean).sort((a,b)=>a.y-b.y);
+  const G=12;for(let i=1;i<ss.length;i++)if(ss[i].y+ss[i].off-(ss[i-1].y+ss[i-1].off)<G)ss[i].off=ss[i-1].y+ss[i-1].off+G-ss[i].y;
+  const mid=(ss[0].y+ss[0].off+ss[ss.length-1].y+ss[ss.length-1].off)/2-(ss[0].y+ss[ss.length-1].y)/2;   // 整組往回置中，別全往下推
+  if(ss.some(x=>x.off))c.setOption({series:o.series.map((s,k)=>{const e=ss.find(x=>x.k===k);return {endLabel:{offset:[0,e?e.off-mid:0]}}})})}
 const FLASH_AREA=(warm,x)=>({silent:true,itemStyle:{color:warm+'22'},label:{show:true,position:'insideBottom',fontSize:9,color:warm,formatter:'快訊'},data:[[{xAxis:x},{xAxis:x}]]});
 const flashBar=(x,v,col)=>x[0]===D.inj?{value:v,itemStyle:{color:col+'4d',borderColor:col,borderWidth:1.5,borderType:'dashed'}}:v;
 // riv 欄位：0年月 1收盤 2近四季EPS 3每股淨值 4PE 5PB
@@ -770,11 +775,11 @@ function render(){
    c.setOption(o,true)}
   {const o=base(),c=mk('cMar');o.xAxis.data=S.map(qlbl);o.yAxis.axisLabel.formatter='{value}%';o.tooltip.valueFormatter=v=>v==null?'—':v+'%';
    o.series=[['毛利率',3,acc],['營益率',4,acc2],['淨利率',5,warm]].filter(([,i])=>S.some(x=>x[i]!=null)).map(([nm,i,col],k)=>({name:nm,type:'line',data:S.map(x=>x[i]),showSymbol:!!D.inj,symbol:'emptyCircle',symbolSize:(v,p)=>S[p.dataIndex]&&S[p.dataIndex][0]===D.inj?6:0,lineStyle:{width:2,color:col},itemStyle:{color:col,borderWidth:1.5},endLabel:{show:true,formatter:p=>p.value,color:col,fontSize:10,fontFamily:'IBM Plex Mono'},markArea:k===0&&D.inj?FLASH_AREA(warm,D.inj):undefined}));
-   o.grid.right=34;c.setOption(o,true)}
+   o.grid.right=34;c.setOption(o,true);spreadEnd(c,o)}
   {const o=base(),c=mk('cEps');o.xAxis.data=S.map(qlbl);o.yAxis.scale=false;
    o.yAxis=[o.yAxis,{...o.yAxis,splitLine:{show:false}}];
    o.tooltip.formatter=ps=>{const i=st+ps[0].dataIndex;return `<b>${qtip(i)}</b><br>EPS ${ap()}${pf(Q[i][6])}${D.freq==='Q'?`<br>近四季 ${ap()}${pf(ttm(i))}`:''}`};
-   const s=[{name:`${D.freq==='Q'?'單季EPS':'年度EPS'}(${cur()})`,type:'bar',data:S.map(x=>flashBar(x,pv(x[6]),acc2)),markArea:D.inj?FLASH_AREA(warm,D.inj):undefined,itemStyle:{color:acc2,borderRadius:[2,2,0,0]},label:{show:true,position:'top',fontSize:9,color:css('--muted'),fontFamily:'IBM Plex Mono',formatter:p=>p.dataIndex>=S.length-4?p.value:''}}];
+   const s=[{name:`${D.freq==='Q'?'單季EPS':'年度EPS'}(${cur()})`,type:'bar',data:S.map(x=>{const v=pv(x[6]),b=flashBar(x,v,acc2),it=typeof b==='object'&&b?b:{value:v};return v!=null&&v<0?{...it,label:{position:'bottom'}}:it}),markArea:D.inj?FLASH_AREA(warm,D.inj):undefined,itemStyle:{color:acc2,borderRadius:[2,2,0,0]},label:{show:true,position:'top',fontSize:9,color:css('--muted'),fontFamily:'IBM Plex Mono',formatter:p=>p.dataIndex>=S.length-4?p.value:''}}];
    if(D.freq==='Q')s.push({name:'近四季',type:'line',yAxisIndex:1,data:S.map((x,j)=>pv(ttm(st+j))),symbol:'none',lineStyle:{width:2,color:warm},itemStyle:{color:warm}});
    o.series=s;c.setOption(o,true)}
   if(D.demand){const o=base(),c=mk('cCap');o.xAxis.data=S.map(qlbl);o.yAxis.scale=false;
