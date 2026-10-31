@@ -17,7 +17,10 @@ rep('<button type="button" data-t="r">🏦 ROE負債</button><button type="butto
 # ---------- ② buildY10：多抓稅前淨利、利息費用；row 多算殖利率、周轉率、權益乘數、利息保障 ----------
 rep("NI=g(['EquityAttributableToOwnersOfParent'],/^母公司業主/),EPS=g(['EPS'],/^基本每股盈餘/);",
     "NI=g(['EquityAttributableToOwnersOfParent'],/^母公司業主/),EPS=g(['EPS'],/^基本每股盈餘/),\n"
-    "    PRE=g(['PreTaxIncome','IncomeBeforeIncomeTax','ProfitLossBeforeTax'],/^(繼續營業單位)?稅前(淨利|損益)/),INT=g(['InterestExpense','FinanceCosts'],/^(財務成本|利息費用)/);")
+    "    PRE=g(['PreTaxIncome','IncomeBeforeIncomeTax','ProfitLossBeforeTax'],/^(繼續營業單位)?稅前(淨利|損益)/),INT0=g(['InterestExpense','FinanceCosts','FinanceCost','InterestExpenses'],/(財務成本|利息費用|利息支出)/),\n"
+    "    INTC=toQuarterS(y10Ser(cf,['InterestPaid','InterestPayed','PaymentsOfInterest'],/(支付之?利息|利息支付|支付利息)/)),\n"
+    "    INT=Object.keys(INT0).length?INT0:(()=>{const o={};Object.entries(INTC).forEach(([k,v])=>{const [y,n]=k.split('-');o[`${y}-${Y10QD[n-1]}`]=v});return o})(),INTSRC=Object.keys(INT0).length?'is':Object.keys(INT).length?'cf':null;\n"
+    "  if(location.search.includes('dbg')){const hit=r=>/利息|財務|Interest|Finance/i.test((r.origin_name||'')+' '+(r.type||''));window.__y10dbg=[...new Set([...fs.filter(hit).map(r=>'損益表 '+r.type+'｜'+r.origin_name),...cf.filter(hit).map(r=>'現金流 '+r.type+'｜'+r.origin_name)])]}")
 rep("eq:e8(eqAt(d)),ta:e8(TA[d]),tl:e8(tlAt(d))})});",
     "eq:e8(eqAt(d)),ta:e8(TA[d]),tl:e8(tlAt(d)),pre:e8(PRE[d]),intx:INT[d]==null?null:e8(Math.abs(INT[d]))})});")
 rep("const z=qs[qs.length-1],pz=Qa.find(x=>x.y===z.y-1&&x.n===z.n),eqA=z.eq!=null?(pz&&pz.eq!=null?(z.eq+pz.eq)/2:z.eq):null;",
@@ -34,6 +37,8 @@ rep("roe:ni4!=null&&eqA>0?ni4/eqA*100:null,debt:x.tl!=null&&x.ta?x.tl/x.ta*100:n
     "roe:ni4!=null&&eqA>0?ni4/eqA*100:null,debt:x.tl!=null&&x.ta?x.tl/x.ta*100:null,at:rev4!=null&&taA>0?rev4/taA:null,lev:taA>0&&eqA>0?taA/eqA:null,cov:pre4!=null&&int4>0?(pre4+int4)/int4:null,ry:ly&&ly.rev?")
 rep("k[a]=typeof v==='number'?(['eps','div','sdiv'].includes(a)?r2(v):r1(v)):v;",
     "k[a]=typeof v==='number'?(['eps','div','sdiv','at','lev'].includes(a)?r2(v):r1(v)):v;")
+rep("return {A:A.slice(-12).map(rr),Q:Qr.slice(-40).map(rr),asof:lq.l,adj:adjK?Math.round(adjK*100)/100:null};",
+    "return {A:A.slice(-12).map(rr),Q:Qr.slice(-40).map(rr),asof:lq.l,adj:adjK?Math.round(adjK*100)/100:null,intSrc:INTSRC};")
 # 快取鍵升版（舊快取沒有新欄位）
 rep("const k='y10v4_'+id,c=store.get(k);", "const k='y10v5_'+id,c=store.get(k);")
 rep("x.startsWith('y10v2_')||x.startsWith('y10v3_')||x.startsWith('y10v4_')", "x.startsWith('y10v2_')||x.startsWith('y10v3_')||x.startsWith('y10v4_')||x.startsWith('y10v5_')")
@@ -58,7 +63,7 @@ new = """  }else if(Y10T==='r'){
     if(hasCov){const cl=line('利息保障(倍)','cov',acc2,1);cl.data=R.map(x=>x.cov==null?null:Math.min(x.cov,CAP));cl.endLabel.formatter=p=>p.value==null?'':(p.value>=CAP?'>'+CAP:fmt(p.value,0))+'倍';cl.lineStyle.width=1.5;o.series.push(cl)}
     const lc=[...R].reverse().find(x=>x.cov!=null),ld=[...R].reverse().find(x=>x.debt!=null);
     foot=`ROE＝母公司淨利 ÷ 平均股東權益${Q?'（近四季淨利）':''}，長期 ≥15% 算優秀；負債比＝總負債 ÷ 總資產（虛線），金融業天生很高不適用。`+
-      (hasCov?`利息保障倍數＝(稅前淨利＋利息費用) ÷ 利息費用（右軸，圖上截在 ${CAP} 倍）：${lc?`${lc.ttm?'近四季':lc.l} ${lc.cov>=CAP?'>'+CAP:fmt(lc.cov,1)} 倍`:''}；<3 倍代表獲利只夠付利息，景氣轉差時借新還舊會有壓力，>10 倍很安全。`:'財報沒有利息費用（財務成本）科目或為零，無法算利息保障倍數。')+
+      (hasCov?`利息保障倍數＝(稅前淨利＋利息費用) ÷ 利息費用（${Y10.intSrc==='cf'?'利息費用取現金流量表「支付之利息」；':''}右軸，圖上截在 ${CAP} 倍）：${lc?`${lc.ttm?'近四季':lc.l} ${lc.cov>=CAP?'>'+CAP:fmt(lc.cov,1)} 倍`:''}；<3 倍代表獲利只夠付利息，景氣轉差時借新還舊會有壓力，>10 倍很安全。`:'財報沒有利息費用（財務成本）科目或為零，無法算利息保障倍數。'+(window.__y10dbg?' 【偵錯】含「利息／財務」的科目：'+(window.__y10dbg.length?window.__y10dbg.join('；'):'一個都沒有'):''))+
       (ld&&ld.debt!=null&&ld.debt>=60&&!/金融/.test(indOfStock())?`負債比 ${fmt(ld.debt,0)}% 偏高，要看負債是有息借款還是客戶預收／應付帳款（財報附註）。`:'');
   }else if(Y10T==='d'){
     o.yAxis.scale=false;o.grid.right=40;o.yAxis=[o.yAxis,{...o.yAxis,scale:false,min:0,splitLine:{show:false},axisLabel:{show:false}}];
