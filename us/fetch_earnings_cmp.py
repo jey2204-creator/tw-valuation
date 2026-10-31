@@ -135,6 +135,18 @@ def main():
     for t in cmp.get("watch", []):
         if t not in tickers:
             tickers.append(t)
+    # 主題股（data/index.json）近 10 天內已公布的也抓，給首頁「已公布」頁籤的驚喜率與首日漲跌用；
+    # 它們不在 earnings_cmp 名單，所以財報對照頁不會列出，只有 earnings_auto.json 多幾個鍵
+    try:
+        idx = [s["id"] for s in json.loads((ROOT / "data" / "index.json").read_text())]
+        ecal = json.loads((ROOT / "data" / "earnings.json").read_text()).get("e", {})
+        today = dt.date.today(); lo = (today - dt.timedelta(days=10)).isoformat(); hi = today.isoformat()
+        for tk in idx:
+            if tk in tickers: continue
+            if any(lo <= (x[0] or "") <= hi for x in ecal.get(tk, [])):
+                tickers.append(tk); overrides[tk] = {"_theme": True}
+    except Exception as e:  # noqa
+        print(f"[warn] 主題股名單: {e}", file=sys.stderr)
     old = {}
     try:
         old = json.loads(OUT.read_text()).get("q", {})
@@ -143,7 +155,10 @@ def main():
     out = {}
     for tk in tickers:
         try:
-            r = one(tk, overrides.get(tk, {}), cmp.get("since", ""))
+            ov = overrides.get(tk, {})
+            r = one(tk, {} if ov.get("_theme") else ov, "" if ov.get("_theme") else cmp.get("since", ""))
+            if r and ov.get("_theme") and dt.date.fromisoformat(r["date"]) < dt.date.today() - dt.timedelta(days=10):
+                r = None   # 主題股只留近 10 天公布的
         except Exception as e:  # noqa
             print(f"[warn] {tk}: {e}", file=sys.stderr); r = None
         if r:

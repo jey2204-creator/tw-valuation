@@ -576,7 +576,7 @@ function earnBox(id){const el=$('earn'),ls=EARN.e[id];if(!ls||!ls.length){el.hid
   if(fut){const w=twTime(fut[0],fut[1]);h+=`<p><span class="lb">📅 下次財報</span><b>${mdw(fut[0])} ${w.when}</b>${w.tw?`<small>${w.tw}</small>`:''}${fut[6]?`<small>${fut[6]}</small>`:''}${fut[2]!=null?`<small>預估 EPS ${epsT(fut[2])}${fut[4]?`｜營收 ${bil(fut[4])}`:''}</small>`:''}</p>`}
   if(past&&dayDiff(past[0],t)<=10){const aq=AUTOQ[id];if(past[3]==null&&aq&&aq.date===past[0]&&aq.epsAct!=null){past=[...past];past[3]=aq.epsAct;if(aq.epsEst!=null)past[2]=aq.epsEst}
     const bt=past[2]!=null&&past[3]!=null?(past[3]>=past[2]?`優於預估 ${epsT(past[2])}`:`低於預估 ${epsT(past[2])}`):'';
-    h+=`<p class="done"><span class="lb">✅ 已公布</span><b>${mdw(past[0])}</b>${CMPSET.has(id)?`<a href="earnings_test.html#${id}" style="color:var(--accent);text-decoration:none;font-weight:600">📊 預期對照 →</a>`:''}${past[6]?`<small>${past[6]}</small>`:''}<small>${past[3]!=null?`EPS ${epsT(past[3])}${bt?`（${bt}）`:''}`:`預估 EPS ${epsT(past[2])}｜實際值待更新`}${past[5]?`｜營收 ${bil(past[5])}`:''}</small></p>`}
+    h+=`<p class="done"><span class="lb">✅ 已公布</span><b>${mdw(past[0])}</b>${WATCH.has(id)?`<a href="earnings_test.html#${id}" style="color:var(--accent);text-decoration:none;font-weight:600">📊 預期對照 →</a>`:''}${past[6]?`<small>${past[6]}</small>`:''}<small>${past[3]!=null?`EPS ${epsT(past[3])}${bt?`（${bt}）`:''}`:`預估 EPS ${epsT(past[2])}｜實際值待更新`}${past[5]?`｜營收 ${bil(past[5])}`:''}</small></p>`}
   el.innerHTML=h;el.hidden=!h}
 let EMODE='focus';try{EMODE=localStorage.getItem('earnMode')||'focus'}catch(e){}
 const OPEN=new Set();
@@ -599,7 +599,8 @@ function doneRows(){const e=EARN.e,t=etToday(),nm=Object.fromEntries(ALL.map(s=>
   return{t,hot,nm,ds:Object.keys(by).sort().reverse().map(d=>[d,by[d].sort((a,b)=>(hot.has(b[0])-hot.has(a[0]))||a[0].localeCompare(b[0]))])}}
 const dchip=(id,x,hot,nm)=>{const aq=AUTOQ[id],inCmp=WATCH.has(id)||(EARN_SET&&EARN_SET.has(id));let sp=aq&&aq.date===x[0]&&aq.epsSurp!=null?aq.epsSurp:(x[2]!=null&&x[3]!=null&&x[2]!==0?(x[3]/Math.abs(x[2])-1)*100:null);
   if(sp!=null&&x[3]==null&&!(aq&&aq.epsAct!=null))sp=null;   // 還沒有實際值就不算驚喜率（避免 Finnhub 預填）
-  const s=sp==null?'':`<small class="${sp>=0?'up':'dw'}">EPS ${sp>=0?'+':''}${sp.toFixed(0)}%</small>`;
+  const rx=aq&&aq.date===x[0]&&aq.px&&aq.px.react!=null?aq.px.react:null;
+  const s=(sp==null?'':`<small class="${sp>=0?'up':'dw'}">EPS ${sp>=0?'+':''}${sp.toFixed(0)}%</small>`)+(rx==null?'':`<small class="${rx>=0?'up':'dw'}">首日${rx>=0?'+':''}${rx.toFixed(1)}%</small>`);
   return `<a class="ec dn${hot.has(id)?' hot':''}${inCmp?' tg':''}" href="${inCmp?'earnings_test.html#'+id:'#'+id}" title="${esc(nm[id]||id)}${inCmp?'：看財報對照':''}">${EARN_SET&&EARN_SET.has(id)?'🎯':hot.has(id)?'🔴':''}<b>${id}</b>${s}</a>`};
 function earnMini(){if(!Object.keys(EARN.e).length){$('earnCal').hidden=true;return}
   [...$('earnCal').querySelectorAll('.etab button')].forEach(b=>{b.classList.toggle('on',b.dataset.v===EVIEW);b.setAttribute('aria-selected',b.dataset.v===EVIEW)});
