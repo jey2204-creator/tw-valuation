@@ -11,7 +11,7 @@ def rep(old,new,n=1):
 
 # 1) CSS：overlay 直線與標籤
 rep(".klab{position:absolute;left:4px;top:2px;z-index:3;",
-    ".kfl{position:absolute;inset:0;z-index:2;pointer-events:none;overflow:hidden}.kfl i{position:absolute;top:0;bottom:0;border-left:1.5px dashed var(--warm);opacity:.75}.kfl i.self{border-color:var(--accent)}.kfl i.next{border-color:var(--muted);opacity:.9}"
+    ".kfl{position:absolute;inset:0;z-index:2;pointer-events:none;overflow:hidden}"
     ".kfl b{position:absolute;top:2px;transform:translateX(-50%);font-size:9px;font-weight:600;line-height:1.1;padding:1px 3px;border-radius:3px;color:#fff;background:var(--warm);white-space:nowrap;font-family:var(--f-num)}.kfl b.self{background:var(--accent)}.kfl b.next{background:var(--muted)}\n"
     ".klab{position:absolute;left:4px;top:2px;z-index:3;")
 
@@ -65,9 +65,13 @@ rep("document.addEventListener('click',e=>{const b=e.target.closest('#klSeg butt
     "  if(!FL)return;const ts=c.timeScale(),pw=ts.width()||$('klBox').clientWidth-60,vis=new Set(dd.slice(from));fut.forEach(s=>vis.add(s));\n"
     "  const marks=FL.past.filter(x=>vis.has(x.d)).map(x=>({...x,cls:x.k==='self'?'self':'',lab:(x.k==='self'?'自結':'財報')+x.q.slice(4)}));\n"
     "  if(FL.next&&fut.length)marks.push({d:fut[fut.length-1],cls:'next',lab:FL.next.q.slice(4)+(FL.next.legal?'≤':' ')+(+FL.next.d.slice(4,6))+'/'+(+FL.next.d.slice(6))});\n"
-    "  let lastX=-99;marks.forEach(m=>{const x=ts.timeToCoordinate({year:+m.d.slice(0,4),month:+m.d.slice(4,6),day:+m.d.slice(6)});if(x==null||x<0)return;\n"
-    "    pan.forEach((o,i)=>{const l=document.createElement('i');l.className=m.cls;l.style.left=x+'px';o.appendChild(l);\n"
-    "      if(i===0){const b=document.createElement('b');b.className=m.cls;b.textContent=m.lab;b.style.left=Math.min(x,pw-18)+'px';if(x-lastX<34)b.style.top='14px';o.appendChild(b)}});lastX=x})}\n"
+    "  // 直線用 SVG 畫（iPhone Safari 對 0 寬 div 的虛線邊框不一定會畫），標籤用 div；標籤左右重疊就下移一行\n"
+    "  const COL={'':css('--warm'),self:css('--accent'),next:css('--muted')},rows=[];\n"
+    "  pan.forEach(o=>{const sv=document.createElementNS('http://www.w3.org/2000/svg','svg');sv.setAttribute('width','100%');sv.setAttribute('height','100%');sv.style.cssText='position:absolute;inset:0;display:block';o.appendChild(sv);o._sv=sv});\n"
+    "  marks.forEach(m=>{const x=ts.timeToCoordinate({year:+m.d.slice(0,4),month:+m.d.slice(4,6),day:+m.d.slice(6)});if(x==null||x<0)return;\n"
+    "    pan.forEach(o=>{const l=document.createElementNS('http://www.w3.org/2000/svg','line');l.setAttribute('x1',x);l.setAttribute('x2',x);l.setAttribute('y1',0);l.setAttribute('y2','100%');l.setAttribute('stroke',COL[m.cls]);l.setAttribute('stroke-width','1.5');l.setAttribute('stroke-dasharray','4 3');l.setAttribute('opacity',m.cls==='next'?'.9':'.8');o._sv.appendChild(l)});\n"
+    "    const w=m.lab.length*6+8,lx=Math.max(w/2,Math.min(x,pw-w/2));let row=0;while(rows[row]!=null&&lx-w/2<rows[row]+2)row++;rows[row]=lx+w/2;\n"
+    "    const b=document.createElement('b');b.className=m.cls;b.textContent=m.lab;b.style.left=lx+'px';b.style.top=(2+row*13)+'px';pan[0].appendChild(b)})}\n"
     "document.addEventListener('click',e=>{const b=e.target.closest('#klSeg button');")
 
 # 5) 摘要加一行「下次財報」＋ 圖例說明
