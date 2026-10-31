@@ -520,7 +520,7 @@ html{scroll-behavior:smooth}
 </section>
 <style>
 /* ---- 📋 財報明細 #fin（同台股站 10 年財報：年／季切換、五個分頁、明細表；資料來自 OpenDART 連結財報） ---- */
-#finPer button{padding:4px 9px}#fin h2 small{overflow:hidden;text-overflow:ellipsis;font-size:11px;letter-spacing:-.2px}
+#finPer button{padding:4px 9px}#fin h2{min-width:0}#fin h2 small{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;font-size:11px;letter-spacing:-.2px}
 .y10k{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:8px 0 4px;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .y10k div{border:1px solid var(--line);border-radius:9px;padding:3px 7px 4px;min-width:0}
 .y10k span{display:block;font-size:10.5px;line-height:1.35;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -779,7 +779,7 @@ function renderFin(){
   $('tFin').innerHTML=`<span class="pill">${kind}</span> <span class="pill ${V[0]}">${V[1]}</span> ${V[2]} <span class="y10tip" data-fint>${$('fin').classList.contains('open')?'收起 ▴':'依據 ▾'}</span>`;
   // 圖
   const Qm=FINP==='q';let R=Qm?X.Q.slice(-16):A;if(NR&&['g','p','c'].includes(FINT))FINT='e';
-  $('uFin').textContent=Qm?`${R.length}季｜${un()}`:`${F.length}年${T?'+近4季':''}｜${un()}`;
+  $('uFin').textContent=Qm?`${R.length}季`:`${F.length}年${T?'+近4季':''}`;
   $('finPer').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.p===FINP));
   $('finTab').querySelectorAll('button').forEach(b=>{b.setAttribute('aria-pressed',b.dataset.t===FINT);b.hidden=NR&&['g','p','c'].includes(b.dataset.t)});
   const ch=mk('cFin'),o=base();o.xAxis.data=R.map(x=>Qm?x.l:(x.ttm?'近4季':"'"+x.l.slice(2)));o.yAxis.scale=false;
@@ -789,13 +789,14 @@ function renderFin(){
     data:R.map(x=>({value:conv?conv(x[k]):x[k],itemStyle:{color:typeof col==='function'?col(x):col,opacity:x.ttm?.5:1,borderColor:typeof col==='function'?col(x):col,borderWidth:x.ttm?1.5:0,borderType:'dashed',borderRadius:[2,2,0,0]}}))});
   const line=(name,k,col,ya,dash)=>({name,type:'line',yAxisIndex:ya||0,data:R.map(x=>x[k]),symbol:'circle',symbolSize:Qm?3:4,connectNulls:true,lineStyle:{width:2,color:col,type:dash?'dashed':'solid'},itemStyle:{color:col},
     endLabel:{show:true,color:col,fontSize:10,fontFamily:'IBM Plex Mono',formatter:p=>p.value==null?'':fmt(p.value,1)}});
-  const gc=k=>x=>x[k]==null?mu:x[k]>0?up:x[k]<0?dn:mu,big=v=>Math.abs(v)>=1000?fmt(Math.round(v),0):fmt(v,Math.abs(v)<10?1:0);
+  const gc=k=>x=>x[k]==null?mu:x[k]>0?up:x[k]<0?dn:mu,big=v=>Math.abs(v)>=1e4?fmt(v/1e4,1)+'萬':Math.abs(v)>=1000?fmt(Math.round(v),0):fmt(v,Math.abs(v)<10?1:0);
   let foot='';o.grid={...o.grid,top:30};
   if(FINT==='g'){
     o.yAxis=[o.yAxis,{type:'value',show:false,scale:false}];
-    o.series=[bar(`營收(${un()})`,'rev',gc('ry'),big,mval),{...bar(`營業利益`,'op',acc2,big,mval),label:{show:false}},{...line('營收年增率','ry',warm,1),endLabel:{show:false},label:{show:true,position:'bottom',fontSize:9,color:warm,fontFamily:'IBM Plex Mono',formatter:p=>show(p.dataIndex)&&p.value!=null?(p.value>0?'+':'')+Math.round(p.value)+'%':''},labelLayout:{hideOverlap:true}}];
-    const ys=R.map(x=>x.ry).filter(v=>v!=null),lo=ys.length?Math.min(...ys):0,hi=ys.length?Math.max(...ys):10,sp=Math.max(hi-lo,10);o.yAxis[1].min=Math.floor(lo-sp*1.75);o.yAxis[1].max=Math.ceil(hi+sp*.25);
-    foot=`柱：${Qm?'單季':'年度'}營收（紅＝年增、綠＝年減${Qm?'':'，虛線＝近四季合計'}）＋營業利益（青綠）；線：營收年增率。`;
+    o.series=[bar(`營收(${un()})`,'rev',gc('ry'),big,mval),{...bar(`營業利益`,'op',acc2,big,mval),label:{show:false}},{...line('營收年增率','ry',warm,1),endLabel:{show:false},label:{show:true,position:'right',fontSize:9,color:warm,fontFamily:'IBM Plex Mono',formatter:p=>p.dataIndex===N-1&&p.value!=null?(p.value>0?'+':'')+Math.round(p.value)+'%':''}}];
+    const ys=R.map(x=>x.ry).filter(v=>v!=null),lo=ys.length?Math.min(...ys):0,hi=ys.length?Math.max(...ys):10,sp=Math.max(hi-lo,10);o.yAxis[1].min=Math.floor(lo-sp*2.6);o.yAxis[1].max=Math.ceil(hi+sp*.2);
+    {const bm=Math.max(...R.map(x=>Math.max(mval(x.rev)||0,mval(x.op)||0))),st=(v=>{const e=Math.pow(10,Math.floor(Math.log10(v)));return [1,2,2.5,5,10].map(k=>k*e).find(k=>k>=v)})(bm*1.8/5||1);o.yAxis[0].interval=st;o.yAxis[0].max=Math.ceil(bm*1.8/st)*st}
+    foot=`柱：${Qm?'單季':'年度'}營收（紅＝年增、綠＝年減${Qm?'':'，虛線＝近四季合計'}）＋營業利益（青綠），單位 ${un()}；線：營收年增率，只標最新一期，其餘點一下柱子看。`;
   }else if(FINT==='p'){
     o.yAxis.scale=true;o.yAxis.axisLabel.formatter='{value}%';o.grid.right=34;
     o.series=[['毛利率','gm',acc],['營益率','om',acc2],['淨利率','nm',warm]].filter(([,k])=>R.some(x=>x[k]!=null)).map(([n,k,c])=>line(n,k,c));
