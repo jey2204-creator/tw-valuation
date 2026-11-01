@@ -77,7 +77,7 @@ function renderTdw(){
   o.xAxis.data=R.map(x=>x.d);o.xAxis.axisLabel.interval=Math.max(0,Math.round(R.length/6)-1);o.xAxis.axisLabel.formatter=(v,i)=>{const m=v.slice(2,7).replace('-','/'),pv=R[i-1]&&R[i-1].d.slice(0,7);return pv===v.slice(0,7)&&i%2?'':m};
   o.yAxis.scale=true;o.yAxis.axisLabel.formatter='{value}%';o.grid.right=40;
   o.yAxis=[o.yAxis,{...o.yAxis,scale:true,splitLine:{show:false},axisLabel:{show:false}}];
-  const line=(name,k,col,ya,dash)=>({name,type:'line',yAxisIndex:ya||0,data:R.map(x=>x[k]),symbol:'none',connectNulls:true,lineStyle:{width:ya?1.5:2,color:col,type:dash?'dashed':'solid'},itemStyle:{color:col},endLabel:{show:true,color:col,fontSize:10,fontFamily:'IBM Plex Mono',formatter:p=>p.value==null?'':(ya?(p.value>=10000?fmt(p.value/10000,1)+'萬':fmt(p.value)):fmt(p.value,1)+'%')}});
+  const SZ=R.length<=30?4:R.length<=60?3:R.length<=110?2:0,line=(name,k,col,ya,dash)=>({name,type:'line',yAxisIndex:ya||0,data:R.map(x=>x[k]),showSymbol:SZ>0,symbol:'circle',symbolSize:(v,p)=>p.dataIndex===R.length-1?SZ+1.5:SZ,connectNulls:true,lineStyle:{width:ya?1.5:2,color:col,type:dash?'dashed':'solid'},itemStyle:{color:col},endLabel:{show:true,color:col,fontSize:10,fontFamily:'IBM Plex Mono',formatter:p=>p.value==null?'':(ya?(p.value>=10000?fmt(p.value/10000,1)+'萬':fmt(p.value)):fmt(p.value,1)+'%')}});
   o.series=[line('400張以上%','b4',acc),line('千張以上%','b10',acc2,0,true),line('股東人數','ppl',warm,1,true)];
   o.tooltip.formatter=ps=>{const x=R[ps[0].dataIndex];return `<b>${x.d}</b><br>400 張以上 ${fmt(x.b4,2)}%<br>千張以上 ${fmt(x.b10,2)}%<br>股東人數 ${fmt(x.ppl)} 人`};
   ch.setOption(o,true);ch.resize();spreadEnd(ch,o,[0,1,2]);
