@@ -1445,10 +1445,10 @@ function caHome(){const el=$('earnCal');if(!el)return;const a=caAll();if(!a.leng
   [...el.querySelectorAll('.etab button')].forEach(b=>{b.classList.toggle('on',b.dataset.v===EVIEW);b.setAttribute('aria-selected',b.dataset.v===EVIEW)});
   const w=a.filter(r=>r.st!=='pre'),wk=w.filter(r=>dDays(r.est)>=0&&dDays(r.est)<=7),late=w.filter(r=>dDays(r.est)<0),dn=recRows(7),dnn=dn.reduce((n,[,r])=>n+r.length,0),older=recRows(45).reduce((n,[,r])=>n+r.length,0)-dnn;
   el.querySelector('[data-v=week]').textContent=EVIEW==='week'?`本週 ${wk.length}`:'本週';el.querySelector('[data-v=done]').textContent=EVIEW==='done'?`已公布 ${dnn}`:'已公布';
-  if(EVIEW==='done'){$('uEarn').textContent='';$('uEarn').title=`近 7 天公布 ${dnn} 檔（暫定業績＋正式季報）；🎯 = 有公布前共識，數字是驚喜率`;
+  if(EVIEW==='done'){$('uEarn').textContent='';$('uEarn').title=`近 7 天公布 ${dnn} 檔（暫定業績＋正式季報）`;
     $('ecalMini').innerHTML=(dn.map(([d,r])=>{const np=r.filter(x=>x.k==='pre').length,sub=np===r.length?'暫定':np?`暫定 ${np}・季報 ${r.length-np}`:'季報';return `<div class="mr">${mhead(d,sub)}<div class="row two">${r.map(rchip).join('')}</div></div>`}).join('')||'<p class="meta" style="margin-top:8px">近 7 天沒有追蹤股公布財報</p>')
       +(older>0?`<div class="row" style="margin-top:6px"><a class="ec pl" href="#calendar/done">更早 +${older} →</a></div>`:'')
-      +(dn.length?'<p class="dnl">粗體＝營益驚喜率（🎯 有公布前共識）、細體＝營益年增（沒有乾淨共識）；金融股看淨利 ｜ 第二欄＝首日漲跌（紅正綠負）；點進個股頁看財報判讀</p>':'');el.hidden=false;return}
+      +(dn.length?`<p class="dnl">${dn.some(([,r])=>r.some(x=>recStat(x).sp!=null))?'數字＝營益年增（🎯 粗體＝營益比法人預估好多少）':'數字＝營益年增（跟去年同季比，金融股看淨利）'}｜首日漲跌（公布當天，紅正綠負）</p>`:'');el.hidden=false;return}
   const by={};wk.forEach(r=>(by[r.est]=by[r.est]||[]).push(r));const ds=Object.keys(by).sort();
   $('uEarn').textContent='';$('uEarn').title=`7 天內預計公布 ${wk.length} 檔${late.length?`，另有 ${late.length} 檔預計日已過未公布`:''}`;
   $('ecalMini').innerHTML=ds.slice(0,3).map(d=>{const r=by[d].sort((x,y)=>x.due<y.due?-1:1),n=dDays(d);return `<div class="mr">${mhead(d,n===0?'':n+' 天後')}<div class="row">${r.slice(0,6).map(x=>`<a class="ec${n===0?' today':n<=3?' soon':''}" href="#${x.id}" title="${x.q} 預計 ${mdT(x.est)} 公布・${esc(x.b||'')}・法定底線 ${mdT(x.due)}${x.cns&&x.cns[1]!=null?'・共識營益 '+capT(x.cns[1],true)+cur():''}"><b>${esc(shortN(x.id))}</b><small>${x.q}</small></a>`).join('')}${r.length>6?`<a class="ec pl" href="#calendar">+${r.length-6}</a>`:''}</div></div>`}).join('')
