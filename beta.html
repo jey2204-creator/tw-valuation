@@ -508,11 +508,13 @@ details.ind.hot summary b{color:var(--up)}
 </section>
 <section class="card" id="tdw">
   <h2 style="display:flex;align-items:center;gap:8px;white-space:nowrap">大戶持股 <small>週｜集保</small><span class="segm" id="tdwSeg" style="margin-left:auto"><button type="button" aria-pressed="true" data-n="52">1年</button><button type="button" aria-pressed="false" data-n="156">3年</button></span></h2>
+  <p class="take tight" id="tTdw"></p>
   <div class="sx" id="tdwK" hidden></div>
-  <p class="take" id="tTdw"></p>
-  <div class="chart" id="cTdw" hidden></div>
+  <div class="chart" id="cTdw" hidden style="height:180px"></div>
   <p class="foot" id="fTdw"></p>
+  <p class="foot" id="fTdw2" hidden></p>
 </section>
+<style>#tdwK i.tdwx{white-space:normal;line-height:1.3;margin-top:2px;border-top:1px dashed var(--line);padding-top:2px}#tdw .take.tight{margin-bottom:4px}</style>
 <section class="card" id="margin">
   <h2>三率 <small>季｜%</small></h2>
   <p class="take" id="tMar"></p>
@@ -1025,14 +1027,15 @@ function renderTdw(){
   const tag=c4==null||p4==null?['','⚪ 資料不足']:c4>0.3&&p4<-1?['ok','🟢 籌碼集中']:c4>0.3&&p4>3?['mid','🟠 散戶追進']:c4<-0.3&&p4>1?['bad','🔴 籌碼分散']:c4>0.3?['ok','🟢 大戶增持']:c4<-0.3?['mid','🟠 大戶減持']:['','⚪ 變化不大'];
   const why={'🟢 籌碼集中':'大戶比例上升、股東人數減少 → 散戶賣給大戶，籌碼往少數人手上集中','🟠 散戶追進':'大戶比例與股東人數同時增加 → 新進的人多，追價資金多、波動會變大','🔴 籌碼分散':'大戶比例下降、股東人數增加 → 大戶出貨給散戶，通常不是好事','🟢 大戶增持':'大戶比例上升、股東人數沒什麼變 → 大戶在市場上慢慢吸籌，但還沒看到散戶明顯退場','🟠 大戶減持':'大戶比例下降、股東人數沒什麼變 → 大戶在減碼，看是不是連續好幾週','⚪ 變化不大':'4 週內大戶比例與人數都沒有明顯變化','⚪ 資料不足':'還沒累積 4 週資料'}[tag[1]];
   const sg=(v,dd=2,u='')=>v==null?'—':`<strong class="${sign(v)}">${(v>0?'+':'')+fmt(v,dd)}${u}</strong>`;
-  $('tTdw').innerHTML=`<span class="pill ${tag[0]}">${tag[1]}</span> ${why}<br>${r.d.slice(5).replace('-','/')} 週：400 張以上大戶 <strong>${fmt(r.b4,1)}%</strong>（週 ${sg(c1)}・4 週 ${sg(c4)}・13 週 ${sg(c13)}・52 週 ${sg(c52)} 點）`+
-    (st>=3?`，已連續 <strong>${st} 週${dir>0?'增加':'減少'}</strong>`:'')+(pos!=null&&A.length>=20?`；位在近一年 ${fmt(lo,1)}～${fmt(hi,1)}% 區間的 <strong>${fmt(pos,0)}%</strong> 位置`:'')+
-    `<br>千張以上 <strong>${fmt(r.b10,1)}%</strong>・股東人數 <strong>${fmt(r.ppl)}</strong> 人（4 週 ${sg(p4,1,'%')}）`+
-    (D.cyclical?'<br><span class="pill">循環股</span> 高峰期大戶比例常先降、人數暴增（散戶接最後一棒），比財報更早反映':'');
-  $('tdwK').hidden=false;$('tdwK').innerHTML=[['400張以上',fmt(r.b4,1)+'%',c4,'4週'],['千張以上',fmt(r.b10,1)+'%',d(r,w4,'b10'),'4週'],['股東人數',r.ppl>=10000?fmt(r.ppl/10000,1)+'萬':fmt(r.ppl),p4,'4週%']]
-    .map(([a,b,c,u])=>`<div class="${sign(a==='股東人數'?(c==null?null:-c):c)}"><span>${a}</span><b>${b}</b><i>${c==null?'&nbsp;':u+' '+(c>0?'+':'')+fmt(c,a==='股東人數'?1:2)}</i></div>`).join('');
+  const short={'🟢 籌碼集中':'散戶賣給大戶，籌碼集中','🟠 散戶追進':'大戶與人數同增，追價資金多','🔴 籌碼分散':'大戶出貨給散戶','🟢 大戶增持':'大戶慢慢吸籌','🟠 大戶減持':'大戶在減碼','⚪ 變化不大':'4 週內沒有明顯變化','⚪ 資料不足':'還沒累積 4 週資料'}[tag[1]];
+  $('tTdw').innerHTML=`<span class="pill ${tag[0]}">${tag[1]}</span> ${short}`+(st>=3?`，已連續 <strong>${st} 週${dir>0?'增加':'減少'}</strong>`:'')+(pos!=null&&A.length>=20?`・近一年 <strong>${fmt(pos,0)}%</strong> 位置`:'')+
+    (D.cyclical?' <span class="pill">循環股</span>':'')+` <span class="y10tip" data-tdwt>說明 ▾</span>`;
+  const sgi=(v,dd=2,u='')=>v==null?'—':(v>0?'+':'')+fmt(v,dd)+u;
+  $('tdwK').hidden=false;$('tdwK').innerHTML=[['400張以上',fmt(r.b4,1)+'%',c4,'4週',`週 ${sgi(c1)}<br>13週 ${sgi(c13)}`+(c52!=null?`<br>52週 ${sgi(c52)}`:'')],['千張以上',fmt(r.b10,1)+'%',d(r,w4,'b10'),'4週',`週 ${sgi(d(r,w1,'b10'))}<br>13週 ${sgi(d(r,w13,'b10'))}`],['股東人數',r.ppl>=10000?fmt(r.ppl/10000,1)+'萬':fmt(r.ppl),p4,'4週%',`${fmt(r.ppl)} 人<br>13週 ${sgi(pp(r,w13),1,'%')}`]]
+    .map(([a,b,c,u,x])=>`<div class="${sign(a==='股東人數'?(c==null?null:-c):c)}"><span>${a}</span><b>${b}</b><i>${c==null?'&nbsp;':u+' '+(c>0?'+':'')+fmt(c,a==='股東人數'?1:2)}</i><i class="tdwx" hidden>${x}</i></div>`).join('');
+  $('tdw').querySelectorAll('.tdwx').forEach(e=>e.hidden=!$('tdw').classList.contains('open'));
   const o=base(),ch=mk('cTdw');$('cTdw').hidden=false;
-  o.xAxis.data=R.map(x=>x.d.slice(2,7).replace('-','/'));o.xAxis.axisLabel.interval=Math.max(0,Math.round(R.length/6)-1);
+  o.xAxis.data=R.map(x=>x.d);o.xAxis.axisLabel.interval=Math.max(0,Math.round(R.length/6)-1);o.xAxis.axisLabel.formatter=(v,i)=>{const m=v.slice(2,7).replace('-','/'),pv=R[i-1]&&R[i-1].d.slice(0,7);return pv===v.slice(0,7)&&i%2?'':m};
   o.yAxis.scale=true;o.yAxis.axisLabel.formatter='{value}%';o.grid.right=40;
   o.yAxis=[o.yAxis,{...o.yAxis,scale:true,splitLine:{show:false},axisLabel:{show:false}}];
   const line=(name,k,col,ya,dash)=>({name,type:'line',yAxisIndex:ya||0,data:R.map(x=>x[k]),symbol:'none',connectNulls:true,lineStyle:{width:ya?1.5:2,color:col,type:dash?'dashed':'solid'},itemStyle:{color:col},endLabel:{show:true,color:col,fontSize:10,fontFamily:'IBM Plex Mono',formatter:p=>p.value==null?'':(ya?(p.value>=10000?fmt(p.value/10000,1)+'萬':fmt(p.value)):fmt(p.value,1)+'%')}});
@@ -1040,8 +1043,10 @@ function renderTdw(){
   o.tooltip.formatter=ps=>{const x=R[ps[0].dataIndex];return `<b>${x.d}</b><br>400 張以上 ${fmt(x.b4,2)}%<br>千張以上 ${fmt(x.b10,2)}%<br>股東人數 ${fmt(x.ppl)} 人`};
   ch.setOption(o,true);ch.resize();spreadEnd(ch,o,[0,1,2]);
   $('tdwSeg').hidden=A.length<=52;$('tdwSeg').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.n===TDWN));
-  $('fTdw').textContent=(A.length<52?`本站目前累積 ${A.length} 週（主題成份股正在回補到 52 週，其他股票每週自動變長）。`:'')+`集保戶股權分散表每週六更新（本週 ${r.d}），400 張以上＝持股 40 萬股以上的人（含法人、董監），千張以上＝100 萬股以上；股東人數（右軸）＝所有集保戶。四週規則：大戶比 +0.3 點且人數 −1%＝集中、大戶比 +0.3 且人數 +3%＝散戶追進、大戶比 −0.3 且人數 +1%＝分散。注意：除權息前後、法人換倉、ETF 成份調整都會讓大戶比短期跳動，看 4～13 週趨勢比單週可靠。資料：集保結算所（本站每日排程抓，FinMind 的集保分級為付費資料集）。`;
+  $('fTdw').textContent=`集保 ${r.d.slice(5).replace('-','/')} 週`+(A.length<52?`・本站累積 ${A.length} 週（主題成份股回補中，其他股票每週自動變長）`:'');
+  $('fTdw2').hidden=!$('tdw').classList.contains('open');$('fTdw2').textContent=`${why}。集保戶股權分散表每週六更新，400 張以上＝持股 40 萬股以上的人（含法人、董監），千張以上＝100 萬股以上；股東人數（右軸）＝所有集保戶。四週規則：大戶比 +0.3 點且人數 −1%＝集中、大戶比 +0.3 且人數 +3%＝散戶追進、大戶比 −0.3 且人數 +1%＝分散；只有大戶比動＝增持／減持。注意：除權息前後、法人換倉、ETF 成份調整都會讓大戶比短期跳動，看 4～13 週趨勢比單週可靠。`+(D.cyclical?'循環股高峰期大戶比例常先降、人數暴增（散戶接最後一棒），比財報更早反映。':'')+`資料：集保結算所（本站每日排程抓；FinMind 的集保分級為付費資料集）。`;
 }
+$('tdw').addEventListener('click',e=>{if(!TDW||!e.target.closest('#tdwK,[data-tdwt],#tTdw .pill'))return;const o=$('tdw').classList.toggle('open');$('tdw').querySelectorAll('.tdwx').forEach(x=>x.hidden=!o);$('fTdw2').hidden=!o;const t=$('tdw').querySelector('[data-tdwt]');if(t)t.textContent=o?'收起 ▴':'說明 ▾'});
 $('tdwSeg').addEventListener('click',e=>{const b=e.target.closest('button[data-n]');if(!b||!TDW)return;TDWN=+b.dataset.n;try{localStorage.setItem('tdwN',TDWN)}catch(_){}renderTdw()});
 // ---- 逐日籌碼（chip.json）：每天 [收盤, 成交張, 外資, 投信, 自營, 融資增減, 融券增減, 融資餘額] ----
 let CH=null,chipMode='i';
