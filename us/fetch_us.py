@@ -326,14 +326,14 @@ def _m(v):
     return None if v is None else round(v / 1e6, 1)
 
 
-def _cash(e, cash, sti, incl):
+def _cash(e, comb, cash, sti):
+    v = comb.get(e, (None,))[0]
+    if v is not None:
+        return v
     c = cash.get(e, (None,))[0]
     if c is None:
         return None
-    if incl:
-        return c
-    s = sti.get(e, (None,))[0]
-    return c + (s or 0)
+    return c + (sti.get(e, (None,))[0] or 0)
 
 
 def _debt(e, dl, dc, first):
@@ -373,8 +373,8 @@ def build_fin(cik):
     eq = merged(cf, EQ, instants)
     inv, ar = merged(cf, INV, instants), merged(cf, AR, instants)
     sbc = merged(cf, SBC, pick)
-    cash, sti = merged(cf, CASH, instants), merged(cf, STI, instants)
-    cash_incl = cash and any(n in cf.get("facts", {}).get("us-gaap", {}) for n in CASH[:1])
+    cash_comb = merged(cf, CASH[:1], instants)          # 已含短投的科目
+    cash, sti = merged(cf, CASH[1:], instants), merged(cf, STI, instants)
     # 債務：長期（含非流動）＋ 流動；LongTermDebt 本身多半已含一年內到期，取到它就不再加 LongTermDebtCurrent
     debt_l = merged(cf, DEBT, instants)
     debt_c = merged(cf, DEBT_CUR, instants)
@@ -411,7 +411,7 @@ def build_fin(cik):
                          capex=None if cx is None else round(cx / 1e6, 1), ni=None if n is None else round(n / 1e6, 1),
                          ocf=None if (oc := ocf.get(e, (None,))[0]) is None else round(oc / 1e6, 1),
                          inv=_m(inv.get(e, (None,))[0]), ar=_m(ar.get(e, (None,))[0]), sbc=_m(sbc.get(e, (None,))[0]),
-                         cash=_m(_cash(e, cash, sti, cash_incl)), debt=_m(_debt(e, debt_l, debt_c, first_debt))))
+                         cash=_m(_cash(e, cash_comb, cash, sti)), debt=_m(_debt(e, debt_l, debt_c, first_debt))))
     eqs = sorted((e, v / 1e6, f) for e, (v, f, _, _) in eq.items())
     return dict(name=cf.get("entityName", ""), freq=freq, fye=fye, splits=splits, q=rows,
                 eq=[[e, round(v, 1), f] for e, v, f in eqs if e >= rows[0]["end"][:4] + "-01-01"] if rows else [])
