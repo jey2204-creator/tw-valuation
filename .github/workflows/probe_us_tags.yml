@@ -1,0 +1,40 @@
+name: probe us xbrl tags
+on:
+  workflow_dispatch:
+    inputs:
+      tickers:
+        description: "代號（空白分隔）"
+        required: true
+      pattern:
+        description: "科目名稱正規表示式（不分大小寫）"
+        required: true
+        default: "Cash|Securities|Investments|Debt|Borrow|Notes|Inventor|Receivable|ShareBased|StockBased"
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: 列出符合的 us-gaap／ifrs 科目與最近 3 筆季末值
+        env:
+          SEC_UA: ${{ secrets.SEC_UA }}
+        run: |
+          python - "${{ github.event.inputs.tickers }}" "${{ github.event.inputs.pattern }}" <<'PY'
+          import sys, re, json
+          sys.path.insert(0, "us"); import fetch_us as F
+          tick = F.sec("https://www.sec.gov/files/company_tickers.json")
+          cik = {v["ticker"].upper(): int(v["cik_str"]) for v in tick.values()}
+          pat = re.compile(sys.argv[2], re.I)
+          for t in sys.argv[1].split():
+              cf = F.sec(f"https://data.sec.gov/api/xbrl/companyfacts/CIK{cik[t]:010d}.json")
+              print(f"===== {t} =====")
+              for ns in ("us-gaap", "ifrs-full"):
+                  for n, node in sorted(cf["facts"].get(ns, {}).items()):
+                      if not pat.search(n): continue
+                      rows = [r for u, l in node["units"].items() for r in l if r.get("form") in F.QFORMS | F.AFORMS]
+                      rows.sort(key=lambda r: (r["end"], r["filed"]))
+                      last = rows[-3:]
+                      print(f"{ns}:{n}  n={len(rows)}  " + " | ".join(f"{r['end']} {r['val']/1e6:,.0f}M {r['form']}" for r in last))
+          PY
