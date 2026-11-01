@@ -548,7 +548,7 @@ html{scroll-behavior:smooth}
   <h2 style="display:flex;align-items:center;gap:8px;white-space:nowrap">財報判讀 <small id="uBeat">最新季 vs 法人共識</small></h2>
   <div class="y10k" id="beatK"></div>
   <p class="take" id="tBeat"></p>
-  <div class="chart" id="cBeat" style="height:130px"></div>
+  <div class="chart" id="cBeat" style="height:140px"></div>
   <p class="foot" id="fBeat"></p>
 </section>
 <style>
@@ -845,7 +845,7 @@ function renderBeat(){
   // 圖：近 12 季 營益（實心柱，紅＝年增、綠＝年減）＋ 公布前共識（空心虛線柱）＋ 營益率（線，右軸）；待公布季只畫共識
   const R=Qr.slice(-12).map(z=>({l:z.l,pre:z.pre,v:z[K],c:QC[z.l]?(NR?QC[z.l][2]:QC[z.l][1]):null,om:z.om,yy:z.y,nn:z.n})),e=D.earn;
   if(e&&e.q&&e.st!=='pre'&&QC[e.q]){const q=QC[e.q];R.push({l:e.q,est:true,v:null,c:NR?q[2]:q[1],om:!NR&&q[0]>0&&q[1]!=null?+(q[1]/q[0]*100).toFixed(1):null})}
-  const hasC=R.some(z=>z.c!=null),ch=mk('cBeat'),o=base();o.xAxis.data=R.map(z=>z.l+(z.est?'E':z.pre?'暫':''));o.yAxis.scale=false;o.legend.show=false;o.grid={...o.grid,top:16,right:hasC||!NR?34:8};o.xAxis.axisLabel={...o.xAxis.axisLabel,interval:1};
+  const hasC=R.some(z=>z.c!=null),ch=mk('cBeat'),o=base();o.xAxis.data=R.map(z=>z.l+(z.est?'E':z.pre?'暫':''));o.yAxis.scale=false;o.legend={...o.legend,top:0,left:0,itemGap:8,itemWidth:10,itemHeight:7,textStyle:{...o.legend.textStyle,fontSize:10.5}};o.grid={...o.grid,top:24,right:hasC||!NR?34:8};o.xAxis.axisLabel={...o.xAxis.axisLabel,interval:1};
   o.yAxis=[o.yAxis,{type:'value',show:false,scale:true}];
   const yoyC=z=>{const q=Qr.find(w=>w.y===z.yy-1&&w.n===z.nn);return q&&q[K]!=null&&z.v!=null?(z.v>q[K]?up:z.v<q[K]?dn:mu):acc};
   o.series=[{name:KN,type:'bar',barGap:'-100%',barCategoryGap:'28%',z:2,data:R.map(z=>({value:mval(z.v),itemStyle:{color:yoyC(z),opacity:z.pre?.7:1,borderRadius:[2,2,0,0]}})),
