@@ -799,8 +799,9 @@ function renderBeat(){
   let V,why=[];
   if(c&&cK!=null&&x[K]!=null&&cK>0){
     V=gK>=10?['ok','🟢 大幅優於預期']:gK>=3?['ok','🟢 優於預期']:gK>-3?['','⚪ 符合預期']:gK>-10?['mid','🟠 略低於預期']:['bad','🔴 大幅低於預期'];
-    V[2]=`${x.l}${x.pre?'（暫定）':''} ${KN} ${big(x[K])}，公布前共識 ${big(cK)}（<b class="${sg(gK)}">${pct(gK,1)}</b>）${gRev!=null?`；營收 ${pct(gRev,1)}`:''}${!NR&&gNi!=null?`、淨利 ${pct(gNi,1)}`:''}`;
+    V[2]=`${x.l}${x.pre?'（暫定）':''} ${KN} ${big(x[K])}，${c[5]?'共識（公布後快照）':'公布前共識'} ${big(cK)}（<b class="${sg(gK)}">${pct(gK,1)}</b>）${gRev!=null?`；營收 ${pct(gRev,1)}`:''}${!NR&&gNi!=null?`、淨利 ${pct(gNi,1)}`:''}`;
     why.push('韓股以「營業利益 vs 共識」為第一反應：±3% 內算符合，超過 10% 才算驚喜；淨利易受匯兌、持股評價干擾，市場不太看。');
+    if(c[5])why.push('⚠️ 這季的共識是公布「後」才快照到的（追蹤起點晚於公布日），分析師可能已經往實際值修，差距會比真實的小；從下一季起才是公布前凍結的共識。');
     if(gK>=10&&oy!=null&&oy>50)why.push('⚠️ 錨定偏誤：大幅超預期＋營益年增超過 5 成＝多半在景氣上升段；共識會跟著上修，下一季要再 beat 的門檻變高，別把這次的驚喜當常態。');
     if(gK<=-10&&x.n===4)why.push('ℹ️ Q4 常認列績效獎金（성과급）、減損等一次性費用，miss 不一定是基本面轉差；看 Q1 營益率有沒有回到 Q3 水準再下結論。');
   }else if(c&&cK!=null&&x[K]!=null){
@@ -817,7 +818,7 @@ function renderBeat(){
   $('tBeat').innerHTML=`<span class="pill ${V[0]}">${V[1]}</span> ${V[2]} <span class="y10tip" data-beatt>${el.classList.contains('open')?'收起 ▴':'怎麼看 ▾'}</span><div class="why">${why.map(esc).map(s=>s.replace(/^(⚠️|ℹ️)/,'<b>$1</b>')).join('<br>')}</div>`;
   // 六格
   $('beatK').innerHTML=[
-    [`${KN} vs 共識`,`<b class="${sg(gK)}">${gK==null?'—':pct(gK,1)}</b>`,c?`共識 ${big(cK)}・${(c[4]||'').slice(5).replace('-','/')} 快照`:'無公布前共識'],
+    [`${KN} vs 共識`,`<b class="${sg(gK)}">${gK==null?'—':pct(gK,1)}</b>`,c?`共識 ${big(cK)}・${(c[4]||'').slice(5).replace('-','/')}${c[5]?' 公布後':''}快照`:'無公布前共識'],
     NR?['淨利 vs 共識',`<b class="${sg(gNi)}">${gNi==null?'—':pct(gNi,1)}</b>`,c?`共識 ${big(c[2])}`:'—']:['營收 vs 共識',`<b class="${sg(gRev)}">${gRev==null?'—':pct(gRev,1)}</b>`,c?`共識 ${big(c[0])}`:'無公布前共識'],
     ['營益率',`<b>${x.om==null?'—':fmt(x.om,1)+'%'}</b>`,x.om==null?'金融股不適用':`季${pp(dOmQ)} 年${pp(dOmY)}`],
     [`${KN}年增`,`<b class="${ot?(ot==='轉盈'?'up':'dn'):sg(oy)}">${ot||(oy==null?'—':oy>300?'>+300%':pct(oy,0))}</b>`,py?`去年同季 ${big(py[K])}`:'無去年同季'],
@@ -837,7 +838,7 @@ function renderBeat(){
       endLabel:{show:true,color:warm,fontSize:10,fontFamily:'IBM Plex Mono',formatter:q=>q.value==null?'':fmt(q.value,1)+'%'}}];
   if(NR)o.series.pop();
   o.tooltip.formatter=ps=>{const z=R[ps[0].dataIndex],L=[`<b>${z.l}${z.est?'（待公布・共識）':z.pre?'（暫定業績）':''}</b>`];
-    if(z.v!=null)L.push(`${KN} ${m0(z.v)}`);if(z.c!=null)L.push(`公布前共識 ${m0(z.c)}${z.v!=null&&z.c>0?`（差距 ${pct(gap(z.v,z.c),1)}）`:''}`);if(z.om!=null)L.push(`營益率 ${fmt(z.om,1)}%`);return L.join('<br>')};
+    if(z.v!=null)L.push(`${KN} ${m0(z.v)}`);if(z.c!=null)L.push(`${QC[z.l]&&QC[z.l][5]?'共識（公布後快照）':'公布前共識'} ${m0(z.c)}${z.v!=null&&z.c>0?`（差距 ${pct(gap(z.v,z.c),1)}）`:''}`);if(z.om!=null)L.push(`營益率 ${fmt(z.om,1)}%`);return L.join('<br>')};
   ch.setOption(o,true);ch.resize();
   $('uBeat').textContent=c?`${x.l} vs 共識`:hasC?'近 12 季・共識累積中':'近 12 季・尚無共識';
   $('fBeat').textContent=`實心柱：單季${KN}（紅＝年增、綠＝年減，單位 ${un()}）；虛線空心柱：公布前最後一次法人共識（Naver／FnGuide 季度共識，排程每日快照、公布後凍結，柱頂小字＝實際 vs 共識）；${NR?'':'線：營益率（右軸）。'}「E」＝待公布季的目前共識。${fxFoot()}`;

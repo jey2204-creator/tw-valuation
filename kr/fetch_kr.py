@@ -552,15 +552,21 @@ def earn_info(code, corp, Q, fin):
         # 📊 季度共識快照：Naver 的共識欄只在公布前存在，公布當天就換成實際值 → 每天覆寫「還是共識」的季，
         # 已公布的季就不再動（＝公布前最後一次共識），之後拿來算「實際 vs 共識」差距。快取 cache['cns'] = {季: {rev, op, ni, nip, eps, at}}
         cs = cache.setdefault("cns", {})
+        # 公布後就凍結：DART 已有暫定公告、Naver 已有實際值、或 OpenDART 已有季報的季，共識會被分析師往實際值修 → 不再覆寫。
+        # 第一次就已經是公布後才抓到的（追蹤起點晚於公布）仍收下，但標 post=1，前端註明「公布後快照」
+        frozen = {q_of_date(dt.date.fromisoformat(a[0])) for a in cache.get("ann", [])} | set((cache.get("nv") or {}).keys()) | {q["cal"] for q in Q}
         for cal, v in cns.items():
-            if v.get("rev") is not None or v.get("op") is not None:
-                cs[cal] = dict(v, at=TODAY.isoformat())
+            if v.get("rev") is None and v.get("op") is None:
+                continue
+            if cal in frozen and cal in cs:
+                continue
+            cs[cal] = dict(v, at=TODAY.isoformat(), **({"post": 1} if cal in frozen else {}))
     except Exception as e:
         err.append(f"Naver 季表：{str(e)[:60]}")
     p.write_text(json.dumps(cache, ensure_ascii=False, separators=(",", ":")), "utf-8")
     # 輸出給前端：qc = {季: [營收(億), 營益(億), 淨利(億), EPS, 快照日]}（公布後保留，給 #beat 財報判讀比對）
-    qc = {cal: [v.get("rev"), v.get("op"), v.get("nip") if v.get("nip") is not None else v.get("ni"), v.get("eps"), v.get("at")]
-          for cal, v in sorted((cache.get("cns") or {}).items())}
+    qc = {cal: [v.get("rev"), v.get("op"), v.get("nip") if v.get("nip") is not None else v.get("ni"), v.get("eps"), v.get("at")] + ([1] if v.get("post") else [])
+          for cal, v in sorted((cache.get("cns") or {}).items())}   # 第 6 欄 1 = 公布後才快照（可能已反映實際值）
     # 暫定公告日：每季取最早的一次（三星 10/8 暫定、10/30 正式都掛「잠정」）
     pre_dt, rnos = {}, {}
     for d, rno, nm in cache.get("ann", []):
