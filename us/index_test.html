@@ -551,7 +551,7 @@ html{scroll-behavior:smooth}
   <h2>股數與股票酬勞 <small id="uShr"></small></h2>
   <p class="take" id="tShr"></p>
   <div class="chart" id="cShr"></div>
-  <p class="foot">藍線：稀釋加權股數（百萬股，左軸不從 0 起算）　橘線：SBC 佔營收 %（右軸）。股數往下＝庫藏股有效、往上＝增資或 SBC 稀釋；SBC 佔營收 > 10% 的公司 Non-GAAP EPS 要打折看</p>
+  <p class="foot">藍柱：稀釋加權股數（百萬股，左軸不從 0 起算，看相對變化）　橘線：SBC 佔營收 %（右軸）。股數往下＝庫藏股有效、往上＝增資或 SBC 稀釋；SBC 佔營收 > 10% 的公司 Non-GAAP EPS 要打折看</p>
 </section>
 <section class="card" id="bal" hidden>
   <h2>現金 vs 債務 <small id="uBal"></small></h2>
@@ -982,7 +982,7 @@ function render(){
    o.yAxis=[{...o.yAxis,axisLabel:{...o.yAxis.axisLabel,formatter:v=>fmt(v,0)}},{...o.yAxis,scale:false,splitLine:{show:false},axisLabel:{...o.yAxis.axisLabel,formatter:'{value}%'}}];
    const sbp=x=>x[14]!=null&&x[2]?+(x[14]/x[2]*100).toFixed(1):null;
    o.tooltip.formatter=ps=>{const i=st+ps[0].dataIndex,x=Q[i],p=Q[prevYearIdx(i)];return `<b>${qtip(i)}</b><br>稀釋股數 ${x[8]==null?'—':fmt(x[8],1)} 百萬股${p&&p[8]&&x[8]?`（年${x[8]<p[8]?'減':'增'} ${Math.abs((x[8]/p[8]-1)*100).toFixed(1)}%）`:''}<br>SBC ${x[14]==null?'—':ap()+amt(x[14])}<br>SBC 佔營收 ${sbp(x)??'—'}%`};
-   o.series=[{name:'稀釋股數(百萬)',type:'line',data:S.map(x=>x[8]),symbol:'circle',symbolSize:3,connectNulls:false,lineStyle:{width:2.5,color:acc},itemStyle:{color:acc},areaStyle:{color:acc+'22'},markArea:D.inj?FLASH_AREA(warm,D.inj):undefined},
+   o.series=[{name:'稀釋股數(百萬)',type:'bar',data:S.map(x=>flashBar(x,x[8],acc)),itemStyle:{color:acc+'b3',borderRadius:[2,2,0,0]},barCategoryGap:'30%',markArea:D.inj?FLASH_AREA(warm,D.inj):undefined},
      {name:'SBC 佔營收',type:'line',yAxisIndex:1,data:S.map(sbp),symbol:'none',connectNulls:false,lineStyle:{width:2,color:warm},itemStyle:{color:warm},endLabel:{show:true,formatter:p=>p.value+'%',color:warm,fontSize:10,fontFamily:'IBM Plex Mono'}}];
    o.grid.right=34;c.setOption(o,true)}
   if(W.hasBL){const o=base(),c=mk('cBal');o.xAxis.data=S.map(qlbl);o.yAxis.scale=false;
