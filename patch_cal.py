@@ -46,7 +46,7 @@ function renderCal(){
     if(shown>=LIM)break}
   $('cal').innerHTML=html||`<div class="cday mu">${CALM==='w'?'追蹤的股票這一季都公布完了，或還沒加自選／主題':'沒有資料'}</div>`;
   const m=$('calMore');if(m)m.onclick=()=>{CALX=true;renderCal()};
-  $('calBox').open=mine.some(c=>c.d>=today&&c.d<w1);
+  if(!renderCal.init){renderCal.init=true;$('calBox').open=mine.some(c=>c.d>=today&&c.d<w1)}   // 只有第一次載入決定自動展開；切換⭐／全市場、展開全部都維持原狀
 }
 $('calSeg').addEventListener('click',e=>{const b=e.target.closest('button[data-m]');if(!b)return;CALM=b.dataset.m;CALX=false;store.set('calM',CALM);renderCal()});
 '''
