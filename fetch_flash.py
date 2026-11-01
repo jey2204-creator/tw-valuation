@@ -450,8 +450,101 @@ def build(raw):
     for i in items:
         cnt[i["q"]] = cnt.get(i["q"], 0) + 1
     seasons = sorted((q for q, n in cnt.items() if n >= 5), reverse=True)
+    est = estimate_dates(items, cal, names, seasons[0] if seasons else None)
     return {"updated": NOW.isoformat(timespec="minutes"), "today": today, "seasons": seasons, "unit": "億元",
-            "tdays": trading_days(20), "items": items, "cal": cal, "diag": DIAG}
+            "tdays": trading_days(20), "items": items, "cal": cal, "est": est, "diag": DIAG}
+
+
+# ---------- 財報公布日推估（台股沒有官方「未來公布日」） ----------
+DEADLINE = {1: (5, 15), 2: (8, 14), 3: (11, 14), 4: (3, 31)}   # 法定期限（Q4＝次年 3/31）
+
+
+def q_deadline(q):
+    y, n = int(q[:4]), int(q[-1])
+    m, d = DEADLINE[n]
+    x = dt.date(y + (1 if n == 4 else 0), m, d)
+    while x.weekday() >= 5:            # 期限遇假日順延到下一個工作日（2026/11/14 是週六 → 11/16）
+        x += dt.timedelta(days=1)
+    return x
+
+
+def q_prev(q):
+    y, n = int(q[:4]), int(q[-1])
+    return f"{y - 1}Q4" if n == 1 else f"{y}Q{n - 1}"
+
+
+def bdays_before(date, deadline):
+    """公布日距法定期限幾個工作日（只跳週末）。"""
+    n, d = 0, date
+    while d < deadline:
+        d += dt.timedelta(days=1)
+        if d.weekday() < 5:
+            n += 1
+    return n
+
+
+def bdays_sub(deadline, n):
+    d = deadline
+    while n > 0:
+        d -= dt.timedelta(days=1)
+        if d.weekday() < 5:
+            n -= 1
+    while d.weekday() >= 5:
+        d -= dt.timedelta(days=1)
+    return d
+
+
+def estimate_dates(items, cal, names, cur_q):
+    """目前季別（最新快訊季）還沒公布董事會財報的公司：推估公布日。
+    來源優先序：cal（公司公告董事會日，確定）＞ 去年同季慣例 ＞ 上一季慣例（距法定期限同樣的工作日數）＞ 法定期限。
+    輸出 [{c, n, d, q, src:'cal'|'ly'|'pq'|'late'|'dl', mk}]（只列 summary/list 有的公司、且 d ≥ 今天 −3 天）。"""
+    if not cur_q:
+        return []
+    done = {}
+    for i in items:
+        if i.get("k") != "board":
+            continue
+        t = i.get("t", "")
+        m = re.match(r"(\d{3})/(\d{2})/(\d{2})", t)
+        if not m:
+            continue
+        done.setdefault((i["c"], i["q"]), dt.date(int(m.group(1)) + 1911, int(m.group(2)), int(m.group(3))))
+    cur_dl = q_deadline(cur_q)
+    y, n = int(cur_q[:4]), int(cur_q[-1])
+    ly_q, pq = f"{y - 1}Q{n}", q_prev(cur_q)
+    calmap = {(v["c"], v["q"]): v for v in cal}
+    mk = {}
+    for i in items:
+        mk.setdefault(i["c"], i.get("mk", 0))
+    today = NOW.date()
+    out = []
+    for c, nm in names.items():
+        if (c, cur_q) in done:
+            continue
+        if (c, cur_q) in calmap:
+            v = calmap[(c, cur_q)]
+            out.append({"c": c, "n": nm, "d": v["d"], "q": cur_q, "src": "cal", "mk": v.get("mk", 0)})
+            continue
+        src, d = None, None
+        for ref_q, tag in ((ly_q, "ly"), (pq, "pq")):
+            if (c, ref_q) in done:
+                nb = bdays_before(done[(c, ref_q)], q_deadline(ref_q))
+                d, src = bdays_sub(cur_dl, nb), tag
+                break
+        if d is None:
+            if c not in mk:
+                continue            # 從沒出現在快訊裡的公司（興櫃、ETF 等）不列
+            d, src = cur_dl, "dl"
+        if d < today:               # 慣例日已過還沒公布 → 標「晚於慣例」，日期改成下一個工作日
+            d = today
+            while d.weekday() >= 5:
+                d += dt.timedelta(days=1)
+            src = "late"
+        out.append({"c": c, "n": nm, "d": d.isoformat(), "q": cur_q, "src": src, "mk": mk.get(c, 0)})
+    out.sort(key=lambda v: (v["d"], v["c"]))
+    DIAG["est"] = {"n": len(out), "cal": sum(1 for v in out if v["src"] == "cal"), "ly": sum(1 for v in out if v["src"] == "ly"),
+                   "pq": sum(1 for v in out if v["src"] == "pq"), "late": sum(1 for v in out if v["src"] == "late"), "dl": sum(1 for v in out if v["src"] == "dl")}
+    return out
 
 
 def trading_days(n):
