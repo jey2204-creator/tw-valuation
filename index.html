@@ -352,7 +352,7 @@ details.ind.hot summary b{color:var(--up)}
   <h2 class="sec"><span>產業主題 <small><span id="sumAsof"></span>・中位數</small></span><span><button type="button" class="act" id="noteBtn" aria-expanded="false" aria-label="說明">ⓘ</button><a class="act" href="#e">✏️ 編輯</a></span></h2>
   <p class="note hnote" id="homeNote" hidden>點「✏️ 編輯」可新增主題、增減成份股、調整順序（存在這支手機上）。數字為證交所／櫃買每日資料，本益比空白＝虧損或不適用。</p>
   <div class="tgrid" id="tgrid"></div>
-  <div class="hub" id="hub"><a class="srlink" href="scan.html"><b>📈 K 線掃描</b><span>一面小卡掃 K、量、投信外資</span></a><a class="srlink" href="notice.html"><b>📢 注意／處置股</b><span id="ntSub">上市櫃注意、處置、快達處置名單</span></a><a class="srlink" id="srLink" href="#s" hidden><b>💰 薪資排行</b><span id="srSub"></span></a>
+  <div class="hub" id="hub"><a class="srlink" href="scan.html"><b>📈 K 線掃描</b><span>一面小卡掃 K、量、投信外資</span></a><a class="srlink" href="notice.html"><b>📢 注意／處置股</b><span id="ntSub">上市櫃注意、處置、快達處置名單</span></a><a class="srlink" href="flash.html#cal"><b>📅 財報日曆</b><span id="calSub">追蹤股近期公布日</span></a><a class="srlink" id="srLink" href="#s" hidden><b>💰 薪資排行</b><span id="srSub"></span></a>
   <details class="ind hot" id="hotBox"><summary><b>🔥 主力訊號</b><span id="hotN"></span></summary><div style="padding:0 10px 8px"><div class="tbl"><table class="lst" id="hotTbl"></table></div><p class="foot" id="hotFoot"></p></div></details>
   <details class="ind" id="aiBox" hidden><summary><b>🤖 AI 成分還沒查的</b><span id="aiN"></span></summary><div style="padding:0 12px 10px;font-size:13px"><p class="foot" id="aiList" style="white-space:normal;line-height:1.7"></p><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button type="button" class="star" id="aiCopy">📋 複製清單</button><span class="foot" id="aiMsg"></span></div><p class="foot">把清單貼給 Claude，查完會更新 data/ai.json，重新整理就有標籤。只看自選與自訂主題（內建主題成份股都已查過）。</p></div></details>
   <details class="ind" id="indAll"><summary><b>🏭 官方產業別</b><span>全部上市櫃</span></summary><div id="indBox" style="padding:0 8px 8px"></div></details></div>
@@ -1132,7 +1132,7 @@ async function klFlashMarks(id,dd){
   let next=null;
   if(nq){const y=+nq.slice(0,4),q=+nq[5];const cal=(F.cal||[]).find(x=>x.c===id&&x.q===nq);
     const dl={1:`${y}-05-15`,2:`${y}-08-14`,3:`${y}-11-14`,4:`${y+1}-03-31`}[q];
-    const d=cal?cal.d:dl;if(d>=today)next={d:d.replace(/-/g,''),q:nq,legal:!cal,dl}}
+    const est=!cal&&(F.est||[]).find(x=>x.c===id&&x.q===nq);const d=cal?cal.d:est?est.d:dl;if(d>=today)next={d:d.replace(/-/g,''),q:nq,legal:!cal&&!est,est:est?est.src:null,dl}}
   return {past:P,next,today:today.replace(/-/g,'')};
 }
 // 今天之後到下次公布日的交易日（跳過週末，國定假日不算；最多 N 根）
@@ -1215,14 +1215,14 @@ function klDraw(){
   const f5=sm(2,5),f20=sm(2,20),t5=sm(3,5),t20=sm(3,20);
   const NX=KL.fl&&KL.fl.next,PP=(KL.fl&&KL.fl.past||[]).slice(-1)[0];
   const tdLeft=NX?klFutureDays(dd[last],NX.d,400).length:null;
-  const flTxt=NX?`📅 下次財報 <strong>${NX.q.slice(2)}</strong>：${NX.legal?`最晚 ${+NX.d.slice(4,6)}/${+NX.d.slice(6)}（法定期限，公司尚未公告董事會日期）`:`${+NX.d.slice(4,6)}/${+NX.d.slice(6)}（公司公告董事會日）`}，距今 <strong>${tdLeft}</strong> 個交易日`:(PP?`📅 ${PP.q.slice(2)} 財報已於 ${+PP.d.slice(4,6)}/${+PP.d.slice(6)} 公布`:'');
+  const flTxt=NX?`📅 下次財報 <strong>${NX.q.slice(2)}</strong>：${NX.legal?`最晚 ${+NX.d.slice(4,6)}/${+NX.d.slice(6)}（法定期限，公司尚未公告董事會日期）`:NX.est?`約 ${+NX.d.slice(4,6)}/${+NX.d.slice(6)}（${NX.est==='late'?'⚠ 上一季這時候已公布，這季還沒；法定期限':'≈ 依'+(NX.est==='ly'?'去年同季':'上一季')+'慣例推估，誤差 1～2 天；法定期限'} ${+NX.dl.slice(5,7)}/${+NX.dl.slice(8)}）`:`${+NX.d.slice(4,6)}/${+NX.d.slice(6)}（✓ 公司公告董事會日）`}，距今 <strong>${tdLeft}</strong> 個交易日`:(PP?`📅 ${PP.q.slice(2)} 財報已於 ${+PP.d.slice(4,6)}/${+PP.d.slice(6)} 公布`:'');
   $('tKl').innerHTML=(flTxt?flTxt+'<br>':'')+`均線 <strong>${bull?'多頭排列（5＞20＞60）':bear?'空頭排列（5＜20＜60）':'糾結／轉折中'}</strong><br>價位 ${abv||'—'}（▲線上 ▼線下）${a240?`・距年線 <strong class="${r[0]>=a240?'up':'dn'}">${r[0]>=a240?'+':''}${((r[0]/a240-1)*100).toFixed(1)}%</strong>`:''}<br>60 日區間 ${lo>=1000?fmt(lo):fmt(lo,lo>=100?1:2)}～${hi>=1000?fmt(hi):fmt(hi,hi>=100?1:2)}（現價位於 ${((r[0]-lo)/(hi-lo||1)*100).toFixed(0)}% 處）・今量 ${vr?(vr>=1.5?'<strong class="up">放大 '+vr.toFixed(1)+'×</strong>':vr<=.6?'<strong>萎縮 '+vr.toFixed(1)+'×</strong>':vr.toFixed(1)+'×'):'—'} 5 日均量<br>外資 5 日 <strong class="${cl(f5)}">${sg(f5)}</strong>／20 日 <strong class="${cl(f20)}">${sg(f20)}</strong>・投信 5 日 <strong class="${cl(t5)}">${sg(t5)}</strong>／20 日 <strong class="${cl(t20)}">${sg(t20)}</strong> 張`;
   // 近 10 日表
   const pz=x=>x==null?'—':fmt(x,x>=1000?0:x>=100?1:2),sz=x=>x==null?'—':(x>0?'+':'')+fmt(x),cz=x=>x>0?'up':x<0?'dn':'';
   $('tbKl').innerHTML='<tr><th>日期</th><th>收</th><th>漲跌%</th><th>量</th><th>外資</th><th>投信</th></tr>'+all.slice(-10).reverse().map((x,j)=>{const i=last-j,pv=i>0?all[i-1][0]:null,pc=pv?((x[0]/pv-1)*100):null,cl=cz(pc);
     return `<tr><td>${dd[i].slice(4,6)}/${dd[i].slice(6)}</td><td class="${cl}">${pz(x[0])}</td><td class="${cl}">${pc==null?'—':(pc>0?'+':'')+pc.toFixed(2)}</td><td>${fmt(x[1])}</td><td class="${cz(x[2])}">${sz(x[2])}</td><td class="${cz(x[3])}">${sz(x[3])}</td></tr>`}).join('');
   const miss=all.filter(x=>x[8]==null).length;
-  $('fKl').textContent='紅漲綠跌；量圖細線＝5 日均量；外資、投信紅買綠賣（近 60 日）。按住看當天數字，左右拖曳、雙指縮放。橘虛線＝董事會通過財報公告日、藍虛線＝法說自結公告日（多在盤後公告，股價反應看下一根 K 棒）、灰虛線＝下次財報（公司公告的董事會日，沒有就用法定期限，12 個交易日內才在右側留白）。'+(l240.length?'灰色虛線＝240 日均線（年線）。':'240 日均線（年線）資料回補中，約 1～2 天補齊。')+(miss?`　⚠️ 尚有 ${miss} 天只有收盤、沒有開高低（當天 K 棒顯示為一字線），今晚排程補齊。`:'');
+  $('fKl').textContent='紅漲綠跌；量圖細線＝5 日均量；外資、投信紅買綠賣（近 60 日）。按住看當天數字，左右拖曳、雙指縮放。橘虛線＝董事會通過財報公告日、藍虛線＝法說自結公告日（多在盤後公告，股價反應看下一根 K 棒）、灰虛線＝下次財報（✓ 公司公告的董事會日＞≈ 依上一季慣例推估＞≤ 法定期限，12 個交易日內才在右側留白）。'+(l240.length?'灰色虛線＝240 日均線（年線）。':'240 日均線（年線）資料回補中，約 1～2 天補齊。')+(miss?`　⚠️ 尚有 ${miss} 天只有收盤、沒有開高低（當天 K 棒顯示為一字線），今晚排程補齊。`:'');
   {const sm=$('klMore').querySelector('summary span');sm.textContent=miss?`⚠️ ${miss} 天缺開高低`:'▾'}
 }
 // 財報公布日 overlay：四張圖各一層，直虛線（橘＝董事會通過財報、藍＝法說自結、灰＝下次），標籤只放主圖
@@ -1230,7 +1230,7 @@ function klFlOverlay(c,FL,fut,dd,from){
   const pan=['klBox','klVol','klF','klT'].map(id=>{let o=$(id).querySelector('.kfl');if(!o){o=document.createElement('div');o.className='kfl';$(id).appendChild(o)}o.innerHTML='';return o});
   if(!FL)return;const ts=c.timeScale(),pw=ts.width()||$('klBox').clientWidth-60,vis=new Set(dd.slice(from));fut.forEach(s=>vis.add(s));
   const marks=FL.past.filter(x=>vis.has(x.d)).map(x=>({...x,cls:x.k==='self'?'self':'',lab:(x.k==='self'?'自結':'財報')+x.q.slice(4)}));
-  if(FL.next&&fut.length)marks.push({d:fut[fut.length-1],cls:'next',lab:FL.next.q.slice(4)+(FL.next.legal?'≤':' ')+(+FL.next.d.slice(4,6))+'/'+(+FL.next.d.slice(6))});
+  if(FL.next&&fut.length)marks.push({d:fut[fut.length-1],cls:'next',lab:FL.next.q.slice(4)+(FL.next.legal?'≤':FL.next.est?'≈':' ')+(+FL.next.d.slice(4,6))+'/'+(+FL.next.d.slice(6))});
   // 直線用 SVG 畫（iPhone Safari 對 0 寬 div 的虛線邊框不一定會畫），標籤用 div；標籤左右重疊就下移一行
   const COL={'':css('--warm'),self:css('--accent'),next:css('--muted')},rows=[];
   pan.forEach(o=>{const sv=document.createElementNS('http://www.w3.org/2000/svg','svg');sv.setAttribute('width','100%');sv.setAttribute('height','100%');sv.style.cssText='position:absolute;inset:0;display:block';o.appendChild(sv);o._sv=sv});
@@ -2524,8 +2524,20 @@ function themeList(el){
       TLS=!nk?'':ck!==nk?nk+':'+first:cd===first?nk+':'+(-first):'';themeList(el);return}
     const r=e.target.closest('tr[data-t]');if(r)location.hash='#t/'+r.dataset.t};
 }
+function calHome(){
+  if(!NPF)NPF=fetch('data/flash.json?t='+Math.floor(Date.now()/6e5)).then(r=>r.ok?r.json():null).catch(()=>null);
+  NPF.then(F=>{const el=$('calSub');if(!el||!F)return;const E=F.est||[];if(!E.length){el.textContent='還沒有推估資料';return}
+    const fav=store.get('fav')||[],pool=new Set([...THEMES.flatMap(t=>t.stocks.map(x=>x[0])),...fav]),today=F.today;
+    const add=(d,n)=>new Date(new Date(d+'T00:00:00Z').getTime()+n*86400e3).toISOString().slice(0,10),dow=d=>new Date(d+'T00:00:00Z').getUTCDay();
+    const w1=add(today,(8-dow(today))%7||7),w2=add(w1,7);
+    const mine=E.filter(c=>pool.has(c.c)&&c.d>=today),tw=mine.filter(c=>c.d<w1),nw=mine.filter(c=>c.d>=w1&&c.d<w2),late=mine.filter(c=>c.src==='late');
+    const nm=c=>c.n.replace(/\*$/,''),md=d=>(+d.slice(5,7))+'/'+(+d.slice(8)),tag=c=>c.src==='cal'?'✓':c.src==='late'?'⚠':'≈';
+    const show=(tw.length?tw:nw).slice().sort((a,b)=>(fav.includes(b.c)-fav.includes(a.c))||(a.src==='late')-(b.src==='late')*-1||a.d.localeCompare(b.d)),lab=tw.length?'本週':'下週';   // 自選優先、再依日期
+    if(!mine.length){el.textContent=`${E[0].q.slice(2)} 追蹤股都已公布`;return}
+    el.textContent=`${lab} ${show.length} 家：`+show.slice(0,4).map(c=>`${nm(c)} ${md(c.d)}${tag(c)}`).join('、')+(show.length>4?` …（共 ${mine.length} 家待公布${late.length?`，⚠ ${late.length} 家晚於慣例`:''}）`:'')});
+}
 function renderHome(){
-  RANK=null;srHome();
+  RANK=null;srHome();try{calHome()}catch(e){}
   modeQ();$('sumAsof').innerHTML=S?`<span class="asof" id="sumPx">收盤 ${S.pxAsof?S.pxAsof.slice(4,6)+'/'+S.pxAsof.slice(6):S.updated.slice(5,10).replace('-','/')}</span>・營收 ${S.revYM?+S.revYM.slice(5)+'月':'—'}${QN?'・EPS '+QN:''}`:'數字待 Actions 產生';
   const fav=store.get('fav')||[];$('favEdit').hidden=!fav.length;try{asofPaint()}catch(e){}
   $('favBox').innerHTML=fav.length?'<div class="panel"><div class="tbl"><table class="lst" id="favTbl"></table></div></div>':'<p class="dtip">在個股頁點「☆ 加入自選」，就會出現在這裡。</p>';
