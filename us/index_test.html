@@ -135,6 +135,8 @@ body.pn .wrap{padding-bottom:calc(84px + env(safe-area-inset-bottom))}
 #pnSheet .c,#pnSheet .p{font-family:var(--f-num);font-size:13px;text-align:right;white-space:nowrap}
 #pnSheet .p{color:var(--muted);font-size:12px}
 .pill.b{background:var(--b2)}
+.pill.g{background:var(--b3)}
+.pill.r{background:var(--b5)}
 /* 幣別切換（固定匯率換算，只動絕對金額） */
 .fx{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px;font-size:12px;color:var(--muted)}
 /* 首頁頭區省高度：標題與「← 台股看板」同列；副標＋幣別同列（副標單行省略，完整說明在 title） */
@@ -543,7 +545,7 @@ html{scroll-behavior:smooth}
   <h2>庫存／應收天數 <small>季末｜天</small></h2>
   <p class="take" id="tWc"></p>
   <div class="chart" id="cWc"></div>
-  <p class="foot" id="fWc">庫存天數 DIO = 季末庫存 ÷ 單季營業成本 × 91；應收天數 DSO = 季末應收 ÷ 單季營收 × 91。橘虛線＝庫存年增 − 營收年增（點，無刻度，點線為 0、上下緣為 ±100）：持續在 0 線之上＝庫存堆得比賣得快，是砍單前 1～3 個月的警訊</p>
+  <p class="foot" id="fWc">庫存天數 DIO = 季末庫存 ÷ 單季營業成本 × 91；應收天數 DSO = 季末應收 ÷ 單季營收 × 91。庫存狀態：庫存年增比營收年增高 10 點以上、或庫存天數連升 2 季 ＝ ⚠️ 堆積（紫線上橘點），連續 3 季 ＝ 🚨（紅點）；庫存年增低於營收年增且天數下降 ＝ ✅ 消化中。庫存堆得比賣得快，是砍單前 1～3 個月的警訊</p>
 </section>
 <section class="card" id="shr" hidden>
   <h2>股數與股票酬勞 <small id="uShr"></small></h2>
@@ -892,10 +894,19 @@ function header(){
   const DAYS=D.freq==='Q'?91:365;
   const dio=i=>{const x=Q[i];if(x[12]==null||x[3]==null||!x[2])return null;const cogs=x[2]*(1-x[3]/100);return cogs>0?+(x[12]/cogs*DAYS).toFixed(0):null};
   const dso=i=>{const x=Q[i];return x[13]==null||!x[2]?null:+(x[13]/x[2]*DAYS).toFixed(0)};
-  const igap=i=>{const p=Q[prevYearIdx(i)],x=Q[i];if(!p||!p[12]||x[12]==null||!p[2])return null;return Math.max(-100,Math.min(100,+(((x[12]/p[12]-1)-(x[2]/p[2]-1))*100).toFixed(0)))};   // 截在 ±100 點，景氣循環股營收年增 300% 時差距沒意義
+  // 庫存狀態（每季）：庫存年增 vs 營收年增 ＋ 庫存天數連升幾季 → ok 消化中／warn 堆積／alert 連續 3 季堆積
   const WC=Q.map((x,i)=>[i,dio(i),dso(i)]).filter(x=>x[1]!=null||x[2]!=null),hasWC=WC.length>=3;$('wc').hidden=!hasWC;
-  if(hasWC){const [i,d1,s1]=WC[WC.length-1],pv=WC[WC.length-2],g=igap(i);let up=0;for(let k=WC.length-1;k>0&&WC[k][1]!=null&&WC[k-1][1]!=null&&WC[k][1]>WC[k-1][1];k--)up++;
-    $('tWc').innerHTML=`${qlbl(Q[i])} 庫存天數 <strong>${d1??'—'}</strong>${pv&&pv[1]!=null&&d1!=null?`（前期 ${pv[1]}）`:''}、應收天數 <strong>${s1??'—'}</strong>${pv&&pv[2]!=null&&s1!=null?`（前期 ${pv[2]}）`:''}${g!=null?`；庫存年增比營收年增 <strong>${g>0?'多':'少'} ${Math.abs(g)>=100?'100 點以上':Math.abs(g)+' 點'}</strong>`:''}${up>=2?'<span class="pill b">庫存天數連升 '+(up)+' 季</span>':''}`}
+  const WI=Object.fromEntries(WC.map(x=>[x[0],x]));
+  const yo=(i,c)=>{const p=Q[prevYearIdx(i)],x=Q[i];return p&&p[c]&&x[c]!=null?+((x[c]/p[c]-1)*100).toFixed(0):null};
+  const upRun=i=>{let n=0;for(let k=i;k>0;k--){const a=WI[k],b=WI[k-1];if(!a||!b||a[1]==null||b[1]==null||a[1]<=b[1])break;n++}return n};
+  const istate=i=>{const iy=yo(i,12),ry=yo(i,2),up=upRun(i),d=WI[i],dn=d&&WI[i-1]&&d[1]!=null&&WI[i-1][1]!=null&&d[1]<WI[i-1][1];
+    let st='';if(iy!=null&&ry!=null){if(iy>ry+10||up>=2)st='warn';else if(iy<ry&&dn)st='ok'}else if(up>=2)st='warn';
+    if(st==='warn'){let n=0;for(let k=i;k>=0&&n<3;k--){const a=yo(k,12),b=yo(k,2);if((a!=null&&b!=null&&a>b+10)||upRun(k)>=2)n++;else break}if(n>=3)st='alert'}
+    return {st,iy,ry,up}};
+  if(hasWC){const [i,d1,s1]=WC[WC.length-1],pv=WC[WC.length-2],z=istate(i);
+    const yoT=`庫存 YoY <strong>${z.iy==null?'—':(z.iy>0?'+':'')+z.iy+'%'}</strong> vs 營收 YoY <strong>${z.ry==null?'—':(z.ry>0?'+':'')+z.ry+'%'}</strong>`;
+    const lab={ok:'<span class="pill g">✅ 庫存消化中</span>',warn:`<span class="pill">⚠️ 庫存堆積${z.up>=2?'，天數連升 '+z.up+' 季':''}</span>`,alert:`<span class="pill r">🚨 庫存堆積已連續 3 季${z.up>=2?'，天數連升 '+z.up+' 季':''}</span>`,'':''}[z.st];
+    $('tWc').innerHTML=`${qlbl(Q[i])} 庫存天數 <strong>${d1??'—'}</strong>${pv&&pv[1]!=null&&d1!=null?`（前期 ${pv[1]}）`:''}、應收天數 <strong>${s1??'—'}</strong>${pv&&pv[2]!=null&&s1!=null?`（前期 ${pv[2]}）`:''}${z.iy!=null||z.ry!=null?`；${yoT}`:''} ${lab}`}
   // 股數＋SBC
   const SB=Q.map((x,i)=>[i,x[8],x[14]!=null&&x[2]?+(x[14]/x[2]*100).toFixed(1):null]).filter(x=>x[1]!=null),hasSB=SB.length>=3;$('shr').hidden=!hasSB;
   if(hasSB){const [i,sh1,sb1]=SB[SB.length-1],py=SB.find(x=>x[0]===prevYearIdx(i)),w=Q.slice(i-3,i+1),ok=D.freq==='Q'&&w.length===4&&w.every((x,j)=>(!j||isPrevQ(w[j-1],x))&&x[14]!=null&&x[2]),sb4=ok?+(sum(w.map(x=>x[14]))/sum(w.map(x=>x[2]))*100).toFixed(1):null;
@@ -907,7 +918,7 @@ function header(){
     $('tBal').innerHTML=`${qlbl(Q[i])} 現金＋短投 <strong>${ap()}${camt(c1)}</strong>、債務 <strong>${d1==null?'無申報':ap()+camt(d1)}</strong> → 淨現金 <strong>${ap()}${camt(n1)}</strong>${np!=null?`（一年前 ${ap()}${camt(np)}）`:''}${n1<0?(np!=null&&n1<np?'<span class="pill b">淨負債擴大</span>':'<span class="pill b">淨負債</span>'):''}`;
     $('uBal').textContent=`${capU()}｜季末`}
   $('chips').innerHTML=(D.demand?'<a href="#capex" data-s>CapEx</a>':'')+'<a href="#rev" data-s>營收</a>'+(hasG?'<a href="#grow" data-s>成長</a>':'')+'<a href="#margin" data-s>三率</a><a href="#eps" data-s>EPS</a>'+(RH.length>=2?'<a href="#react" data-s>財報反應</a>':'')+(hasF?'<a href="#fcf" data-s>現金流</a>':'')+(hasFQ?'<a href="#fcfq" data-s>FCF品質</a>':'')+(hasWC?'<a href="#wc" data-s>庫存應收</a>':'')+(hasSB?'<a href="#shr" data-s>股數SBC</a>':'')+(hasBL?'<a href="#bal" data-s>現金債務</a>':'')+'<a href="#fwd" data-s>預估EPS</a><a href="#pe" data-s>本益比河流</a><a href="#pb" data-s>淨值比河流</a>';
-  window.__FQ=FQ;window.__RH=RH;window.__WC={dio,dso,igap,hasWC,hasSB,hasBL};
+  window.__FQ=FQ;window.__RH=RH;window.__WC={dio,dso,istate,hasWC,hasSB,hasBL};
 }
 function render(){
   const acc=css('--accent'),acc2=css('--accent2'),warm=css('--warm'),n=D.freq==='Q'?20:8,st=Math.max(0,Q.length-n),S=Q.slice(st);
@@ -961,12 +972,12 @@ function render(){
    o.legend.data=['EPS 驚喜率','首日漲跌'];c.setOption(o,true)}
   const W=window.__WC||{};
   if(W.hasWC){const o=base(),c=mk('cWc');o.xAxis.data=S.map(qlbl);o.yAxis.scale=false;o.yAxis.axisLabel.formatter='{value}天';
-   o.yAxis=[o.yAxis,{...o.yAxis,scale:false,min:-100,max:100,interval:50,splitLine:{show:false},axisLabel:{show:false}}];   // 右軸刻度不顯示（會跟天數末端數字疊），只看虛線相對 0 線的方向
-   o.tooltip.formatter=ps=>{const i=st+ps[0].dataIndex,g=W.igap(i);return `<b>${qtip(i)}</b><br>庫存天數 ${W.dio(i)??'—'}<br>應收天數 ${W.dso(i)??'—'}<br>庫存 ${Q[i][12]==null?'—':ap()+amt(Q[i][12])}<br>應收 ${Q[i][13]==null?'—':ap()+amt(Q[i][13])}${g!=null?`<br>庫存年增 − 營收年增 ${Math.abs(g)>=100?(g>0?'+100 點以上':'−100 點以下'):(g>0?'+':'')+g+' 點'}`:''}`};
-   o.series=[{name:'庫存天數',type:'line',data:S.map((x,j)=>W.dio(st+j)),symbol:'circle',symbolSize:3,connectNulls:false,lineStyle:{width:2.5,color:css('--violet')},itemStyle:{color:css('--violet')},endLabel:{show:true,formatter:p=>p.value,color:css('--violet'),fontSize:10,fontFamily:'IBM Plex Mono'}},
-     {name:'應收天數',type:'line',data:S.map((x,j)=>W.dso(st+j)),symbol:'circle',symbolSize:3,connectNulls:false,lineStyle:{width:2,color:acc2},itemStyle:{color:acc2},endLabel:{show:true,formatter:p=>p.value,color:acc2,fontSize:10,fontFamily:'IBM Plex Mono'}},
-     {name:'庫存−營收年增',type:'line',yAxisIndex:1,data:S.map((x,j)=>W.igap(st+j)),symbol:'none',connectNulls:false,lineStyle:{width:1.5,color:warm,type:'dashed'},itemStyle:{color:warm},markLine:{silent:true,symbol:'none',lineStyle:{color:warm,type:'dotted',width:1,opacity:.5},label:{show:false},data:[{yAxis:0}]}}];
-   o.grid.right=30;c.setOption(o,true);spreadEnd(c,{series:o.series.slice(0,2)})}
+   const STN={ok:'✅ 庫存消化中',warn:'⚠️ 庫存堆積',alert:'🚨 堆積連續 3 季'},SC={warn:warm,alert:css('--up')};
+   o.tooltip.formatter=ps=>{const i=st+ps[0].dataIndex,z=W.istate(i);return `<b>${qtip(i)}</b><br>庫存天數 ${W.dio(i)??'—'}　應收天數 ${W.dso(i)??'—'}<br>庫存 ${Q[i][12]==null?'—':ap()+amt(Q[i][12])}${z.iy!=null?`（YoY ${z.iy>0?'+':''}${z.iy}%）`:''}<br>營收 YoY ${z.ry==null?'—':(z.ry>0?'+':'')+z.ry+'%'}${z.st?`<br><b>${STN[z.st]}</b>`:''}`};
+   // 庫存天數線：堆積的季度把點放大、換警示色（橘＝堆積、紅＝連續 3 季）
+   o.series=[{name:'庫存天數',type:'line',data:S.map((x,j)=>{const v=W.dio(st+j),z=W.istate(st+j);return v!=null&&SC[z.st]?{value:v,symbolSize:7,itemStyle:{color:SC[z.st],borderColor:css('--card'),borderWidth:1.5}}:v}),symbol:'circle',symbolSize:3,connectNulls:false,lineStyle:{width:2.5,color:css('--violet')},itemStyle:{color:css('--violet')},endLabel:{show:true,formatter:p=>p.value,color:css('--violet'),fontSize:10,fontFamily:'IBM Plex Mono'}},
+     {name:'應收天數',type:'line',data:S.map((x,j)=>W.dso(st+j)),symbol:'circle',symbolSize:3,connectNulls:false,lineStyle:{width:2,color:acc2},itemStyle:{color:acc2},endLabel:{show:true,formatter:p=>p.value,color:acc2,fontSize:10,fontFamily:'IBM Plex Mono'}}];
+   o.legend.data=['庫存天數','應收天數'];o.grid.right=30;c.setOption(o,true);spreadEnd(c,o)}
   if(W.hasSB){const o=base(),c=mk('cShr');o.xAxis.data=S.map(qlbl);o.yAxis.scale=true;
    o.yAxis=[{...o.yAxis,axisLabel:{...o.yAxis.axisLabel,formatter:v=>fmt(v,0)}},{...o.yAxis,scale:false,splitLine:{show:false},axisLabel:{...o.yAxis.axisLabel,formatter:'{value}%'}}];
    const sbp=x=>x[14]!=null&&x[2]?+(x[14]/x[2]*100).toFixed(1):null;
