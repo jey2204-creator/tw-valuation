@@ -358,12 +358,14 @@ html{scroll-behavior:smooth}
     <div class="qs" id="qs" aria-live="polite"></div>
     <div class="sug" id="sug" role="listbox" hidden></div>
   </header>
+  <div id="caWrap">
+    <a class="srlink" id="caLink" href="#calendar" hidden><b>📅 財報公布倒數</b><span id="caSub"></span></a>
+  </div>
   <div id="tsec">
     <h2 class="sec"><span>產業主題 <small id="tAsof"></small></span><span><button type="button" class="act nfo" id="tLegI" aria-expanded="false" aria-controls="tLeg" aria-label="欄位說明">ⓘ</button><button type="button" class="dns" id="hDense"></button><a class="act" id="hEdit" href="#edit">✏️ 編輯</a></span></h2>
     <div class="tgrid" id="tgrid"></div>
     <p class="legend" id="tLeg" hidden>各主題中位數。<span id="tLegC"><i class="cv">5/7</i>＝7 檔裡只有 5 檔有值（虧損、資料不足不算），檔數少時別當成整個主題。</span>營收年增＝最新一季對比去年同季；EPS 年增＝近四季合計對比前四季；PEG＝本益比 ÷ EPS 年增，<span class="cheap">&lt;1</span>、<span class="pricey">&gt;2</span>；本月至今＝收盤對比上月底；外資持股＝主題內中位數，外資是韓股主力，持股比轉折常領先股價。</p>
   </div>
-  <a class="srlink" id="caLink" href="#calendar" hidden><b>📅 財報公布倒數</b><span id="caSub"></span></a>
   <a class="srlink" id="srLink" href="#salary" hidden><b>💰 薪資排行</b><span id="srSub"></span></a>
   <div id="groups"></div>
   <p class="legend" id="gLegend" hidden>清單欄位：收盤價（日漲跌，台幣模式為固定匯率換算）　本益比／淨值比。<span class="pill">循環</span> 循環股以淨值比為主；外資持股比在主題頁與個股頁</p>
@@ -1141,7 +1143,7 @@ function homeRender(){
   const hit=s=>!v||ms.includes(s);
   sugRender(raw,ms);qsRender(raw,ms);
   // 沒打字：產業主題卡；有打字：符合的個股清單（依主題分組）
-  $('tsec').hidden=!!v;$('gLegend').hidden=!v;$('exp').hidden=!!v||!expModel();
+  $('tsec').hidden=!!v;$('caWrap').hidden=!!v;$('gLegend').hidden=!v;$('exp').hidden=!!v||!expModel();
   if(!v){$('groups').innerHTML='';cardsRender();return}
   const groups=[];IDX.forEach(s=>{let g=groups.find(x=>x.t===s.theme);if(!g)groups.push(g={t:s.theme,tw:s.tw,items:[]});if(hit(s))g.items.push(s)});groups.sort((a,b)=>rankOf(a.t)-rankOf(b.t));
   $('groups').innerHTML=groups.filter(g=>g.items.length).map(g=>`<div class="grp"><h3>${esc(g.t)}</h3>`+
