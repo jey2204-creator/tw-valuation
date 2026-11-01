@@ -78,6 +78,17 @@ CAPEX = ["PaymentsToAcquirePropertyPlantAndEquipment", "PaymentsToAcquireProduct
          "PurchaseOfPropertyPlantAndEquipmentClassifiedAsInvestingActivities"]
 OCF = ["NetCashProvidedByUsedInOperatingActivities", "CashFlowsFromUsedInOperatingActivities",
        "NetCashProvidedByUsedInOperatingActivitiesContinuingOperations"]   # 營業現金流（自由現金流 = OCF − CapEx）
+# 第二批圖表（庫存／應收天數、股數＋SBC、現金 vs 債務）：q 列欄位 12～16
+INV = ["InventoryNet", "InventoryGross", "InventoryFinishedGoodsNetOfReserves", "Inventories"]
+AR = ["AccountsReceivableNetCurrent", "ReceivablesNetCurrent", "AccountsNotesAndLoansReceivableNetCurrent",
+      "TradeAndOtherCurrentReceivables", "TradeReceivables"]
+SBC = ["ShareBasedCompensation", "AllocatedShareBasedCompensationExpense", "StockOptionPlanExpense"]   # 現金流量表的股票酬勞加回
+CASH = ["CashCashEquivalentsAndShortTermInvestments", "CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalents",
+        "CashAndCashEquivalentsAtCarryingValue", "CashAndCashEquivalents"]
+STI = ["ShortTermInvestments", "MarketableSecuritiesCurrent", "AvailableForSaleSecuritiesDebtSecuritiesCurrent"]   # 只在 CASH 取到的不是「含短投」科目時加上
+DEBT = ["LongTermDebt", "LongTermDebtAndCapitalLeaseObligations", "DebtInstrumentCarryingAmount",
+        "LongTermDebtNoncurrent", "Borrowings"]
+DEBT_CUR = ["LongTermDebtCurrent", "DebtCurrent", "ShortTermBorrowings", "CommercialPaper"]
 QFORMS = {"10-Q", "10-Q/A", "10-K", "10-K/A", "6-K", "6-K/A"}
 AFORMS = {"20-F", "20-F/A", "40-F", "40-F/A"}
 
@@ -311,6 +322,30 @@ def fiscal_label(end, fye):
     return f"FY{str(y)[2:]}Q{q}"
 
 
+def _m(v):
+    return None if v is None else round(v / 1e6, 1)
+
+
+def _cash(e, cash, sti, incl):
+    c = cash.get(e, (None,))[0]
+    if c is None:
+        return None
+    if incl:
+        return c
+    s = sti.get(e, (None,))[0]
+    return c + (s or 0)
+
+
+def _debt(e, dl, dc, first):
+    l = dl.get(e, (None,))[0]
+    c = dc.get(e, (None,))[0]
+    if l is None and c is None:
+        return None
+    if first in ("LongTermDebt", "LongTermDebtAndCapitalLeaseObligations", "DebtInstrumentCarryingAmount", "Borrowings"):
+        return l if l is not None else c
+    return (l or 0) + (c or 0)
+
+
 def build_fin(cik):
     cf = sec(f"https://data.sec.gov/api/xbrl/companyfacts/CIK{cik:010d}.json")
     splits = split_events(cf)
@@ -336,6 +371,14 @@ def build_fin(cik):
     capex = merged(cf, CAPEX, pick)
     ocf = merged(cf, OCF, pick)
     eq = merged(cf, EQ, instants)
+    inv, ar = merged(cf, INV, instants), merged(cf, AR, instants)
+    sbc = merged(cf, SBC, pick)
+    cash, sti = merged(cf, CASH, instants), merged(cf, STI, instants)
+    cash_incl = cash and any(n in cf.get("facts", {}).get("us-gaap", {}) for n in CASH[:1])
+    # 債務：長期（含非流動）＋ 流動；LongTermDebt 本身多半已含一年內到期，取到它就不再加 LongTermDebtCurrent
+    debt_l = merged(cf, DEBT, instants)
+    debt_c = merged(cf, DEBT_CUR, instants)
+    first_debt = next((n for n in DEBT if n in cf.get("facts", {}).get("us-gaap", {})), None)
     fyes = sorted(revA) or sorted(merged(cf, NI, annuals))
     fye = fyes[-1] if fyes else None
 
@@ -366,7 +409,9 @@ def build_fin(cik):
                          rev=round(r / 1e6, 1), gm=pct(g), om=pct(opi.get(e, (None,))[0]), nm=pct(n),
                          eps=None if ep is None else round(ep, 3), sh=None if not shares else round(shares / 1e6, 2),
                          capex=None if cx is None else round(cx / 1e6, 1), ni=None if n is None else round(n / 1e6, 1),
-                         ocf=None if (oc := ocf.get(e, (None,))[0]) is None else round(oc / 1e6, 1)))
+                         ocf=None if (oc := ocf.get(e, (None,))[0]) is None else round(oc / 1e6, 1),
+                         inv=_m(inv.get(e, (None,))[0]), ar=_m(ar.get(e, (None,))[0]), sbc=_m(sbc.get(e, (None,))[0]),
+                         cash=_m(_cash(e, cash, sti, cash_incl)), debt=_m(_debt(e, debt_l, debt_c, first_debt))))
     eqs = sorted((e, v / 1e6, f) for e, (v, f, _, _) in eq.items())
     return dict(name=cf.get("entityName", ""), freq=freq, fye=fye, splits=splits, q=rows,
                 eq=[[e, round(v, 1), f] for e, v, f in eqs if e >= rows[0]["end"][:4] + "-01-01"] if rows else [])
@@ -439,7 +484,8 @@ def build(tk, cik_map, today=None):
                 ttm=None if t is None else round(t, 3), bvps=None if b is None else round(b, 2),
                 pe=round(last_r["c"] / t, 1) if t and t >= 0.01 else None,
                 pb=round(last_r["c"] / b, 2) if b and b > 0 else None)
-    q = [[x["cal"], x["fis"], x["rev"], x["gm"], x["om"], x["nm"], x["eps"], x["capex"], x["sh"], x["end"], x["filed"], x.get("ocf")]
+    q = [[x["cal"], x["fis"], x["rev"], x["gm"], x["om"], x["nm"], x["eps"], x["capex"], x["sh"], x["end"], x["filed"], x.get("ocf"),
+          x.get("inv"), x.get("ar"), x.get("sbc"), x.get("cash"), x.get("debt")]
          for x in Q if x["end"] >= f"{today.year - YEARS - 1}-01-01"]
     note = []
     if not cik:
