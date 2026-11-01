@@ -1,0 +1,226 @@
+{
+ "TaiwanStockInfo": {
+  "msg": "success",
+  "n": 1,
+  "first": {
+   "industry_category": "光電業",
+   "stock_id": "3595",
+   "stock_name": "山太士",
+   "type": "emerging",
+   "date": "2026-11-02"
+  },
+  "last": {
+   "industry_category": "光電業",
+   "stock_id": "3595",
+   "stock_name": "山太士",
+   "type": "emerging",
+   "date": "2026-11-02"
+  },
+  "dates": [
+   "2026-11-02"
+  ]
+ },
+ "TaiwanStockPrice": {
+  "msg": "success",
+  "n": 39,
+  "first": {
+   "date": "2026-09-01",
+   "stock_id": "3595",
+   "Trading_Volume": 585433,
+   "Trading_money": 998812555,
+   "open": 1752.02,
+   "max": 1805.0,
+   "min": 1655.0,
+   "close": 1690.0,
+   "spread": -45.91,
+   "Trading_turnover": 3077
+  },
+  "last": {
+   "date": "2026-10-30",
+   "stock_id": "3595",
+   "Trading_Volume": 2447594,
+   "Trading_money": 1448037320,
+   "open": 651.61,
+   "max": 729.0,
+   "min": 407.5,
+   "close": 693.0,
+   "spread": -59.99,
+   "Trading_turnover": 7963
+  },
+  "dates": [
+   "2026-10-21",
+   "2026-10-22",
+   "2026-10-27",
+   "2026-10-28",
+   "2026-10-29",
+   "2026-10-30"
+  ]
+ },
+ "TaiwanStockPER": {
+  "msg": "success",
+  "n": 0,
+  "first": null,
+  "last": null,
+  "dates": []
+ },
+ "TaiwanStockMonthRevenue": {
+  "msg": "success",
+  "n": 22,
+  "first": {
+   "date": "2025-01-01",
+   "stock_id": "3595",
+   "country": "Taiwan",
+   "revenue": 23759000,
+   "revenue_month": 12,
+   "revenue_year": 2024,
+   "create_time": "2026-05-19"
+  },
+  "last": {
+   "date": "2026-10-01",
+   "stock_id": "3595",
+   "country": "Taiwan",
+   "revenue": 92752000,
+   "revenue_month": 9,
+   "revenue_year": 2026,
+   "create_time": "2026-10-06"
+  },
+  "dates": [
+   "2026-05-01",
+   "2026-06-01",
+   "2026-07-01",
+   "2026-08-01",
+   "2026-09-01",
+   "2026-10-01"
+  ]
+ },
+ "TaiwanStockFinancialStatements": {
+  "msg": "success",
+  "n": 60,
+  "first": {
+   "date": "2025-06-30",
+   "stock_id": "3595",
+   "type": "OtherComprehensiveIncome",
+   "value": -8907000.0,
+   "origin_name": "其他綜合損益（淨額）"
+  },
+  "last": {
+   "date": "2026-06-30",
+   "stock_id": "3595",
+   "type": "IncomeFromContinuingOperations",
+   "value": 79807000.0,
+   "origin_name": "繼續營業單位本期淨利（淨損）"
+  },
+  "dates": [
+   "2025-06-30",
+   "2025-12-31",
+   "2026-03-31",
+   "2026-06-30"
+  ]
+ },
+ "TaiwanStockBalanceSheet": {
+  "msg": "success",
+  "n": 300,
+  "first": {
+   "date": "2025-06-30",
+   "stock_id": "3595",
+   "type": "CashAndCashEquivalents",
+   "value": 105047000.0,
+   "origin_name": "現金及約當現金"
+  },
+  "last": {
+   "date": "2026-06-30",
+   "stock_id": "3595",
+   "type": "CurrentContractLiabilities_per",
+   "value": 0.18,
+   "origin_name": "合約負債"
+  },
+  "dates": [
+   "2025-06-30",
+   "2025-12-31",
+   "2026-03-31",
+   "2026-06-30"
+  ]
+ },
+ "TaiwanStockCashFlowsStatement": {
+  "msg": "success",
+  "n": 102,
+  "first": {
+   "date": "2025-06-30",
+   "stock_id": "3595",
+   "type": "Depreciation",
+   "value": 8791000.0,
+   "origin_name": "折舊費用"
+  },
+  "last": {
+   "date": "2026-06-30",
+   "stock_id": "3595",
+   "type": "CashReceivedThroughOperations",
+   "value": 43181000.0,
+   "origin_name": "營運產生之現金流入（流出）"
+  },
+  "dates": [
+   "2025-06-30",
+   "2025-12-31",
+   "2026-03-31",
+   "2026-06-30"
+  ]
+ },
+ "TaiwanStockDividend": {
+  "msg": "success",
+  "n": 4,
+  "first": {
+   "date": "2023-07-23",
+   "stock_id": "3595",
+   "year": "111年",
+   "StockEarningsDistribution": 0.0,
+   "StockStatutorySurplus": 0.0,
+   "StockExDividendTradingDate": "",
+   "TotalEmployeeStockDividend": 0.0,
+   "TotalEmployeeStockDividendAmount": 0.0,
+   "RatioOfEmployeeStockDividendOfTotal": 0.0,
+   "RatioOfEmployeeStockDividend": 0.0,
+   "CashEarningsDistribution": 0.60099442,
+   "CashStatutorySurplus": 0.0,
+   "CashExDividendTradingDate": "2023-07-17",
+   "CashDividendPaymentDate": "2023-08-11",
+   "TotalEmployeeCashDividend": 0.0,
+   "TotalNumberOfCashCapitalIncrease": 0.0,
+   "CashIncreaseSubscriptionRate": 0.0,
+   "CashIncreaseSubscriptionpRrice": 0.0,
+   "RemunerationOfDirectorsAndSupervisors": 0.0,
+   "ParticipateDistributionOfTotalShares": 27151282.0,
+   "AnnouncementDate": "2023-06-30",
+   "AnnouncementTime": "17:35:15"
+  },
+  "last": {
+   "date": "2026-07-29",
+   "stock_id": "3595",
+   "year": "114年",
+   "StockEarningsDistribution": 2.0,
+   "StockStatutorySurplus": 0.0,
+   "StockExDividendTradingDate": "2026-07-23",
+   "TotalEmployeeStockDividend": 0.0,
+   "TotalEmployeeStockDividendAmount": 0.0,
+   "RatioOfEmployeeStockDividendOfTotal": 0.0,
+   "RatioOfEmployeeStockDividend": 0.0,
+   "CashEarningsDistribution": 1.0,
+   "CashStatutorySurplus": 0.0,
+   "CashExDividendTradingDate": "2026-07-23",
+   "CashDividendPaymentDate": "2026-08-27",
+   "TotalEmployeeCashDividend": 0.0,
+   "TotalNumberOfCashCapitalIncrease": 0.0,
+   "CashIncreaseSubscriptionRate": 0.0,
+   "CashIncreaseSubscriptionpRrice": 0.0,
+   "RemunerationOfDirectorsAndSupervisors": 0.0,
+   "ParticipateDistributionOfTotalShares": 33913282.0,
+   "AnnouncementDate": "2026-07-08",
+   "AnnouncementTime": "17:11:46"
+  },
+  "dates": [
+   "2023-07-23",
+   "2024-07-09",
+   "2025-02-09",
+   "2026-07-29"
+  ]
+ }
+}
