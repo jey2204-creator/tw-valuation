@@ -444,6 +444,7 @@ html{scroll-behavior:smooth}
 #calPage .top{padding-top:12px}#calPage h1{font-size:22px;font-weight:900;margin:6px 0 0;line-height:1.3}
 #caTbl td.co{font-family:var(--f-body);white-space:normal;min-width:6.5em}#caTbl th:nth-child(2),#caTbl td:nth-child(2){text-align:left}#caTbl .ind{font-size:11px;color:var(--muted);display:block}
 #caTbl th,#caTbl td{padding-inline:4px}#caTbl td:not(.co) .sub{white-space:nowrap;line-height:1.3}#caTbl td.co{min-width:5.5em}#caTbl td.co .nmw{white-space:normal}#caTbl td b.soon{color:var(--warm)}#caTbl td b.today{color:var(--down)}#caTbl .pre{color:var(--accent)}
+.lst .sub i.bt{font-style:normal;font-family:var(--f-num);font-size:9.5px;font-weight:600;margin-left:3px;white-space:nowrap}.lst .sub i.bt.vu{color:var(--up)}.lst .sub i.bt.vd{color:var(--down)}
 .lst .sub i.pre{font-style:normal;color:var(--accent);font-size:9.5px;border:1px solid var(--accent);border-radius:3px;padding:0 2px;margin-left:2px;vertical-align:1px}
 </style>
 
@@ -1274,11 +1275,13 @@ function themeRender(tid){
   const b=(a,f,c)=>a.v==null?(ST_OK?'—':'…'):`<b class="${c||''}">${f(a.v)}</b>${cvT(a)}`;
   const lqs=[...new Set(ids.map(i=>(ST[i]||{}).lq).filter(l=>l&&/^\d\dQ\d$/.test(l)))].sort();
   $('tSum').innerHTML=`${it.length} 檔${it.length>1?'中位數':''}：營收年增 ${b(A.ry,v=>pct(v),sgc(A.ry.v))}・EPS 年增（四季）${b(A.ey,v=>pct(v),sgc(A.ey.v))}・本益比 ${b(A.pe,v=>fmt(v,1))}・PEG ${b(A.peg,v=>fmt(v,2),pegc(A.peg.v))}・淨值比 ${b(A.pb,v=>fmt(v,2))}・外資持股 ${b(A.fr,v=>fmt(v,1)+'%')}・本月至今 ${b(A.mtd,v=>pct(v,1),sgc(A.mtd.v))}`+
-    (lqs.length>1?`<br>最新季 ${lqs[0]}～${lqs[lqs.length-1]}：財報季各家進度不同，中位數會混到兩季`:lqs.length?`<br>最新季 ${lqs[0]}`:'')+(it.some(s=>s.pre)?`（${it.filter(s=>s.pre).length} 檔為暫定業績）`:'')+(it.some(s=>s.earn&&s.earn.q&&s.earn.st!=='pre')?` <a href="#calendar" style="color:var(--accent);text-decoration:none">📅 公布倒數 →</a>`:'');
+    (lqs.length>1?`<br>最新季 ${lqs[0]}～${lqs[lqs.length-1]}：財報季各家進度不同，中位數會混到兩季`:lqs.length?`<br>最新季 ${lqs[0]}`:'')+(it.some(s=>s.pre)?`（${it.filter(s=>s.pre).length} 檔為暫定業績）`:'')+(()=>{const B=ids.map(i=>beatOf(i,(ST[i]||{}).lq)).filter(Boolean);if(!B.length)return '';
+      const bt=B.filter(b=>b.sp>=3).length,ms=B.filter(b=>b.sp<=-3).length,md=B.map(b=>b.sp).sort((a,b)=>a-b)[Math.floor(B.length/2)];
+      return `<br>🎯 本季 vs 法人共識（${B.length} 檔有乾淨共識）：優於 <b class="vu">${bt}</b>・符合 <b>${B.length-bt-ms}</b>・低於 <b class="vd">${ms}</b>，驚喜率中位數 <b class="${md>=0?'vu':'vd'}">${spT(md)}</b>${bt===B.length&&B.length>=3?'——整個主題都 beat，多半是產業景氣而非個股，共識會集體上修':ms===B.length&&B.length>=3?'——整個主題都 miss，先看是產業還是匯率／一次性':''}`})()+(it.some(s=>s.earn&&s.earn.q&&s.earn.st!=='pre')?` <a href="#calendar" style="color:var(--accent);text-decoration:none">📅 公布倒數 →</a>`:'');
   $('tTw').innerHTML=t.tw.length?'<span class="lb">對應台股</span>'+t.tw.map(([c,n])=>`<a href="../#${c}"><b>${c}</b>${esc(n)}</a>`).join('')+(!t.custom?`<a class="all" href="../#t/${t.id}">台股同主題 →</a><a class="all" href="../us/#t/${t.id}">美股同主題 →</a>`:''):'';
   if(LAST_TS!==tid){TS=tsGet(tid);LAST_TS=tid}
   tTable(t);
-  $('tFoot').innerHTML=`營收＝最新一季對比去年同季；EPS＝近四季合計對比前四季（「虧損」＝近四季合計 ≤ 0，「轉盈」＝前四季是虧損）；PEG＝本益比 ÷ EPS 年增，年增 &gt;300% 低基期不算${it.some(s=>s.cyc)?'；<span class="pill">循環</span> 股 PEG 參考性低，以淨值比河流為主':''}；本月＝最新收盤對比上月底；外資＝外資持股比（%），外資是韓股主力，持股比轉折常領先股價。收盤${fxOn()?`以 1 台幣 = ${FX.rate} 韓元固定匯率換成台幣`:'為韓元'}；市值＝Naver 市值${fxOn()?'，同樣換算':''}。${DENSE?'緊湊模式：本益比下方一行＝近四季 EPS 年增與 P＝PEG；本月漲跌、備註看完整模式。':''}營收欄小字＝最新季，<i class="pre" style="font-style:normal;color:var(--accent)">暫</i>＝暫定業績（正式季報未出，EPS 推算）、⏳日期＝下一季財報預計公布日（7 天內橘色）。點欄位標題可排序，每個主題會記住上次的排序（本益比連點：本益比 → EPS年增 → PEG；淨值比連點：淨值比 → 外資持股）。`}
+  $('tFoot').innerHTML=`營收＝最新一季對比去年同季；EPS＝近四季合計對比前四季（「虧損」＝近四季合計 ≤ 0，「轉盈」＝前四季是虧損）；PEG＝本益比 ÷ EPS 年增，年增 &gt;300% 低基期不算${it.some(s=>s.cyc)?'；<span class="pill">循環</span> 股 PEG 參考性低，以淨值比河流為主':''}+'；🎯＝營益驚喜率（最新季實際營益 ÷ 公布前法人共識 −1，金融股看淨利；共識是公布後才快照到的不算、不顯示）'；本月＝最新收盤對比上月底；外資＝外資持股比（%），外資是韓股主力，持股比轉折常領先股價。收盤${fxOn()?`以 1 台幣 = ${FX.rate} 韓元固定匯率換成台幣`:'為韓元'}；市值＝Naver 市值${fxOn()?'，同樣換算':''}。${DENSE?'緊湊模式：本益比下方一行＝近四季 EPS 年增與 P＝PEG；本月漲跌、備註看完整模式。':''}營收欄小字＝最新季，<i class="pre" style="font-style:normal;color:var(--accent)">暫</i>＝暫定業績（正式季報未出，EPS 推算）、⏳日期＝下一季財報預計公布日（7 天內橘色）。點欄位標題可排序，每個主題會記住上次的排序（本益比連點：本益比 → EPS年增 → PEG；淨值比連點：淨值比 → 外資持股）。`}
 // ---------- 主題頁個股表（排版同台股站）----------
 // 市值＝Naver 市值（億韓元），存在個股檔 last.mcap
 const capM=id=>(ST[id]||{}).mcap||null;
@@ -1489,7 +1492,11 @@ function renderCal(){
 document.addEventListener('click',e=>{const b=e.target.closest('#caTabs button[data-tab]');if(b){CA.tab=b.dataset.tab;renderCal();return}
   const r=e.target.closest('#caTbl tr[data-id]');if(r)location.hash=r.dataset.id});
 // 主題表「營收」欄小字：最新季 + 暫定／預計公布日；個股頁說明一行
+// 🎯 主題層驚喜率：最新季那筆 rec 的 recStat（共識乾淨才算；post=1 回傳 null，前端不顯示）
+function beatOf(id,lq){const s=stockOf(id),r=(s.rec||[]).find(x=>x.cal===lq);if(!r)return null;const {fin,sp}=recStat(r);return sp==null?null:{sp,lb:fin?'淨利':'營益',d:r.d}}
+const spT=v=>v>300?'>+300%':pmT(v,Math.abs(v)>=1?0:1);
 function earnSub(id,lq,dense){const s=stockOf(id),e=s.earn;let t=lq?(dense?lq.slice(2):lq):'';
+  {const bt=beatOf(id,lq);if(bt)t+=`<i class="bt ${bt.sp>=0?'vu':'vd'}" title="${bt.lb}驚喜率：${mdT(bt.d)} 公布的${bt.lb}比公布前法人共識${bt.sp>=0?'好':'差'} ${spT(bt.sp)}">🎯${spT(bt.sp)}</i>`}
   if(s.pre)t+='<i class="pre" title="暫定業績（正式季報未出）">暫</i>';
   else if(e&&e.q&&e.st!=='pre'&&e.est){const n=dDays(e.est);t+=` <span title="${e.q} 預計 ${mdT(e.est)} 公布（${esc(e.b||'')}）" style="${n<=7?'color:var(--warm)':''}">${e.st==='late'?'逾期':'⏳'+mdT(e.est)}</span>`}
   return t}
