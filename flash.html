@@ -280,6 +280,7 @@ async function main(){
   $('seas').innerHTML=seas.map(q=>`<button data-q="${q}" aria-pressed="${q===SEA}">${qlab(q)} <span class="num" style="font-size:11px">${D.items.filter(i=>i.q===q).length}</span></button>`).join('');
   $('sort').value=SORT;
   renderCal();render();
+  if(location.hash==='#cal'){$('calBox').open=true;setTimeout(()=>$('calBox').scrollIntoView({block:'start'}),50)}
 }
 $('seas').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;SEA=b.dataset.q;SHOW=60;
   document.querySelectorAll('#seas button').forEach(x=>x.setAttribute('aria-pressed',x===b));render()});
