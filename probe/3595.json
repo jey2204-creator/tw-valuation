@@ -1,226 +1,481 @@
 {
- "TaiwanStockInfo": {
-  "msg": "success",
-  "n": 1,
-  "first": {
-   "industry_category": "光電業",
-   "stock_id": "3595",
-   "stock_name": "山太士",
-   "type": "emerging",
-   "date": "2026-11-02"
+ "fs": {
+  "2018-06-30": {
+   "IncomeAfterTaxes": -2467000.0,
+   "EquityAttributableToOwnersOfParent": -2467000.0,
+   "OperatingIncome": -2442000.0,
+   "Revenue": 150796000.0,
+   "GrossProfit": 24318000.0,
+   "EPS": -0.11
   },
-  "last": {
-   "industry_category": "光電業",
-   "stock_id": "3595",
-   "stock_name": "山太士",
-   "type": "emerging",
-   "date": "2026-11-02"
+  "2018-12-31": {
+   "IncomeAfterTaxes": 34288000.0,
+   "EquityAttributableToOwnersOfParent": 34288000.0,
+   "OperatingIncome": 35820000.0,
+   "Revenue": 334440000.0,
+   "GrossProfit": 80296000.0,
+   "EPS": 1.53
   },
-  "dates": [
-   "2026-11-02"
-  ]
+  "2019-06-30": {
+   "IncomeAfterTaxes": 3656000.0,
+   "EquityAttributableToOwnersOfParent": 3656000.0,
+   "OperatingIncome": 2828000.0,
+   "Revenue": 222090000.0,
+   "GrossProfit": 35916000.0,
+   "EPS": 0.16
+  },
+  "2019-12-31": {
+   "IncomeAfterTaxes": 25393000.0,
+   "EquityAttributableToOwnersOfParent": 25393000.0,
+   "OperatingIncome": 30563000.0,
+   "Revenue": 329774000.0,
+   "GrossProfit": 76620000.0,
+   "EPS": 1.13
+  },
+  "2020-06-30": {
+   "IncomeAfterTaxes": 16992000.0,
+   "EquityAttributableToOwnersOfParent": 16992000.0,
+   "OperatingIncome": 16648000.0,
+   "Revenue": 271176000.0,
+   "GrossProfit": 57090000.0,
+   "EPS": 0.75
+  },
+  "2020-12-31": {
+   "IncomeAfterTaxes": 20562000.0,
+   "EquityAttributableToOwnersOfParent": 20562000.0,
+   "OperatingIncome": 22523000.0,
+   "Revenue": 295533000.0,
+   "GrossProfit": 60706000.0,
+   "EPS": 0.9
+  },
+  "2021-06-30": {
+   "IncomeAfterTaxes": 36505000.0,
+   "EquityAttributableToOwnersOfParent": 36505000.0,
+   "OperatingIncome": 40465000.0,
+   "Revenue": 311823000.0,
+   "GrossProfit": 82723000.0,
+   "EPS": 1.57
+  },
+  "2021-12-31": {
+   "IncomeAfterTaxes": 16280000.0,
+   "EquityAttributableToOwnersOfParent": 16280000.0,
+   "OperatingIncome": 15838000.0,
+   "Revenue": 256499000.0,
+   "GrossProfit": 53696000.0,
+   "EPS": 0.69
+  },
+  "2022-06-30": {
+   "IncomeAfterTaxes": 28361000.0,
+   "EquityAttributableToOwnersOfParent": 28361000.0,
+   "OperatingIncome": 25859000.0,
+   "Revenue": 252231000.0,
+   "GrossProfit": 67601000.0,
+   "EPS": 1.09
+  },
+  "2022-12-31": {
+   "IncomeAfterTaxes": -469000.0,
+   "EquityAttributableToOwnersOfParent": -469000.0,
+   "OperatingIncome": -4120000.0,
+   "Revenue": 127934000.0,
+   "GrossProfit": 28400000.0,
+   "EPS": -0.04
+  },
+  "2023-06-30": {
+   "IncomeAfterTaxes": -6888000.0,
+   "EquityAttributableToOwnersOfParent": -6888000.0,
+   "OperatingIncome": -9862000.0,
+   "Revenue": 99575000.0,
+   "GrossProfit": 22012000.0,
+   "EPS": -0.25
+  },
+  "2023-12-31": {
+   "IncomeAfterTaxes": 11657000.0,
+   "EquityAttributableToOwnersOfParent": 11657000.0,
+   "OperatingIncome": 14999000.0,
+   "Revenue": 122971000.0,
+   "GrossProfit": 45264000.0,
+   "EPS": 0.43
+  },
+  "2024-06-30": {
+   "IncomeAfterTaxes": -32494000.0,
+   "EquityAttributableToOwnersOfParent": -32494000.0,
+   "OperatingIncome": -34212000.0,
+   "Revenue": 67458000.0,
+   "GrossProfit": 2391000.0,
+   "EPS": -1.21
+  },
+  "2024-12-31": {
+   "IncomeAfterTaxes": -1846000.0,
+   "EquityAttributableToOwnersOfParent": -1846000.0,
+   "OperatingIncome": -1883000.0,
+   "Revenue": 99071000.0,
+   "GrossProfit": 27506000.0,
+   "EPS": -0.07
+  },
+  "2025-06-30": {
+   "IncomeAfterTaxes": 19656000.0,
+   "EquityAttributableToOwnersOfParent": 19656000.0,
+   "OperatingIncome": 19916000.0,
+   "Revenue": 153141000.0,
+   "GrossProfit": 68855000.0,
+   "EPS": 0.62
+  },
+  "2025-12-31": {
+   "IncomeAfterTaxes": 125245000.0,
+   "EquityAttributableToOwnersOfParent": 125245000.0,
+   "OperatingIncome": 155067000.0,
+   "Revenue": 346272000.0,
+   "GrossProfit": 224601000.0,
+   "EPS": 3.79
+  },
+  "2026-03-31": {
+   "EPS": 1.27,
+   "IncomeAfterTaxes": 43028000.0,
+   "EquityAttributableToOwnersOfParent": 43028000.0,
+   "OperatingIncome": 51504000.0,
+   "Revenue": 131082000.0,
+   "GrossProfit": 83072000.0
+  },
+  "2026-06-30": {
+   "EPS": 1.96,
+   "IncomeAfterTaxes": 79807000.0,
+   "EquityAttributableToOwnersOfParent": 79807000.0,
+   "OperatingIncome": 97482000.0,
+   "Revenue": 201610000.0,
+   "GrossProfit": 139686000.0
+  }
  },
- "TaiwanStockPrice": {
-  "msg": "success",
-  "n": 39,
-  "first": {
-   "date": "2026-09-01",
-   "stock_id": "3595",
-   "Trading_Volume": 585433,
-   "Trading_money": 998812555,
-   "open": 1752.02,
-   "max": 1805.0,
-   "min": 1655.0,
-   "close": 1690.0,
-   "spread": -45.91,
-   "Trading_turnover": 3077
+ "bs": {
+  "2018-06-30": {
+   "OrdinaryShare": 223443000.0,
+   "CapitalStock": 223443000.0,
+   "EquityAttributableToOwnersOfParent": 190126000.0,
+   "Equity": 190126000.0
   },
-  "last": {
-   "date": "2026-10-30",
-   "stock_id": "3595",
-   "Trading_Volume": 2447594,
-   "Trading_money": 1448037320,
-   "open": 651.61,
-   "max": 729.0,
-   "min": 407.5,
-   "close": 693.0,
-   "spread": -59.99,
-   "Trading_turnover": 7963
+  "2018-12-31": {
+   "OrdinaryShare": 223443000.0,
+   "CapitalStock": 223443000.0,
+   "EquityAttributableToOwnersOfParent": 223434000.0,
+   "Equity": 223434000.0
   },
-  "dates": [
-   "2026-10-21",
-   "2026-10-22",
-   "2026-10-27",
-   "2026-10-28",
-   "2026-10-29",
-   "2026-10-30"
-  ]
+  "2019-06-30": {
+   "OrdinaryShare": 223443000.0,
+   "CapitalStock": 223443000.0,
+   "EquityAttributableToOwnersOfParent": 228504000.0,
+   "Equity": 228504000.0
+  },
+  "2019-12-31": {
+   "OrdinaryShare": 227543000.0,
+   "CapitalStock": 227543000.0,
+   "EquityAttributableToOwnersOfParent": 253890000.0,
+   "Equity": 253890000.0
+  },
+  "2020-06-30": {
+   "OrdinaryShare": 227543000.0,
+   "CapitalStock": 227543000.0,
+   "EquityAttributableToOwnersOfParent": 253051000.0,
+   "Equity": 253051000.0
+  },
+  "2020-12-31": {
+   "OrdinaryShare": 233373000.0,
+   "CapitalStock": 233373000.0,
+   "EquityAttributableToOwnersOfParent": 282690000.0,
+   "Equity": 282690000.0
+  },
+  "2021-06-30": {
+   "OrdinaryShare": 233373000.0,
+   "CapitalStock": 233373000.0,
+   "EquityAttributableToOwnersOfParent": 317223000.0,
+   "Equity": 317223000.0
+  },
+  "2021-12-31": {
+   "OrdinaryShare": 236853000.0,
+   "CapitalStock": 275269000.0,
+   "EquityAttributableToOwnersOfParent": 343022000.0,
+   "Equity": 343022000.0
+  },
+  "2022-06-30": {
+   "OrdinaryShare": 272253000.0,
+   "CapitalStock": 272253000.0,
+   "EquityAttributableToOwnersOfParent": 429970000.0,
+   "Equity": 429970000.0
+  },
+  "2022-12-31": {
+   "OrdinaryShare": 272993000.0,
+   "CapitalStock": 272993000.0,
+   "EquityAttributableToOwnersOfParent": 429918000.0,
+   "Equity": 429918000.0
+  },
+  "2023-06-30": {
+   "OrdinaryShare": 272993000.0,
+   "CapitalStock": 272993000.0,
+   "EquityAttributableToOwnersOfParent": 403604000.0,
+   "Equity": 403604000.0
+  },
+  "2023-12-31": {
+   "OrdinaryShare": 272993000.0,
+   "CapitalStock": 272993000.0,
+   "EquityAttributableToOwnersOfParent": 408062000.0,
+   "Equity": 408062000.0
+  },
+  "2024-06-30": {
+   "OrdinaryShare": 272993000.0,
+   "CapitalStock": 272993000.0,
+   "EquityAttributableToOwnersOfParent": 368634000.0,
+   "Equity": 368634000.0
+  },
+  "2024-12-31": {
+   "OrdinaryShare": 272993000.0,
+   "CapitalStock": 272993000.0,
+   "EquityAttributableToOwnersOfParent": 367640000.0,
+   "Equity": 367640000.0
+  },
+  "2025-03-31": {
+   "OrdinaryShare": 342993000.0,
+   "CapitalStock": 342993000.0,
+   "EquityAttributableToOwnersOfParent": 552676000.0,
+   "Equity": 552676000.0
+  },
+  "2025-06-30": {
+   "OrdinaryShare": 342993000.0,
+   "CapitalStock": 342993000.0,
+   "EquityAttributableToOwnersOfParent": 561579000.0,
+   "Equity": 561579000.0
+  },
+  "2025-12-31": {
+   "OrdinaryShare": 339133000.0,
+   "CapitalStock": 339133000.0,
+   "EquityAttributableToOwnersOfParent": 692419000.0,
+   "Equity": 692419000.0
+  },
+  "2026-03-31": {
+   "OrdinaryShare": 339133000.0,
+   "CapitalStock": 339133000.0,
+   "EquityAttributableToOwnersOfParent": 737014000.0,
+   "Equity": 737014000.0
+  },
+  "2026-06-30": {
+   "OrdinaryShare": 339133000.0,
+   "CapitalStock": 406960000.0,
+   "EquityAttributableToOwnersOfParent": 782836000.0,
+   "Equity": 782836000.0
+  }
  },
- "TaiwanStockPER": {
-  "msg": "success",
-  "n": 0,
-  "first": null,
-  "last": null,
-  "dates": []
+ "px_n": 1899,
+ "px_first": {
+  "date": "2019-01-02",
+  "stock_id": "3595",
+  "Trading_Volume": 23000,
+  "Trading_money": 259840,
+  "open": 11.27,
+  "max": 11.85,
+  "min": 11.2,
+  "close": 11.3,
+  "spread": 0.03,
+  "Trading_turnover": 7
  },
- "TaiwanStockMonthRevenue": {
-  "msg": "success",
-  "n": 22,
-  "first": {
-   "date": "2025-01-01",
-   "stock_id": "3595",
-   "country": "Taiwan",
-   "revenue": 23759000,
-   "revenue_month": 12,
-   "revenue_year": 2024,
-   "create_time": "2026-05-19"
-  },
-  "last": {
-   "date": "2026-10-01",
-   "stock_id": "3595",
-   "country": "Taiwan",
-   "revenue": 92752000,
-   "revenue_month": 9,
-   "revenue_year": 2026,
-   "create_time": "2026-10-06"
-  },
-  "dates": [
-   "2026-05-01",
-   "2026-06-01",
-   "2026-07-01",
-   "2026-08-01",
-   "2026-09-01",
-   "2026-10-01"
-  ]
+ "px_month_end": {
+  "2019-01": 13.41,
+  "2019-02": 14.25,
+  "2019-03": 14.7,
+  "2019-04": 16.4,
+  "2019-05": 15.2,
+  "2019-06": 12.82,
+  "2019-07": 14.1,
+  "2019-08": 0.0,
+  "2019-09": 13.5,
+  "2019-10": 0.0,
+  "2019-11": 0.0,
+  "2019-12": 0.0,
+  "2020-01": 12.6,
+  "2020-02": 0.0,
+  "2020-03": 9.85,
+  "2020-04": 9.88,
+  "2020-05": 12.35,
+  "2020-06": 12.7,
+  "2020-07": 12.6,
+  "2020-08": 12.9,
+  "2020-09": 0.0,
+  "2020-10": 16.0,
+  "2020-11": 29.75,
+  "2020-12": 42.5,
+  "2021-01": 59.9,
+  "2021-02": 67.1,
+  "2021-03": 64.2,
+  "2021-04": 61.7,
+  "2021-05": 50.7,
+  "2021-06": 54.9,
+  "2021-07": 59.6,
+  "2021-08": 56.5,
+  "2021-09": 49.9,
+  "2021-10": 46.25,
+  "2021-11": 44.55,
+  "2021-12": 45.55,
+  "2022-01": 50.8,
+  "2022-02": 46.4,
+  "2022-03": 44.2,
+  "2022-04": 39.1,
+  "2022-05": 38.5,
+  "2022-06": 34.2,
+  "2022-07": 30.3,
+  "2022-08": 28.25,
+  "2022-09": 20.05,
+  "2022-10": 17.55,
+  "2022-11": 21.45,
+  "2022-12": 21.5,
+  "2023-01": 21.0,
+  "2023-02": 22.85,
+  "2023-03": 20.9,
+  "2023-04": 21.25,
+  "2023-05": 19.2,
+  "2023-06": 17.45,
+  "2023-07": 21.25,
+  "2023-08": 28.8,
+  "2023-09": 30.35,
+  "2023-10": 35.75,
+  "2023-11": 42.3,
+  "2023-12": 39.05,
+  "2024-01": 37.85,
+  "2024-02": 36.9,
+  "2024-03": 35.7,
+  "2024-04": 33.35,
+  "2024-05": 35.6,
+  "2024-06": 35.3,
+  "2024-07": 41.25,
+  "2024-08": 36.15,
+  "2024-09": 37.55,
+  "2024-10": 35.4,
+  "2024-11": 34.25,
+  "2024-12": 32.1,
+  "2025-01": 34.6,
+  "2025-02": 36.0,
+  "2025-03": 42.3,
+  "2025-04": 43.55,
+  "2025-05": 61.3,
+  "2025-06": 128.5,
+  "2025-07": 193.0,
+  "2025-08": 329.0,
+  "2025-09": 388.5,
+  "2025-10": 399.0,
+  "2025-11": 336.5,
+  "2025-12": 305.5,
+  "2026-01": 526.0,
+  "2026-02": 690.0,
+  "2026-03": 1615.0,
+  "2026-04": 2615.0,
+  "2026-05": 2675.0,
+  "2026-06": 2300.0,
+  "2026-07": 1620.0,
+  "2026-08": 1795.0,
+  "2026-09": 1440.0,
+  "2026-10": 693.0
  },
- "TaiwanStockFinancialStatements": {
-  "msg": "success",
-  "n": 60,
-  "first": {
-   "date": "2025-06-30",
-   "stock_id": "3595",
-   "type": "OtherComprehensiveIncome",
-   "value": -8907000.0,
-   "origin_name": "其他綜合損益（淨額）"
-  },
-  "last": {
-   "date": "2026-06-30",
-   "stock_id": "3595",
-   "type": "IncomeFromContinuingOperations",
-   "value": 79807000.0,
-   "origin_name": "繼續營業單位本期淨利（淨損）"
-  },
-  "dates": [
-   "2025-06-30",
-   "2025-12-31",
-   "2026-03-31",
-   "2026-06-30"
-  ]
- },
- "TaiwanStockBalanceSheet": {
-  "msg": "success",
-  "n": 300,
-  "first": {
-   "date": "2025-06-30",
-   "stock_id": "3595",
-   "type": "CashAndCashEquivalents",
-   "value": 105047000.0,
-   "origin_name": "現金及約當現金"
-  },
-  "last": {
-   "date": "2026-06-30",
-   "stock_id": "3595",
-   "type": "CurrentContractLiabilities_per",
-   "value": 0.18,
-   "origin_name": "合約負債"
-  },
-  "dates": [
-   "2025-06-30",
-   "2025-12-31",
-   "2026-03-31",
-   "2026-06-30"
-  ]
- },
- "TaiwanStockCashFlowsStatement": {
-  "msg": "success",
-  "n": 102,
-  "first": {
-   "date": "2025-06-30",
-   "stock_id": "3595",
-   "type": "Depreciation",
-   "value": 8791000.0,
-   "origin_name": "折舊費用"
-  },
-  "last": {
-   "date": "2026-06-30",
-   "stock_id": "3595",
-   "type": "CashReceivedThroughOperations",
-   "value": 43181000.0,
-   "origin_name": "營運產生之現金流入（流出）"
-  },
-  "dates": [
-   "2025-06-30",
-   "2025-12-31",
-   "2026-03-31",
-   "2026-06-30"
-  ]
- },
- "TaiwanStockDividend": {
-  "msg": "success",
-  "n": 4,
-  "first": {
-   "date": "2023-07-23",
-   "stock_id": "3595",
-   "year": "111年",
-   "StockEarningsDistribution": 0.0,
-   "StockStatutorySurplus": 0.0,
-   "StockExDividendTradingDate": "",
-   "TotalEmployeeStockDividend": 0.0,
-   "TotalEmployeeStockDividendAmount": 0.0,
-   "RatioOfEmployeeStockDividendOfTotal": 0.0,
-   "RatioOfEmployeeStockDividend": 0.0,
-   "CashEarningsDistribution": 0.60099442,
-   "CashStatutorySurplus": 0.0,
-   "CashExDividendTradingDate": "2023-07-17",
-   "CashDividendPaymentDate": "2023-08-11",
-   "TotalEmployeeCashDividend": 0.0,
-   "TotalNumberOfCashCapitalIncrease": 0.0,
-   "CashIncreaseSubscriptionRate": 0.0,
-   "CashIncreaseSubscriptionpRrice": 0.0,
-   "RemunerationOfDirectorsAndSupervisors": 0.0,
-   "ParticipateDistributionOfTotalShares": 27151282.0,
-   "AnnouncementDate": "2023-06-30",
-   "AnnouncementTime": "17:35:15"
-  },
-  "last": {
-   "date": "2026-07-29",
-   "stock_id": "3595",
-   "year": "114年",
-   "StockEarningsDistribution": 2.0,
-   "StockStatutorySurplus": 0.0,
-   "StockExDividendTradingDate": "2026-07-23",
-   "TotalEmployeeStockDividend": 0.0,
-   "TotalEmployeeStockDividendAmount": 0.0,
-   "RatioOfEmployeeStockDividendOfTotal": 0.0,
-   "RatioOfEmployeeStockDividend": 0.0,
-   "CashEarningsDistribution": 1.0,
-   "CashStatutorySurplus": 0.0,
-   "CashExDividendTradingDate": "2026-07-23",
-   "CashDividendPaymentDate": "2026-08-27",
-   "TotalEmployeeCashDividend": 0.0,
-   "TotalNumberOfCashCapitalIncrease": 0.0,
-   "CashIncreaseSubscriptionRate": 0.0,
-   "CashIncreaseSubscriptionpRrice": 0.0,
-   "RemunerationOfDirectorsAndSupervisors": 0.0,
-   "ParticipateDistributionOfTotalShares": 33913282.0,
-   "AnnouncementDate": "2026-07-08",
-   "AnnouncementTime": "17:11:46"
-  },
-  "dates": [
-   "2023-07-23",
-   "2024-07-09",
-   "2025-02-09",
-   "2026-07-29"
-  ]
+ "rv": {
+  "2017-12": 36819000,
+  "2018-01": 33148000,
+  "2018-02": 14817000,
+  "2018-03": 24896000,
+  "2018-04": 26095000,
+  "2018-05": 27617000,
+  "2018-06": 24223000,
+  "2018-07": 54875000,
+  "2018-08": 57828000,
+  "2018-09": 59215000,
+  "2018-10": 49275000,
+  "2018-11": 59359000,
+  "2018-12": 53887000,
+  "2019-01": 47567000,
+  "2019-02": 27655000,
+  "2019-03": 48421000,
+  "2019-04": 34073000,
+  "2019-05": 36704000,
+  "2019-06": 27669000,
+  "2019-07": 39944000,
+  "2019-08": 46192000,
+  "2019-09": 81737000,
+  "2019-10": 56668000,
+  "2019-11": 52047000,
+  "2019-12": 53187000,
+  "2020-01": 48606000,
+  "2020-02": 22082000,
+  "2020-03": 54683000,
+  "2020-04": 56022000,
+  "2020-05": 42075000,
+  "2020-06": 47707000,
+  "2020-07": 59173000,
+  "2020-08": 50742000,
+  "2020-09": 47493000,
+  "2020-10": 36046000,
+  "2020-11": 48207000,
+  "2020-12": 53872000,
+  "2021-01": 65983000,
+  "2021-02": 35682000,
+  "2021-03": 53799000,
+  "2021-04": 53007000,
+  "2021-05": 48928000,
+  "2021-06": 54425000,
+  "2021-07": 47588000,
+  "2021-08": 40862000,
+  "2021-09": 35156000,
+  "2021-10": 40640000,
+  "2021-11": 40129000,
+  "2021-12": 52123000,
+  "2022-01": 48330000,
+  "2022-02": 32354000,
+  "2022-03": 48077000,
+  "2022-04": 42440000,
+  "2022-05": 46183000,
+  "2022-06": 34847000,
+  "2022-07": 17574000,
+  "2022-08": 28683000,
+  "2022-09": 16119000,
+  "2022-10": 21458000,
+  "2022-11": 27109000,
+  "2022-12": 17033000,
+  "2023-01": 16962000,
+  "2023-02": 12108000,
+  "2023-03": 24716000,
+  "2023-04": 12903000,
+  "2023-05": 20522000,
+  "2023-06": 12364000,
+  "2023-07": 14113000,
+  "2023-08": 15844000,
+  "2023-09": 15430000,
+  "2023-10": 27148000,
+  "2023-11": 26186000,
+  "2023-12": 25051000,
+  "2024-01": 18545000,
+  "2024-02": 10194000,
+  "2024-03": 8672000,
+  "2024-04": 9619000,
+  "2024-05": 11939000,
+  "2024-06": 8488000,
+  "2024-07": 10614000,
+  "2024-08": 13894000,
+  "2024-09": 14268000,
+  "2024-10": 17276000,
+  "2024-11": 19259000,
+  "2024-12": 23759000,
+  "2025-01": 21971000,
+  "2025-02": 20352000,
+  "2025-03": 22095000,
+  "2025-04": 18880000,
+  "2025-05": 20991000,
+  "2025-06": 48852000,
+  "2025-07": 58641000,
+  "2025-08": 67932000,
+  "2025-09": 70773000,
+  "2025-10": 61605000,
+  "2025-11": 33923000,
+  "2025-12": 53398000,
+  "2026-01": 37310000,
+  "2026-02": 42185000,
+  "2026-03": 51588000,
+  "2026-04": 58686000,
+  "2026-05": 66147000,
+  "2026-06": 76777000,
+  "2026-07": 80223000,
+  "2026-08": 84567000,
+  "2026-09": 92752000
  }
 }
