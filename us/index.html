@@ -503,6 +503,12 @@ html{scroll-behavior:smooth}
   <div class="chart" id="cRev"></div>
   <p class="foot" id="fRev">柱：單季營收　線：年增率（右軸 %）</p>
 </section>
+<section class="card" id="grow" hidden>
+  <h2>營收成長加速度 <small id="uGrow">季｜%</small></h2>
+  <p class="take" id="tGrow"></p>
+  <div class="chart" id="cGrow"></div>
+  <p class="foot" id="fGrow">柱：季增率　線：年增率。看的是年增率的「方向」：連續上彎＝加速、連續下彎＝減速，Beat and Drop 幾乎都發生在減速段</p>
+</section>
 <section class="card" id="margin">
   <h2>三率 <small id="uMar">季｜%</small></h2>
   <p class="take" id="tMar"></p>
@@ -515,11 +521,23 @@ html{scroll-behavior:smooth}
   <div class="chart" id="cEps"></div>
   <p class="foot" id="fEps">柱：單季稀釋 EPS　線：近四季累計（右軸）。10-K 的第四季 = 全年 − 前三季</p>
 </section>
+<section class="card" id="react" hidden>
+  <h2>財報驚喜 vs 首日反應 <small>近 8 季｜%</small></h2>
+  <p class="take" id="tReact"></p>
+  <div class="chart" id="cReact"></div>
+  <p class="foot">柱：EPS 驚喜率（實際 vs 預估，Finnhub 只有近 4 季）　柱：首日漲跌（財報後首個交易日收盤 vs 前一收盤）。看市場對這檔「Beat 買不買單」：驚喜正、首日負＝預期已過高</p>
+</section>
 <section class="card" id="fcf" hidden>
   <h2>自由現金流 <small id="uFcf"></small></h2>
   <p class="take" id="tFcf"></p>
   <div class="chart" id="cFcf"></div>
   <p class="foot" id="fFcf">柱：營業現金流 vs 資本支出（現金購置 PP&amp;E，不含融資租賃）　線：自由現金流 = 兩者相減，同一軸。紫柱高過綠柱＝投資燒掉的錢超過本業賺進來的</p>
+</section>
+<section class="card" id="fcfq" hidden>
+  <h2>自由現金流品質 <small>近四季滾動｜%</small></h2>
+  <p class="take" id="tFcfq"></p>
+  <div class="chart" id="cFcfq"></div>
+  <p class="foot">FCF 利潤率 = 近四季 FCF ÷ 近四季營收；FCF 轉換率 = 近四季 FCF ÷ 近四季淨利（淨利 = 營收 × 淨利率）。轉換率長期 < 100%（虛線）＝帳上賺的錢沒變成現金，常見原因是應收、庫存堆高或 CapEx 吃掉；近四季淨利率不到 2% 或虧損時不畫轉換率</p>
 </section>
 <section class="card" id="fwd">
   <h2>預估 EPS <small>自建模型｜可調假設</small></h2>
@@ -836,7 +854,24 @@ function header(){
   if(hasF){const [i,o,cx]=FC[FC.length-1],f=o-cx,w=Q.slice(i-3,i+1),ok=D.freq==='Q'&&w.length===4&&w.every((x,j)=>(!j||isPrevQ(w[j-1],x))&&x[11]!=null&&x[7]!=null),t4=ok?sum(w.map(x=>x[11]-x[7])):null;
     $('tFcf').innerHTML=`${qlbl(Q[i])} 營業現金流 <strong>${ap()}${camt(o)}</strong>、資本支出 <strong>${ap()}${camt(cx)}</strong> → 自由現金流 <strong>${ap()}${camt(f)}</strong>${t4!=null?`；近四季 <strong>${ap()}${camt(t4)}</strong>`:''}${f<0?'<span class="pill">轉負</span>':''}`;
     $('uFcf').textContent=`${capU()}｜${D.freq==='Q'?'日曆季':'會計年度'}`}
-  $('chips').innerHTML=(D.demand?'<a href="#capex" data-s>CapEx</a>':'')+'<a href="#rev" data-s>營收</a><a href="#margin" data-s>三率</a><a href="#eps" data-s>EPS</a>'+(hasF?'<a href="#fcf" data-s>現金流</a>':'')+'<a href="#fwd" data-s>預估EPS</a><a href="#pe" data-s>本益比河流</a><a href="#pb" data-s>淨值比河流</a>';
+  // 成長加速度：年增率至少 3 季才畫
+  const GY=Q.map((x,i)=>[i,yoyOf(i)]).filter(x=>x[1]!=null),hasG=GY.length>=3;$('grow').hidden=!hasG;
+  if(hasG){const k=GY.length-1,[i1,y1]=GY[k],[i0,y0]=GY[k-1];let run=0,dir=Math.sign(y1-y0);for(let j=k;j>0&&Math.sign(GY[j][1]-GY[j-1][1])===dir&&dir;j--)run++;
+    const d=y1-y0,q0g=isPrevQ(Q[i1-1],Q[i1])?((Q[i1][2]/Q[i1-1][2]-1)*100).toFixed(1):null;
+    $('tGrow').innerHTML=`${qlbl(Q[i1])} 年增 <strong>${y1}%</strong>（前期 ${y0}%）${d!==0?`，${d>0?'<span class="pill">加速</span>':'<span class="pill b">減速</span>'} ${Math.abs(d).toFixed(1)} 個百分點${run>=2?`，已連續 ${run} ${D.freq==='Q'?'季':'年'}${d>0?'加速':'減速'}`:''}`:'，持平'}${q0g!=null?`；季增 <strong>${q0g}%</strong>`:''}`;
+    $('uGrow').textContent=`${D.freq==='Q'?'季':'年度'}｜%`}
+  // FCF 品質：近四季滾動，需有 OCF、CapEx、淨利率
+  const fq4=i=>{const w=Q.slice(i-3,i+1);if(D.freq!=='Q'||w.length<4||!w.every((x,j)=>(!j||isPrevQ(w[j-1],x))&&x[11]!=null&&x[7]!=null&&x[2]&&x[5]!=null))return null;const f=sum(w.map(x=>x[11]-x[7])),r=sum(w.map(x=>x[2])),ni=sum(w.map(x=>x[2]*x[5]/100));return {m:+(f/r*100).toFixed(1),c:ni/r>=0.02?Math.max(-100,Math.min(300,+(f/ni*100).toFixed(0))):null,f,ni}};   // 淨利率 < 2% 或虧損時轉換率沒意義，不畫；上限 300%
+  const FQ=Q.map((x,i)=>[i,fq4(i)]).filter(x=>x[1]),hasFQ=FQ.length>=2;$('fcfq').hidden=!hasFQ;
+  if(hasFQ){const [i,v]=FQ[FQ.length-1],lo=FQ.slice(-4).filter(x=>x[1].c!=null&&x[1].c<100).length;
+    $('tFcfq').innerHTML=`到 ${qlbl(Q[i])} 近四季 FCF 利潤率 <strong>${v.m}%</strong>，轉換率 <strong>${v.c==null?'—（淨利太低）':(v.c>=300?'>300':v.c<=-100?'<−100':v.c)+'%'}</strong>${v.c!=null?(v.c>=100?'<span class="pill">現金 ≥ 帳面獲利</span>':lo>=3?'<span class="pill b">連續偏低</span>':''):''}`}
+  // 財報驚喜 vs 首日反應：自動層近 8 季
+  const RH=((AUTOQ[D.id]||{}).hist||[]).filter(h=>h[6]!=null||h[3]!=null);$('react').hidden=RH.length<2;
+  if(RH.length>=2){const be=RH.filter(h=>h[3]!=null&&h[3]>=0),mi=RH.filter(h=>h[3]!=null&&h[3]<0),av=a=>a.length?(sum(a.map(h=>h[6]).filter(v=>v!=null))/Math.max(1,a.filter(h=>h[6]!=null).length)).toFixed(1):null,l=RH[RH.length-1];
+    const pc=v=>v==null?'—':`${v>=0?'+':'−'}${Math.abs(v).toFixed(1)}%`;
+    $('tReact').innerHTML=`${l[0]} 驚喜 <strong>${pc(l[3])}</strong>、首日 <strong>${pc(l[6])}</strong>${be.length+mi.length?`；有預估的 ${be.length+mi.length} 季：Beat ${be.length} 次${be.length&&av(be)!=null?`（首日平均 ${av(be)>=0?'+':''}${av(be)}%）`:''}、Miss ${mi.length} 次${mi.length&&av(mi)!=null?`（首日平均 ${av(mi)>=0?'+':''}${av(mi)}%）`:''}`:''}`}
+  $('chips').innerHTML=(D.demand?'<a href="#capex" data-s>CapEx</a>':'')+'<a href="#rev" data-s>營收</a>'+(hasG?'<a href="#grow" data-s>成長</a>':'')+'<a href="#margin" data-s>三率</a><a href="#eps" data-s>EPS</a>'+(RH.length>=2?'<a href="#react" data-s>財報反應</a>':'')+(hasF?'<a href="#fcf" data-s>現金流</a>':'')+(hasFQ?'<a href="#fcfq" data-s>FCF品質</a>':'')+'<a href="#fwd" data-s>預估EPS</a><a href="#pe" data-s>本益比河流</a><a href="#pb" data-s>淨值比河流</a>';
+  window.__FQ=FQ;window.__RH=RH;
 }
 function render(){
   const acc=css('--accent'),acc2=css('--accent2'),warm=css('--warm'),n=D.freq==='Q'?20:8,st=Math.max(0,Q.length-n),S=Q.slice(st);
@@ -869,6 +904,25 @@ function render(){
      {name:'資本支出',type:'bar',data:S.map(x=>flashBar(x,cval(x[7]),css('--violet'))),itemStyle:{color:css('--violet'),borderRadius:[2,2,0,0]}},
      {name:'自由現金流',type:'line',data:S.map(x=>cval(f(x))),symbol:'circle',symbolSize:4,z:5,lineStyle:{width:2,color:down},itemStyle:{color:down},markLine:{silent:true,symbol:'none',lineStyle:{color:down,type:'dashed',width:1,opacity:.6},label:{show:false},data:[{yAxis:0}]}}];
    c.setOption(o,true)}
+  if(!$('grow').hidden){const o=base(),c=mk('cGrow');o.xAxis.data=S.map(qlbl);o.yAxis.scale=false;o.yAxis.axisLabel.formatter='{value}%';
+   const qq=i=>i>0&&isPrevQ(Q[i-1],Q[i])&&Q[i-1][2]?+((Q[i][2]/Q[i-1][2]-1)*100).toFixed(1):null;
+   o.tooltip.formatter=ps=>{const i=st+ps[0].dataIndex,y=yoyOf(i),p=Q[prevYearIdx(i)],py=p?yoyOf(prevYearIdx(i)):null;return `<b>${qtip(i)}</b><br>年增 ${y??'—'}%${py!=null&&y!=null?`（去年同期 ${py}%，${y>py?'加速':y<py?'減速':'持平'} ${Math.abs(y-py).toFixed(1)} 點）`:''}${D.freq==='Q'?`<br>季增 ${qq(i)??'—'}%`:''}`};
+   const ser=[{name:'年增率',type:'line',data:S.map((x,j)=>yoyOf(st+j)),symbol:'circle',symbolSize:4,connectNulls:false,z:5,lineStyle:{width:2.5,color:warm},itemStyle:{color:warm},endLabel:{show:true,formatter:p=>p.value+'%',color:warm,fontSize:10,fontFamily:'IBM Plex Mono'},markLine:{silent:true,symbol:'none',lineStyle:{color:css('--muted'),type:'dashed',width:1,opacity:.6},label:{show:false},data:[{yAxis:0}]}}];
+   if(D.freq==='Q')ser.unshift({name:'季增率',type:'bar',data:S.map((x,j)=>{const v=qq(st+j);return flashBar(x,v,acc)}),itemStyle:{color:acc+'99',borderRadius:[2,2,0,0]},barCategoryGap:'35%',markArea:D.inj?FLASH_AREA(warm,D.inj):undefined});
+   o.series=ser;o.grid.right=38;c.setOption(o,true)}
+  if(!$('fcfq').hidden){const o=base(),c=mk('cFcfq');const FQ=window.__FQ,M=Object.fromEntries(FQ);o.xAxis.data=S.map(qlbl);o.yAxis.scale=false;o.yAxis.axisLabel.formatter='{value}%';o.tooltip.valueFormatter=v=>v==null?'—':v+'%';
+   o.yAxis.max=v=>Math.max(110,Math.ceil(v.max/10)*10);o.tooltip.formatter=ps=>{const i=st+ps[0].dataIndex,v=M[i];return `<b>${qtip(i)}</b>${v?`<br>近四季 FCF ${ap()}${camt(v.f)}<br>FCF 利潤率 ${v.m}%<br>FCF 轉換率 ${v.c==null?'—（淨利太低）':(v.c>=300?'>300':v.c<=-100?'<−100':v.c)+'%'}`:'<br>資料不足'}`};
+   o.series=[{name:'FCF 利潤率',type:'line',data:S.map((x,j)=>M[st+j]?M[st+j].m:null),symbol:'none',lineStyle:{width:2,color:acc2},itemStyle:{color:acc2},endLabel:{show:true,formatter:p=>p.value+'%',color:acc2,fontSize:10,fontFamily:'IBM Plex Mono'}},
+     {name:'FCF 轉換率',type:'line',data:S.map((x,j)=>M[st+j]?M[st+j].c:null),symbol:'none',lineStyle:{width:2,color:css('--violet')},itemStyle:{color:css('--violet')},endLabel:{show:true,formatter:p=>p.value+'%',color:css('--violet'),fontSize:10,fontFamily:'IBM Plex Mono'},markLine:{silent:true,symbol:'none',lineStyle:{color:css('--violet'),type:'dashed',width:1,opacity:.6},label:{show:true,position:'insideEndTop',formatter:'100%',fontSize:9,color:css('--violet')},data:[{yAxis:100}]}}];
+   o.grid.right=42;c.setOption(o,true);spreadEnd(c,o)}
+  if(!$('react').hidden){const o=base(),c=mk('cReact'),RH=window.__RH;o.xAxis.data=RH.map(h=>h[0]);o.yAxis.scale=false;o.yAxis.axisLabel.formatter='{value}%';
+   const pc=v=>v==null?'—':`${v>=0?'+':'−'}${Math.abs(v).toFixed(1)}%`,hr={bmo:'盤前',amc:'盤後',dmh:'盤中'};
+   o.tooltip.formatter=ps=>{const h=RH[ps[0].dataIndex];return `<b>${h[0]}</b>　${h[4]?h[4].slice(5).replace('-','/'):''} ${hr[h[5]]||''}<br>EPS 實際 ${h[2]??'—'}${h[1]!=null?` ／預估 ${h[1]}`:'（無預估）'}<br>驚喜率 ${pc(h[3])}<br>首日漲跌 ${pc(h[6])}`};
+   const col=(v,up,dn)=>v==null?acc:v>=0?up:dn;
+   o.series=[{name:'EPS 驚喜率',type:'bar',data:RH.map(h=>h[3]==null?null:{value:h[3],itemStyle:{color:acc}}),itemStyle:{color:acc,borderRadius:[2,2,0,0]},barCategoryGap:'30%',barGap:'10%',label:{show:true,position:'top',fontSize:9,color:css('--muted'),fontFamily:'IBM Plex Mono',formatter:p=>p.value==null?'':(p.value>=0?'+':'')+p.value}},
+     {name:'首日漲跌',type:'bar',data:RH.map(h=>h[6]==null?null:{value:h[6],itemStyle:{color:h[6]>=0?css('--up'):css('--down')}}),itemStyle:{color:warm,borderRadius:[2,2,0,0]},label:{show:true,position:'top',fontSize:9,color:css('--muted'),fontFamily:'IBM Plex Mono',formatter:p=>p.value==null?'':(p.value>=0?'+':'')+p.value}},
+     {name:'',type:'line',data:[],markLine:{silent:true,symbol:'none',lineStyle:{color:css('--muted'),type:'dashed',width:1,opacity:.6},label:{show:false},data:[{yAxis:0}]}}];
+   o.legend.data=['EPS 驚喜率','首日漲跌'];c.setOption(o,true)}
   renderFwd();river('cPE',PEM,2,'倍 PE');river('cPB',PBM,3,'倍 PB');
 }
 // ---------- 預估模型 ----------
