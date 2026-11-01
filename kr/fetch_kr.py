@@ -8,7 +8,7 @@
 （OpenDART 每次約 7 秒，6 年 × 4 份報告全抓一次要 3 分鐘）。
 公司代碼快取：kr/data/corp.json（corpCode.xml 下載要 3.5 分鐘，只在清單缺代號時重抓）。
 """
-import io, json, os, re, sys, time, zipfile, datetime as dt
+import bisect, io, json, os, re, sys, time, zipfile, datetime as dt
 from pathlib import Path
 import urllib.request, urllib.parse
 
@@ -665,8 +665,65 @@ def earn_info(code, corp, Q, fin):
     return e, row
 
 
+def recent_ann(cache, Q, px, days=120):
+    """📣 最近公布的財報事件（給首頁「財報・已公布」卡）→ list，新→舊。
+    每筆 {cal 季, d 公布日, k pre(暫定)|fin(正式季報), rev op ni(億), cop/cni 公布前共識營益／淨利(億; post=1 表示快照晚於公布，不可當驚喜率),
+          rx 首日漲跌%(公布日收盤 vs 前一交易日；公布日非交易日→下一交易日), rx2 兩日漲跌%(含次日，涵蓋盤後公布)}
+    暫定公告日取該季最早一次；該季沒有暫定公告（小型股只發季報）才用季報申報日。"""
+    cut = (TODAY - dt.timedelta(days=days)).isoformat()
+    pre_dt = {}
+    for d, rno, nm in cache.get("ann", []):
+        cal = q_of_date(dt.date.fromisoformat(d))
+        if cal not in pre_dt or d < pre_dt[cal]:
+            pre_dt[cal] = d
+    ev = {}
+    for cal, d in pre_dt.items():
+        if d >= cut:
+            ev[cal] = dict(cal=cal, d=d, k="pre")
+    for x in Q:
+        if x["cal"] not in ev and not x.get("pre") and x.get("filed") and x["filed"] >= cut:
+            ev[x["cal"]] = dict(cal=x["cal"], d=x["filed"], k="fin")
+    if not ev:
+        return []
+    dates = [r["date"] for r in px]
+    closes = [r["c"] for r in px]
+    out = []
+    for cal, e in ev.items():
+        row = next((x for x in Q if x["cal"] == cal), None)
+        nv = (cache.get("nv") or {}).get(cal) or {}
+        if row and (row.get("rev") is not None or row.get("nia") is not None):
+            e.update(rev=row.get("rev"), op=row.get("opa"), ni=row.get("nia"))
+            if e["k"] == "pre" and not row.get("pre"):
+                e["k"] = "fin"   # 暫定後正式季報也到了 → 數字已是正式值
+        elif nv:
+            e.update(rev=nv.get("rev"), op=nv.get("op"), ni=nv.get("nip") if nv.get("nip") is not None else nv.get("ni"))
+        else:
+            continue
+        c = (cache.get("cns") or {}).get(cal)
+        if c:
+            e["cop"], e["cni"] = c.get("op"), c.get("nip") if c.get("nip") is not None else c.get("ni")
+            if c.get("post"):
+                e["post"] = 1
+        # 去年同季正式值 → 年增（共識不乾淨時前端改顯示年增）
+        ly = f"{int(cal[:2]) - 1:02d}Q{cal[3]}"
+        py = next((x for x in Q if x["cal"] == ly), None)
+        if py:
+            if py.get("opa") and py["opa"] > 0 and e.get("op") is not None:
+                e["oy"] = round((e["op"] / py["opa"] - 1) * 100, 1)
+            if py.get("nia") and py["nia"] > 0 and e.get("ni") is not None:
+                e["ny"] = round((e["ni"] / py["nia"] - 1) * 100, 1)
+        # 股價反應
+        i = bisect.bisect_left(dates, e["d"])   # 第一個 >= 公布日的交易日
+        if 0 < i < len(dates):
+            e["rx"] = round((closes[i] / closes[i - 1] - 1) * 100, 1)
+            if i + 1 < len(dates):
+                e["rx2"] = round((closes[i + 1] / closes[i - 1] - 1) * 100, 1)
+        out.append(e)
+    return sorted(out, key=lambda x: x["d"], reverse=True)
+
+
 # ---------- 組裝 ----------
-FIN_COLS = ["cal", "rev", "gm", "om", "nm", "eps", "opa", "nia", "capex", "ocf", "divp", "eq", "assets", "liab", "cash"]
+FIN_COLS =["cal", "rev", "gm", "om", "nm", "eps", "opa", "nia", "capex", "ocf", "divp", "eq", "assets", "liab", "cash"]
 # fin 欄位：0季別 1營收(億) 2毛利率 3營益率 4淨利率 5EPS 6營業利益(億) 7母公司淨利(億) 8資本支出(億) 9營業現金流(億)
 #           10股利發放(億) 11母公司權益(億) 12總資產(億) 13總負債(億) 14現金(億)　— 前端 #fin 財報明細頁用
 
@@ -766,10 +823,16 @@ def build(code, corps):
         note.append("此公司沒有連結財報，使用個別財報")
     if src != "Naver":
         note.append("股價來自 Yahoo（Naver 暫時抓不到），沒有外資持股比")
+    try:
+        ep = OUT / "earn" / f"{code}.json"
+        rec = recent_ann(json.loads(ep.read_text("utf-8")) if ep.exists() else {}, Q, px)
+    except Exception as e:
+        print(f"  已公布事件失敗：{e}")
+        rec = []
     return dict(id=code, name=cfg["zh"] or nv.get("name") or kname, kname=kname, theme=cfg["theme"],
                 cyclical="C" in cfg["flags"], tw=cfg["tw"], freq="Q", fye=f"{TODAY.year - 1}-12-31", corp=corp,
                 updated=dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%MZ"), last=last, q=q, riv=riv,
-                fr=fr, cons=cons, fin=fin, earn=earn, qc=qc, note=note, _nv_name=nv.get("name")), n_new
+                fr=fr, cons=cons, fin=fin, earn=earn, qc=qc, rec=rec, note=note, _nv_name=nv.get("name")), n_new
 
 
 def write_diag(diag):
@@ -799,7 +862,8 @@ def main():
                            close=L["close"], chg=round((L["close"] / L["prev"] - 1) * 100, 2) if L["prev"] else None,
                            pe=L["pe"], pb=L["pb"], fr=L["fr"], cpe=L["cns_per"], lq=lq[0] if lq else None,
                            cyc=d["cyclical"], tw=d["tw"], date=L["date"], pre=bool(lq and len(lq) > 11 and lq[11]),
-                           earn={k: v for k, v in (d.get("earn") or {}).items() if k in ("q", "st", "pre", "est", "due", "b", "ry", "oy", "ot", "ny", "nonum", "cns")}))
+                           earn={k: v for k, v in (d.get("earn") or {}).items() if k in ("q", "st", "pre", "est", "due", "b", "ry", "oy", "ot", "ny", "nonum", "cns")},
+                           rec=d.get("rec") or []))
             Qs = d["q"]
             diag[code] = dict(zh=d["name"], kname=d["kname"], nv=nvn, n=len(Qs), sec=round(time.time() - t0),
                               first=Qs[0][0] if Qs else None, last=lq[0] if lq else None, new=n_new,

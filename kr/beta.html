@@ -327,6 +327,18 @@ html{scroll-behavior:smooth}
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 [hidden]{display:none!important}
 /* ---- 🏆 市值排行 #rank：同 .lst 表格；首頁入口同台股站 .srlink ---- */
+/* 📅 首頁財報卡（比照美股站）：本週＝待公布倒數、已公布＝近 14 天公布的暫定／季報，chip 兩檔一行 */
+.ecard h2{flex-wrap:nowrap;white-space:nowrap;gap:5px}.ecard .etab{display:inline-flex;flex:none;border:1px solid var(--line);border-radius:999px;overflow:hidden;margin:0;gap:0}.ecard .etab button{font:inherit;font-size:11px;font-weight:600;color:var(--muted);background:var(--bg);border:0;padding:2px 6px;cursor:pointer;white-space:nowrap;border-radius:0}.ecard .etab button.on{color:#fff;background:var(--accent)}
+.ecard h2 small{min-width:0;overflow:hidden;text-overflow:ellipsis}.ecard h2 .more{flex:none;font-size:11.5px;color:var(--accent);text-decoration:none;font-weight:600;margin-left:auto}.ecard h2 .more+.more{margin-left:0}
+.ecal .mr{display:grid;grid-template-columns:56px 1fr;gap:5px;align-items:start;padding:7px 0;border-top:1px solid var(--line)}.ecal .mr:first-child{border-top:0;padding-top:6px}
+.ecal .md{display:flex;flex-direction:column;line-height:1.25;padding-top:3px}.ecal .md b{font-family:var(--f-num);font-size:12.5px;font-weight:700;white-space:nowrap;letter-spacing:-.02em}.ecal .md b span{font-family:var(--f-body);font-size:10px;font-weight:500;color:var(--muted);margin-left:1px}
+.ecal .md small{font-size:10.5px;color:var(--muted);white-space:nowrap}.ecal .md i{font-style:normal;color:var(--accent);font-weight:600;margin-right:3px}
+.ecal .row{display:flex;flex-wrap:wrap;gap:5px}.ecal .row.two{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+.ecal .ec{display:inline-flex;align-items:baseline;gap:3px;font-size:12px;text-decoration:none;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:3px 7px;min-width:0;white-space:nowrap;overflow:hidden}
+.ecal .ec b{font-size:11.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;max-width:6.5em;flex:1 1 auto;min-width:2.5em}.ecal .ec small{font-size:10px;flex:none;font-family:var(--f-num);color:var(--muted)}.ecal .ec small+small{margin-left:auto}
+.ecal .ec.tg{border-color:color-mix(in srgb,var(--warm) 55%,var(--line))}.ecal .ec.tg b{color:var(--accent)}.ecal .ec small.up{color:var(--up);font-weight:600}.ecal .ec small.dw{color:var(--down);font-weight:600}.ecal .ec.pl{color:var(--accent);font-weight:600;justify-content:center}
+.ecal .ec.soon{border-color:var(--warm)}.ecal .ec.today{border-color:var(--down)}.ecal .dnl{font-size:10.5px;margin:6px 0 0;color:var(--muted)}
+#caTbl td.rx{font-family:var(--f-num)}#caTbl .yy{font-size:11px;color:var(--muted)}
 .srlink{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:10px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;color:var(--fg);text-decoration:none}.srlink b{font-size:14px;white-space:nowrap}.srlink span{font-size:12px;color:var(--muted);text-align:right}
 #rankPage .top{padding-top:12px}#rankPage h1{font-size:22px;font-weight:900;margin:6px 0 0;line-height:1.3}#rankPage .fx{margin-top:8px}
 #rkList td:first-child{min-width:7.5em}.lst .mk{font-size:10px;padding:0 5px;border-radius:4px;border:1px solid var(--line);color:var(--muted);margin-left:4px;vertical-align:1px}
@@ -359,7 +371,10 @@ html{scroll-behavior:smooth}
     <div class="sug" id="sug" role="listbox" hidden></div>
   </header>
   <div id="caWrap">
-    <a class="srlink" id="caLink" href="#calendar" hidden><b>📅 財報公布倒數</b><span id="caSub"></span></a>
+    <section class="card ecard" id="earnCal" hidden>
+      <h2>📅 財報 <span class="etab" role="tablist"><button type="button" data-v="week" role="tab">本週</button><button type="button" data-v="done" role="tab">已公布</button></span><small id="uEarn"></small><a class="more" href="#calendar/wait">⏳ 倒數</a><a class="more" href="#calendar/done">全部→</a></h2>
+      <div class="ecal" id="ecalMini"></div>
+    </section>
   </div>
   <div id="tsec">
     <h2 class="sec"><span>產業主題 <small id="tAsof"></small></span><span><button type="button" class="act nfo" id="tLegI" aria-expanded="false" aria-controls="tLeg" aria-label="欄位說明">ⓘ</button><button type="button" class="dns" id="hDense"></button><a class="act" id="hEdit" href="#edit">✏️ 編輯</a></span></h2>
@@ -1319,7 +1334,7 @@ function backPaint(id){const t=themeOfStock(id);$('back').href=t?'#t/'+t.id:'#';
 let HOMEY=0;
 function route(){
   const raw=decodeURIComponent(location.hash.slice(1)),id=raw.toUpperCase();
-  const em=/^edit(?:\/([a-z0-9_-]+))?$/.exec(raw),rk=raw.toLowerCase()==='rank',sr=raw.toLowerCase()==='salary',ca=raw.toLowerCase()==='calendar';   // 編輯頁 #edit、#edit/{主題}（小寫，跟代號 EDIT 分開）
+  const em=/^edit(?:\/([a-z0-9_-]+))?$/.exec(raw),rk=raw.toLowerCase()==='rank',sr=raw.toLowerCase()==='salary',cam=/^calendar(?:\/(wait|pre|done))?$/i.exec(raw),ca=!!cam;if(cam&&cam[1])CA.tab=cam[1].toLowerCase();   // #calendar/done 直接開「已公布」頁籤；編輯頁 #edit、#edit/{主題}（小寫，跟代號 EDIT 分開）
   if(!em&&!rk&&!sr&&!ca&&ALIAS[id]&&!IDX.some(s=>s.id===id)){location.replace('#'+ALIAS[id]);return}   // #FB → #META
   const tm=/^t\/([a-z0-9_-]+)$/i.exec(raw),tid=tm?tm[1].toLowerCase():null,h=em?raw:rk?'rank':sr?'salary':ca?'calendar':tid?'t/'+tid:id;   // 主題頁 #t/pcb
   bkTrack(h);
@@ -1410,20 +1425,54 @@ const mdT=s=>s?`${+s.slice(5,7)}/${+s.slice(8)}`:'—';
 const WD=['日','一','二','三','四','五','六'];const wdT=s=>s?WD[new Date(s+'T00:00:00').getDay()]:'';
 const earnOf=id=>{const s=stockOf(id);return s&&s.earn&&s.earn.q?s.earn:null};
 function caAll(){return IDX.filter(s=>s.earn&&s.earn.q).map(s=>({id:s.id,...s.earn,th:srTheme(s.id)}))}
-function caHome(){const el=$('caLink');if(!el)return;const a=caAll();if(!a.length){el.hidden=true;return}
-  const w=a.filter(r=>r.st!=='pre'),soon=w.filter(r=>dDays(r.est)<=7),nx=w.filter(r=>dDays(r.est)>=0).sort((x,y)=>x.est<y.est?-1:1)[0];
-  $('caSub').innerHTML=`${a.filter(r=>r.st==='pre').length}檔已出暫定・${w.length}檔待公布${soon.length?`・7天內 <b style="color:var(--warm)">${soon.length}</b> 檔`:''}${nx?`・最近 ${esc(stockOf(nx.id).name||nx.id)} ${mdT(nx.est)}`:''} →`;el.hidden=false}
+// 📣 已公布事件：index.json 每檔 rec = [{cal, d 公布日, k pre|fin, rev op ni(億), cop/cni 公布前共識營益／淨利, post 共識快照晚於公布, oy/ny 年增, rx 首日漲跌%, rx2 兩日}]
+function recRows(days=14){const by={};IDX.forEach(s=>(s.rec||[]).forEach(r=>{const dd=dDays(r.d);if(dd>0||dd<-days)return;(by[r.d]=by[r.d]||[]).push({id:s.id,...r,th:srTheme(s.id)})}));
+  return Object.keys(by).sort().reverse().map(d=>[d,by[d].sort((a,b)=>(b.rev||b.ni||0)-(a.rev||a.ni||0))])}
+// 驚喜率只在「公布前共識」乾淨時算（post=1 是公布後才快照、已被分析師往實際值修 → 不算）；金融股沒營收，看淨利
+function recStat(r){const fin=r.rev==null,a=fin?r.ni:r.op,c=fin?r.cni:r.cop;let sp=null;if(c!=null&&!r.post&&a!=null&&c!==0)sp=(a/Math.abs(c)-1)*100;return {fin,sp,yy:fin?r.ny:r.oy,a,c}}
+// 首頁 chip 兩檔一行塞不下長名 → 短名（只用在財報卡）
+const SHORT={'000660':'海力士','042700':'韓美半導','039030':'EO Tech','240810':'圓益IPS','007660':'ISU','011070':'LG Innotek','222800':'Simmtech','357780':'Soulbrain','005290':'東進世美','267260':'HD現代電','298040':'曉星重工','402340':'SK Square','373220':'LG新能源','207940':'三星生物','006400':'三星SDI','329180':'HD現代重','055550':'新韓金融','086790':'韓亞金融','105560':'KB金融','012450':'韓華航太','034020':'斗山能源','028260':'三星物產','009150':'三星電機'};
+const shortN=id=>SHORT[id]||stockOf(id).name||id;
+const pmT=(v,d)=>(v>=0?'+':'−')+Math.abs(v).toFixed(d)+'%';
+function rchip(r){const st=stockOf(r.id),{fin,sp,yy}=recStat(r),lb=fin?'淨利':'營益';
+  const m=sp!=null?`<small class="${sp>=0?'up':'dw'}" title="${lb}驚喜率：實際 vs 公布前法人共識">${pmT(sp,Math.abs(sp)>=1?0:1)}</small>`
+    :yy!=null?`<small class="${yy>=0?'up':'dw'}" title="${lb}年增（${r.post?'公布前共識不乾淨，':'沒有法人共識，'}改顯示年增）" style="font-weight:400">${yy>300?'>+300%':pmT(yy,0)}</small>`:'<small title="沒數字">—</small>';
+  const rx=r.rx==null?'':`<small class="${r.rx>=0?'up':'dw'}" title="首日漲跌：公布日收盤 vs 前一交易日${r.rx2!=null?`；兩日（含次日）${pmT(r.rx2,1)}`:''}">${pmT(r.rx,1)}</small>`;
+  return `<a class="ec${sp!=null?' tg':''}" href="#${r.id}" title="${esc(st.name||r.id)} ${r.cal} ${r.k==='pre'?'暫定業績':'正式季報'} ${mdT(r.d)} 公布，點進個股頁看財報判讀">${sp!=null?'🎯':''}<b>${esc(shortN(r.id))}</b>${m}${rx}</a>`}
+const mhead=(d,sub)=>`<div class="md"><b>${mdT(d)}<span>（${wdT(d)}）</span></b><small>${d===TODAY_?'<i>今天</i>':''}${sub||''}</small></div>`;
+let EVIEW='week';try{EVIEW=localStorage.getItem('krEarnView')||'week'}catch(e){}
+function caHome(){const el=$('earnCal');if(!el)return;const a=caAll();if(!a.length&&!IDX.some(s=>s.rec&&s.rec.length)){el.hidden=true;return}
+  [...el.querySelectorAll('.etab button')].forEach(b=>{b.classList.toggle('on',b.dataset.v===EVIEW);b.setAttribute('aria-selected',b.dataset.v===EVIEW)});
+  const w=a.filter(r=>r.st!=='pre'),wk=w.filter(r=>dDays(r.est)>=0&&dDays(r.est)<=7),late=w.filter(r=>dDays(r.est)<0),dn=recRows(7),dnn=dn.reduce((n,[,r])=>n+r.length,0),older=recRows(45).reduce((n,[,r])=>n+r.length,0)-dnn;
+  el.querySelector('[data-v=week]').textContent=EVIEW==='week'?`本週 ${wk.length}`:'本週';el.querySelector('[data-v=done]').textContent=EVIEW==='done'?`已公布 ${dnn}`:'已公布';
+  if(EVIEW==='done'){$('uEarn').textContent='';$('uEarn').title=`近 7 天公布 ${dnn} 檔（暫定業績＋正式季報）；🎯 = 有公布前共識，數字是驚喜率`;
+    $('ecalMini').innerHTML=(dn.map(([d,r])=>{const np=r.filter(x=>x.k==='pre').length,sub=np===r.length?'暫定':np?`暫定 ${np}・季報 ${r.length-np}`:'季報';return `<div class="mr">${mhead(d,sub)}<div class="row two">${r.map(rchip).join('')}</div></div>`}).join('')||'<p class="meta" style="margin-top:8px">近 7 天沒有追蹤股公布財報</p>')
+      +(older>0?`<div class="row" style="margin-top:6px"><a class="ec pl" href="#calendar/done">更早 +${older} →</a></div>`:'')
+      +(dn.length?'<p class="dnl">粗體＝營益驚喜率（🎯 有公布前共識）、細體＝營益年增（沒有乾淨共識）；金融股看淨利 ｜ 第二欄＝首日漲跌（紅正綠負）；點進個股頁看財報判讀</p>':'');el.hidden=false;return}
+  const by={};wk.forEach(r=>(by[r.est]=by[r.est]||[]).push(r));const ds=Object.keys(by).sort();
+  $('uEarn').textContent='';$('uEarn').title=`7 天內預計公布 ${wk.length} 檔${late.length?`，另有 ${late.length} 檔預計日已過未公布`:''}`;
+  $('ecalMini').innerHTML=ds.slice(0,3).map(d=>{const r=by[d].sort((x,y)=>x.due<y.due?-1:1),n=dDays(d);return `<div class="mr">${mhead(d,n===0?'':n+' 天後')}<div class="row">${r.slice(0,6).map(x=>`<a class="ec${n===0?' today':n<=3?' soon':''}" href="#${x.id}" title="${x.q} 預計 ${mdT(x.est)} 公布・${esc(x.b||'')}・法定底線 ${mdT(x.due)}${x.cns&&x.cns[1]!=null?'・共識營益 '+capT(x.cns[1],true)+cur():''}"><b>${esc(shortN(x.id))}</b><small>${x.q}</small></a>`).join('')}${r.length>6?`<a class="ec pl" href="#calendar">+${r.length-6}</a>`:''}</div></div>`}).join('')
+    ||`<p class="meta" style="margin-top:8px">7 天內沒有追蹤股預計公布財報${late.length?`（${late.length} 檔預計日已過、尚未公布，見倒數頁）`:''}</p>`;
+  el.hidden=false}
+document.addEventListener('click',e=>{const b=e.target.closest('#earnCal .etab button');if(b){EVIEW=b.dataset.v;try{localStorage.setItem('krEarnView',EVIEW)}catch(x){}caHome();return}});
 const CA={tab:'wait'};
 function renderCal(){
   const a=caAll();$('caAsof').textContent=`今天 ${mdT(TODAY_)}（韓國）`;
   if(!a.length){$('caTake').textContent='還沒有財報日資料（等 Actions「更新韓股資料」跑完）';$('caTabs').innerHTML='';$('caTbl').innerHTML='';$('caFoot').textContent='';return}
-  const pre=a.filter(r=>r.st==='pre'),wait=a.filter(r=>r.st!=='pre'),soon=wait.filter(r=>dDays(r.est)<=7),late=wait.filter(r=>r.st==='late');
+  const pre=a.filter(r=>r.st==='pre'),wait=a.filter(r=>r.st!=='pre'),soon=wait.filter(r=>dDays(r.est)<=7),late=wait.filter(r=>r.st==='late'),dn=recRows(45),dnn=dn.reduce((n,[,r])=>n+r.length,0);
   const qs=[...new Set(a.map(r=>r.q))].sort(),qT=qs.length>1?qs.join('／'):qs[0]||'';
   $('caTake').innerHTML=`追蹤 <strong>${a.length}</strong> 檔・待公布季 <strong>${qT}</strong>：已出暫定業績 <strong>${pre.length}</strong> 檔、待公布 <strong>${wait.length}</strong> 檔${soon.length?`（7 天內 <strong style="color:var(--warm)">${soon.length}</strong> 檔）`:''}${late.length?`、<strong style="color:var(--down)">逾期 ${late.length}</strong> 檔`:''}`;
-  $('caTabs').innerHTML=[['wait',`⏳ 待公布 ${wait.length}`],['pre',`✅ 已出暫定 ${pre.length}`]].map(([k,l])=>`<button type="button" data-tab="${k}" aria-pressed="${CA.tab===k}">${l}</button>`).join('');
+  $('caTabs').innerHTML=[['wait',`⏳ 待公布 ${wait.length}`],['pre',`✅ 已出暫定 ${pre.length}`],['done',`📣 已公布 ${dnn}`]].map(([k,l])=>`<button type="button" data-tab="${k}" aria-pressed="${CA.tab===k}">${l}</button>`).join('');
   const co=r=>{const st=stockOf(r.id);return `<td class="co"><span class="nmw"><span class="nm" style="font-family:var(--f-body)">${esc(st.name||r.id)}</span><span class="cd">${r.id}</span></span><span class="ind">${esc(r.th)}${ROLE[r.id]?'・'+esc(ROLE[r.id]):''}</span></td>`};
   let rows,th,cell;
-  if(CA.tab==='pre'){
+  if(CA.tab==='done'){
+    rows=dn.flatMap(([,r])=>r);th='<th>公布</th><th>營益驚喜／年增</th><th>首日</th>';
+    cell=r=>{const {fin,sp,yy,a,c}=recStat(r),lb=fin?'淨利':'營益';
+      const v=sp!=null?`<b class="${sp>=0?'vu':'vd'}">${pmT(sp,Math.abs(sp)>=1?0:1)}</b><span class="sub">${lb} ${ap()}${capT(a,true)}<br>共識 ${ap()}${capT(c,true)}</span>`
+        :`<span class="${yy==null?'':yy>=0?'vu':'vd'}">${yy==null?'—':yy>300?'>+300%':pmT(yy,0)}</span><span class="sub">${lb} ${a==null?'—':ap()+capT(a,true)}<br>${c!=null?`共識 ${ap()}${capT(c,true)} <i class="pre" style="font-style:normal" title="共識是公布後才快照到的，可能已反映實際值 → 不算驚喜率，上面顯示年增">後</i>`:'無共識・年增'}</span>`;
+      return `<td><b class="pre">${mdT(r.d)}</b><span class="sub">${r.cal}${r.k==='pre'?'暫定':'季報'}</span></td><td>${v}</td><td class="rx ${r.rx==null?'':r.rx>=0?'vu':'vd'}">${r.rx==null?'—':pmT(r.rx,1)}${r.rx2!=null?`<span class="sub ${r.rx2>=0?'vu':'vd'}">兩日 ${pmT(r.rx2,1)}</span>`:''}</td>`};
+    $('caHead').innerHTML='近 45 天已公布，新→舊。粗體＝驚喜率（實際營益 ÷ 公布前法人共識 −1，金融股看淨利）；共識標「後」＝公布後才快照到（追蹤起點晚於公布，可能已反映實際值）→ 不算驚喜率，改列營益年增。首日＝公布日收盤 vs 前一交易日；盤後公布的反應落在「兩日」';
+  }else if(CA.tab==='pre'){
     rows=pre.slice().sort((x,y)=>x.pre<y.pre?1:-1);th='<th>暫定公布</th><th>營收年增</th><th>營益年增</th>';
     cell=r=>`<td><b class="pre">${mdT(r.pre)}</b><span class="sub">${r.q}${r.nonum?'・數字待更新':''}</span></td><td class="${sgc(r.ry)}">${r.ry==null?'—':pct(r.ry,0)}</td><td class="${r.ot?(r.ot==='轉盈'?'vu':'vd'):sgc(r.oy)}">${r.ot?r.ot:r.oy==null?(r.ny!=null?`<span class="sub">淨利 ${pct(r.ny,0)}</span>`:'—'):r.oy>300?'>+300%':pct(r.oy,0)}</td>`;
     $('caHead').innerHTML='已發「營業（暫定）實績」公正公示，數字已併入個股頁與主題表（標 <i class="pre" style="font-style:normal;color:var(--accent)">暫</i>）；正式季報申報後自動取代。年增＝對去年同季正式財報';
