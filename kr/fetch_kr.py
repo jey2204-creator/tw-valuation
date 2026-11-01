@@ -422,8 +422,9 @@ def weekday(d):
     return d
 
 
-def naver_quarter(code):
-    """Naver 季度財務表 → {'26Q3': dict(rev=億, op=億, ni=億, nip=億(母公司), eps=韓元)}，只收非共識（已公布）的季度"""
+def naver_quarter2(code):
+    """Naver 季度財務表 → (已公布季, 共識季)。兩者都是 {'26Q3': dict(rev=億, op=億, ni=億, nip=億(母公司), eps=韓元)}。
+    共識季＝欄位 isConsensus=Y 或標題帶 (E)：FnGuide 法人預估的下一（兩）季，公布當天就被實際值取代，所以要每天快照留住"""
     j = http(f"https://m.stock.naver.com/api/stock/{code}/finance/quarter")
     fi = j.get("financeInfo") or {}
     rows = {re.sub(r"\s", "", str(r.get("title") or "")): r.get("columns") or {} for r in fi.get("rowList") or []}
@@ -436,12 +437,13 @@ def naver_quarter(code):
                     if v is not None:
                         return v
         return None
-    out = {}
+    out, cns = {}, {}
     for t in fi.get("trTitleList") or []:
         title, k = str(t.get("title", "")), t.get("key")
         m = re.search(r"(\d{4})\D?(\d{1,2})", title)
-        if not m or t.get("isConsensus") == "Y" or "(E)" in title or "E" == title.strip()[-1:]:
+        if not m:
             continue
+        is_c = t.get("isConsensus") == "Y" or "(E)" in title or "E" == title.strip()[-1:]
         y, mo = int(m[1]), int(m[2])
         if mo not in (3, 6, 9, 12):
             continue
@@ -449,9 +451,14 @@ def naver_quarter(code):
         rev, op = pick(k, "매출액"), pick(k, "영업이익")
         if rev is None and op is None:
             continue
-        out[cal] = dict(rev=rev, op=op, ni=pick(k, "당기순이익"), nip=pick(k, "당기순이익(지배", "지배주주순이익", "지배기업"),
-                        eps=pick(k, "EPS", "주당순이익"))
-    return out
+        (cns if is_c else out)[cal] = dict(rev=rev, op=op, ni=pick(k, "당기순이익"), nip=pick(k, "당기순이익(지배", "지배주주순이익", "지배기업"),
+                                          eps=pick(k, "EPS", "주당순이익"))
+    return out, cns
+
+
+def naver_quarter(code):
+    """只要已公布季（舊介面）"""
+    return naver_quarter2(code)[0]
 
 
 def dart_prelim(corp, cache):
@@ -540,11 +547,20 @@ def earn_info(code, corp, Q, fin):
         except Exception as e:
             err.append(f"DART 公示：{str(e)[:60]}")
     try:
-        cache["nv"] = naver_quarter(code)
+        cache["nv"], cns = naver_quarter2(code)
         cache["nv_at"] = TODAY.isoformat()
+        # 📊 季度共識快照：Naver 的共識欄只在公布前存在，公布當天就換成實際值 → 每天覆寫「還是共識」的季，
+        # 已公布的季就不再動（＝公布前最後一次共識），之後拿來算「實際 vs 共識」差距。快取 cache['cns'] = {季: {rev, op, ni, nip, eps, at}}
+        cs = cache.setdefault("cns", {})
+        for cal, v in cns.items():
+            if v.get("rev") is not None or v.get("op") is not None:
+                cs[cal] = dict(v, at=TODAY.isoformat())
     except Exception as e:
         err.append(f"Naver 季表：{str(e)[:60]}")
     p.write_text(json.dumps(cache, ensure_ascii=False, separators=(",", ":")), "utf-8")
+    # 輸出給前端：qc = {季: [營收(億), 營益(億), 淨利(億), EPS, 快照日]}（公布後保留，給 #beat 財報判讀比對）
+    qc = {cal: [v.get("rev"), v.get("op"), v.get("nip") if v.get("nip") is not None else v.get("ni"), v.get("eps"), v.get("at")]
+          for cal, v in sorted((cache.get("cns") or {}).items())}
     # 暫定公告日：每季取最早的一次（三星 10/8 暫定、10/30 正式都掛「잠정」）
     pre_dt, rnos = {}, {}
     for d, rno, nm in cache.get("ann", []):
@@ -553,14 +569,16 @@ def earn_info(code, corp, Q, fin):
             pre_dt[cal] = [d, rno]
         rnos.setdefault(cal, []).append(rno)   # 三星 10/8 暫定只有營收／營益，10/29 正式才有淨利 → 從最新一份往回讀，缺的科目用較早的補
     if not Q:
-        return dict(err=err) if err else {}, None
+        return dict(err=err, qc=qc) if err else dict(qc=qc), None
     last = Q[-1]["cal"]
     pend = next_cal(last)
     end = q_end(pend)   # 待公布季還沒結束（剛申報完）時，一樣顯示它的預計日
     y, qn = 2000 + int(pend[:2]), int(pend[3])
     rc, due_days = next((r, du) for r, q, md, du in REPORTS if q == qn)
     due = weekday(end + dt.timedelta(days=due_days))   # 期限遇假日順延到下個工作日
-    e = dict(q=pend, end=end.isoformat(), due=due.isoformat())
+    e = dict(q=pend, end=end.isoformat(), due=due.isoformat(), qc=qc)
+    if pend in qc:   # 待公布季的法人共識（給倒數頁、個股頁說明用）：[營收, 營益, 淨利, EPS, 快照日]
+        e["cns"] = qc[pend]
     # 預計公布日：去年同季暫定公告日 → 去年同季季報申報日 → 法定底線
     ly = f"{int(pend[:2]) - 1:02d}Q{qn}"
     if ly in pre_dt:
@@ -666,6 +684,7 @@ def build(code, corps):
     except Exception as e:
         print(f"  暫定業績失敗：{e}")
         earn, prow = {}, None
+    qc = earn.pop("qc", {}) if isinstance(earn, dict) else {}
     if prow and (prow.get("rev") or prow.get("nia") is not None):
         Q.append(prow)   # 說明文字由前端 earnNote() 依 earn 產生，這裡不重複
     if False:
@@ -744,7 +763,7 @@ def build(code, corps):
     return dict(id=code, name=cfg["zh"] or nv.get("name") or kname, kname=kname, theme=cfg["theme"],
                 cyclical="C" in cfg["flags"], tw=cfg["tw"], freq="Q", fye=f"{TODAY.year - 1}-12-31", corp=corp,
                 updated=dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%MZ"), last=last, q=q, riv=riv,
-                fr=fr, cons=cons, fin=fin, earn=earn, note=note, _nv_name=nv.get("name")), n_new
+                fr=fr, cons=cons, fin=fin, earn=earn, qc=qc, note=note, _nv_name=nv.get("name")), n_new
 
 
 def write_diag(diag):
@@ -774,7 +793,7 @@ def main():
                            close=L["close"], chg=round((L["close"] / L["prev"] - 1) * 100, 2) if L["prev"] else None,
                            pe=L["pe"], pb=L["pb"], fr=L["fr"], cpe=L["cns_per"], lq=lq[0] if lq else None,
                            cyc=d["cyclical"], tw=d["tw"], date=L["date"], pre=bool(lq and len(lq) > 11 and lq[11]),
-                           earn={k: v for k, v in (d.get("earn") or {}).items() if k in ("q", "st", "pre", "est", "due", "b", "ry", "oy", "ot", "ny", "nonum")}))
+                           earn={k: v for k, v in (d.get("earn") or {}).items() if k in ("q", "st", "pre", "est", "due", "b", "ry", "oy", "ot", "ny", "nonum", "cns")}))
             Qs = d["q"]
             diag[code] = dict(zh=d["name"], kname=d["kname"], nv=nvn, n=len(Qs), sec=round(time.time() - t0),
                               first=Qs[0][0] if Qs else None, last=lq[0] if lq else None, new=n_new,

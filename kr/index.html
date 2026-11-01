@@ -527,6 +527,20 @@ html{scroll-behavior:smooth}
   <div class="chart" id="cEps"></div>
   <p class="foot" id="fEps">柱：單季基本 EPS（普通股）　線：近四季累計（右軸）</p>
 </section>
+<section class="card" id="beat" hidden>
+  <h2 style="display:flex;align-items:center;gap:8px;white-space:nowrap">財報判讀 <small id="uBeat">最新季 vs 法人共識</small></h2>
+  <div class="y10k" id="beatK"></div>
+  <p class="take" id="tBeat"></p>
+  <div class="chart" id="cBeat" style="height:200px"></div>
+  <p class="foot" id="fBeat"></p>
+</section>
+<style>
+/* ---- 📊 財報判讀 #beat：韓股看財報的順序「營益 vs 共識 → 營益率方向 → 年增／季增 → 全年共識達成率」。共識＝Naver（FnGuide）季度共識，fetch_kr.py 每天快照、公布後凍結 ---- */
+#beat h2{min-width:0}#beat h2 small{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;font-size:11px;letter-spacing:-.2px}
+#beat .y10k i{display:block}
+#beat .pill.ok{background:var(--b2)}#beat .pill.mid{background:var(--b4)}#beat .pill.bad{background:var(--b5)}
+#beat .why{display:none;margin:6px 0 0;font-size:12px;color:var(--muted);line-height:1.5}#beat.open .why{display:block}
+</style>
 <section class="card" id="fin">
   <h2 style="display:flex;align-items:center;gap:8px;white-space:nowrap">財報明細 <small id="uFin">年度</small><span class="segm" id="finPer" style="margin-left:auto"><button type="button" aria-pressed="true" data-p="y">年</button><button type="button" aria-pressed="false" data-p="q">季</button></span></h2>
   <div class="y10k" id="finK"></div>
@@ -716,7 +730,7 @@ function header(){
   $('note').textContent=`資料來源：OpenDART（韓國金融監督院電子公示：季報、半年報、年報連結財報）、Naver 證券（股價、外資持股比、法人共識）。共識本益比與共識 EPS 為 Naver 彙整的法人預估${cy.length?`（${cy.join('、')} 年度）`:''}。財報更新 ${D.updated.replace('T',' ').replace('Z',' UTC')}。每個交易日台北 17:30 自動更新。本頁不構成投資建議。`;
   // 金融股（銀行／壽險／金控）財報沒有營收科目：藏起營收、三率、預估 EPS（模型靠營收），只看 EPS 與河流
   const NR=!Q.some(x=>x[2]!=null);['rev','margin','fwd'].forEach(k=>$(k).hidden=NR);
-  $('chips').innerHTML=(NR?'':'<a href="#rev" data-s>營收</a><a href="#margin" data-s>三率</a>')+'<a href="#eps" data-s>EPS</a>'+(D.fin&&D.fin.length?'<a href="#fin" data-s>財報</a>':'')+(NR?'':'<a href="#fwd" data-s>預估EPS</a>')+(F.length>=20?'<a href="#frs" data-s>外資持股</a>':'')+'<a href="#pe" data-s>本益比河流</a><a href="#pb" data-s>淨值比河流</a>';
+  $('chips').innerHTML=(NR?'':'<a href="#rev" data-s>營收</a><a href="#margin" data-s>三率</a>')+'<a href="#eps" data-s>EPS</a>'+(D.fin&&D.fin.length>1?'<a href="#beat" data-s>判讀</a>':'')+(D.fin&&D.fin.length?'<a href="#fin" data-s>財報</a>':'')+(NR?'':'<a href="#fwd" data-s>預估EPS</a>')+(F.length>=20?'<a href="#frs" data-s>外資持股</a>':'')+'<a href="#pe" data-s>本益比河流</a><a href="#pb" data-s>淨值比河流</a>';
 }
 function render(){
   const acc=css('--accent'),acc2=css('--accent2'),warm=css('--warm'),st=Math.max(0,Q.length-20),S=Q.slice(st);
@@ -735,7 +749,7 @@ function render(){
    o.series=[{name:`單季EPS(${cur()})`,type:'bar',data:S.map(x=>pv(x[6])),itemStyle:{color:acc2,borderRadius:[2,2,0,0]},label:{show:true,position:'top',fontSize:9,color:css('--muted'),fontFamily:'IBM Plex Mono',formatter:p=>p.dataIndex>=S.length-4?fmt(p.value,fxOn()&&Math.abs(p.value)<100?1:0):''}},
      {name:'近四季',type:'line',yAxisIndex:1,data:S.map((x,j)=>pv(ttm(st+j))),symbol:'none',lineStyle:{width:2,color:warm},itemStyle:{color:warm}}];
    c.setOption(o,true)}
-  renderFR();renderFwd();renderFin();river('cPE',PEM,2,'倍 PE');river('cPB',PBM,3,'倍 PB');
+  renderFR();renderFwd();renderBeat();renderFin();river('cPE',PEM,2,'倍 PE');river('cPB',PBM,3,'倍 PB');
 }
 // ---------- 📋 財報明細 #fin：D.fin 每季 [0季別 1營收(億) 2毛利率 3營益率 4淨利率 5EPS 6營業利益(億) 7母公司淨利(億) 8資本支出(億) 9營業現金流(億) 10股利發放(億) 11母公司權益(億) 12總資產(億) 13總負債(億) 14現金(億)] ----------
 // 年度列＝四季加總（三率以加總重算、資產負債取年底）；最新未滿一年的季度另加「近4季」列（虛線柱）。9～14 欄為 2026-10 新增科目，舊快取為 null，排程重抓後補齊。
@@ -765,6 +779,70 @@ function finRows(){
     x.ry=p&&p.rev>0&&x.rev!=null?r(1,(x.rev/p.rev-1)*100):null;x.ey=p&&p.eps>0&&x.eps!=null?r(1,(x.eps/p.eps-1)*100):null;x.et=p&&p.eps!=null&&x.eps!=null&&p.eps<=0&&x.eps>0?'轉盈':p&&p.eps>0&&x.eps!=null&&x.eps<=0?'轉虧':null});
   return {Q:Qr,A};
 }
+// ---------- 📊 財報判讀 #beat：D.qc = {季: [營收(億), 營益(億), 淨利(億), EPS, 快照日]} 公布前最後一次法人共識（Naver／FnGuide，排程每日快照、公布後凍結） ----------
+// 判讀順序（韓股特有）：1 營業利益 vs 共識（股價當天反應）→ 2 營益率對上季、去年同季（景氣位置）→ 3 營益年增／季增 → 4 全年共識達成率（下季 beat 難度）。
+// 沒有共識快照（追蹤前已公布的季）時只看 2～3；金融股沒有營收科目，用淨利代替營益。
+function renderBeat(){
+  const X=finRows(),el=$('beat');if(!X||X.Q.length<2){el.hidden=true;return}el.hidden=false;
+  const Qr=X.Q,n=Qr.length,x=Qr[n-1],p=Qr[n-2],py=Qr.find(z=>z.y===x.y-1&&z.n===x.n),QC=D.qc||{},c=QC[x.l]||null;
+  const NR=!Qr.some(z=>z.rev!=null),K=NR?'ni':'op',KN=NR?'淨利':'營業利益';   // 金融股：沒有營收／營益 → 看母公司淨利
+  const mu=css('--muted'),up=css('--up'),dn=css('--down'),acc=css('--accent'),acc2=css('--accent2'),warm=css('--warm');
+  const gap=(a,b)=>a!=null&&b!=null&&b>0?+((a/b-1)*100).toFixed(1):null,sg=v=>v==null?'':v>0?'up':v<0?'dn':'',pp=v=>v==null?'—':(v>0?'+':'')+fmt(v,1)+'pp';
+  const cK=c?(NR?c[2]:c[1]):null,gK=c?gap(x[K],cK):null,gRev=c?gap(x.rev,c[0]):null,gNi=c?gap(x.ni,c[2]):null;
+  const dOmQ=x.om!=null&&p&&p.om!=null?+(x.om-p.om).toFixed(1):null,dOmY=x.om!=null&&py&&py.om!=null?+(x.om-py.om).toFixed(1):null;
+  const oy=py&&py[K]>0&&x[K]!=null?gap(x[K],py[K]):null,oq=p&&p[K]>0&&x[K]!=null?gap(x[K],p[K]):null;
+  const ot=py&&py[K]!=null&&x[K]!=null&&py[K]<=0&&x[K]>0?'轉盈':py&&py[K]>0&&x[K]!=null&&x[K]<=0?'轉虧':null;
+  const cm=consOf(),yc=cm[String(x.y)],ytd=Qr.filter(z=>z.y===x.y&&z[K]!=null),ySum=ytd.length?sum(ytd.map(z=>z[K])):null;
+  const yK=yc?(NR?null:yc[2]):null,ach=yK>0&&ySum!=null?Math.round(ySum/yK*100):null,par=ytd.length*25;
+  const m0=v=>v==null?'—':ap()+money(v,0)+' '+un(),big=m0;
+  // 判讀
+  let V,why=[];
+  if(c&&cK!=null&&x[K]!=null&&cK>0){
+    V=gK>=10?['ok','🟢 大幅優於預期']:gK>=3?['ok','🟢 優於預期']:gK>-3?['','⚪ 符合預期']:gK>-10?['mid','🟠 略低於預期']:['bad','🔴 大幅低於預期'];
+    V[2]=`${x.l}${x.pre?'（暫定）':''} ${KN} ${big(x[K])}，公布前共識 ${big(cK)}（<b class="${sg(gK)}">${pct(gK,1)}</b>）${gRev!=null?`；營收 ${pct(gRev,1)}`:''}${!NR&&gNi!=null?`、淨利 ${pct(gNi,1)}`:''}`;
+    why.push('韓股以「營業利益 vs 共識」為第一反應：±3% 內算符合，超過 10% 才算驚喜；淨利易受匯兌、持股評價干擾，市場不太看。');
+    if(gK>=10&&oy!=null&&oy>50)why.push('⚠️ 錨定偏誤：大幅超預期＋營益年增超過 5 成＝多半在景氣上升段；共識會跟著上修，下一季要再 beat 的門檻變高，別把這次的驚喜當常態。');
+    if(gK<=-10&&x.n===4)why.push('ℹ️ Q4 常認列績效獎金（성과급）、減損等一次性費用，miss 不一定是基本面轉差；看 Q1 營益率有沒有回到 Q3 水準再下結論。');
+  }else if(c&&cK!=null&&x[K]!=null){
+    V=x[K]>0?['ok','🟢 轉盈優於預期',`${x.l} ${KN} ${big(x[K])}，共識預期 ${big(cK)}（虧損），實際轉盈`]:['','⚪ 虧損符合預期',`${x.l} ${KN} ${big(x[K])}，共識 ${big(cK)}`];
+  }else{
+    const t=dOmQ!=null&&dOmY!=null;
+    V=!t?['','⚪ 共識資料累積中',`${x.l} ${KN} ${big(x[K])}${ot?`（${ot}）`:oy!=null?`（年增 ${pct(oy,0)}）`:''}`]:
+      dOmQ>0&&dOmY>0?['ok','🟢 營益率雙升',`${x.l} 營益率 ${fmt(x.om,1)}%：對上季 ${pp(dOmQ)}、對去年同季 ${pp(dOmY)}，景氣與定價能力同步往上`]:
+      dOmQ<0&&dOmY<0?['bad','🔴 營益率雙降',`${x.l} 營益率 ${fmt(x.om,1)}%：對上季 ${pp(dOmQ)}、對去年同季 ${pp(dOmY)}；景氣差時掉最多的就是營益率，先看是循環還是結構`]:
+      ['mid','🟠 營益率方向不一',`${x.l} 營益率 ${fmt(x.om,1)}%：對上季 ${pp(dOmQ)}、對去年同季 ${pp(dOmY)}${x.n===4&&dOmQ<0?'；Q4 常有一次性費用，季減不急著解讀':''}`];
+    why.push(`這一季沒有「公布前共識」快照（追蹤起點之後才開始每天快照，公布後凍結），先用營益率方向判讀；${D.earn&&D.earn.q?`${D.earn.q} 起`:'下一季起'}會有共識可比對。`);
+  }
+  if(ach!=null)why.push(`全年共識達成率 ${ach}%（${ytd.length} 季累計 ${big(ySum)} ÷ ${x.y} 年共識 ${big(yK)}），均速基準 ${par}%：${ach>=par+5?'進度超前，法人可能上修':ach<=par-5?'進度落後，剩下的季要補的量更大，留意下修':'大致照進度'}。`);
+  $('tBeat').innerHTML=`<span class="pill ${V[0]}">${V[1]}</span> ${V[2]} <span class="y10tip" data-beatt>${el.classList.contains('open')?'收起 ▴':'怎麼看 ▾'}</span><div class="why">${why.map(esc).map(s=>s.replace(/^(⚠️|ℹ️)/,'<b>$1</b>')).join('<br>')}</div>`;
+  // 六格
+  $('beatK').innerHTML=[
+    [`${KN} vs 共識`,`<b class="${sg(gK)}">${gK==null?'—':pct(gK,1)}</b>`,c?`共識 ${big(cK)}・${(c[4]||'').slice(5).replace('-','/')} 快照`:'無公布前共識'],
+    NR?['淨利 vs 共識',`<b class="${sg(gNi)}">${gNi==null?'—':pct(gNi,1)}</b>`,c?`共識 ${big(c[2])}`:'—']:['營收 vs 共識',`<b class="${sg(gRev)}">${gRev==null?'—':pct(gRev,1)}</b>`,c?`共識 ${big(c[0])}`:'無公布前共識'],
+    ['營益率',`<b>${x.om==null?'—':fmt(x.om,1)+'%'}</b>`,x.om==null?'金融股不適用':`季${pp(dOmQ)} 年${pp(dOmY)}`],
+    [`${KN}年增`,`<b class="${ot?(ot==='轉盈'?'up':'dn'):sg(oy)}">${ot||(oy==null?'—':oy>300?'>+300%':pct(oy,0))}</b>`,py?`去年同季 ${big(py[K])}`:'無去年同季'],
+    [`${KN}季增`,`<b class="${sg(oq)}">${oq==null?'—':oq>300?'>+300%':pct(oq,0)}</b>`,p?`上季 ${big(p[K])}`:'—'],
+    ['全年共識達成率',`<b class="${ach==null?'':ach>=par+5?'up':ach<=par-5?'dn':''}">${ach==null?'—':ach+'%'}</b>`,yK?`${ytd.length} 季累計・基準 ${par}%`:'無年度共識']
+  ].map(([a,b,d])=>`<div><span>${a}</span>${b}<i>${d||'&nbsp;'}</i></div>`).join('');
+  // 圖：近 12 季 營益（實心柱，紅＝年增、綠＝年減）＋ 公布前共識（空心虛線柱）＋ 營益率（線，右軸）；待公布季只畫共識
+  const R=Qr.slice(-12).map(z=>({l:z.l,pre:z.pre,v:z[K],c:QC[z.l]?(NR?QC[z.l][2]:QC[z.l][1]):null,om:z.om,yy:z.y,nn:z.n})),e=D.earn;
+  if(e&&e.q&&e.st!=='pre'&&QC[e.q]){const q=QC[e.q];R.push({l:e.q,est:true,v:null,c:NR?q[2]:q[1],om:!NR&&q[0]>0&&q[1]!=null?+(q[1]/q[0]*100).toFixed(1):null})}
+  const hasC=R.some(z=>z.c!=null),ch=mk('cBeat'),o=base();o.xAxis.data=R.map(z=>z.l+(z.est?'E':z.pre?'暫':''));o.yAxis.scale=false;o.grid={...o.grid,top:28,right:hasC||!NR?34:8};
+  o.yAxis=[o.yAxis,{type:'value',show:false,scale:true}];
+  const yoyC=z=>{const q=Qr.find(w=>w.y===z.yy-1&&w.n===z.nn);return q&&q[K]!=null&&z.v!=null?(z.v>q[K]?up:z.v<q[K]?dn:mu):acc};
+  o.series=[{name:KN,type:'bar',barGap:'-100%',barCategoryGap:'28%',z:2,data:R.map(z=>({value:mval(z.v),itemStyle:{color:yoyC(z),opacity:z.pre?.7:1,borderRadius:[2,2,0,0]}})),
+      label:{show:true,position:'top',fontSize:9,color:mu,fontFamily:'IBM Plex Mono',formatter:q=>{const z=R[q.dataIndex];return z.c!=null&&z.v!=null&&z.c>0?pct(gap(z.v,z.c),1):''}}},
+    {name:'共識',type:'bar',barGap:'-100%',barCategoryGap:'28%',z:1,data:R.map(z=>({value:mval(z.c),itemStyle:{color:'transparent',borderColor:z.est?acc:mu,borderWidth:1.5,borderType:'dashed',borderRadius:[2,2,0,0]}}))},
+    {name:'營益率',type:'line',yAxisIndex:1,data:R.map(z=>z.om),symbol:'circle',symbolSize:3,connectNulls:true,lineStyle:{width:2,color:warm,type:'solid'},itemStyle:{color:warm},
+      endLabel:{show:true,color:warm,fontSize:10,fontFamily:'IBM Plex Mono',formatter:q=>q.value==null?'':fmt(q.value,1)+'%'}}];
+  if(NR)o.series.pop();
+  o.tooltip.formatter=ps=>{const z=R[ps[0].dataIndex],L=[`<b>${z.l}${z.est?'（待公布・共識）':z.pre?'（暫定業績）':''}</b>`];
+    if(z.v!=null)L.push(`${KN} ${m0(z.v)}`);if(z.c!=null)L.push(`公布前共識 ${m0(z.c)}${z.v!=null&&z.c>0?`（差距 ${pct(gap(z.v,z.c),1)}）`:''}`);if(z.om!=null)L.push(`營益率 ${fmt(z.om,1)}%`);return L.join('<br>')};
+  ch.setOption(o,true);ch.resize();
+  $('uBeat').textContent=c?`${x.l} vs 共識`:hasC?'近 12 季・共識累積中':'近 12 季・尚無共識';
+  $('fBeat').textContent=`實心柱：單季${KN}（紅＝年增、綠＝年減，單位 ${un()}）；虛線空心柱：公布前最後一次法人共識（Naver／FnGuide 季度共識，排程每日快照、公布後凍結，柱頂小字＝實際 vs 共識）；${NR?'':'線：營益率（右軸）。'}「E」＝待公布季的目前共識。${fxFoot()}`;
+}
+$('beat').addEventListener('click',e=>{if(!e.target.closest('#beatK,[data-beatt],#tBeat .pill'))return;const o=$('beat').classList.toggle('open');const t=$('beat').querySelector('[data-beatt]');if(t)t.textContent=o?'收起 ▴':'怎麼看 ▾'});
 function renderFin(){
   const X=finRows();$('fin').hidden=!X;if(!X)return;
   const A=X.A,F=A.filter(x=>!x.ttm),T=A.find(x=>x.ttm),mu=css('--muted'),up=css('--up'),dn=css('--down'),acc=css('--accent'),acc2=css('--accent2'),warm=css('--warm'),fg=css('--fg');
@@ -1350,8 +1428,8 @@ function renderCal(){
     rows=wait.slice().sort((x,y)=>x.est===y.est?(x.due<y.due?-1:1):x.est<y.est?-1:1);th='<th>預計公布</th><th>法定底線</th>';
     cell=r=>{const n=dDays(r.est),nd=dDays(r.due),st=stockOf(r.id);
       const dT=r.st==='late'?`<b class="today">逾期</b><span class="sub">底線 ${mdT(r.due)} 已過</span>`:`<b class="${n<=0?'today':n<=7?'soon':''}">${mdT(r.est)}<small style="font-weight:400">（${wdT(r.est)}）</small></b><span class="sub">${n<0?`已過 ${-n} 天`:n===0?'今天':n+' 天後'}<br>${esc(r.b||'')}</span>`;
-      return `<td>${dT}</td><td>${mdT(r.due)}<span class="sub ${nd<0?'vd':''}">${nd<0?'已過':nd+' 天'}<br>${r.q}${st.pe?' PE'+fmt(st.pe,1):''}</span></td>`};
-    $('caHead').innerHTML='依預計公布日排序（<b style="color:var(--warm)">橘</b>＝7 天內、<b style="color:var(--down)">紅</b>＝今天、預計日已過或逾期）。小字＝預估依據：「去年暫定」＝去年同季暫定業績公告日 +1 年（大型股準，誤差多在 ±3 天）；「去年季報」＝沒發暫定業績的公司，只能看去年季報申報日，通常壓線';
+      return `<td>${dT}</td><td>${mdT(r.due)}<span class="sub ${nd<0?'vd':''}">${nd<0?'已過':nd+' 天'}<br>${r.q}${st.pe?' PE'+fmt(st.pe,1):''}${r.cns&&r.cns[1]!=null?`<br>共識營益 ${ap()}${capT(r.cns[1],true)}${cur()}`:''}</span></td>`};
+    $('caHead').innerHTML='依預計公布日排序（<b style="color:var(--warm)">橘</b>＝7 天內、<b style="color:var(--down)">紅</b>＝今天、預計日已過或逾期）。小字＝預估依據：「去年暫定」＝去年同季暫定業績公告日 +1 年（大型股準，誤差多在 ±3 天）；「去年季報」＝沒發暫定業績的公司，只能看去年季報申報日，通常壓線；「共識營益」＝Naver／FnGuide 目前的法人季度共識（每日快照）';
   }
   $('caTbl').innerHTML=`<thead><tr><th>#</th><th>股票</th>${th}</tr></thead><tbody>`+rows.map((r,i)=>`<tr data-id="${r.id}"><td>${i+1}</td>${co(r)}${cell(r)}</tr>`).join('')+'</tbody>';
   $('caFoot').innerHTML='韓國沒有統一的財報日曆：三星、海力士等大型股在季末後 1～4 週先發「연결재무제표기준영업(잠정)실적」公正公示（只有營收、營業利益、淨利，不含資產負債），正式分期報告（분기보고서）要到季末後 45 天、年報（사업보고서）90 天內才申報到 OpenDART，期限遇假日順延。預計日由 OpenDART 公示搜尋的去年同季公告日推算，公司可能改期；法定底線是最晚日期。暫定業績的 EPS 由淨利 ÷ 前季股數推算，正式季報申報後整列自動取代。本頁不構成投資建議。';
