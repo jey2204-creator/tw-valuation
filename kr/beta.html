@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>韓股估值看板（測試版）</title>
+<title>韓股估值看板</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="韓股看板">
@@ -548,7 +548,7 @@ html{scroll-behavior:smooth}
   <h2 style="display:flex;align-items:center;gap:8px;white-space:nowrap">財報判讀 <small id="uBeat">最新季 vs 法人共識</small></h2>
   <div class="y10k" id="beatK"></div>
   <p class="take" id="tBeat"></p>
-  <div class="chart" id="cBeat" style="height:200px"></div>
+  <div class="chart" id="cBeat" style="height:130px"></div>
   <p class="foot" id="fBeat"></p>
 </section>
 <style>
@@ -816,7 +816,7 @@ function renderBeat(){
   let V,why=[];
   if(c&&cK!=null&&x[K]!=null&&cK>0){
     V=gK>=10?['ok','🟢 大幅優於預期']:gK>=3?['ok','🟢 優於預期']:gK>-3?['','⚪ 符合預期']:gK>-10?['mid','🟠 略低於預期']:['bad','🔴 大幅低於預期'];
-    V[2]=`${x.l}${x.pre?'（暫定）':''} ${KN} ${big(x[K])}，${c[5]?'共識（公布後快照）':'公布前共識'} ${big(cK)}（<b class="${sg(gK)}">${pct(gK,1)}</b>）${gRev!=null?`；營收 ${pct(gRev,1)}`:''}${!NR&&gNi!=null?`、淨利 ${pct(gNi,1)}`:''}`;
+    V[2]=`${x.l}${x.pre?'（暫定）':''} ${KN} ${ap()}${money(x[K],0)} vs 共識 ${big(cK)}（<b class="${sg(gK)}">${pct(gK,1)}</b>${c[5]?'・公布後快照':''}）；年增 ${ot||(oy==null?'—':oy>300?'>+300%':pct(oy,0))}、季增 ${oq==null?'—':oq>300?'>+300%':pct(oq,0)}`;
     why.push('韓股以「營業利益 vs 共識」為第一反應：±3% 內算符合，超過 10% 才算驚喜；淨利易受匯兌、持股評價干擾，市場不太看。');
     if(c[5])why.push('⚠️ 這季的共識是公布「後」才快照到的（追蹤起點晚於公布日），分析師可能已經往實際值修，差距會比真實的小；從下一季起才是公布前凍結的共識。');
     if(gK>=10&&oy!=null&&oy>50)why.push('⚠️ 錨定偏誤：大幅超預期＋營益年增超過 5 成＝多半在景氣上升段；共識會跟著上修，下一季要再 beat 的門檻變高，別把這次的驚喜當常態。');
@@ -829,23 +829,23 @@ function renderBeat(){
       dOmQ>0&&dOmY>0?['ok','🟢 營益率雙升',`${x.l} 營益率 ${fmt(x.om,1)}%：對上季 ${pp(dOmQ)}、對去年同季 ${pp(dOmY)}，景氣與定價能力同步往上`]:
       dOmQ<0&&dOmY<0?['bad','🔴 營益率雙降',`${x.l} 營益率 ${fmt(x.om,1)}%：對上季 ${pp(dOmQ)}、對去年同季 ${pp(dOmY)}；景氣差時掉最多的就是營益率，先看是循環還是結構`]:
       ['mid','🟠 營益率方向不一',`${x.l} 營益率 ${fmt(x.om,1)}%：對上季 ${pp(dOmQ)}、對去年同季 ${pp(dOmY)}${x.n===4&&dOmQ<0?'；Q4 常有一次性費用，季減不急著解讀':''}`];
+    V[2]+=`；${KN}年增 ${ot||(oy==null?'—':oy>300?'>+300%':pct(oy,0))}、季增 ${oq==null?'—':oq>300?'>+300%':pct(oq,0)}`;
     why.push(`這一季沒有「公布前共識」快照（追蹤起點之後才開始每天快照，公布後凍結），先用營益率方向判讀；${D.earn&&D.earn.q?`${D.earn.q} 起`:'下一季起'}會有共識可比對。`);
   }
   if(ach!=null)why.push(`全年共識達成率 ${ach}%（${ytd.length} 季累計 ${big(ySum)} ÷ ${x.y} 年共識 ${big(yK)}），均速基準 ${par}%：${ach>=par+5?'進度超前，法人可能上修':ach<=par-5?'進度落後，剩下的季要補的量更大，留意下修':'大致照進度'}。`);
+  why.push('共識來源：Naver／FnGuide 季度法人共識，排程每日快照、公布後凍結，所以是「公布前最後一次」共識。');
   $('tBeat').innerHTML=`<span class="pill ${V[0]}">${V[1]}</span> ${V[2]} <span class="y10tip" data-beatt>${el.classList.contains('open')?'收起 ▴':'怎麼看 ▾'}</span><div class="why">${why.map(esc).map(s=>s.replace(/^(⚠️|ℹ️)/,'<b>$1</b>')).join('<br>')}</div>`;
   // 六格
+  const g2=NR?gNi:gRev,g2n=NR?'淨利':'營收';
   $('beatK').innerHTML=[
-    [`${KN} vs 共識`,`<b class="${sg(gK)}">${gK==null?'—':pct(gK,1)}</b>`,c?`共識 ${big(cK)}・${(c[4]||'').slice(5).replace('-','/')}${c[5]?' 公布後':''}快照`:'無公布前共識'],
-    NR?['淨利 vs 共識',`<b class="${sg(gNi)}">${gNi==null?'—':pct(gNi,1)}</b>`,c?`共識 ${big(c[2])}`:'—']:['營收 vs 共識',`<b class="${sg(gRev)}">${gRev==null?'—':pct(gRev,1)}</b>`,c?`共識 ${big(c[0])}`:'無公布前共識'],
+    [`${KN} vs 共識`,`<b class="${sg(gK)}">${gK==null?'—':pct(gK,1)}</b>`,c?`${g2n} <span class="${sg(g2)}">${g2==null?'—':pct(g2,1)}</span>`:'無公布前共識'],
     ['營益率',`<b>${x.om==null?'—':fmt(x.om,1)+'%'}</b>`,x.om==null?'金融股不適用':`季${pp(dOmQ)} 年${pp(dOmY)}`],
-    [`${KN}年增`,`<b class="${ot?(ot==='轉盈'?'up':'dn'):sg(oy)}">${ot||(oy==null?'—':oy>300?'>+300%':pct(oy,0))}</b>`,py?`去年同季 ${big(py[K])}`:'無去年同季'],
-    [`${KN}季增`,`<b class="${sg(oq)}">${oq==null?'—':oq>300?'>+300%':pct(oq,0)}</b>`,p?`上季 ${big(p[K])}`:'—'],
-    ['全年共識達成率',`<b class="${ach==null?'':ach>=par+5?'up':ach<=par-5?'dn':''}">${ach==null?'—':ach+'%'}</b>`,yK?`${ytd.length} 季累計・基準 ${par}%`:'無年度共識']
+    ['全年達成率',`<b class="${ach==null?'':ach>=par+5?'up':ach<=par-5?'dn':''}">${ach==null?'—':ach+'%'}</b>`,yK?`${ytd.length} 季・基準 ${par}%`:'無年度共識']
   ].map(([a,b,d])=>`<div><span>${a}</span>${b}<i>${d||'&nbsp;'}</i></div>`).join('');
   // 圖：近 12 季 營益（實心柱，紅＝年增、綠＝年減）＋ 公布前共識（空心虛線柱）＋ 營益率（線，右軸）；待公布季只畫共識
   const R=Qr.slice(-12).map(z=>({l:z.l,pre:z.pre,v:z[K],c:QC[z.l]?(NR?QC[z.l][2]:QC[z.l][1]):null,om:z.om,yy:z.y,nn:z.n})),e=D.earn;
   if(e&&e.q&&e.st!=='pre'&&QC[e.q]){const q=QC[e.q];R.push({l:e.q,est:true,v:null,c:NR?q[2]:q[1],om:!NR&&q[0]>0&&q[1]!=null?+(q[1]/q[0]*100).toFixed(1):null})}
-  const hasC=R.some(z=>z.c!=null),ch=mk('cBeat'),o=base();o.xAxis.data=R.map(z=>z.l+(z.est?'E':z.pre?'暫':''));o.yAxis.scale=false;o.grid={...o.grid,top:28,right:hasC||!NR?34:8};
+  const hasC=R.some(z=>z.c!=null),ch=mk('cBeat'),o=base();o.xAxis.data=R.map(z=>z.l+(z.est?'E':z.pre?'暫':''));o.yAxis.scale=false;o.legend.show=false;o.grid={...o.grid,top:16,right:hasC||!NR?34:8};o.xAxis.axisLabel={...o.xAxis.axisLabel,interval:1};
   o.yAxis=[o.yAxis,{type:'value',show:false,scale:true}];
   const yoyC=z=>{const q=Qr.find(w=>w.y===z.yy-1&&w.n===z.nn);return q&&q[K]!=null&&z.v!=null?(z.v>q[K]?up:z.v<q[K]?dn:mu):acc};
   o.series=[{name:KN,type:'bar',barGap:'-100%',barCategoryGap:'28%',z:2,data:R.map(z=>({value:mval(z.v),itemStyle:{color:yoyC(z),opacity:z.pre?.7:1,borderRadius:[2,2,0,0]}})),
@@ -858,7 +858,7 @@ function renderBeat(){
     if(z.v!=null)L.push(`${KN} ${m0(z.v)}`);if(z.c!=null)L.push(`${QC[z.l]&&QC[z.l][5]?'共識（公布後快照）':'公布前共識'} ${m0(z.c)}${z.v!=null&&z.c>0?`（差距 ${pct(gap(z.v,z.c),1)}）`:''}`);if(z.om!=null)L.push(`營益率 ${fmt(z.om,1)}%`);return L.join('<br>')};
   ch.setOption(o,true);ch.resize();
   $('uBeat').textContent=c?`${x.l} vs 共識`:hasC?'近 12 季・共識累積中':'近 12 季・尚無共識';
-  $('fBeat').textContent=`實心柱：單季${KN}（紅＝年增、綠＝年減，單位 ${un()}）；虛線空心柱：公布前最後一次法人共識（Naver／FnGuide 季度共識，排程每日快照、公布後凍結，柱頂小字＝實際 vs 共識）；${NR?'':'線：營益率（右軸）。'}「E」＝待公布季的目前共識。${fxFoot()}`;
+  $('fBeat').textContent=`實心柱 ${KN}（紅年增／綠年減，${un()}）・虛線框＝公布前共識，柱頂＝差距${NR?'':'・線＝營益率'}・E＝待公布季共識${fxFoot()}`;
 }
 $('beat').addEventListener('click',e=>{if(!e.target.closest('#beatK,[data-beatt],#tBeat .pill'))return;const o=$('beat').classList.toggle('open');const t=$('beat').querySelector('[data-beatt]');if(t)t.textContent=o?'收起 ▴':'怎麼看 ▾'});
 function renderFin(){
