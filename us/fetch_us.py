@@ -81,14 +81,18 @@ OCF = ["NetCashProvidedByUsedInOperatingActivities", "CashFlowsFromUsedInOperati
 # 第二批圖表（庫存／應收天數、股數＋SBC、現金 vs 債務）：q 列欄位 12～16
 INV = ["InventoryNet", "InventoryGross", "InventoryFinishedGoodsNetOfReserves", "Inventories"]
 AR = ["AccountsReceivableNetCurrent", "ReceivablesNetCurrent", "AccountsNotesAndLoansReceivableNetCurrent",
+      "AccountsAndOtherReceivablesNetCurrent", "AccountsReceivableNet", "ContractWithCustomerReceivableAfterAllowanceForCreditLossCurrent",
       "TradeAndOtherCurrentReceivables", "TradeReceivables"]
 SBC = ["ShareBasedCompensation", "AllocatedShareBasedCompensationExpense", "StockOptionPlanExpense"]   # 現金流量表的股票酬勞加回
 CASH = ["CashCashEquivalentsAndShortTermInvestments", "CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalents",
         "CashAndCashEquivalentsAtCarryingValue", "CashAndCashEquivalents"]
-STI = ["ShortTermInvestments", "MarketableSecuritiesCurrent", "AvailableForSaleSecuritiesDebtSecuritiesCurrent"]   # 只在 CASH 取到的不是「含短投」科目時加上
-DEBT = ["LongTermDebt", "LongTermDebtAndCapitalLeaseObligations", "DebtInstrumentCarryingAmount",
-        "LongTermDebtNoncurrent", "Borrowings"]
-DEBT_CUR = ["LongTermDebtCurrent", "DebtCurrent", "ShortTermBorrowings", "CommercialPaper"]
+STI = ["ShortTermInvestments", "MarketableSecuritiesCurrent", "AvailableForSaleSecuritiesDebtSecuritiesCurrent",
+       "DebtSecuritiesCurrent", "HeldToMaturitySecuritiesCurrent"]   # CASH[0]（已含短投）沒有的期間才加上；不含權益投資
+# 債務：有「合計」科目就用，否則 非流動＋流動（merged 每期只認一個科目，不會重複加）
+DEBT_TOT = ["LongTermDebt", "DebtLongtermAndShorttermCombinedAmount", "LongTermDebtAndCapitalLeaseObligations", "Borrowings"]
+DEBT_NC = ["LongTermDebtNoncurrent", "LongTermDebtAndCapitalLeaseObligationsNoncurrent", "ConvertibleNotesPayableNoncurrent",
+           "SeniorNotesNoncurrent", "NoncurrentBorrowings"]
+DEBT_CUR = ["LongTermDebtCurrent", "DebtCurrent", "ShortTermBorrowings", "CommercialPaper", "ConvertibleNotesPayableCurrent"]
 QFORMS = {"10-Q", "10-Q/A", "10-K", "10-K/A", "6-K", "6-K/A"}
 AFORMS = {"20-F", "20-F/A", "40-F", "40-F/A"}
 
@@ -336,14 +340,14 @@ def _cash(e, comb, cash, sti):
     return c + (sti.get(e, (None,))[0] or 0)
 
 
-def _debt(e, dl, dc, first):
-    l = dl.get(e, (None,))[0]
-    c = dc.get(e, (None,))[0]
-    if l is None and c is None:
+def _debt(e, dt_, dn, dc):
+    t = dt_.get(e, (None,))[0]
+    if t is not None:
+        return t
+    n, c = dn.get(e, (None,))[0], dc.get(e, (None,))[0]
+    if n is None and c is None:
         return None
-    if first in ("LongTermDebt", "LongTermDebtAndCapitalLeaseObligations", "DebtInstrumentCarryingAmount", "Borrowings"):
-        return l if l is not None else c
-    return (l or 0) + (c or 0)
+    return (n or 0) + (c or 0)
 
 
 def build_fin(cik):
@@ -376,9 +380,7 @@ def build_fin(cik):
     cash_comb = merged(cf, CASH[:1], instants)          # 已含短投的科目
     cash, sti = merged(cf, CASH[1:], instants), merged(cf, STI, instants)
     # 債務：長期（含非流動）＋ 流動；LongTermDebt 本身多半已含一年內到期，取到它就不再加 LongTermDebtCurrent
-    debt_l = merged(cf, DEBT, instants)
-    debt_c = merged(cf, DEBT_CUR, instants)
-    first_debt = next((n for n in DEBT if n in cf.get("facts", {}).get("us-gaap", {})), None)
+    debt_t, debt_n, debt_c = merged(cf, DEBT_TOT, instants), merged(cf, DEBT_NC, instants), merged(cf, DEBT_CUR, instants)
     fyes = sorted(revA) or sorted(merged(cf, NI, annuals))
     fye = fyes[-1] if fyes else None
 
@@ -411,7 +413,7 @@ def build_fin(cik):
                          capex=None if cx is None else round(cx / 1e6, 1), ni=None if n is None else round(n / 1e6, 1),
                          ocf=None if (oc := ocf.get(e, (None,))[0]) is None else round(oc / 1e6, 1),
                          inv=_m(inv.get(e, (None,))[0]), ar=_m(ar.get(e, (None,))[0]), sbc=_m(sbc.get(e, (None,))[0]),
-                         cash=_m(_cash(e, cash_comb, cash, sti)), debt=_m(_debt(e, debt_l, debt_c, first_debt))))
+                         cash=_m(_cash(e, cash_comb, cash, sti)), debt=_m(_debt(e, debt_t, debt_n, debt_c))))
     eqs = sorted((e, v / 1e6, f) for e, (v, f, _, _) in eq.items())
     return dict(name=cf.get("entityName", ""), freq=freq, fye=fye, splits=splits, q=rows,
                 eq=[[e, round(v, 1), f] for e, v, f in eqs if e >= rows[0]["end"][:4] + "-01-01"] if rows else [])
