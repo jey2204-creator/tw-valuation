@@ -523,6 +523,26 @@ html{scroll-behavior:smooth}
   <div class="chart" id="cEps"></div>
   <p class="foot" id="fEps">柱：單季稀釋 EPS　線：近四季累計（右軸）。10-K 的第四季 = 全年 − 前三季</p>
 </section>
+<section class="card" id="beat" hidden>
+  <h2 style="display:flex;align-items:center;gap:8px;white-space:nowrap">財報判讀 <small id="uBeat">最新季 vs 分析師預估</small></h2>
+  <div class="y10k" id="beatK"></div>
+  <p class="take" id="tBeat"></p>
+  <div class="chart" id="cBeat" style="height:140px"></div>
+  <p class="foot" id="fBeat"></p>
+</section>
+<style>
+/* ---- 📊 財報判讀 #beat（同韓股站，但美股看 EPS／營收 vs 分析師預估，再看首日反應：beat 但跌＝預期已過高）。資料：earnings_auto.json（Finnhub 預估／實際、FinMind 首日）＋ SEC 財報三率 ---- */
+#beat h2{min-width:0}#beat h2 small{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;font-size:11px;letter-spacing:-.2px}
+.y10k{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:8px 0 4px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.y10k div{border:1px solid var(--line);border-radius:9px;padding:3px 7px 4px;min-width:0}
+.y10k span{display:block;font-size:10.5px;line-height:1.35;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.y10k b{display:block;font-family:var(--f-num);font-size:15px;font-weight:600;line-height:1.2}
+.y10k b.up{color:var(--up)}.y10k b.dn{color:var(--down)}
+.y10k i{display:block;font-style:normal;font-size:10px;line-height:1.35;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#beat .pill.ok{background:var(--b2)}#beat .pill.mid{background:var(--b4)}#beat .pill.bad{background:var(--b5)}
+#beat .why{display:none;margin:6px 0 0;font-size:12px;color:var(--muted);line-height:1.5}#beat.open .why{display:block}
+.y10tip{font-size:11px;color:var(--accent);cursor:pointer;white-space:nowrap}
+</style>
 <section class="card" id="react" hidden>
   <h2>財報驚喜 vs 首日反應 <small>近 8 季｜%</small></h2>
   <p class="take" id="tReact"></p>
@@ -917,9 +937,54 @@ function header(){
   if(hasBL){const [i,c1,d1]=BL[BL.length-1],n1=c1-(d1||0),p=BL.length>=5?BL[BL.length-5]:null,np=p?p[1]-(p[2]||0):null;
     $('tBal').innerHTML=`${qlbl(Q[i])} 現金＋短投 <strong>${ap()}${camt(c1)}</strong>、債務 <strong>${d1==null?'無申報':ap()+camt(d1)}</strong> → 淨現金 <strong>${ap()}${camt(n1)}</strong>${np!=null?`（一年前 ${ap()}${camt(np)}）`:''}${n1<0?(np!=null&&n1<np?'<span class="pill b">淨負債擴大</span>':'<span class="pill b">淨負債</span>'):''}`;
     $('uBal').textContent=`${capU()}｜季末`}
-  $('chips').innerHTML=(D.demand?'<a href="#capex" data-s>CapEx</a>':'')+'<a href="#rev" data-s>營收</a>'+(hasG?'<a href="#grow" data-s>成長</a>':'')+'<a href="#margin" data-s>三率</a><a href="#eps" data-s>EPS</a>'+(RH.length>=2?'<a href="#react" data-s>財報反應</a>':'')+(hasF?'<a href="#fcf" data-s>現金流</a>':'')+(hasFQ?'<a href="#fcfq" data-s>FCF品質</a>':'')+(hasWC?'<a href="#wc" data-s>庫存應收</a>':'')+(hasSB?'<a href="#shr" data-s>股數SBC</a>':'')+(hasBL?'<a href="#bal" data-s>現金債務</a>':'')+'<a href="#fwd" data-s>預估EPS</a><a href="#pe" data-s>本益比河流</a><a href="#pb" data-s>淨值比河流</a>';
+  $('chips').innerHTML=(D.demand?'<a href="#capex" data-s>CapEx</a>':'')+'<a href="#rev" data-s>營收</a>'+(hasG?'<a href="#grow" data-s>成長</a>':'')+'<a href="#margin" data-s>三率</a><a href="#eps" data-s>EPS</a>'+(RH.length>=2?'<a href="#beat" data-s>判讀</a><a href="#react" data-s>財報反應</a>':'')+(hasF?'<a href="#fcf" data-s>現金流</a>':'')+(hasFQ?'<a href="#fcfq" data-s>FCF品質</a>':'')+(hasWC?'<a href="#wc" data-s>庫存應收</a>':'')+(hasSB?'<a href="#shr" data-s>股數SBC</a>':'')+(hasBL?'<a href="#bal" data-s>現金債務</a>':'')+'<a href="#fwd" data-s>預估EPS</a><a href="#pe" data-s>本益比河流</a><a href="#pb" data-s>淨值比河流</a>';
   window.__FQ=FQ;window.__RH=RH;window.__WC={dio,dso,istate,hasWC,hasSB,hasBL};
 }
+// ---------- 📊 財報判讀 #beat：AUTOQ[id] = {fq, epsEst, epsAct, epsSurp, revEst, revAct, revSurp, px.react, hist[[fq, est, act, surp, date, hour, react, 'sec'?]]} ----------
+// 判讀順序（美股）：1 EPS vs 預估（±3% 符合、±10% 驚喜）→ 2 營收 vs 預估（Finnhub 免費方案多半沒有）→ 3 營益率對上季／去年同季 → 4 首日反應 vs 驚喜方向（beat 但跌＝預期已過高，miss 但漲＝利空出盡）
+let CMPJ=null;
+function renderBeat(){
+  const el=$('beat'),A=AUTOQ[D.id];if(!A||A.epsAct==null||D.freq!=='Q'){el.hidden=true;return}el.hidden=false;
+  const H=(A.hist||[]).filter(h=>h[2]!=null),mu=css('--muted'),up=css('--up'),dn=css('--down'),acc=css('--accent'),warm=css('--warm');
+  const sg=v=>v==null?'':v>0?'up':v<0?'dn':'',pp=v=>v==null?'—':(v>0?'+':'')+fmt(v,1)+'pp',pc=v=>v==null?'—':`${v>=0?'+':'−'}${Math.abs(v).toFixed(1)}%`,eT=v=>v==null?'—':sym()+fmt(ps(v),2);
+  const fq=A.fq,i=Q.findIndex(x=>x[0]===fq),x=i>=0?Q[i]:null,p=x&&isPrevQ(Q[i-1],x)?Q[i-1]:null,py=x?Q.find(z=>z[0]===String(+fq.slice(0,2)-1).padStart(2,'0')+fq.slice(2)):null;
+  const dOmQ=x&&p&&x[4]!=null&&p[4]!=null?+(x[4]-p[4]).toFixed(1):null,dOmY=x&&py&&x[4]!=null&&py[4]!=null?+(x[4]-py[4]).toFixed(1):null,dGmY=x&&py&&x[3]!=null&&py[3]!=null?+(x[3]-py[3]).toFixed(1):null;
+  const sp=A.epsSurp,rs=A.revSurp,rx=A.px&&A.px.react!=null?A.px.react:null,pre=!!A.pre;
+  const hs=H.filter(h=>h[3]!=null),be=hs.filter(h=>h[3]>=0).length,mi=hs.length-be;
+  let V,why=[];
+  if(sp==null)V=['','⚪ 無分析師預估',`${fq} EPS ${eT(A.epsAct)}，Finnhub 沒有這一季的預估值`];
+  else{V=sp>=10?['ok','🟢 大幅優於預期']:sp>=3?['ok','🟢 優於預期']:sp>-3?['','⚪ 符合預期']:sp>-10?['mid','🟠 略低於預期']:['bad','🔴 大幅低於預期'];
+    V[2]=`${fq} EPS ${eT(A.epsAct)} vs 預估 ${eT(A.epsEst)}（<b class="${sg(sp)}">${pc(sp)}</b>）${rs!=null?`、營收 ${pc(rs)}`:''}${rx!=null?`；首日 <b class="${sg(rx)}">${pc(rx)}</b>`:pre?'；尚未開盤':''}`;
+    why.push('美股以「EPS vs 分析師預估」為第一反應（調整後 EPS 為主）：±3% 內算符合，超過 10% 才算驚喜；營收驚喜率 Finnhub 免費方案多半沒有，有才顯示。');
+    if(rx!=null&&sp>=3&&rx<=-3)why.push('⚠️ Beat 但首日下跌＝市場要的不是這一季，是指引或 CapEx；預期已經跑在財報前面，別把「beat」當成買進理由。');
+    if(rx!=null&&sp<=-3&&rx>=3)why.push('ℹ️ Miss 但首日上漲＝利空出盡或指引優於擔憂；這種反應通常比 beat 更值得追，因為壞消息已反映在價格裡。');
+    if(rx!=null&&sp>=10&&rx>=5)why.push('⚠️ 錨定偏誤：大幅 beat＋大漲之後，分析師會集體上修，下一季要再 beat 的門檻變高；連續 beat 的紀錄不保證下一次。');}
+  if(x&&x[4]!=null&&dOmY!=null)why.push(`營益率 ${fmt(x[4],1)}%：對去年同季 ${pp(dOmY)}${dOmQ!=null?`、對上季 ${pp(dOmQ)}`:''}${dGmY!=null?`；毛利率年 ${pp(dGmY)}`:''}——EPS beat 若靠一次性或稅率，營益率不會同步往上，這是辨別品質的地方。`);
+  if(hs.length>=4)why.push(`近 ${hs.length} 季有預估：Beat ${be} 次、Miss ${mi} 次${be===hs.length?'——每季都 beat 的公司，市場會把「beat」當常態，驚喜率要越來越大才有反應':''}。`);
+  const cmp=CMPJ&&(CMPJ.companies||[]).find(c=>c.ticker===D.id),gk=cmp&&(cmp.kpi||[]).find(k=>/指引/.test(k.n||''));
+  if(gk)why.push(`📌 ${gk.n}：${gk.v}（${gk.e}${gk.s!=null?`，${pc(gk.s)}`:''}）——指引 vs 共識常比本季數字更決定首日方向；完整分析見「🎯 看財報」。`);
+  else if(EARN_SET&&EARN_SET.has(D.id))why.push('📌 這一季有手動分析層（含指引 vs 共識），點上方「🎯 看財報」。');
+  $('tBeat').innerHTML=`<span class="pill ${V[0]}">${V[1]}</span> ${V[2]} <span class="y10tip" data-beatt>${el.classList.contains('open')?'收起 ▴':'怎麼看 ▾'}</span><div class="why">${why.map(esc).map(t=>t.replace(/^(⚠️|ℹ️|📌)/,'<b>$1</b>')).join('<br>')}</div>`;
+  $('beatK').innerHTML=[
+    ['EPS vs 預估',`<b class="${sg(sp)}">${sp==null?'—':pc(sp)}</b>`,rs!=null?`營收 <span class="${sg(rs)}">${pc(rs)}</span>`:'無營收預估'],
+    ['營益率',`<b>${x&&x[4]!=null?fmt(x[4],1)+'%':'—'}</b>`,x&&x[4]!=null?`季${pp(dOmQ)} 年${pp(dOmY)}`:'SEC 財報未入'],
+    ['首日反應',`<b class="${sg(rx)}">${rx==null?(pre?'未開盤':'—'):pc(rx)}</b>`,hs.length?`近${hs.length}季 Beat ${be}・Miss ${mi}`:'無歷史']
+  ].map(([a,b,d])=>`<div><span>${a}</span>${b}<i>${d||'&nbsp;'}</i></div>`).join('');
+  // 圖：近 8 季 EPS 實際（實心柱，紅＝beat／綠＝miss／灰＝無預估）＋預估（虛線空心柱）＋營益率（線，右軸）
+  const R=H.slice(-8).map(h=>{const q=Q.find(z=>z[0]===h[0]);return {l:h[0],act:h[2],est:h[1],sp:h[3],om:q?q[4]:null,sec:h[7]==='sec'}});
+  const ch=mk('cBeat'),o=base();o.xAxis.data=R.map(z=>z.l);o.yAxis.scale=false;o.legend={...o.legend,top:0,left:0,itemGap:8,itemWidth:10,itemHeight:7,textStyle:{...o.legend.textStyle,fontSize:10.5}};o.grid={...o.grid,top:24,right:34};
+  o.yAxis=[o.yAxis,{type:'value',show:false,scale:true}];const hasOm=R.some(z=>z.om!=null);
+  o.series=[{name:'EPS 實際',type:'bar',barGap:'-100%',barCategoryGap:'28%',z:2,data:R.map(z=>({value:ps(z.act),itemStyle:{color:z.sp==null?mu:z.sp>=0?up:dn,borderRadius:[2,2,0,0]}})),
+      label:{show:true,position:'top',fontSize:9,color:mu,fontFamily:'IBM Plex Mono',formatter:q=>{const z=R[q.dataIndex];return z.sp==null?'':pc(z.sp).replace('.0','')}}},
+    {name:'預估',type:'bar',barGap:'-100%',barCategoryGap:'28%',z:1,data:R.map(z=>({value:ps(z.est),itemStyle:{color:'transparent',borderColor:mu,borderWidth:1.5,borderType:'dashed',borderRadius:[2,2,0,0]}}))}];
+  if(hasOm)o.series.push({name:'營益率',type:'line',yAxisIndex:1,data:R.map(z=>z.om),symbol:'circle',symbolSize:3,connectNulls:true,lineStyle:{width:2,color:warm},itemStyle:{color:warm},endLabel:{show:true,color:warm,fontSize:10,fontFamily:'IBM Plex Mono',formatter:q=>q.value==null?'':fmt(q.value,1)+'%'}});
+  {const vs=R.flatMap(z=>[ps(z.act),ps(z.est)]).filter(v=>v!=null);if(vs.length&&Math.min(...vs)<0)o.yAxis[0].min=v=>Math.floor(v.min*1.2*100)/100}
+  o.tooltip.formatter=qs=>{const z=R[qs[0].dataIndex],L=[`<b>${z.l}</b>`];L.push(`EPS 實際 ${eT(z.act)}${z.sec?'（GAAP，SEC 財報）':''}`);if(z.est!=null)L.push(`預估 ${eT(z.est)}（驚喜 ${pc(z.sp)}）`);if(z.om!=null)L.push(`營益率 ${fmt(z.om,1)}%`);return L.join('<br>')};
+  ch.setOption(o,true);ch.resize();
+  $('uBeat').textContent=`${fq} vs 分析師預估`;
+  $('fBeat').textContent=`實心柱 EPS 實際（紅＝beat／綠＝miss／灰＝無預估，${cur()}）・虛線框＝分析師預估（Finnhub，只有近 4 季）${hasOm?'・線＝營益率（SEC 財報）':''}。首日＝財報後首個交易日收盤 vs 前一收盤。`;
+}
+$('beat').addEventListener('click',e=>{if(!e.target.closest('#beatK,[data-beatt],#tBeat .pill'))return;const o=$('beat').classList.toggle('open');const t=$('beat').querySelector('[data-beatt]');if(t)t.textContent=o?'收起 ▴':'怎麼看 ▾'});
 function render(){
   const acc=css('--accent'),acc2=css('--accent2'),warm=css('--warm'),n=D.freq==='Q'?20:8,st=Math.max(0,Q.length-n),S=Q.slice(st);
   {const o=base(),c=mk('cRev');o.xAxis.data=S.map(qlbl);o.yAxis.scale=false;
@@ -992,7 +1057,7 @@ function render(){
      {name:'債務',type:'bar',data:S.map(x=>cval(x[16])),itemStyle:{color:css('--up'),borderRadius:[2,2,0,0]}},
      {name:'淨現金',type:'line',data:S.map(x=>cval(net(x))),symbol:'circle',symbolSize:4,z:5,connectNulls:false,lineStyle:{width:2,color:warm},itemStyle:{color:warm},markLine:{silent:true,symbol:'none',lineStyle:{color:warm,type:'dashed',width:1,opacity:.6},label:{show:false},data:[{yAxis:0}]}}];
    c.setOption(o,true)}
-  renderFwd();river('cPE',PEM,2,'倍 PE');river('cPB',PBM,3,'倍 PB');
+  renderFwd();renderBeat();river('cPE',PEM,2,'倍 PE');river('cPB',PBM,3,'倍 PB');
 }
 // ---------- 預估模型 ----------
 function model(){
@@ -1432,7 +1497,7 @@ const isStk=h=>/^[A-Z][A-Z.\-]{0,5}$/.test(h)&&h!=='EARN'&&h!=='SALARY';
 const nameOf=id=>{const s=IDX.find(x=>x.id===id);if(s)return s.cn||s.name||id;if(D&&D.id===id)return cnOf(D)||D.name||id;const a=ALLM[id];return a&&a.name||id};
 let PN=null,KEEP=null,SHEET_SEC=null;
 // 個股頁頂列「🎯 看財報 →」：財報對照頁（earnings_cmp.json）有這檔才顯示，連到那頁的個股
-let EARN_SET=null;const CMP_P=fetch('data/earnings_cmp.json?t='+Math.floor(Date.now()/6e5)).then(r=>r.ok?r.json():null).catch(()=>null);
+let EARN_SET=null;const CMP_P=fetch('data/earnings_cmp.json?t='+Math.floor(Date.now()/6e5)).then(r=>r.ok?r.json():null).catch(()=>null);CMP_P.then(j=>{CMPJ=j;if(D&&!$('stock').hidden&&!$('beat').hidden)renderBeat()});
 CMP_P.then(j=>{EARN_SET=new Set(((j&&j.companies)||[]).map(c=>c.ticker));WATCH=new Set([...EARN_SET,...((j&&j.watch)||[])]);SINCE=(j&&j.since)||'';if(!$('earnPage').hidden)earnCal();if(D&&!$('stock').hidden)earnLnk(D.id);if(EVIEW==='done'&&!$('earnCal').hidden)earnMini()});
 function earnLnk(id){const a=$('earnLnk'),on=!!(EARN_SET&&EARN_SET.has(id));a.hidden=!on;if(on)a.href='earnings.html#'+encodeURIComponent(id)}
 function pnPaint(id){
