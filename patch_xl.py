@@ -25,7 +25,10 @@ patch('index.html','beta.html',
   "function mk(id){if(!charts[id])charts[id]=echarts.init($(id));return charts[id]}",
   "function mk(id){if(!charts[id])charts[id]=xLast(echarts.init($(id)),$(id));return charts[id]}",
   [("o.xAxis.axisLabel.interval=Math.max(0,Math.round(R.length/6)-1);o.xAxis.axisLabel.formatter=(v,i)=>{const m=v.slice(2,7).replace('-','/'),pv=R[i-1]&&R[i-1].d.slice(0,7);return pv===v.slice(0,7)&&i%2?'':m};",
-    "o.xAxis.axisLabel.formatter=R.length<=60?v=>v.slice(5).replace('-','/'):v=>v.slice(2,7).replace('-','/');   // 1年內用 月/日，3年用 年/月")])
+    "o.xAxis.axisLabel.formatter=R.length<=60?v=>v.slice(5).replace('-','/'):v=>v.slice(2,7).replace('-','/');   // 1年內用 月/日，3年用 年/月"),
+   ('<div class="chart" id="cTdw" hidden style="height:180px"></div>','<div class="chart" id="cTdw" hidden style="height:136px"></div>'),
+   ("o.yAxis.scale=true;o.yAxis.axisLabel.formatter='{value}%';o.grid.right=40;\n  o.yAxis=[o.yAxis,{...o.yAxis,scale:true,splitLine:{show:false},axisLabel:{show:false}}];",
+    "o.yAxis.scale=true;o.yAxis.splitNumber=3;o.yAxis.axisLabel.formatter='{value}%';o.grid.right=40;o.grid.top=24;\n  o.yAxis=[o.yAxis,{...o.yAxis,scale:true,splitLine:{show:false},axisLabel:{show:false}}];")])
 patch('health.html','beta_health.html',
   "function mk(id){if(charts[id])charts[id].dispose();return charts[id]=echarts.init($(id),null,{renderer:'svg'})}",
   "function mk(id){if(charts[id])charts[id].dispose();return charts[id]=xLast(echarts.init($(id),null,{renderer:'svg'}),$(id))}")

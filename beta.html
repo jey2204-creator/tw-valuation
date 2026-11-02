@@ -512,7 +512,7 @@ details.ind.hot summary b{color:var(--up)}
   <h2 style="display:flex;align-items:center;gap:8px;white-space:nowrap">大戶持股 <small>週｜集保</small><span class="segm" id="tdwSeg" style="margin-left:auto"><button type="button" aria-pressed="true" data-n="52">1年</button><button type="button" aria-pressed="false" data-n="156">3年</button></span></h2>
   <p class="take tight" id="tTdw"></p>
   <div class="sx" id="tdwK" hidden></div>
-  <div class="chart" id="cTdw" hidden style="height:180px"></div>
+  <div class="chart" id="cTdw" hidden style="height:136px"></div>
   <p class="foot" id="fTdw"></p>
   <p class="foot" id="fTdw2" hidden></p>
 </section>
@@ -1049,7 +1049,7 @@ function renderTdw(){
   $('tdw').querySelectorAll('.tdwx').forEach(e=>e.hidden=!$('tdw').classList.contains('open'));
   const o=base(),ch=mk('cTdw');$('cTdw').hidden=false;
   o.xAxis.data=R.map(x=>x.d);o.xAxis.axisLabel.formatter=R.length<=60?v=>v.slice(5).replace('-','/'):v=>v.slice(2,7).replace('-','/');   // 1年內用 月/日，3年用 年/月
-  o.yAxis.scale=true;o.yAxis.axisLabel.formatter='{value}%';o.grid.right=40;
+  o.yAxis.scale=true;o.yAxis.splitNumber=3;o.yAxis.axisLabel.formatter='{value}%';o.grid.right=40;o.grid.top=24;
   o.yAxis=[o.yAxis,{...o.yAxis,scale:true,splitLine:{show:false},axisLabel:{show:false}}];
   const SZ=R.length<=30?4:R.length<=60?3:R.length<=110?2:0,line=(name,k,col,ya,dash)=>({name,type:'line',yAxisIndex:ya||0,data:R.map(x=>x[k]),showSymbol:SZ>0,symbol:'circle',symbolSize:(v,p)=>p.dataIndex===R.length-1?SZ+1.5:SZ,connectNulls:true,lineStyle:{width:ya?1.5:2,color:col,type:dash?'dashed':'solid'},itemStyle:{color:col},endLabel:{show:true,color:col,fontSize:10,fontFamily:'IBM Plex Mono',formatter:p=>p.value==null?'':(ya?(p.value>=10000?fmt(p.value/10000,1)+'萬':fmt(p.value)):fmt(p.value,1)+'%')}});
   o.series=[line('400張以上%','b4',acc),line('千張以上%','b10',acc2,0,true),line('股東人數','ppl',warm,1,true)];
