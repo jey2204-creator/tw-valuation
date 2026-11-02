@@ -906,10 +906,10 @@ function header(){
   if(hasFQ){const [i,v]=FQ[FQ.length-1],lo=FQ.slice(-4).filter(x=>x[1].c!=null&&x[1].c<100).length;
     $('tFcfq').innerHTML=`到 ${qlbl(Q[i])} 近四季 FCF 利潤率 <strong>${v.m}%</strong>，轉換率 <strong>${v.c==null?'—（淨利太低）':(v.c>=300?'>300':v.c<=-100?'<−100':v.c)+'%'}</strong>${v.c!=null?(v.c>=100?'<span class="pill">現金 ≥ 帳面獲利</span>':lo>=3?'<span class="pill b">連續偏低</span>':''):''}`}
   // 財報驚喜 vs 首日反應：自動層近 8 季
-  const RH=((AUTOQ[D.id]||{}).hist||[]).filter(h=>h[6]!=null||h[3]!=null);$('react').hidden=RH.length<2;
+  const RH=histOf(D.id).filter(h=>h[6]!=null||h[3]!=null);$('react').hidden=RH.length<2;
   if(RH.length>=2){const be=RH.filter(h=>h[3]!=null&&h[3]>=0),mi=RH.filter(h=>h[3]!=null&&h[3]<0),av=a=>a.length?(sum(a.map(h=>h[6]).filter(v=>v!=null))/Math.max(1,a.filter(h=>h[6]!=null).length)).toFixed(1):null,l=RH[RH.length-1];
     const pc=v=>v==null?'—':`${v>=0?'+':'−'}${Math.abs(v).toFixed(1)}%`;
-    $('tReact').innerHTML=`${l[0]} 驚喜 <strong>${pc(l[3])}</strong>、首日 <strong>${pc(l[6])}</strong>${be.length+mi.length?`；有預估的 ${be.length+mi.length} 季：Beat ${be.length} 次${be.length&&av(be)!=null?`（首日平均 ${av(be)>=0?'+':''}${av(be)}%）`:''}、Miss ${mi.length} 次${mi.length&&av(mi)!=null?`（首日平均 ${av(mi)>=0?'+':''}${av(mi)}%）`:''}`:''}`}
+    $('tReact').innerHTML=`${l[0]} 驚喜 <strong>${pc(l[3])}</strong>${l[8]?'<span class="pill" title="最新季用手動分析層的 EPS 與共識">手動層</span>':''}、首日 <strong>${pc(l[6])}</strong>${be.length+mi.length?`；有預估的 ${be.length+mi.length} 季：Beat ${be.length} 次${be.length&&av(be)!=null?`（首日平均 ${av(be)>=0?'+':''}${av(be)}%）`:''}、Miss ${mi.length} 次${mi.length&&av(mi)!=null?`（首日平均 ${av(mi)>=0?'+':''}${av(mi)}%）`:''}`:''}`}
   // 庫存／應收天數：季末餘額 ÷ 單季流量 × 91；年報股用 365
   const DAYS=D.freq==='Q'?91:365;
   const dio=i=>{const x=Q[i];if(x[12]==null||x[3]==null||!x[2])return null;const cogs=x[2]*(1-x[3]/100);return cogs>0?+(x[12]/cogs*DAYS).toFixed(0):null};
@@ -943,18 +943,21 @@ function header(){
 // ---------- 📊 財報判讀 #beat：AUTOQ[id] = {fq, epsEst, epsAct, epsSurp, revEst, revAct, revSurp, px.react, hist[[fq, est, act, surp, date, hour, react, 'sec'?]]} ----------
 // 判讀順序（美股）：1 EPS vs 預估（±3% 符合、±10% 驚喜）→ 2 營收 vs 預估（Finnhub 免費方案多半沒有）→ 3 營益率對上季／去年同季 → 4 首日反應 vs 驚喜方向（beat 但跌＝預期已過高，miss 但漲＝利空出盡）
 let CMPJ=null;
+// 手動分析層（earnings_cmp.json）同一季（公布日相同）的 EPS：調整後 EPS → EPS → GAAP EPS；回傳 {n 名稱, act, est, sp, rev(營收 KPI), cmp} 或 null
+function manualEps(id,A){if(!CMPJ||!A)return null;const c=(CMPJ.companies||[]).find(x=>x.ticker===id&&(x.date||'').slice(0,10).replace(/\//g,'-')===A.date);if(!c)return null;const K=c.kpi||[];
+  const k=K.find(k=>/^調整後\s*EPS/.test(k.n))||K.find(k=>/^EPS$/.test((k.n||'').trim()))||K.find(k=>/^GAAP\s*EPS/.test(k.n)),num=t=>{const m=String(t||'').replace(/,/g,'').match(/-?[\d.]+/);return m?+m[0]:null};
+  if(!k||k.s==null||num(k.v)==null)return null;return {n:k.n,act:num(k.v),est:num(k.e),sp:k.s,rev:K.find(x=>/^營收/.test(x.n)&&/^預期/.test(x.e||'')),cmp:c}}
+// 自動層 hist 近 8 季，最新季若有手動層就換成手動層數字（第 9 欄 1＝手動層）
+function histOf(id){const A=AUTOQ[id];if(!A)return [];const M=manualEps(id,A);return (A.hist||[]).map(h=>M&&h[0]===A.fq?[h[0],M.est,M.act,M.sp,h[4],h[5],h[6],h[7],1]:h)}
 function renderBeat(){
   const el=$('beat'),A=AUTOQ[D.id];if(!A||A.epsAct==null||D.freq!=='Q'){el.hidden=true;return}el.hidden=false;
-  const H=(A.hist||[]).filter(h=>h[2]!=null),mu=css('--muted'),up=css('--up'),dn=css('--down'),acc=css('--accent'),warm=css('--warm');
+  const H=histOf(D.id).filter(h=>h[2]!=null),mu=css('--muted'),up=css('--up'),dn=css('--down'),acc=css('--accent'),warm=css('--warm');
   const sg=v=>v==null?'':v>0?'up':v<0?'dn':'',pp=v=>v==null?'—':(v>0?'+':'')+fmt(v,1)+'pp',pc=v=>v==null?'—':`${v>=0?'+':'−'}${Math.abs(v).toFixed(1)}%`,eT=v=>v==null?'—':sym()+fmt(ps(v),2);
   const fq=A.fq,i=Q.findIndex(x=>x[0]===fq),x=i>=0?Q[i]:null,p=x&&isPrevQ(Q[i-1],x)?Q[i-1]:null,py=x?Q.find(z=>z[0]===String(+fq.slice(0,2)-1).padStart(2,'0')+fq.slice(2)):null;
   const dOmQ=x&&p&&x[4]!=null&&p[4]!=null?+(x[4]-p[4]).toFixed(1):null,dOmY=x&&py&&x[4]!=null&&py[4]!=null?+(x[4]-py[4]).toFixed(1):null,dGmY=x&&py&&x[3]!=null&&py[3]!=null?+(x[3]-py[3]).toFixed(1):null;
   // 手動分析層（earnings_cmp.json）同一季有數字時優先：調整後 EPS 比 Finnhub 的 GAAP 混用更接近市場看的數字，共識來源也在對照頁寫明
-  const cmp0=CMPJ&&(CMPJ.companies||[]).find(c=>c.ticker===D.id&&(c.date||'').slice(0,10).replace(/\//g,'-')===A.date),K=cmp0&&(cmp0.kpi||[]);
-  const kEps=K&&(K.find(k=>/^調整後\s*EPS/.test(k.n))||K.find(k=>/^EPS$/.test((k.n||'').trim()))||K.find(k=>/^GAAP\s*EPS/.test(k.n))),kRev=K&&K.find(k=>/^營收/.test(k.n)&&/^預期/.test(k.e||''));
-  const num=t=>{const m=String(t||'').replace(/,/g,'').match(/-?[\d.]+/);return m?+m[0]:null};
-  const useM=!!(kEps&&kEps.s!=null&&num(kEps.v)!=null);
-  const epsAct=useM?num(kEps.v):A.epsAct,epsEst=useM?num(kEps.e):A.epsEst,sp=useM?kEps.s:A.epsSurp,rs=useM&&kRev&&kRev.s!=null?kRev.s:A.revSurp,rx=A.px&&A.px.react!=null?A.px.react:null,pre=!!A.pre,srcT=useM?`${kEps.n}`:'Finnhub';
+  const M=manualEps(D.id,A),useM=!!M,kEps=M?{n:M.n,e:((M.cmp.kpi||[]).find(k=>k.n===M.n)||{}).e||''}:null,kRev=M?M.rev:null;
+  const epsAct=useM?M.act:A.epsAct,epsEst=useM?M.est:A.epsEst,sp=useM?M.sp:A.epsSurp,rs=useM&&kRev&&kRev.s!=null?kRev.s:A.revSurp,rx=A.px&&A.px.react!=null?A.px.react:null,pre=!!A.pre,srcT=useM?`${kEps.n}`:'Finnhub';
   const hs=H.filter(h=>h[3]!=null),be=hs.filter(h=>h[3]>=0).length,mi=hs.length-be;
   let V,why=[];
   if(sp==null)V=['','⚪ 無分析師預估',`${fq} EPS ${eT(epsAct)}，Finnhub 沒有這一季的預估值`];
@@ -976,7 +979,7 @@ function renderBeat(){
     ['首日反應',`<b class="${sg(rx)}">${rx==null?(pre?'未開盤':'—'):pc(rx)}</b>`,hs.length?`近${hs.length}季 Beat ${be}・Miss ${mi}`:'無歷史']
   ].map(([a,b,d])=>`<div><span>${a}</span>${b}<i>${d||'&nbsp;'}</i></div>`).join('');
   // 圖：近 8 季 EPS 實際（實心柱，紅＝beat／綠＝miss／灰＝無預估）＋預估（虛線空心柱）＋營益率（線，右軸）
-  const R=H.slice(-8).map(h=>{const q=Q.find(z=>z[0]===h[0]),m=useM&&h[0]===fq;return {l:h[0],act:m?epsAct:h[2],est:m?epsEst:h[1],sp:m?sp:h[3],om:q?q[4]:null,sec:h[7]==='sec',m}});
+  const R=H.slice(-8).map(h=>{const q=Q.find(z=>z[0]===h[0]);return {l:h[0],act:h[2],est:h[1],sp:h[3],om:q?q[4]:null,sec:h[7]==='sec',m:!!h[8]}});
   const ch=mk('cBeat'),o=base();o.xAxis.data=R.map(z=>z.l);o.yAxis.scale=false;o.legend={...o.legend,top:0,left:0,itemGap:8,itemWidth:10,itemHeight:7,textStyle:{...o.legend.textStyle,fontSize:10.5}};o.grid={...o.grid,top:24,right:34};
   o.yAxis=[o.yAxis,{type:'value',show:false,scale:true}];const hasOm=R.some(z=>z.om!=null);
   o.series=[{name:'EPS 實際',type:'bar',barGap:'-100%',barCategoryGap:'28%',z:2,data:R.map(z=>({value:ps(z.act),itemStyle:{color:z.sp==null?mu:z.sp>=0?up:dn,borderRadius:[2,2,0,0]}})),
@@ -1034,7 +1037,7 @@ function render(){
    o.grid.right=42;c.setOption(o,true);spreadEnd(c,o)}
   if(!$('react').hidden){const o=base(),c=mk('cReact'),RH=window.__RH;o.xAxis.data=RH.map(h=>h[0]);o.yAxis.scale=false;o.yAxis.axisLabel.formatter='{value}%';
    const pc=v=>v==null?'—':`${v>=0?'+':'−'}${Math.abs(v).toFixed(1)}%`,hr={bmo:'盤前',amc:'盤後',dmh:'盤中'};
-   o.tooltip.formatter=ps=>{const h=RH[ps[0].dataIndex];return `<b>${h[0]}</b>　${h[4]?h[4].slice(5).replace('-','/'):''} ${hr[h[5]]||''}<br>EPS 實際 ${h[2]??'—'}${h[1]!=null?` ／預估 ${h[1]}`:'（無預估）'}<br>驚喜率 ${pc(h[3])}<br>首日漲跌 ${pc(h[6])}`};
+   o.tooltip.formatter=ps=>{const h=RH[ps[0].dataIndex];return `<b>${h[0]}</b>　${h[4]?h[4].slice(5).replace('-','/'):''} ${hr[h[5]]||''}<br>EPS 實際 ${h[2]??'—'}${h[1]!=null?` ／預估 ${h[1]}`:'（無預估）'}${h[8]?'（手動層）':''}<br>驚喜率 ${pc(h[3])}<br>首日漲跌 ${pc(h[6])}`};
    const col=(v,up,dn)=>v==null?acc:v>=0?up:dn;
    o.series=[{name:'EPS 驚喜率',type:'bar',data:RH.map(h=>h[3]==null?null:{value:h[3],itemStyle:{color:acc}}),itemStyle:{color:acc,borderRadius:[2,2,0,0]},barCategoryGap:'30%',barGap:'10%',label:{show:true,position:'top',fontSize:9,color:css('--muted'),fontFamily:'IBM Plex Mono',formatter:p=>p.value==null?'':(p.value>=0?'+':'')+p.value}},
      {name:'首日漲跌',type:'bar',data:RH.map(h=>h[6]==null?null:{value:h[6],itemStyle:{color:h[6]>=0?css('--up'):css('--down')}}),itemStyle:{color:warm,borderRadius:[2,2,0,0]},label:{show:true,position:'top',fontSize:9,color:css('--muted'),fontFamily:'IBM Plex Mono',formatter:p=>p.value==null?'':(p.value>=0?'+':'')+p.value}},
@@ -1502,7 +1505,7 @@ const isStk=h=>/^[A-Z][A-Z.\-]{0,5}$/.test(h)&&h!=='EARN'&&h!=='SALARY';
 const nameOf=id=>{const s=IDX.find(x=>x.id===id);if(s)return s.cn||s.name||id;if(D&&D.id===id)return cnOf(D)||D.name||id;const a=ALLM[id];return a&&a.name||id};
 let PN=null,KEEP=null,SHEET_SEC=null;
 // 個股頁頂列「🎯 看財報 →」：財報對照頁（earnings_cmp.json）有這檔才顯示，連到那頁的個股
-let EARN_SET=null;const CMP_P=fetch('data/earnings_cmp.json?t='+Math.floor(Date.now()/6e5)).then(r=>r.ok?r.json():null).catch(()=>null);CMP_P.then(j=>{CMPJ=j;if(D&&!$('stock').hidden&&!$('beat').hidden)renderBeat()});
+let EARN_SET=null;const CMP_P=fetch('data/earnings_cmp.json?t='+Math.floor(Date.now()/6e5)).then(r=>r.ok?r.json():null).catch(()=>null);CMP_P.then(j=>{CMPJ=j;if(D&&!$('stock').hidden){header();render()}});
 CMP_P.then(j=>{EARN_SET=new Set(((j&&j.companies)||[]).map(c=>c.ticker));WATCH=new Set([...EARN_SET,...((j&&j.watch)||[])]);SINCE=(j&&j.since)||'';if(!$('earnPage').hidden)earnCal();if(D&&!$('stock').hidden)earnLnk(D.id);if(EVIEW==='done'&&!$('earnCal').hidden)earnMini()});
 function earnLnk(id){const a=$('earnLnk'),on=!!(EARN_SET&&EARN_SET.has(id));a.hidden=!on;if(on)a.href='earnings.html#'+encodeURIComponent(id)}
 function pnPaint(id){
