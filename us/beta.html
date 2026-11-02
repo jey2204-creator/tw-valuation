@@ -996,7 +996,7 @@ function renderBeat(){
   if(hasOm)o.series.push({name:'營益率',type:'line',yAxisIndex:1,data:R.map(z=>z.om),symbol:'circle',symbolSize:3,connectNulls:true,lineStyle:{width:2,color:warm},itemStyle:{color:warm},endLabel:{show:true,color:warm,fontSize:10,fontFamily:'IBM Plex Mono',formatter:q=>q.value==null?'':fmt(q.value,1)+'%'}});
   {const vs=R.flatMap(z=>[ps(z.act),ps(z.est)]).filter(v=>v!=null);if(vs.length&&Math.min(...vs)<0)o.yAxis[0].min=v=>Math.floor(v.min*1.2*100)/100}
   {const rv=R.map(z=>z.rx).filter(v=>v!=null),m=rv.length?Math.max(5,...rv.map(Math.abs))*1.35:10;o.yAxis[2].min=-Math.ceil(m);o.yAxis[2].max=Math.ceil(m)}
-  o.tooltip.formatter=qs=>{const z=R[qs[0].dataIndex],L=[`<b>${z.l}</b>　${z.d?z.d.slice(5).replace('-','/'):''} ${HR[z.hr]||''}`];if(z.rx!=null)L.push(`首日漲跌 ${pc(z.rx)}`);L.push(`${z.m?kEps.n:'EPS'} 實際 ${eT(z.act)}${z.sec?'（GAAP，SEC 財報）':z.m?'（手動層）':''}`);if(z.est!=null)L.push(`預估 ${eT(z.est)}（驚喜 ${pc(z.sp)}）`);if(z.om!=null)L.push(`營益率 ${fmt(z.om,1)}%`);return L.join('<br>')};
+  o.tooltip.formatter=qs=>{const z=R[qs[0].dataIndex],L=[`<b>${z.l}</b>　${z.d?z.d.slice(5).replace('-','/'):''} ${HR[z.hr]||''}`];L.push(`${z.m?kEps.n:'EPS'} 實際 ${eT(z.act)}${z.sec?'（GAAP，SEC 財報）':z.m?'（手動層）':''}`);if(z.est!=null)L.push(`預估 ${eT(z.est)}（驚喜 ${pc(z.sp)}）`);if(z.om!=null)L.push(`營益率 ${fmt(z.om,1)}%`);if(z.rx!=null)L.push(`首日漲跌 ${pc(z.rx)}`);return L.join('<br>')};
   ch.setOption(o,true);ch.resize();
   $('uBeat').textContent=`${fq} vs 分析師預估${useM?'（手動層）':''}`;
   $('fBeat').textContent=`上：EPS 實際（紅＝beat／綠＝miss／灰＝無預估，${cur()}）、虛線框＝分析師預估（Finnhub 只有近 4 季${useM?'；最新季改用手動分析層':''}）${hasOm?'、線＝營益率（SEC 財報）':''}。下：首日漲跌＝財報後首個交易日收盤 vs 前一收盤（FinMind）。看市場對這檔「beat 買不買單」：上紅、下綠＝預期已過高。`;
