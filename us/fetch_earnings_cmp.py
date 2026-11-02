@@ -203,9 +203,12 @@ def one(tk, override, since=""):
         for h in hist:   # Finnhub 的季別是會計年度（AAPL 的 26Q3＝曆年 26Q2），改成 SEC 財報檔的標籤，才對得上 8-K
             h[0] = relabel(periods.get(h[0]), h[0])
         byfq = {h[0]: h for h in hist}
-        rows8 = []
+        rows8, seen = [], set()
         for d8, hr in rels:
             fq = fqof(d8)
+            if fq in seen:   # 同一季有兩份 8-K（同日兩份、或事後更正）→ 只留最早那份，否則 hist 同季出現兩列、圖畫兩根
+                continue
+            seen.add(fq)
             h = byfq.get(fq) or [fq, None, None, None]
             if len(h) < 5:
                 h.extend([d8, hr, None])
