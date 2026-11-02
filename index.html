@@ -335,6 +335,8 @@ details.ind.hot summary b{color:var(--up)}
 .hub>details.ind[open]>summary span::after{transform:rotate(90deg)}
 .hub>details.ind[open]>summary{border-bottom:1px dashed var(--line)}
 .note.hnote{margin:2px 0 8px}
+.emgn{font-size:11px;line-height:1.45;margin-top:4px;padding:5px 8px;border-radius:8px;background:#fff7e0;color:#7a5200}
+@media (prefers-color-scheme:dark){.emgn{background:#3a2e10;color:#f0cf80}}
 </style>
 
 </head>
@@ -1608,22 +1610,42 @@ async function fm(dataset,id,start){
   return js.data||[];
 }
 // 與 fetch.py 的 build() 相同邏輯
+const EMG=[['3595','山太士','興櫃','光電業']];   // 興櫃 beta：先只放這幾檔
+// 興櫃半年報：某年只有 06-30（無 03-31）或只有 12-31（無 09-30）→ 依月營收比重拆成兩季；回傳 [新 fs, 拆算季標籤]
+function emgSplit(fs,rvd){
+  const by={};fs.forEach(r=>{(by[r.date]=by[r.date]||[]).push(r)});
+  const out=fs.slice(),mark=[];
+  const qr=(y,n)=>{let t=0,c=0;for(let i=1;i<=3;i++){const v=rvd[`${y}-${String((n-1)*3+i).padStart(2,'0')}`];if(v!=null){t+=v;c++}}return c===3?t:null};
+  Object.keys(by).forEach(d=>{const y=+d.slice(0,4),md=d.slice(5);
+    const pair=md==='06-30'?['03-31',1,2]:md==='12-31'?['09-30',3,4]:null;if(!pair)return;
+    if(by[`${y}-${pair[0]}`])return;   // 已有前一季 → 本來就是單季
+    const a=qr(y,pair[1]),b=qr(y,pair[2]),w=a!=null&&b!=null&&a+b>0?a/(a+b):0.5;
+    const rows=by[d];
+    rows.forEach(r=>{const i=out.indexOf(r);if(i<0||r.value==null)return;
+      out[i]={...r,value:r.type==='EPS'?+(r.value*(1-w)).toFixed(2):r.value*(1-w)};
+      out.push({...r,date:`${y}-${pair[0]}`,value:r.type==='EPS'?+(r.value*w).toFixed(2):r.value*w})});
+    const yy=String(y).slice(2);mark.push(`${yy}Q${pair[1]}`,`${yy}Q${pair[2]}`)});
+  return [out,mark];
+}
 async function live(id){
   const y=new Date().getFullYear(),start=`${y-6}-01-01`,start2=`${y-7}-01-01`;
-  const [px,per,fs,rv,bs]=await Promise.all([fm('TaiwanStockPrice',id,start),fm('TaiwanStockPER',id,start),fm('TaiwanStockFinancialStatements',id,start2),fm('TaiwanStockMonthRevenue',id,start2),fm('TaiwanStockBalanceSheet',id,start2)]);
+  const emg=EMG.some(e=>e[0]===id);let hs=[];
+  let [px,per,fs,rv,bs]=await Promise.all([fm('TaiwanStockPrice',id,start),fm('TaiwanStockPER',id,start),fm('TaiwanStockFinancialStatements',id,start2),fm('TaiwanStockMonthRevenue',id,start2),fm('TaiwanStockBalanceSheet',id,start2)]);
   const cf=await fm('TaiwanStockCashFlowsStatement',id,start2).catch(()=>[]);
   if(!px.length)throw new Error(`查無 ${id} 的股價資料（可能是興櫃、已下市或代號錯誤）`);
   const cap=bs.filter(r=>r.type==='OrdinaryShare'||r.type==='CapitalStock').sort((a,b)=>a.date<b.date?-1:1);
   let shares=cap.length?cap[cap.length-1].value/10/1e8:null;
   const it=LIST.find(s=>s[0]===id),star=((it&&it[1])||'').includes('*');   // 名稱帶 *＝面額非 10 元（分割過），股本 ÷10 算不出股數
   const rvd={};rv.forEach(r=>{rvd[`${r.revenue_year}-${String(r.revenue_month).padStart(2,'0')}`]=r.revenue/1e8});
-  const rev=Object.keys(rvd).sort().map(k=>{const p=rvd[`${+k.slice(0,4)-1}${k.slice(4)}`];return [k,Math.round(rvd[k]),p?+((rvd[k]/p-1)*100).toFixed(1):null]}).filter(r=>r[2]!=null);
+  if(emg)[fs,hs]=emgSplit(fs,rvd);
+  const r1=v=>emg&&Math.abs(v)<10?+v.toFixed(2):Math.round(v);
+  const rev=Object.keys(rvd).sort().map(k=>{const p=rvd[`${+k.slice(0,4)-1}${k.slice(4)}`];return [k,r1(rvd[k]),p?+((rvd[k]/p-1)*100).toFixed(1):null]}).filter(r=>r[2]!=null);
   const qd={};fs.forEach(r=>{(qd[r.date]=qd[r.date]||{})[r.type]=r.value});
   const q=[];Object.keys(qd).sort().forEach(d=>{const o=qd[d],rv_=o.Revenue,ni=o.EquityAttributableToOwnersOfParent;
     let eps=o.EPS;if(eps==null&&ni!=null&&shares)eps=ni/1e8/shares;
     if(!rv_||eps==null)return;
     const pct=v=>v==null?null:+(v/rv_*100).toFixed(1);
-    q.push([`${d.slice(2,4)}Q${+d.slice(5,7)/3}`,Math.round(rv_/1e8),pct(o.GrossProfit),pct(o.OperatingIncome),pct(ni),+eps.toFixed(2),ni])});
+    q.push([`${d.slice(2,4)}Q${+d.slice(5,7)/3}`,r1(rv_/1e8),pct(o.GrossProfit),pct(o.OperatingIncome),pct(ni),+eps.toFixed(2),ni])});
   if(star){ // 分割還原：用「母公司淨利 ÷ EPS」反推每季隱含股數，最新一季當基準；舊季差超過 30% 就把 EPS 換到現在基準，股數也改用隱含股數
     const sh=x=>x[6]!=null&&Math.abs(x[5])>=0.5&&Math.abs(x[6])>=1e7&&(x[6]>0)===(x[5]>0)?x[6]/x[5]:null;
     let ref=null;for(let i=q.length-1;i>=0&&!ref;i--)ref=sh(q[i]);
@@ -1634,9 +1656,22 @@ async function live(id){
   const pm=ml(px),em=ml(per),riv=[];
   Object.keys(pm).sort().forEach(k=>{if(!em[k])return;const c=pm[k].close,pe=em[k].PER,pb=em[k].PBR;
     riv.push([k,c,pe?+(c/pe).toFixed(2):null,pb?+(c/pb).toFixed(2):null,pe,pb])});
+  let fbPe=null,fbPb=null;
+  if(!per.length&&q.length>=4){   // 興櫃沒有官方本益比／淨值比 → 自算：月底收盤 ÷ 近4季 EPS、÷ 每股淨值
+    const qe=q.map(x=>({end:`20${x[0].slice(0,2)}-${String(+x[0][3]*3).padStart(2,'0')}`,eps:x[5]}));
+    const eq=bs.filter(r=>r.type==='EquityAttributableToOwnersOfParent'||r.type==='Equity').sort((a,b)=>a.date<b.date?-1:1);
+    const sc=bs.filter(r=>r.type==='OrdinaryShare').sort((a,b)=>a.date<b.date?-1:1);
+    const at=(arr,k)=>{let v=null;arr.forEach(r=>{if(r.date.slice(0,7)<=k)v=r.value});return v};
+    const ttmAt=k=>{const i=qe.map(x=>x.end<=k).lastIndexOf(true);return i>=3?qe.slice(i-3,i+1).reduce((a,x)=>a+x.eps,0):null};
+    const bvAt=k=>{const e=at(eq,k),c=at(sc,k);return e&&c?e/(c/10):null};
+    Object.keys(pm).sort().forEach(k=>{const c=pm[k].close,t=ttmAt(k),b=bvAt(k);if(t==null&&b==null)return;
+      const pe=t>0?+(c/t).toFixed(1):null,pb=b>0?+(c/b).toFixed(2):null;riv.push([k,c,pe?+(c/pe).toFixed(2):null,pb?+(c/pb).toFixed(2):null,pe,pb])});
+    const lc=px.slice().sort((a,b)=>a.date<b.date?-1:1).pop(),lk=lc.date.slice(0,7),t=ttmAt(lk),b=bvAt(lk);
+    fbPe=t>0?+(lc.close/t).toFixed(1):null;fbPb=b>0?+(lc.close/b).toFixed(2):null;
+  }
   const P=px.slice().sort((a,b)=>a.date<b.date?-1:1),E=per.slice().sort((a,b)=>a.date<b.date?-1:1);
-  return {id,name:it?it[1]:id,live:true,split:star||undefined,updated:new Date().toISOString().slice(0,16)+'Z',shares:shares?+shares.toFixed(4):null,
-    capex:buildCapex(cf,q),inv:buildInv(bs,fs,cf,q),cf:buildCf(fs,cf,q),np:buildNp(fs,q),last:{date:P[P.length-1].date,close:P[P.length-1].close,prev:(P[P.length-2]||P[P.length-1]).close,pe:E.length?E[E.length-1].PER:null,pb:E.length?E[E.length-1].PBR:null},rev,q,riv};
+  return {id,emg:emg||undefined,hsplit:hs.length?hs:undefined,name:it?it[1]:id,live:true,split:star||undefined,updated:new Date().toISOString().slice(0,16)+'Z',shares:shares?+shares.toFixed(4):null,
+    capex:buildCapex(cf,q),inv:buildInv(bs,fs,cf,q),cf:buildCf(fs,cf,q),np:buildNp(fs,q),last:{date:P[P.length-1].date,close:P[P.length-1].close,prev:(P[P.length-2]||P[P.length-1]).close,pe:E.length?E[E.length-1].PER:fbPe,pb:E.length?E[E.length-1].PBR:fbPb},rev,q,riv};
 }
 // 與 fetch.py 的 build_capex() 相同邏輯
 function cfItem(rows,names,types){
@@ -2013,7 +2048,7 @@ function buildCf(fs,cf,q){
 }
 async function getData(id){
   try{const r=await fetch(`data/${id}.json?t=${Date.now()}`);if(r.ok)return await r.json()}catch(e){}
-  const k='live5_'+id,c=store.get(k);
+  const k=(EMG.some(e=>e[0]===id)?'liveE1_':'live5_')+id,c=store.get(k);
   if(c&&Date.now()-c.t<6*3600e3)return c.d;
   const d=await live(id);store.set(k,{t:Date.now(),d});return d;
 }
@@ -2032,7 +2067,7 @@ async function load(id){
     GS='mid';if(gModel(GS))window.__nmAbn=false; // 有公司財測 → 預估 EPS 預設帶入財測中位數
     const it=LIST.find(s=>s[0]===id);
     $('nm').textContent=D.name||(it&&it[1])||id;
-    $('meta').innerHTML=(it?`${it[2]}・${it[3]}`:'')+(D.live?' <span class="live">即時查詢</span>':' <span class="live">追蹤清單</span>');
+    $('meta').innerHTML=(it?`${it[2]}・${it[3]}`:'')+(D.live?' <span class="live">即時查詢</span>':' <span class="live">追蹤清單</span>')+(D.emg?`<div class="emgn">⚠️ 興櫃股：無漲跌幅、成交稀，價格波動大。本益比／淨值比為本站自算（月底收盤 ÷ 近4季 EPS／每股淨值）`+(D.hsplit?`；${D.hsplit[0]}～${D.hsplit[D.hsplit.length-1]} 間有半年報，${D.hsplit.length} 季依月營收比重拆算（營收準確，毛利、營益、淨利、EPS 為估算）`:'')+`</div>`:'');
     salLine(id);aiLine(id);indCmp(id);
     document.title=`${D.id} ${$('nm').textContent} 估值看板`;
     document.querySelectorAll('section.card>h2').forEach(h=>h.dataset.who=`${$('nm').textContent} ${D.id}`);
@@ -2721,6 +2756,7 @@ addEventListener('hashchange',route);
     const r=await fetch(`${FM}?dataset=TaiwanStockInfo`);const js=await r.json();const m={};
     (js.data||[]).filter(s=>(s.type==='twse'||s.type==='tpex')&&/^[1-9]\d{3}$/.test(s.stock_id)).forEach(s=>{if(!m[s.stock_id]||s.date>m[s.stock_id].date)m[s.stock_id]=s});
     LIST=Object.values(m).map(s=>[s.stock_id,s.stock_name,s.type==='twse'?'上市':'上櫃',s.industry_category]).sort((a,b)=>a[0].localeCompare(b[0]));store.set('list',{t:Date.now(),d:LIST})}catch(e){}}}
+  EMG.forEach(e=>{if(!LIST.some(s=>s[0]===e[0]))LIST.push(e)});
   try{const r=await fetch('data/themes.json?t='+Date.now());if(r.ok)BASE=(await r.json()).themes||[]}catch(e){}
   try{const r=await fetch('data/itrust_top.json?t='+Date.now());if(r.ok)TOP=await r.json()}catch(e){}
   try{const r=await fetch('data/notice.json?t='+Math.floor(Date.now()/3e5));if(r.ok)NT=await r.json()}catch(e){}
