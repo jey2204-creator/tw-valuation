@@ -976,7 +976,7 @@ function renderBeat(){
     ['首日反應',`<b class="${sg(rx)}">${rx==null?(pre?'未開盤':'—'):pc(rx)}</b>`,hs.length?`近${hs.length}季 Beat ${be}・Miss ${mi}`:'無歷史']
   ].map(([a,b,d])=>`<div><span>${a}</span>${b}<i>${d||'&nbsp;'}</i></div>`).join('');
   // 圖：近 8 季 EPS 實際（實心柱，紅＝beat／綠＝miss／灰＝無預估）＋預估（虛線空心柱）＋營益率（線，右軸）
-  const R=H.slice(-8).map(h=>{const q=Q.find(z=>z[0]===h[0]);return {l:h[0],act:h[2],est:h[1],sp:h[3],om:q?q[4]:null,sec:h[7]==='sec'}});
+  const R=H.slice(-8).map(h=>{const q=Q.find(z=>z[0]===h[0]),m=useM&&h[0]===fq;return {l:h[0],act:m?epsAct:h[2],est:m?epsEst:h[1],sp:m?sp:h[3],om:q?q[4]:null,sec:h[7]==='sec',m}});
   const ch=mk('cBeat'),o=base();o.xAxis.data=R.map(z=>z.l);o.yAxis.scale=false;o.legend={...o.legend,top:0,left:0,itemGap:8,itemWidth:10,itemHeight:7,textStyle:{...o.legend.textStyle,fontSize:10.5}};o.grid={...o.grid,top:24,right:34};
   o.yAxis=[o.yAxis,{type:'value',show:false,scale:true}];const hasOm=R.some(z=>z.om!=null);
   o.series=[{name:'EPS 實際',type:'bar',barGap:'-100%',barCategoryGap:'28%',z:2,data:R.map(z=>({value:ps(z.act),itemStyle:{color:z.sp==null?mu:z.sp>=0?up:dn,borderRadius:[2,2,0,0]}})),
@@ -984,10 +984,10 @@ function renderBeat(){
     {name:'預估',type:'bar',barGap:'-100%',barCategoryGap:'28%',z:1,data:R.map(z=>({value:ps(z.est),itemStyle:{color:'transparent',borderColor:mu,borderWidth:1.5,borderType:'dashed',borderRadius:[2,2,0,0]}}))}];
   if(hasOm)o.series.push({name:'營益率',type:'line',yAxisIndex:1,data:R.map(z=>z.om),symbol:'circle',symbolSize:3,connectNulls:true,lineStyle:{width:2,color:warm},itemStyle:{color:warm},endLabel:{show:true,color:warm,fontSize:10,fontFamily:'IBM Plex Mono',formatter:q=>q.value==null?'':fmt(q.value,1)+'%'}});
   {const vs=R.flatMap(z=>[ps(z.act),ps(z.est)]).filter(v=>v!=null);if(vs.length&&Math.min(...vs)<0)o.yAxis[0].min=v=>Math.floor(v.min*1.2*100)/100}
-  o.tooltip.formatter=qs=>{const z=R[qs[0].dataIndex],L=[`<b>${z.l}</b>`];L.push(`EPS 實際 ${eT(z.act)}${z.sec?'（GAAP，SEC 財報）':''}`);if(z.est!=null)L.push(`預估 ${eT(z.est)}（驚喜 ${pc(z.sp)}）`);if(z.om!=null)L.push(`營益率 ${fmt(z.om,1)}%`);return L.join('<br>')};
+  o.tooltip.formatter=qs=>{const z=R[qs[0].dataIndex],L=[`<b>${z.l}</b>`];L.push(`${z.m?kEps.n:'EPS'} 實際 ${eT(z.act)}${z.sec?'（GAAP，SEC 財報）':z.m?'（手動層）':''}`);if(z.est!=null)L.push(`預估 ${eT(z.est)}（驚喜 ${pc(z.sp)}）`);if(z.om!=null)L.push(`營益率 ${fmt(z.om,1)}%`);return L.join('<br>')};
   ch.setOption(o,true);ch.resize();
   $('uBeat').textContent=`${fq} vs 分析師預估${useM?'（手動層）':''}`;
-  $('fBeat').textContent=`實心柱 EPS 實際（紅＝beat／綠＝miss／灰＝無預估，${cur()}）・虛線框＝分析師預估（Finnhub，只有近 4 季${useM?'；上方結論用手動分析層，圖仍是 Finnhub':''}）${hasOm?'・線＝營益率（SEC 財報）':''}。首日＝財報後首個交易日收盤 vs 前一收盤。`;
+  $('fBeat').textContent=`實心柱 EPS 實際（紅＝beat／綠＝miss／灰＝無預估，${cur()}）・虛線框＝分析師預估（Finnhub，只有近 4 季${useM?'；最新季改用手動分析層的數字':''}）${hasOm?'・線＝營益率（SEC 財報）':''}。首日＝財報後首個交易日收盤 vs 前一收盤。`;
 }
 $('beat').addEventListener('click',e=>{if(!e.target.closest('#beatK,[data-beatt],#tBeat .pill'))return;const o=$('beat').classList.toggle('open');const t=$('beat').querySelector('[data-beatt]');if(t)t.textContent=o?'收起 ▴':'怎麼看 ▾'});
 function render(){
