@@ -26,9 +26,13 @@ patch('index.html','beta.html',
   "function mk(id){if(!charts[id])charts[id]=xLast(echarts.init($(id)),$(id));return charts[id]}",
   [("o.xAxis.axisLabel.interval=Math.max(0,Math.round(R.length/6)-1);o.xAxis.axisLabel.formatter=(v,i)=>{const m=v.slice(2,7).replace('-','/'),pv=R[i-1]&&R[i-1].d.slice(0,7);return pv===v.slice(0,7)&&i%2?'':m};",
     "o.xAxis.axisLabel.formatter=R.length<=60?v=>v.slice(5).replace('-','/'):v=>v.slice(2,7).replace('-','/');   // 1年內用 月/日，3年用 年/月"),
-   ('<div class="chart" id="cTdw" hidden style="height:180px"></div>','<div class="chart" id="cTdw" hidden style="height:136px"></div>'),
-   ("o.yAxis.scale=true;o.yAxis.axisLabel.formatter='{value}%';o.grid.right=40;\n  o.yAxis=[o.yAxis,{...o.yAxis,scale:true,splitLine:{show:false},axisLabel:{show:false}}];",
-    "o.yAxis.scale=true;o.yAxis.splitNumber=3;o.yAxis.axisLabel.formatter='{value}%';o.grid.right=40;o.grid.top=24;\n  o.yAxis=[o.yAxis,{...o.yAxis,scale:true,splitLine:{show:false},axisLabel:{show:false}}];")])
+   ('<div class="sx" id="tdwK" hidden></div>', '<div class="sx thin" id="tdwK" hidden></div>'),
+   ('<style>#tdwK i.tdwx{white-space:normal;line-height:1.3;margin-top:2px;border-top:1px dashed var(--line);padding-top:2px}', '<style>.sx.thin{border:1px solid var(--line);border-radius:9px;padding:3px 5px;gap:0}.sx.thin>div{border:0;border-radius:0;padding:0 2px;display:flex;flex-wrap:wrap;align-items:baseline;justify-content:center;gap:3px;text-align:left}.sx.thin>div+div{border-left:1px solid var(--line)}.sx.thin b{font-size:13px}.sx.thin i{font-size:9px}#tdwK i.tdwx{flex-basis:100%;white-space:normal;line-height:1.3;margin-top:2px;border-top:1px dashed var(--line);padding-top:2px}'),
+   ("[['400張以上',fmt(r.b4,1)+'%',c4,'4週',", "[['400張',fmt(r.b4,1)+'%',c4,'4週',"),
+   ("['千張以上',fmt(r.b10,1)+'%',d(r,w4,'b10'),'4週',", "['千張',fmt(r.b10,1)+'%',d(r,w4,'b10'),'4週',"),
+   ("['股東人數',r.ppl>=10000?fmt(r.ppl/10000,1)+'萬':fmt(r.ppl),p4,'4週%'", "['股東',r.ppl>=10000?fmt(r.ppl/10000,1)+'萬':fmt(r.ppl),p4,'4週'"),
+   ("<i>${c==null?'&nbsp;':u+' '+(c>0?'+':'')+fmt(c,a==='股東人數'?1:2)}</i>", "<i>${c==null?'&nbsp;':u+(c>0?'+':'')+fmt(c,1)+(a==='股東'?'%':'')}</i>"),
+   ('<div class="${sign(a===\'股東人數\'?(c==null?null:-c):c)}">', '<div class="${sign(a===\'股東\'?(c==null?null:-c):c)}">')])
 patch('health.html','beta_health.html',
   "function mk(id){if(charts[id])charts[id].dispose();return charts[id]=echarts.init($(id),null,{renderer:'svg'})}",
   "function mk(id){if(charts[id])charts[id].dispose();return charts[id]=xLast(echarts.init($(id),null,{renderer:'svg'}),$(id))}")
