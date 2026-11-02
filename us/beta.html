@@ -949,13 +949,18 @@ function renderBeat(){
   const sg=v=>v==null?'':v>0?'up':v<0?'dn':'',pp=v=>v==null?'—':(v>0?'+':'')+fmt(v,1)+'pp',pc=v=>v==null?'—':`${v>=0?'+':'−'}${Math.abs(v).toFixed(1)}%`,eT=v=>v==null?'—':sym()+fmt(ps(v),2);
   const fq=A.fq,i=Q.findIndex(x=>x[0]===fq),x=i>=0?Q[i]:null,p=x&&isPrevQ(Q[i-1],x)?Q[i-1]:null,py=x?Q.find(z=>z[0]===String(+fq.slice(0,2)-1).padStart(2,'0')+fq.slice(2)):null;
   const dOmQ=x&&p&&x[4]!=null&&p[4]!=null?+(x[4]-p[4]).toFixed(1):null,dOmY=x&&py&&x[4]!=null&&py[4]!=null?+(x[4]-py[4]).toFixed(1):null,dGmY=x&&py&&x[3]!=null&&py[3]!=null?+(x[3]-py[3]).toFixed(1):null;
-  const sp=A.epsSurp,rs=A.revSurp,rx=A.px&&A.px.react!=null?A.px.react:null,pre=!!A.pre;
+  // 手動分析層（earnings_cmp.json）同一季有數字時優先：調整後 EPS 比 Finnhub 的 GAAP 混用更接近市場看的數字，共識來源也在對照頁寫明
+  const cmp0=CMPJ&&(CMPJ.companies||[]).find(c=>c.ticker===D.id&&(c.date||'').slice(0,10).replace(/\//g,'-')===A.date),K=cmp0&&(cmp0.kpi||[]);
+  const kEps=K&&(K.find(k=>/^調整後\s*EPS/.test(k.n))||K.find(k=>/^EPS$/.test((k.n||'').trim()))||K.find(k=>/^GAAP\s*EPS/.test(k.n))),kRev=K&&K.find(k=>/^營收/.test(k.n)&&/^預期/.test(k.e||''));
+  const num=t=>{const m=String(t||'').replace(/,/g,'').match(/-?[\d.]+/);return m?+m[0]:null};
+  const useM=!!(kEps&&kEps.s!=null&&num(kEps.v)!=null);
+  const epsAct=useM?num(kEps.v):A.epsAct,epsEst=useM?num(kEps.e):A.epsEst,sp=useM?kEps.s:A.epsSurp,rs=useM&&kRev&&kRev.s!=null?kRev.s:A.revSurp,rx=A.px&&A.px.react!=null?A.px.react:null,pre=!!A.pre,srcT=useM?`${kEps.n}`:'Finnhub';
   const hs=H.filter(h=>h[3]!=null),be=hs.filter(h=>h[3]>=0).length,mi=hs.length-be;
   let V,why=[];
-  if(sp==null)V=['','⚪ 無分析師預估',`${fq} EPS ${eT(A.epsAct)}，Finnhub 沒有這一季的預估值`];
+  if(sp==null)V=['','⚪ 無分析師預估',`${fq} EPS ${eT(epsAct)}，Finnhub 沒有這一季的預估值`];
   else{V=sp>=10?['ok','🟢 大幅優於預期']:sp>=3?['ok','🟢 優於預期']:sp>-3?['','⚪ 符合預期']:sp>-10?['mid','🟠 略低於預期']:['bad','🔴 大幅低於預期'];
-    V[2]=`${fq} EPS ${eT(A.epsAct)} vs 預估 ${eT(A.epsEst)}（<b class="${sg(sp)}">${pc(sp)}</b>）${rs!=null?`、營收 ${pc(rs)}`:''}${rx!=null?`；首日 <b class="${sg(rx)}">${pc(rx)}</b>`:pre?'；尚未開盤':''}`;
-    why.push('美股以「EPS vs 分析師預估」為第一反應（調整後 EPS 為主）：±3% 內算符合，超過 10% 才算驚喜；營收驚喜率 Finnhub 免費方案多半沒有，有才顯示。');
+    V[2]=`${fq} ${useM?kEps.n:'EPS'} ${eT(epsAct)} vs 預估 ${eT(epsEst)}（<b class="${sg(sp)}">${pc(sp)}</b>）${rs!=null?`、營收 ${pc(rs)}`:''}${rx!=null?`；首日 <b class="${sg(rx)}">${pc(rx)}</b>`:pre?'；尚未開盤':''}`;
+    why.push(useM?`數字來自手動分析層（${kEps.n} ${kEps.e}${kRev?`；營收 ${kRev.e}`:''}，共識來源見「🎯 看財報」）；Finnhub 自動層這季算 ${pc(A.epsSurp)}，差異來自調整後／GAAP 與共識來源不同。±3% 內算符合，超過 10% 才算驚喜。`:'美股以「EPS vs 分析師預估」為第一反應（調整後 EPS 為主）：±3% 內算符合，超過 10% 才算驚喜；營收驚喜率 Finnhub 免費方案多半沒有，有才顯示。');
     if(rx!=null&&sp>=3&&rx<=-3)why.push('⚠️ Beat 但首日下跌＝市場要的不是這一季，是指引或 CapEx；預期已經跑在財報前面，別把「beat」當成買進理由。');
     if(rx!=null&&sp<=-3&&rx>=3)why.push('ℹ️ Miss 但首日上漲＝利空出盡或指引優於擔憂；這種反應通常比 beat 更值得追，因為壞消息已反映在價格裡。');
     if(rx!=null&&sp>=10&&rx>=5)why.push('⚠️ 錨定偏誤：大幅 beat＋大漲之後，分析師會集體上修，下一季要再 beat 的門檻變高；連續 beat 的紀錄不保證下一次。');}
@@ -966,7 +971,7 @@ function renderBeat(){
   else if(EARN_SET&&EARN_SET.has(D.id))why.push('📌 這一季有手動分析層（含指引 vs 共識），點上方「🎯 看財報」。');
   $('tBeat').innerHTML=`<span class="pill ${V[0]}">${V[1]}</span> ${V[2]} <span class="y10tip" data-beatt>${el.classList.contains('open')?'收起 ▴':'怎麼看 ▾'}</span><div class="why">${why.map(esc).map(t=>t.replace(/^(⚠️|ℹ️|📌)/,'<b>$1</b>')).join('<br>')}</div>`;
   $('beatK').innerHTML=[
-    ['EPS vs 預估',`<b class="${sg(sp)}">${sp==null?'—':pc(sp)}</b>`,rs!=null?`營收 <span class="${sg(rs)}">${pc(rs)}</span>`:'無營收預估'],
+    [useM?'EPS vs 預估 🎯':'EPS vs 預估',`<b class="${sg(sp)}">${sp==null?'—':pc(sp)}</b>`,rs!=null?`營收 <span class="${sg(rs)}">${pc(rs)}</span>`:'無營收預估'],
     ['營益率',`<b>${x&&x[4]!=null?fmt(x[4],1)+'%':'—'}</b>`,x&&x[4]!=null?`季${pp(dOmQ)} 年${pp(dOmY)}`:'SEC 財報未入'],
     ['首日反應',`<b class="${sg(rx)}">${rx==null?(pre?'未開盤':'—'):pc(rx)}</b>`,hs.length?`近${hs.length}季 Beat ${be}・Miss ${mi}`:'無歷史']
   ].map(([a,b,d])=>`<div><span>${a}</span>${b}<i>${d||'&nbsp;'}</i></div>`).join('');
@@ -981,8 +986,8 @@ function renderBeat(){
   {const vs=R.flatMap(z=>[ps(z.act),ps(z.est)]).filter(v=>v!=null);if(vs.length&&Math.min(...vs)<0)o.yAxis[0].min=v=>Math.floor(v.min*1.2*100)/100}
   o.tooltip.formatter=qs=>{const z=R[qs[0].dataIndex],L=[`<b>${z.l}</b>`];L.push(`EPS 實際 ${eT(z.act)}${z.sec?'（GAAP，SEC 財報）':''}`);if(z.est!=null)L.push(`預估 ${eT(z.est)}（驚喜 ${pc(z.sp)}）`);if(z.om!=null)L.push(`營益率 ${fmt(z.om,1)}%`);return L.join('<br>')};
   ch.setOption(o,true);ch.resize();
-  $('uBeat').textContent=`${fq} vs 分析師預估`;
-  $('fBeat').textContent=`實心柱 EPS 實際（紅＝beat／綠＝miss／灰＝無預估，${cur()}）・虛線框＝分析師預估（Finnhub，只有近 4 季）${hasOm?'・線＝營益率（SEC 財報）':''}。首日＝財報後首個交易日收盤 vs 前一收盤。`;
+  $('uBeat').textContent=`${fq} vs 分析師預估${useM?'（手動層）':''}`;
+  $('fBeat').textContent=`實心柱 EPS 實際（紅＝beat／綠＝miss／灰＝無預估，${cur()}）・虛線框＝分析師預估（Finnhub，只有近 4 季${useM?'；上方結論用手動分析層，圖仍是 Finnhub':''}）${hasOm?'・線＝營益率（SEC 財報）':''}。首日＝財報後首個交易日收盤 vs 前一收盤。`;
 }
 $('beat').addEventListener('click',e=>{if(!e.target.closest('#beatK,[data-beatt],#tBeat .pill'))return;const o=$('beat').classList.toggle('open');const t=$('beat').querySelector('[data-beatt]');if(t)t.textContent=o?'收起 ▴':'怎麼看 ▾'});
 function render(){
