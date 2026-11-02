@@ -983,7 +983,7 @@ function renderBeat(){
   const R=H.slice(-8).map(h=>{const q=Q.find(z=>z[0]===h[0]);return {l:h[0],act:h[2],est:h[1],sp:h[3],om:q?q[4]:null,sec:h[7]==='sec',m:!!h[8],rx:h[6],d:h[4],hr:h[5]}});
   const ch=mk('cBeat'),o=base(),HR={bmo:'盤前',amc:'盤後',dmh:'盤中'};o.legend={...o.legend,top:0,left:0,itemGap:8,itemWidth:10,itemHeight:7,textStyle:{...o.legend.textStyle,fontSize:10.5}};
   // 上層（grid 0）EPS 實際 vs 預估＋營益率；下層（grid 1）首日漲跌，共用 X 軸類別、axisPointer 連動
-  o.grid=[{left:6,right:34,top:24,height:120,containLabel:true},{left:6,right:34,top:158,bottom:6,containLabel:true}];
+  o.grid=[{left:38,right:34,top:24,height:120,containLabel:false},{left:38,right:34,top:158,bottom:22,containLabel:false}];   // 固定左邊距：兩層 Y 軸標籤寬度不同（「10」vs「16%」），containLabel 會讓兩層繪圖區錯開、指標線對不齊
   const xa=o.xAxis;o.xAxis=[{...xa,data:R.map(z=>z.l),gridIndex:0,axisLabel:{...xa.axisLabel,show:false},axisTick:{show:false}},{...xa,data:R.map(z=>z.l),gridIndex:1}];
   const ya=o.yAxis;o.yAxis=[{...ya,scale:false,gridIndex:0},{type:'value',show:false,scale:true,gridIndex:0},{...ya,scale:false,gridIndex:1,axisLabel:{...ya.axisLabel,formatter:'{value}%'},splitNumber:3}];
   o.axisPointer={link:[{xAxisIndex:'all'}]};const hasOm=R.some(z=>z.om!=null);
