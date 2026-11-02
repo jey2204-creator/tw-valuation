@@ -1,12 +1,12 @@
 {
- "asof": "2026-11-03 04:36 JST",
+ "asof": "2026-11-03 07:22 JST",
  "errors": [],
  "stocks": {
   "8035": {
    "yname": "Tokyo Electron Limited",
    "jname": "東京エレクトロン",
-   "px_n": 2461,
-   "px_last": "2026-10-30",
+   "px_n": 2462,
+   "px_last": "2026-11-02",
    "q_n": 10,
    "q_first": "24Q2",
    "q_last": "26Q3",
@@ -25,14 +25,14 @@
     ]
    ],
    "std": "JP",
-   "riv_pe": 18,
-   "riv_pb": 27
+   "riv_pe": 19,
+   "riv_pb": 28
   },
   "6857": {
    "yname": "Advantest Corporation",
    "jname": "アドバンテスト",
-   "px_n": 2461,
-   "px_last": "2026-10-30",
+   "px_n": 2462,
+   "px_last": "2026-11-02",
    "q_n": 10,
    "q_first": "24Q2",
    "q_last": "26Q3",
@@ -47,14 +47,14 @@
     ]
    ],
    "std": "IFRS",
-   "riv_pe": 19,
-   "riv_pb": 27
+   "riv_pe": 20,
+   "riv_pb": 28
   },
   "6146": {
    "yname": "Disco Corporation",
    "jname": "ディスコ",
-   "px_n": 2461,
-   "px_last": "2026-10-30",
+   "px_n": 2462,
+   "px_last": "2026-11-02",
    "q_n": 8,
    "q_first": "24Q4",
    "q_last": "26Q3",
@@ -69,14 +69,14 @@
     ]
    ],
    "std": "JP",
-   "riv_pe": 13,
-   "riv_pb": 22
+   "riv_pe": 14,
+   "riv_pb": 23
   },
   "6920": {
    "yname": "Lasertec Corporation",
    "jname": "レーザーテック",
-   "px_n": 2461,
-   "px_last": "2026-10-30",
+   "px_n": 2462,
+   "px_last": "2026-11-02",
    "q_n": 9,
    "q_first": "24Q3",
    "q_last": "26Q3",
@@ -95,14 +95,14 @@
     ]
    ],
    "std": "JP",
-   "riv_pe": 15,
-   "riv_pb": 24
+   "riv_pe": 16,
+   "riv_pb": 25
   },
   "7735": {
    "yname": "SCREEN Holdings Co., Ltd.",
    "jname": "ＳＣＲＥＥＮホールディングス",
-   "px_n": 2461,
-   "px_last": "2026-10-30",
+   "px_n": 2462,
+   "px_last": "2026-11-02",
    "q_n": 10,
    "q_first": "24Q2",
    "q_last": "26Q3",
@@ -121,14 +121,14 @@
     ]
    ],
    "std": "JP",
-   "riv_pe": 18,
-   "riv_pb": 28
+   "riv_pe": 19,
+   "riv_pb": 29
   },
   "6525": {
    "yname": "Kokusai Electric Corporation",
    "jname": "ＫＯＫＵＳＡＩ　ＥＬＥＣＴＲＩＣ",
-   "px_n": 735,
-   "px_last": "2026-10-30",
+   "px_n": 736,
+   "px_last": "2026-11-02",
    "q_n": 9,
    "q_first": "24Q2",
    "q_last": "26Q2",
@@ -138,14 +138,14 @@
    "eps_np_ok": "9/9",
    "splits": [],
    "std": "IFRS",
-   "riv_pe": 18,
-   "riv_pb": 27
+   "riv_pe": 19,
+   "riv_pb": 28
   },
   "7729": {
    "yname": "Tokyo Seimitsu Co., Ltd.",
    "jname": "東京精密",
-   "px_n": 2461,
-   "px_last": "2026-10-30",
+   "px_n": 2462,
+   "px_last": "2026-11-02",
    "q_n": 9,
    "q_first": "24Q2",
    "q_last": "26Q2",
@@ -155,14 +155,14 @@
    "eps_np_ok": "9/9",
    "splits": [],
    "std": "JP",
-   "riv_pe": 18,
-   "riv_pb": 27
+   "riv_pe": 19,
+   "riv_pb": 28
   },
   "4063": {
    "yname": "Shin-Etsu Chemical Co., Ltd.",
    "jname": "信越化学工業",
-   "px_n": 2461,
-   "px_last": "2026-10-30",
+   "px_n": 2462,
+   "px_last": "2026-11-02",
    "q_n": 10,
    "q_first": "24Q2",
    "q_last": "26Q3",
@@ -177,14 +177,14 @@
     ]
    ],
    "std": "JP",
-   "riv_pe": 19,
-   "riv_pb": 28
+   "riv_pe": 20,
+   "riv_pb": 29
   },
   "3436": {
    "yname": "Sumco Corporation",
    "jname": "ＳＵＭＣＯ",
-   "px_n": 2461,
-   "px_last": "2026-10-30",
+   "px_n": 2462,
+   "px_last": "2026-11-02",
    "q_n": 8,
    "q_first": "24Q3",
    "q_last": "26Q2",
@@ -195,13 +195,13 @@
    "splits": [],
    "std": "JP",
    "riv_pe": 6,
-   "riv_pb": 24
+   "riv_pb": 25
   },
   "4004": {
    "yname": "Resonac Holdings Corporation",
    "jname": "レゾナック・ホールディングス",
-   "px_n": 2461,
-   "px_last": "2026-10-30",
+   "px_n": 2462,
+   "px_last": "2026-11-02",
    "q_n": 8,
    "q_first": "24Q3",
    "q_last": "26Q2",
@@ -211,14 +211,14 @@
    "eps_np_ok": "8/8",
    "splits": [],
    "std": "IFRS",
-   "riv_pe": 15,
-   "riv_pb": 24
+   "riv_pe": 16,
+   "riv_pb": 25
   },
   "4186": {
    "yname": "Tokyo Ohka Kogyo Co., Ltd.",
    "jname": "東京応化工業",
-   "px_n": 2461,
-   "px_last": "2026-10-30",
+   "px_n": 2462,
+   "px_last": "2026-11-02",
    "q_n": 8,
    "q_first": "24Q3",
    "q_last": "26Q2",
@@ -233,14 +233,14 @@
     ]
    ],
    "std": "JP",
-   "riv_pe": 15,
-   "riv_pb": 24
+   "riv_pe": 16,
+   "riv_pb": 25
   },
   "2802": {
    "yname": "Ajinomoto Co., Inc.",
    "jname": "味の素",
-   "px_n": 2461,
-   "px_last": "2026-10-30",
+   "px_n": 2462,
+   "px_last": "2026-11-02",
    "q_n": 9,
    "q_first": "24Q2",
    "q_last": "26Q2",
@@ -255,14 +255,14 @@
     ]
    ],
    "std": "IFRS",
-   "riv_pe": 18,
-   "riv_pb": 27
+   "riv_pe": 19,
+   "riv_pb": 28
   },
   "4062": {
    "yname": "Ibiden Co.,Ltd.",
    "jname": "イビデン",
-   "px_n": 2461,
-   "px_last": "2026-10-30",
+   "px_n": 2462,
+   "px_last": "2026-11-02",
    "q_n": 10,
    "q_first": "24Q2",
    "q_last": "26Q3",
@@ -281,14 +281,14 @@
     ]
    ],
    "std": "JP",
-   "riv_pe": 18,
-   "riv_pb": 27
+   "riv_pe": 19,
+   "riv_pb": 28
   },
   "3110": {
    "yname": "Nitto Boseki Co., Ltd.",
    "jname": "日東紡績",
-   "px_n": 2461,
-   "px_last": "2026-10-30",
+   "px_n": 2462,
+   "px_last": "2026-11-02",
    "q_n": 9,
    "q_first": "24Q2",
    "q_last": "26Q2",
@@ -307,14 +307,14 @@
     ]
    ],
    "std": "JP",
-   "riv_pe": 18,
-   "riv_pb": 27
+   "riv_pe": 19,
+   "riv_pb": 28
   },
   "6981": {
    "yname": "Murata Manufacturing Co., Ltd.",
    "jname": "村田製作所",
-   "px_n": 2461,
-   "px_last": "2026-10-30",
+   "px_n": 2462,
+   "px_last": "2026-11-02",
    "q_n": 10,
    "q_first": "24Q2",
    "q_last": "26Q3",
@@ -333,14 +333,14 @@
     ]
    ],
    "std": "IFRS",
-   "riv_pe": 18,
-   "riv_pb": 28
+   "riv_pe": 19,
+   "riv_pb": 29
   },
   "6762": {
    "yname": "TDK Corporation",
    "jname": "ＴＤＫ",
-   "px_n": 2461,
-   "px_last": "2026-10-30",
+   "px_n": 2462,
+   "px_last": "2026-11-02",
    "q_n": 10,
    "q_first": "24Q2",
    "q_last": "26Q3",
@@ -359,14 +359,14 @@
     ]
    ],
    "std": "IFRS",
-   "riv_pe": 19,
-   "riv_pb": 28
+   "riv_pe": 20,
+   "riv_pb": 29
   },
   "6976": {
    "yname": "Taiyo Yuden Co., Ltd.",
    "jname": "太陽誘電",
-   "px_n": 2461,
-   "px_last": "2026-10-30",
+   "px_n": 2462,
+   "px_last": "2026-11-02",
    "q_n": 9,
    "q_first": "24Q2",
    "q_last": "26Q2",
@@ -376,14 +376,14 @@
    "eps_np_ok": "9/9",
    "splits": [],
    "std": "JP",
-   "riv_pe": 15,
-   "riv_pb": 27
+   "riv_pe": 16,
+   "riv_pb": 28
   },
   "6971": {
    "yname": "Kyocera Corporation",
    "jname": "京セラ",
-   "px_n": 2461,
-   "px_last": "2026-10-30",
+   "px_n": 2462,
+   "px_last": "2026-11-02",
    "q_n": 10,
    "q_first": "24Q2",
    "q_last": "26Q3",
@@ -398,14 +398,14 @@
     ]
    ],
    "std": "IFRS",
-   "riv_pe": 18,
-   "riv_pb": 27
+   "riv_pe": 19,
+   "riv_pb": 28
   },
   "5803": {
    "yname": "Fujikura Ltd.",
    "jname": "フジクラ",
-   "px_n": 2461,
-   "px_last": "2026-10-30",
+   "px_n": 2462,
+   "px_last": "2026-11-02",
    "q_n": 9,
    "q_first": "24Q2",
    "q_last": "26Q2",
@@ -420,14 +420,14 @@
     ]
    ],
    "std": "JP",
-   "riv_pe": 18,
-   "riv_pb": 27
+   "riv_pe": 19,
+   "riv_pb": 28
   },
   "5801": {
    "yname": "Furukawa Electric Co., Ltd.",
    "jname": "古河電気工業",
-   "px_n": 2461,
-   "px_last": "2026-10-30",
+   "px_n": 2462,
+   "px_last": "2026-11-02",
    "q_n": 9,
    "q_first": "24Q2",
    "q_last": "26Q2",
@@ -442,14 +442,14 @@
     ]
    ],
    "std": "JP",
-   "riv_pe": 18,
-   "riv_pb": 27
+   "riv_pe": 19,
+   "riv_pb": 28
   },
   "5802": {
    "yname": "Sumitomo Electric Industries, Ltd.",
    "jname": "住友電気工業",
-   "px_n": 2461,
-   "px_last": "2026-10-30",
+   "px_n": 2462,
+   "px_last": "2026-11-02",
    "q_n": 10,
    "q_first": "24Q2",
    "q_last": "26Q3",
@@ -464,14 +464,14 @@
     ]
    ],
    "std": "JP",
-   "riv_pe": 18,
-   "riv_pb": 27
+   "riv_pe": 19,
+   "riv_pb": 28
   },
   "285A": {
    "yname": "Kioxia Holdings Corporation",
    "jname": "キオクシアホールディングス",
-   "px_n": 453,
-   "px_last": "2026-10-30",
+   "px_n": 454,
+   "px_last": "2026-11-02",
    "q_n": 7,
    "q_first": "25Q1",
    "q_last": "26Q3",
@@ -486,14 +486,14 @@
     ]
    ],
    "std": "IFRS",
-   "riv_pe": 9,
-   "riv_pb": 18
+   "riv_pe": 10,
+   "riv_pb": 19
   },
   "6526": {
    "yname": "Socionext Inc.",
    "jname": "ソシオネクスト",
-   "px_n": 991,
-   "px_last": "2026-10-30",
+   "px_n": 992,
+   "px_last": "2026-11-02",
    "q_n": 10,
    "q_first": "24Q2",
    "q_last": "26Q3",
@@ -508,14 +508,14 @@
     ]
    ],
    "std": "JP",
-   "riv_pe": 19,
-   "riv_pb": 27
+   "riv_pe": 20,
+   "riv_pb": 28
   },
   "6723": {
    "yname": "Renesas Electronics Corporation",
    "jname": "ルネサスエレクトロニクス",
-   "px_n": 2461,
-   "px_last": "2026-10-30",
+   "px_n": 2462,
+   "px_last": "2026-11-02",
    "q_n": 9,
    "q_first": "24Q3",
    "q_last": "26Q3",
@@ -525,14 +525,14 @@
    "eps_np_ok": "8/8",
    "splits": [],
    "std": "IFRS",
-   "riv_pe": 3,
-   "riv_pb": 24
+   "riv_pe": 4,
+   "riv_pb": 25
   },
   "6501": {
    "yname": "Hitachi, Ltd.",
    "jname": "日立製作所",
-   "px_n": 2461,
-   "px_last": "2026-10-30",
+   "px_n": 2462,
+   "px_last": "2026-11-02",
    "q_n": 10,
    "q_first": "24Q2",
    "q_last": "26Q3",
@@ -551,14 +551,14 @@
     ]
    ],
    "std": "IFRS",
-   "riv_pe": 19,
-   "riv_pb": 27
+   "riv_pe": 20,
+   "riv_pb": 28
   },
   "6503": {
    "yname": "Mitsubishi Electric Corporation",
    "jname": "三菱電機",
-   "px_n": 2461,
-   "px_last": "2026-10-30",
+   "px_n": 2462,
+   "px_last": "2026-11-02",
    "q_n": 10,
    "q_first": "24Q2",
    "q_last": "26Q3",
@@ -568,14 +568,14 @@
    "eps_np_ok": "9/9",
    "splits": [],
    "std": "IFRS",
-   "riv_pe": 19,
-   "riv_pb": 27
+   "riv_pe": 20,
+   "riv_pb": 28
   },
   "6504": {
    "yname": "Fuji Electric Co., Ltd.",
    "jname": "富士電機",
-   "px_n": 2461,
-   "px_last": "2026-10-30",
+   "px_n": 2462,
+   "px_last": "2026-11-02",
    "q_n": 10,
    "q_first": "24Q2",
    "q_last": "26Q3",
@@ -590,14 +590,14 @@
     ]
    ],
    "std": "JP",
-   "riv_pe": 19,
-   "riv_pb": 28
+   "riv_pe": 20,
+   "riv_pb": 29
   },
   "5706": {
    "yname": "Mitsui Kinzoku Company, Limited",
    "jname": "三井金属",
-   "px_n": 2461,
-   "px_last": "2026-10-30",
+   "px_n": 2462,
+   "px_last": "2026-11-02",
    "q_n": 9,
    "q_first": "24Q2",
    "q_last": "26Q2",
@@ -616,14 +616,14 @@
     ]
    ],
    "std": "JP",
-   "riv_pe": 18,
-   "riv_pb": 27
+   "riv_pe": 19,
+   "riv_pb": 28
   },
   "6516": {
    "yname": "Sanyo Denki Co., Ltd.",
    "jname": "山洋電気",
-   "px_n": 2461,
-   "px_last": "2026-10-30",
+   "px_n": 2462,
+   "px_last": "2026-11-02",
    "q_n": 10,
    "q_first": "24Q2",
    "q_last": "26Q3",
@@ -642,14 +642,14 @@
     ]
    ],
    "std": "IFRS",
-   "riv_pe": 19,
-   "riv_pb": 27
+   "riv_pe": 20,
+   "riv_pb": 28
   },
   "6594": {
    "yname": "Nidec Corporation",
    "jname": "ニデック",
-   "px_n": 2461,
-   "px_last": "2026-10-30",
+   "px_n": 2462,
+   "px_last": "2026-11-02",
    "q_n": 8,
    "q_first": "24Q2",
    "q_last": "26Q1",
@@ -669,13 +669,13 @@
    ],
    "std": "IFRS",
    "riv_pe": 18,
-   "riv_pb": 28
+   "riv_pb": 29
   },
   "6963": {
    "yname": "ROHM Co., Ltd.",
    "jname": "ローム",
-   "px_n": 2461,
-   "px_last": "2026-10-30",
+   "px_n": 2462,
+   "px_last": "2026-11-02",
    "q_n": 9,
    "q_first": "24Q2",
    "q_last": "26Q2",
@@ -691,13 +691,13 @@
    ],
    "std": "JP",
    "riv_pe": 0,
-   "riv_pb": 27
+   "riv_pb": 28
   },
   "6997": {
    "yname": "Nippon Chemi-Con Corporation",
    "jname": "日本ケミコン",
-   "px_n": 2461,
-   "px_last": "2026-10-30",
+   "px_n": 2462,
+   "px_last": "2026-11-02",
    "q_n": 9,
    "q_first": "24Q2",
    "q_last": "26Q2",
@@ -712,8 +712,8 @@
     ]
    ],
    "std": "JP",
-   "riv_pe": 15,
-   "riv_pb": 27
+   "riv_pe": 16,
+   "riv_pb": 28
   }
  },
  "jq": {
@@ -790,7 +790,7 @@
  "tdnet": {
   "days_scanned": 2,
   "rows": 60,
-  "new_records": 1,
+  "new_records": 0,
   "backfill": false
  },
  "validate_tdnet": {
@@ -820,10 +820,10 @@
   "mismatch": []
  },
  "fx_src": {
-  "usdtwd": 32.59600067138672,
-  "usdjpy": 157.85699462890625
+  "usdtwd": 32.5890007019043,
+  "usdjpy": 157.8509979248047
  },
- "fx_jpytwd": 0.20649,
+ "fx_jpytwd": 0.20645,
  "ok": [
   "8035",
   "6857",
