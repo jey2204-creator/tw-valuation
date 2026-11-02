@@ -792,6 +792,10 @@ function alignX(fresh){
   cs.forEach(c=>{if(!c.__g0){const g=c.getOption().grid[0];c.__g0={left:g.left,right:g.right,top:g.top,bottom:g.bottom,containLabel:g.containLabel}}else c.setOption({grid:c.__g0})});
   let L=0,R=0;const rs=cs.map(c=>{const r=c.getModel().getComponent('grid').coordinateSystem.getRect();L=Math.max(L,r.x);R=Math.max(R,c.getWidth()-r.x-r.width);return r});
   cs.forEach((c,k)=>{const r=rs[k];c.setOption({grid:{left:Math.ceil(L),right:Math.ceil(R),top:Math.round(r.y),bottom:Math.round(c.getHeight()-r.y-r.height),containLabel:false}})})}   // 上下維持各圖原本含標籤的邊界，只統一左右
+// 末端數字改放圖內（最後一個點的上／下方），不再掛在圖外：避免這兩張圖把對齊後的右邊界撐寬
+function inLabel(s,pos,al){if(!s.endLabel)return;const e=s.endLabel,val=x=>x!=null&&typeof x==='object'?x.value:x;let j=-1;s.data.forEach((x,k)=>{if(val(x)!=null)j=k});if(j<0){delete s.endLabel;return}
+  const it=typeof s.data[j]==='object'?s.data[j]:{value:s.data[j]};
+  s.data[j]={...it,label:{show:true,position:pos||'top',align:al||'left',offset:[al==='right'?5:-4,0],distance:6,backgroundColor:css('--card'),padding:[1,3],borderRadius:3,formatter:p=>e.formatter?e.formatter({value:val(p.value)}):val(p.value),color:e.color,fontSize:e.fontSize||10,fontFamily:e.fontFamily||'IBM Plex Mono',fontWeight:600}};delete s.endLabel}
 // 折線實心圓：每季小實心點、最新一季大點加底色框；快訊季改空心圓（跟 SEC 正式值分開）；沒資料的季不畫點
 function dots(o){const card=css('--card'),xs=[].concat(o.xAxis);
   o.series.forEach(s=>{if(s.type!=='line'||!s.data||!s.data.length||s.stack||(s.lineStyle&&s.lineStyle.width===0))return;
@@ -1070,7 +1074,9 @@ function render(){
    o.yAxis.max=v=>Math.max(110,Math.ceil(v.max/10)*10);o.tooltip.formatter=ps=>{const i=st+ps[0].dataIndex,v=M[i];return `<b>${qtip(i)}</b>${v?`<br>近四季 FCF ${ap()}${camt(v.f)}<br>FCF 利潤率 ${v.m}%<br>FCF 轉換率 ${v.c==null?'—（淨利太低）':(v.c>=300?'>300':v.c<=-100?'<−100':v.c)+'%'}`:'<br>資料不足'}`};
    o.series=[{name:'FCF 利潤率',type:'line',data:S.map((x,j)=>M[st+j]?M[st+j].m:null),symbol:'none',lineStyle:{width:2,color:acc2},itemStyle:{color:acc2},endLabel:{show:true,formatter:p=>p.value+'%',color:acc2,fontSize:10,fontFamily:'IBM Plex Mono'}},
      {name:'FCF 轉換率',type:'line',data:S.map((x,j)=>M[st+j]?M[st+j].c:null),symbol:'none',lineStyle:{width:2,color:css('--violet')},itemStyle:{color:css('--violet')},endLabel:{show:true,formatter:p=>p.value+'%',color:css('--violet'),fontSize:10,fontFamily:'IBM Plex Mono'},markLine:{silent:true,symbol:'none',lineStyle:{color:css('--violet'),type:'dashed',width:1,opacity:.6},label:{show:true,position:'insideEndTop',formatter:'100%',fontSize:9,color:css('--violet')},data:[{yAxis:100}]}}];
-   o.grid.right=42;dots(o);xLast(o,c);c.setOption(o,true);spreadEnd(c,o)}
+   inLabel(o.series[0]);inLabel(o.series[1]);o.grid.right=6;dots(o);xLast(o,c);c.setOption(o,true);
+   {const lv=k=>{const x=[...o.series[k].data].reverse().find(x=>x!=null&&(typeof x!=='object'||x.value!=null));return x==null?null:typeof x==='object'?x.value:x},a=lv(0),b=lv(1);   // 兩個末端數字垂直距離不到 14px 時，低的那個改放點下方
+    if(a!=null&&b!=null&&Math.abs(c.convertToPixel({yAxisIndex:0},a)-c.convertToPixel({yAxisIndex:0},b))<14){const k=a<b?0:1,d=o.series[k].data;let j=-1;d.forEach((x,i)=>{if(x!=null&&(typeof x!=='object'||x.value!=null))j=i});if(j>=0&&d[j].label){d[j].label.position='bottom';c.setOption({series:o.series})}}}}
   if(!$('react').hidden){const o=base(),c=mk('cReact'),RH=window.__RH;o.xAxis.data=RH.map(h=>h[0]);o.yAxis.scale=false;o.yAxis.axisLabel.formatter='{value}%';
    const pc=v=>v==null?'—':`${v>=0?'+':'−'}${Math.abs(v).toFixed(1)}%`,hr={bmo:'盤前',amc:'盤後',dmh:'盤中'};
    o.tooltip.formatter=ps=>{const h=RH[ps[0].dataIndex];return `<b>${h[0]}</b>　${h[4]?h[4].slice(5).replace('-','/'):''} ${hr[h[5]]||''}<br>EPS 實際 ${h[2]??'—'}${h[1]!=null?` ／預估 ${h[1]}`:'（無預估）'}${h[8]?'（手動層）':''}<br>驚喜率 ${pc(h[3])}<br>首日漲跌 ${pc(h[6])}`};
@@ -1093,7 +1099,8 @@ function render(){
    o.tooltip.formatter=ps=>{const i=st+ps[0].dataIndex,x=Q[i],p=Q[prevYearIdx(i)];return `<b>${qtip(i)}</b><br>稀釋股數 ${x[8]==null?'—':fmt(x[8],1)} 百萬股${p&&p[8]&&x[8]?`（年${x[8]<p[8]?'減':'增'} ${Math.abs((x[8]/p[8]-1)*100).toFixed(1)}%）`:''}<br>SBC ${x[14]==null?'—':ap()+amt(x[14])}<br>SBC 佔營收 ${sbp(x)??'—'}%`};
    o.series=[{name:'稀釋股數(百萬)',type:'bar',data:S.map(x=>flashBar(x,x[8],acc)),itemStyle:{color:acc+'b3',borderRadius:[2,2,0,0]},barCategoryGap:'30%',markArea:D.inj?FLASH_AREA(warm,D.inj):undefined},
      {name:'SBC 佔營收',type:'line',yAxisIndex:1,data:S.map(sbp),symbol:'none',connectNulls:false,lineStyle:{width:2,color:warm},itemStyle:{color:warm},endLabel:{show:true,formatter:p=>p.value+'%',color:warm,fontSize:10,fontFamily:'IBM Plex Mono'}}];
-   o.grid.right=34;dots(o);xLast(o,c);c.setOption(o,true)}
+   inLabel(o.series[1],'top','right');   // 有右軸：數字放點的左上（放右邊會壓到右軸刻度），加底色避免被線穿過
+   o.grid.right=6;dots(o);xLast(o,c);c.setOption(o,true)}
   if(W.hasBL){const o=base(),c=mk('cBal');o.xAxis.data=S.map(qlbl);o.yAxis.scale=false;
    const net=x=>x[15]==null?null:x[15]-(x[16]||0);
    o.tooltip.formatter=ps=>{const i=st+ps[0].dataIndex,x=Q[i];return `<b>${qtip(i)}</b><br>現金＋短投 ${x[15]==null?'—':ap()+camt(x[15],fxOn()?0:2)}<br>債務 ${x[16]==null?'—':ap()+camt(x[16],fxOn()?0:2)}<br>淨現金 <b>${ap()}${camt(net(x),fxOn()?0:2)}</b>`};
