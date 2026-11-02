@@ -784,6 +784,14 @@ function xLast(o,c){const xs=[].concat(o.xAxis),gs=[].concat(o.grid);
     xa.axisLabel={...(xa.axisLabel||{}),hideOverlap:false,interval:i=>(n-1-i)%step()===0,
       formatter:(v,i)=>i===n-1?`{b|${v}}`:v,
       rich:{b:{fontWeight:'bold',color:css('--fg'),fontFamily:'IBM Plex Mono, ui-monospace, monospace',fontSize:fs}}}})}
+// 季度圖 X 軸對齊：量每張圖實際左右邊界（含 Y 軸標籤），取最大值統一套用，同一季在每張圖落在同一條垂直線；只對齊共用同一組季度（S）的圖
+const QIDS=['cRev','cMar','cEps','cCap','cFcf','cGrow','cFcfq','cWc','cShr','cBal'];
+function alignX(fresh){
+  if(fresh)QIDS.forEach(id=>{if(charts[id])charts[id].__g0=null});
+  const cs=QIDS.map(id=>charts[id]).filter(c=>c&&c.getDom().offsetWidth>50&&c.getOption()&&c.getOption().grid);if(cs.length<2)return;
+  cs.forEach(c=>{if(!c.__g0){const g=c.getOption().grid[0];c.__g0={left:g.left,right:g.right,top:g.top,bottom:g.bottom,containLabel:g.containLabel}}else c.setOption({grid:c.__g0})});
+  let L=0,R=0;const rs=cs.map(c=>{const r=c.getModel().getComponent('grid').coordinateSystem.getRect();L=Math.max(L,r.x);R=Math.max(R,c.getWidth()-r.x-r.width);return r});
+  cs.forEach((c,k)=>{const r=rs[k];c.setOption({grid:{left:Math.ceil(L),right:Math.ceil(R),top:Math.round(r.y),bottom:Math.round(c.getHeight()-r.y-r.height),containLabel:false}})})}   // 上下維持各圖原本含標籤的邊界，只統一左右
 // 折線實心圓：每季小實心點、最新一季大點加底色框；快訊季改空心圓（跟 SEC 正式值分開）；沒資料的季不畫點
 function dots(o){const card=css('--card'),xs=[].concat(o.xAxis);
   o.series.forEach(s=>{if(s.type!=='line'||!s.data||!s.data.length||s.stack||(s.lineStyle&&s.lineStyle.width===0))return;
@@ -1094,6 +1102,7 @@ function render(){
      {name:'淨現金',type:'line',data:S.map(x=>cval(net(x))),symbol:'circle',symbolSize:4,z:5,connectNulls:false,lineStyle:{width:2,color:warm},itemStyle:{color:warm},markLine:{silent:true,symbol:'none',lineStyle:{color:warm,type:'dashed',width:1,opacity:.6},label:{show:false},data:[{yAxis:0}]}}];
    dots(o);xLast(o,c);c.setOption(o,true)}
   renderFwd();renderBeat();river('cPE',PEM,2,'倍 PE');river('cPB',PBM,3,'倍 PB');
+  alignX(true);
 }
 // ---------- 預估模型 ----------
 function model(){
@@ -1523,7 +1532,7 @@ function route(){
   else if(id==='SALARY'){$('stock').hidden=true;$('home').hidden=true;$('srank').hidden=false;document.title='員工薪酬排行';renderSal();scrollTo(0,0)}
   else if(tid){$('stock').hidden=true;$('home').hidden=true;themeRender(tid);scrollTo(0,0)}
   else if(stk){const k=KEEP;KEEP=null;if(!D||D.id!==id){if(!k)scrollTo(0,0);load(id).then(()=>{if(k)requestAnimationFrame(()=>goSec(k))})}else{$('home').hidden=true;$('stock').hidden=false;pnPaint(id);setTimeout(()=>Object.values(charts).forEach(c=>c.resize()),0);k?goSec(k):scrollTo(0,0)}}
-  else{$('stock').hidden=true;$('home').hidden=false;document.title='美股估值看板';if(!$('q').value.trim())cardsRender();Object.values(charts).forEach(c=>c.resize());
+  else{$('stock').hidden=true;$('home').hidden=false;document.title='美股估值看板';if(!$('q').value.trim())cardsRender();Object.values(charts).forEach(c=>c.resize());alignX();
     if(VPREV==='edit')requestAnimationFrame(()=>scrollTo(0,$('tsec').getBoundingClientRect().top+scrollY-8));   // 編輯完回首頁：停在主題卡
     if(VPREV==='theme'){const y=HOMEY,pt=HPREV;requestAnimationFrame(()=>{scrollTo(0,y);const c=document.querySelector(`a.tcard[href="#${pt}"]`)||document.querySelector(`.tlt tr[data-t="${pt.replace(/^t\//,'')}"]`);if(c){c.classList.remove('bkflash');void c.offsetWidth;c.classList.add('bkflash')}})}}
   bkRestore(h);VPREV=stk?'stock':em?'edit':id==='EARN'?'earn':tid?'theme':'home';HPREV=h;
@@ -1791,7 +1800,7 @@ addEventListener('hashchange',route);
 // 台股對應一列橫滑：右邊還有沒露出的才加淡出遮罩
 function twFade(){const t=$('tw');t.classList.toggle('more',t.scrollWidth-t.clientWidth-t.scrollLeft>4)}
 $('tw').addEventListener('scroll',twFade,{passive:true});
-let rt;addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>{Object.values(charts).forEach(c=>c.resize());twFade()},120)});
+let rt;addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>{Object.values(charts).forEach(c=>c.resize());alignX();twFade()},120)});
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{if(D&&!$('stock').hidden)render();capexAll()});
 </script>
 <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "1d5b7d7f9e9b4171b25487fae2dfeea9"}'></script><!-- End Cloudflare Web Analytics -->
