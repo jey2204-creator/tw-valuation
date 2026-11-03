@@ -647,7 +647,16 @@ function fillSheet(){
   const ysym=encodeURIComponent(r.c)+(r.m==='上櫃'?'.TWO':'.TW');
   const yahoo='https://tw.stock.yahoo.com/quote/'+ysym+'/technical-analysis';
   const ynews='https://tw.stock.yahoo.com/quote/'+ysym+'/news';
-  const gai='https://www.google.com/search?udm=50&q='+encodeURIComponent(r.n+' '+r.c+' 今天股價為什麼漲');
+  // 2026-11-03 問句依漲跌自動換字：漲停／漲（≥+0.5%）／跌停／跌（≤−0.5%）／平盤；回顧模式改問「名單日以來」
+  const gq=(()=>{const ch=S&&S.chg!=null?S.chg*100:null,px=S?S.px:r.cl;
+    const head=S&&S.retro?`${md(L)}以來`:'今天';
+    if(ch==null)return `${head}股價有什麼消息`;
+    if(!S.retro&&q&&q.u&&px>=q.u)return '今天為什麼漲停';
+    if(!S.retro&&q&&q.w&&px<=q.w)return '今天為什麼跌停';
+    if(ch>=0.5)return `${head}股價為什麼漲`;
+    if(ch<=-0.5)return `${head}股價為什麼跌`;
+    return `${head}股價有什麼消息`})();
+  const gai='https://www.google.com/search?udm=50&q='+encodeURIComponent(r.n+' '+r.c+' '+gq);
   const cnews='https://www.cnyes.com/search/news?keyword='+encodeURIComponent(r.n);
   const fin='../../#'+encodeURIComponent(r.c);
   const ginfo='https://goodinfo.tw/tw/StockFinDetail.asp?RPT_CAT=XX_M_QUAR_ACC&STOCK_ID='+encodeURIComponent(r.c);
@@ -659,7 +668,7 @@ function fillSheet(){
     <div class="sh-leg">${[5,10,20,60].map(w=>`<span><i style="background:var(--ma${w})"></i>${w}MA</span>`).join('')}<span><i style="background:var(--buy)"></i>前20日高（虛線）</span></div>
     <div class="sh-cur" id="shCur"></div>
     <canvas class="sh-cv" aria-label="${esc(r.n)} 日K與今天盤中K棒"></canvas>`:'<p class="sh-note">還沒有這檔的日K資料。</p>'}
-    <div class="sh-links"><a class="news" href="${gai}" target="_blank" rel="noopener noreferrer">🤖 Google AI ↗</a><a href="${ynews}" target="_blank" rel="noopener noreferrer">📰 新聞 ↗</a><a href="${cnews}" target="_blank" rel="noopener noreferrer">鉅亨 ↗</a><a href="${yahoo}" target="_blank" rel="noopener noreferrer">Yahoo 技術分析 ↗</a><a class="fin" href="${fin}" target="_blank" rel="noopener noreferrer">📊 財報 ↗</a><a href="${ginfo}" target="_blank" rel="noopener noreferrer">Goodinfo ↗</a></div>
+    <div class="sh-links"><a class="news" href="${gai}" title="問：${esc(r.n+" "+r.c+" "+gq)}" target="_blank" rel="noopener noreferrer">🤖 Google AI ↗</a><a href="${ynews}" target="_blank" rel="noopener noreferrer">📰 新聞 ↗</a><a href="${cnews}" target="_blank" rel="noopener noreferrer">鉅亨 ↗</a><a href="${yahoo}" target="_blank" rel="noopener noreferrer">Yahoo 技術分析 ↗</a><a class="fin" href="${fin}" target="_blank" rel="noopener noreferrer">📊 財報 ↗</a><a href="${ginfo}" target="_blank" rel="noopener noreferrer">Goodinfo ↗</a></div>
     <p class="sh-note">虛線框＝今天盤中到目前為止的K棒；量的虛線框＝推估全天量，點線＝前 5 日均量。價格未還原權息。投持＝投信估計持股佔股本（MoneyDJ 估計值，季末可能跳動），低於 1.5% 標綠。看盤工具，不是買賣建議；下單以券商報價為準。</p>`;
   box.querySelector('.x').onclick=closeSheet;
   box.querySelectorAll('.seg button').forEach(b=>b.onclick=()=>{nBars=+b.dataset.n;store.set(N_KEY,String(nBars));const keep=curI;fillSheet();if(keep!=null)setCur(keep)});
