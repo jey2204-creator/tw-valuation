@@ -125,6 +125,10 @@ select.ch.on{background-color:var(--sel);color:var(--selfg);font-weight:700}
 .sh-seg button,.sh-seg a{height:26px;line-height:26px;padding:0 10px;border-radius:13px;border:1px solid var(--line);font-size:12px;color:var(--fg)}
 .sh-seg button[aria-pressed=true]{background:var(--sel);color:var(--selfg);border-color:var(--sel)}
 .sh-seg a{margin-left:auto;background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700}
+/* 2026-11-09 計數＋下一檔 放在按鈕列左側 */
+.sh-seg .cnt2{display:inline-flex;align-items:center;gap:3px;height:26px;font:600 11.5px var(--f-num);color:var(--muted);white-space:nowrap;min-width:0;overflow:hidden;text-overflow:ellipsis;padding:0 2px}
+.sh-seg .cnt2 button{height:26px;line-height:26px;padding:0 4px;border:0;border-radius:6px;color:var(--accent);font:700 12px var(--f-body)}
+.sh-seg .cnt2 button:disabled{color:var(--muted);font-weight:600}
 .sh-nav{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:4px}
 .sh-nav button{color:var(--accent);font-weight:700;padding:4px 6px}
 .leg{display:flex;gap:10px;font:500 10.5px var(--f-num);color:var(--muted)}
@@ -450,10 +454,9 @@ function fillSheetV(){const r=SHR[openI];if(!r)return closeSheet();const v=VAL[r
       PB=`${line('淨值比',v.pb,v.pbPct,v.pbm)}<canvas class="sh-cv rv" id="shPb"></canvas><div class="leg" style="margin-bottom:6px"><span>色帶＝每股淨值 × ${v.pbm.join('／')} 倍</span>${S&&S[4]!=null?`<span>殖利率 ${S[4]}%</span>`:''}${S&&S[5]!=null?`<span>營收年增 ${S[5]}%</span>`:''}</div>`;
       return (v.cyc?PB+PE:PE+PB)+`<div class="sh-t" style="color:var(--muted)">${v.cyc?`<b style="color:var(--warm)">循環股</b>（${esc(v.why)}）：主尺用淨值比，EPS 高峰時本益比會偏低、谷底時偏高`:`一般股（${esc(v.why)}）：主尺用本益比`}・近四季 ROE ≈ <b class="${v.roe!=null&&v.roe<5?'dn':''}">${v.roe==null?'—':v.roe+'%'}</b>${v.roe!=null&&v.roe<5?'（淨值報酬低，淨值比低可能是價值陷阱）':''} <button id="cycBtn" style="color:var(--accent);font-weight:700">${v.cyc?'取消循環股':'標為循環股'}</button></div>`})()+`<div class="sh-t" style="color:var(--muted);font-size:11px">資料：${esc(v.src)}・月底收盤 ${esc(v.riv[v.riv.length-1][0])}${S?'・目前倍數＝證交所／櫃買 '+esc(String(SUM.pxAsof||'')):''}</div>`
     :`<div class="empty">${VCUR[r.c]==null&&VAL[r.c]===null?'讀不到這檔的估值歷史':'估值資料讀取中…'}</div>`}
-    <div class="sh-seg"><a href="index.html#${esc(r.c)}">財報・估值 →</a></div>
-    <div class="sh-nav"><span>${openI+1}／${SHR.length}${openI<SHR.length-1?'・下一檔 '+esc(SHR[openI+1].n):''}</span></div>`;
+    <div class="sh-seg">${shCnt(true)}<a href="index.html#${esc(r.c)}">財報・估值 →</a></div>`;
   if(v){drawRiver($('shPe'),v,{kind:'pe'});drawRiver($('shPb'),v,{kind:'pb'});$('cycBtn').onclick=()=>cycToggle(r.c)}
-  $('shX').onclick=closeSheet;$('shPrev').onclick=()=>{openI--;fillSheet();$('sh').scrollTop=0};$('shNext').onclick=()=>{openI++;fillSheet();$('sh').scrollTop=0};
+  $('shX').onclick=closeSheet;$('shPrev').onclick=()=>{openI--;fillSheet();$('sh').scrollTop=0};$('shNext').onclick=()=>{openI++;fillSheet();$('sh').scrollTop=0};const n2=$('shNext2');if(n2)n2.onclick=()=>{openI++;fillSheet();$('sh').scrollTop=0};
 }
 // ---- 放大卡 ----
 let SHR=[];
@@ -464,6 +467,7 @@ addEventListener('resize',()=>{if(openI>=0)ovTop()});if(window.visualViewport){v
 function openSheet(R,i){SHR=R;openI=i;ovTop();$('ov').hidden=false;document.body.style.overflow='hidden';fillSheet()}
 function closeSheet(){$('ov').hidden=true;document.body.style.overflow='';openI=-1}
 function fillSheet(){return MODE==='v'?fillSheetV():fillSheetK()}
+function shCnt(long){const last=openI>=SHR.length-1;return `<span class="cnt2">${openI+1}／${SHR.length}・<button id="shNext2" ${last?'disabled':''}>${last?'最後一檔':(long?'下一檔 ':'')+esc(SHR[openI+1].n)+' ›'}</button></span>`}
 function fillSheetK(){const r=SHR[openI];if(!r)return closeSheet();const last=r.bars[r.bars.length-1];
   const lot=v=>v==null?'—':(v>0?'+':'')+fmt(v);
   const nm=PMAP?PMAP[r.c]:NMAP[r.c],ntag=nm?`<span class="ntag" style="background:${TLAB[nm.k]?TCOL[nm.k]:nm.k==='g'?'var(--accent)':nm.k==='r'?'var(--up)':nm.k==='o'?'#d9731a':'#b88600'}">${TLAB[nm.k]?'第 '+nm.rank+' 名・連 '+nm.n+' 天上榜':nm.k==='g'?'處置 '+(nm.end||'')+' 結束・後 '+nm.n+' 日':nm.k==='r'?'處置中'+(nm.end?'～'+nm.end:''):nm.k==='o'?'快達處置':'注意 連'+nm.n+'天'}</span>`:'';
@@ -474,12 +478,11 @@ function fillSheetK(){const r=SHR[openI];if(!r)return closeSheet();const last=r.
       <span><b>${r.arr}</b>・距月線<b class="${cls(r.d20)}">${pct(r.d20)}</b>・距季線<b class="${cls(r.d60)}">${pct(r.d60)}</b>・距年線<b class="${cls(r.d240)}">${pct(r.d240)}</b>・60日區間<b>${r.pos60==null?'—':Math.round(r.pos60*100)+'%'}</b></span></div>
     ${nm?`<div class="sh-m" style="color:var(--muted)"><span>${esc(nm.r||'')}</span></div>`:''}<div class="leg"><span><i style="background:var(--ma20)"></i>20日</span><span><i style="background:var(--ma60)"></i>60日</span><span><i style="background:var(--ma240);height:0;border-top:2px dashed var(--ma240)"></i>240日</span><span><i style="height:0;border-top:1px dashed var(--up)"></i>前20日高</span>${r.nd&&Object.values(r.nd).includes('y')?'<span><i style="width:7px;height:7px;border-radius:50%;background:#e0a800"></i>列注意日</span>':''}${TOPK&&r.nd&&Object.values(r.nd).includes(TOPK)?`<span><i style="width:7px;height:7px;border-radius:50%;background:${TCOL[TOPK]}"></i>上榜日</span>`:''}${r.dp&&r.dp.length?'<span><i style="width:12px;height:9px;background:var(--up);opacity:.18"></i>處置期間</span>':''}${NDATE&&PMAP?'<span><i style="height:0;border-top:1.5px dashed var(--fg)"></i>名單日 '+md(NDATE)+'</span>':''}</div>
     <canvas class="sh-cv"></canvas>
-    <div class="sh-seg"><button data-n="40" aria-pressed="${shN===40}">2月</button><button data-n="80" aria-pressed="${shN===80}">4月</button><button data-n="130" aria-pressed="${shN===130}">6月</button><a href="index.html#${esc(r.c)}">財報・估值 →</a></div>
-    <div class="sh-nav"><span>${openI+1}／${SHR.length}${openI<SHR.length-1?'・下一檔 '+esc(SHR[openI+1].n):''}</span></div>`;
+    <div class="sh-seg"><button data-n="40" aria-pressed="${shN===40}">2月</button><button data-n="80" aria-pressed="${shN===80}">4月</button><button data-n="130" aria-pressed="${shN===130}">6月</button>${shCnt(false)}<a href="index.html#${esc(r.c)}">財報・估值 →</a></div>`;
   drawK($('sh').querySelector('.sh-cv'),r,shN,{});
   $('shX').onclick=closeSheet;
-  $('sh').querySelectorAll('.sh-seg button').forEach(b=>b.onclick=()=>{shN=+b.dataset.n;fillSheet()});
-  $('shPrev').onclick=()=>{openI--;fillSheet();$('sh').scrollTop=0};$('shNext').onclick=()=>{openI++;fillSheet();$('sh').scrollTop=0};
+  $('sh').querySelectorAll('.sh-seg button[data-n]').forEach(b=>b.onclick=()=>{shN=+b.dataset.n;fillSheet()});
+  $('shPrev').onclick=()=>{openI--;fillSheet();$('sh').scrollTop=0};$('shNext').onclick=()=>{openI++;fillSheet();$('sh').scrollTop=0};const n2=$('shNext2');if(n2)n2.onclick=()=>{openI++;fillSheet();$('sh').scrollTop=0};
 }
 $('ov').addEventListener('click',e=>{if(e.target===$('ov'))closeSheet()});
 document.querySelector('.hd').addEventListener('click',()=>{if(openI>=0)closeSheet()},true);
