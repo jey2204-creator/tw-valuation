@@ -1,4 +1,4 @@
-"""美股估值看板：SEC EDGAR 財報 + FinMind 美股股價 → us/data/{TICKER}.json
+"""美股估值看板：SEC EDGAR 財報 + FinMind 美股股價 → us/data/{TICKER}.json（＋日 K us/data/ohlc/{TICKER}.json）
 用法：python us/fetch_us.py              # 抓 STOCKS 全部
      python us/fetch_us.py NVDA AVGO    # 指定代號
 環境變數：FINMIND_TOKEN（選填）、SEC_UA（SEC 要求的 User-Agent，需含聯絡 email）
@@ -435,6 +435,47 @@ def price_splits(px, splits):
     return fix
 
 
+OHLC_DAYS = 520   # 日 K 檔保留約 2 年交易日
+
+
+def pick(r, *keys):
+    """FinMind 欄位名不同版本大小寫不一（Open／open、High／max、Low／min、Volume／volume），依序取第一個有值的"""
+    for k in keys:
+        v = r.get(k)
+        if v not in (None, "", 0):
+            return v
+    return None
+
+
+def write_ohlc(tk, px, fix):
+    """日 K（個股頁「K線」圖用）→ us/data/ohlc/{TICKER}.json
+    k 欄位：[日期, 開, 高, 低, 收, 量]；價格依分割因子調整（同 Close 的作法），量乘回同一因子。
+    開高低任一缺就整列略過只留收盤（o=h=l=c），避免畫出假影線。"""
+    rows = []
+    for r in px[-OHLC_DAYS:]:
+        f = split_factor(r["date"], [(d, n) for d, n in fix]) if fix else 1
+        c = r["Close"] / f
+        o = pick(r, "Open", "open")
+        h = pick(r, "High", "high", "max", "Max")
+        l = pick(r, "Low", "low", "min", "Min")
+        v = pick(r, "Volume", "volume", "Trading_Volume")
+        rd = (lambda x: round(x, 2) if x >= 10 else round(x, 3))
+        if o and h and l:
+            o, h, l = o / f, h / f, l / f
+            h, l = max(h, o, c), min(l, o, c)   # 防資料源偶發高低顛倒
+        else:
+            o = h = l = c
+        rows.append([r["date"], rd(o), rd(h), rd(l), rd(c), int(round(v * f)) if v else None])
+    keys = sorted(px[-1].keys()) if px else []
+    out = dict(id=tk, updated=dt.datetime.utcnow().strftime("%Y-%m-%dT%H:%MZ"), src="FinMind USStockPrice",
+               cols=["date", "o", "h", "l", "c", "v"], fields=keys,
+               split=[[d, n] for d, n in fix], k=rows)
+    d = OUT / "ohlc"
+    d.mkdir(parents=True, exist_ok=True)
+    (d / f"{tk}.json").write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")), "utf-8")
+    return len(rows)
+
+
 def build(tk, cik_map, today=None):
     today = today or dt.date.today()
     cfg = CFG.get(tk, dict(theme="", flags="", tw=[]))
@@ -450,6 +491,10 @@ def build(tk, cik_map, today=None):
     fix = price_splits(px, fin["splits"])
     for r in px:
         r["c"] = r["Close"] / split_factor(r["date"], [(d, n) for d, n in fix]) if fix else r["Close"]
+    try:
+        print(f"{tk:5} ohlc {write_ohlc(tk, px, fix)} 根")
+    except Exception as e:   # 日 K 失敗不影響主檔
+        print(f"{tk:5} ohlc FAILED: {e}", file=sys.stderr)
 
     Q, EQS = fin["q"], fin["eq"]
     need = 4 if fin["freq"] == "Q" else 1
