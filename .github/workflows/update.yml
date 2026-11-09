@@ -70,6 +70,13 @@ jobs:
         env:
           FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
         run: python fetch.py 2>&1 | tee "$RUNNER_TEMP/main.log"
+      - name: 全市場負債結構（掃描頁「負債」排序用，每次最多 250 檔，FinMind 額度不夠就下次續）
+        id: debt
+        continue-on-error: true
+        timeout-minutes: 8
+        env:
+          FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
+        run: python fetch_debt.py 2>&1 | tee "$RUNNER_TEMP/debt.log"
       - name: 健康檢查（哪一步壞了 → data/run_status.json、Telegram 通知）
         if: always()
         continue-on-error: true
