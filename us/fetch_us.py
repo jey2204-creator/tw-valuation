@@ -435,7 +435,7 @@ def price_splits(px, splits):
     return fix
 
 
-OHLC_DAYS = 520   # 日 K 檔保留約 2 年交易日
+OHLC_DAYS = 760   # 日 K 檔保留約 3 年交易日（2 年區間的 MA200 要往前多 200 根才算得出）
 
 
 def pick(r, *keys):

@@ -91,10 +91,12 @@ section.card{background:var(--card);border:1px solid var(--line);border-radius:1
 .chart.tall{height:240px}
 .foot{font-size:11px;color:var(--muted);margin:1px 0 4px;line-height:1.45}
 #cK{height:300px}
-.krange{display:flex;gap:6px;margin:4px 0 0;align-items:center}
+.krange{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 0;align-items:center}
 .krange button{font:inherit;font-size:11.5px;white-space:nowrap;line-height:1.5;border:1px solid var(--line);background:var(--card);color:var(--muted);border-radius:999px;padding:1px 9px;cursor:pointer}
 .krange button.on{background:var(--b4);color:var(--fg);font-weight:700;border-color:transparent}
-.krange .kma{margin-left:auto;font-size:11px;color:var(--muted);font-family:IBM Plex Mono,ui-monospace,monospace}
+.krange .kma{flex-basis:100%;font-size:11px;color:var(--muted);font-family:IBM Plex Mono,ui-monospace,monospace;display:flex;gap:10px;flex-wrap:wrap}
+.krange .kma span{cursor:pointer;white-space:nowrap}
+.krange .kma span.off{text-decoration:line-through;opacity:.45}
 .pill{display:inline-block;font-size:11.5px;font-weight:700;border-radius:999px;padding:1px 8px;background:var(--b4);color:var(--fg)}
 /* 個股頁搜尋：標題列放大鏡，點開才出現搜尋框（跟台股站一致） */
 .qbtn{flex:none;align-self:center;width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--line);border-radius:999px;background:var(--card);color:var(--muted);cursor:pointer;-webkit-tap-highlight-color:transparent}
@@ -511,11 +513,11 @@ html{scroll-behavior:smooth}
   <p class="foot" id="fRev">柱：單季營收　線：年增率（右軸 %）</p>
 </section>
 <section class="card" id="kline" hidden>
-  <h2>日 K 線 <small id="uK">美元｜含 MA5／20／60</small></h2>
+  <h2>日 K 線 <small id="uK">美元｜MA 5／20／50／200</small></h2>
   <p class="take" id="tK"></p>
   <div class="krange" id="kRange"><button data-n="60">3月</button><button data-n="120" class="on">6月</button><button data-n="250">1年</button><button data-n="520">2年</button><span class="kma" id="kMa"></span></div>
   <div class="chart" id="cK"></div>
-  <p class="foot" id="fK">紅漲綠跌（台股習慣）。▲▼ 標記＝財報公布後首個交易日（紅＝EPS beat、綠＝miss、灰＝無預估或只有 SEC 申報日），點標記看該季驚喜率與首日漲跌。下方為成交量（百萬股）。雙指縮放、拖曳可移動區間。</p>
+  <p class="foot" id="fK">紅漲綠跌（台股習慣）。均線用美股市場習慣的天數：3 月／6 月預設 MA5／20／50，1 年／2 年預設 MA20／50／200，點上方 MA 名稱可隱藏／顯示（會記住）。▲▼ 標記＝財報公布後首個交易日（紅＝EPS beat、綠＝miss、灰＝無預估或只有 SEC 申報日），點標記看該季驚喜率與首日漲跌。下方為成交量（百萬股）。雙指縮放、拖曳可移動區間。</p>
 </section>
 <section class="card" id="grow" hidden>
   <h2>營收成長加速度 <small id="uGrow">季｜%</small></h2>
@@ -1127,9 +1129,14 @@ function render(){
 
 // ---------- 📈 日 K 線 #kline：45 檔讀 data/ohlc/{T}.json（fetch_us.py 每日寫，開高低收量已依分割調整）；全市場股用 loadAny 抓回的 FinMind 原始列即時組 ----------
 let KD=null,KN=120;   // KD = [[date,o,h,l,c,v],...]；KN = 顯示根數
+// 均線：美股市場共識天數。短區間（≤6 月）預設 5／20／50，長區間（≥1 年）預設 20／50／200；點圖例可開關，依短／長兩組分別記住
+const KMAS=[[5,'--accent'],[20,'--warm'],[50,'--accent2'],[200,'--violet']];
+const kGrp=()=>KN<=120?'s':'l';
+function kHidden(){try{const o=JSON.parse(localStorage.getItem('us_kma')||'{}');if(o[kGrp()])return new Set(o[kGrp()])}catch(e){}return new Set(kGrp()==='s'?[200]:[5])}
+function kHideSave(set){try{const o=JSON.parse(localStorage.getItem('us_kma')||'{}');o[kGrp()]=[...set];localStorage.setItem('us_kma',JSON.stringify(o))}catch(e){}}
 const KPICK=(r,...ks)=>{for(const k of ks){const v=r[k];if(v!=null&&v!==''&&v!==0)return v}return null};
 function kFromPx(px){return px.map(r=>{const f=r.c?r.Close/r.c:1,c=r.Close/f;let o=KPICK(r,'Open','open'),h=KPICK(r,'High','high','max','Max'),l=KPICK(r,'Low','low','min','Min'),v=KPICK(r,'Volume','volume','Trading_Volume');
-  if(o&&h&&l){o/=f;h/=f;l/=f;h=Math.max(h,o,c);l=Math.min(l,o,c)}else o=h=l=c;return [r.date,o,h,l,c,v?Math.round(v*f):null]}).slice(-520)}
+  if(o&&h&&l){o/=f;h/=f;l/=f;h=Math.max(h,o,c);l=Math.min(l,o,c)}else o=h=l=c;return [r.date,o,h,l,c,v?Math.round(v*f):null]}).slice(-760)}
 async function loadK(d){
   const id=d.id;let k=null;
   try{const r=await fetch(`data/ohlc/${id}.json?t=${Math.floor(Date.now()/36e5)}`);if(r.ok){const j=await r.json();k=j.k||[];window.__kmeta=j}}catch(e){}
@@ -1152,15 +1159,18 @@ function renderK(){
   const el=$('kline');if(!KD||!KD.length){el.hidden=true;return}el.hidden=false;
   const up=css('--up'),dn=css('--down'),mu=css('--muted'),acc=css('--accent'),warm=css('--warm'),vio=css('--violet');
   const n=Math.min(KN,KD.length),st=KD.length-n,S=KD.slice(st),dates=S.map(x=>x[0]);
-  const ma=[5,20,60].map(w=>S.map((x,i)=>kMA(KD,w,st+i)));
+  const ma=KMAS.map(([w])=>S.map((x,i)=>kMA(KD,w,st+i))),hid=kHidden(),vis=KMAS.map(([w],k)=>!hid.has(w)),maAll=KMAS.map(([w],k)=>kMA(KD,w,KD.length-1));
   const marks=kMarks(dates);
   const L=S[S.length-1],P=S[S.length-2],chg=P?(L[4]/P[4]-1)*100:null,hi=Math.max(...S.map(x=>x[2])),lo=Math.min(...S.map(x=>x[3]));
   const y52=KD.slice(-250),h52=Math.max(...y52.map(x=>x[2])),l52=Math.min(...y52.map(x=>x[3]));
-  const m20=ma[1][n-1],m60=ma[2][n-1],pos=v=>v==null?null:(L[4]/v-1)*100;
+  const m20=maAll[1],m50=maAll[2],m200=maAll[3],pos=v=>v==null?null:(L[4]/v-1)*100;
+  // 50／200 交叉：近 20 根內由下穿上＝黃金交叉、由上穿下＝死亡交叉
+  let cross='';{const a=kMA(KD,50,KD.length-1),b=kMA(KD,200,KD.length-1),a0=kMA(KD,50,KD.length-21),b0=kMA(KD,200,KD.length-21);
+    if(a!=null&&b!=null&&a0!=null&&b0!=null){if(a>b&&a0<=b0)cross='<span class="pill g">近 20 日黃金交叉</span>';else if(a<b&&a0>=b0)cross='<span class="pill r">近 20 日死亡交叉</span>'}}
   const pc=v=>v==null?'—':`${v>=0?'+':'−'}${Math.abs(v).toFixed(1)}%`,sg=v=>v==null?'':v>=0?'up':'dn';
-  const trend=m20!=null&&m60!=null?(L[4]>m20&&m20>m60?'<span class="pill g">多頭排列</span>':L[4]<m20&&m20<m60?'<span class="pill r">空頭排列</span>':'<span class="pill">盤整</span>'):'';
-  $('tK').innerHTML=`${L[0].slice(5).replace('-','/')} 收 <strong>$${fmt(L[4],2)}</strong>（<b class="${sg(chg)}">${pc(chg)}</b>）${m20!=null?`；對 MA20 <b class="${sg(pos(m20))}">${pc(pos(m20))}</b>`:''}${m60!=null?`、MA60 <b class="${sg(pos(m60))}">${pc(pos(m60))}</b>`:''}；距 52 週高 <strong>${pc(L[4]/h52*100-100)}</strong>、距 52 週低 <strong>${pc(L[4]/l52*100-100)}</strong> ${trend}`;
-  $('kMa').innerHTML=`<span style="color:${acc}">MA5 ${ma[0][n-1]==null?'—':fmt(ma[0][n-1],2)}</span>　<span style="color:${warm}">MA20 ${m20==null?'—':fmt(m20,2)}</span>　<span style="color:${vio}">MA60 ${m60==null?'—':fmt(m60,2)}</span>`;
+  const trend=m50!=null&&m200!=null?(L[4]>m50&&m50>m200?'<span class="pill g">多頭排列</span>':L[4]<m50&&m50<m200?'<span class="pill r">空頭排列</span>':'<span class="pill">盤整</span>'):'';
+  $('tK').innerHTML=`${L[0].slice(5).replace('-','/')} 收 <strong>$${fmt(L[4],2)}</strong>（<b class="${sg(chg)}">${pc(chg)}</b>）${m50!=null?`；對 50 日 <b class="${sg(pos(m50))}">${pc(pos(m50))}</b>`:''}${m200!=null?`、200 日 <b class="${sg(pos(m200))}">${pc(pos(m200))}</b>`:''}；距 52 週高 <strong>${pc(L[4]/h52*100-100)}</strong>、距 52 週低 <strong>${pc(L[4]/l52*100-100)}</strong> ${trend}${cross}`;
+  $('kMa').innerHTML=KMAS.map(([w,cv],k)=>`<span data-w="${w}" class="${vis[k]?'':'off'}" style="color:${css(cv)}" title="點一下隱藏／顯示">MA${w} ${maAll[k]==null?'—':fmt(maAll[k],2)}</span>`).join('');
   document.querySelectorAll('#kRange button').forEach(b=>b.classList.toggle('on',+b.dataset.n===KN));
   const o=base(),c=mk('cK');delete o.legend;
   o.grid=[{left:6,right:16,top:14,height:'61%',containLabel:true},{left:6,right:16,top:'78%',bottom:4,containLabel:true}];
@@ -1173,17 +1183,18 @@ function renderK(){
   o.series=[{name:'K',type:'candlestick',data:S.map(x=>[x[1],x[4],x[3],x[2]]),itemStyle:{color:up,color0:dn,borderColor:up,borderColor0:dn},barMaxWidth:14,
       markPoint:{symbol:'triangle',symbolSize:9,symbolOffset:[0,-8],label:{show:true,position:'top',fontSize:9,fontFamily:'IBM Plex Mono',color:mu,formatter:p=>p.data.fq},
         data:marks.map(m=>({coord:[m.i,S[m.i][2]],fq:m.fq.replace(/^FY/,''),itemStyle:{color:m.sec||m.sp==null?mu:m.sp>=0?up:dn,opacity:m.sec?.6:1},symbolRotate:m.rx!=null&&m.rx<0?180:0,symbolOffset:[0,m.rx!=null&&m.rx<0?-6:-8]})),silent:true}},
-    ...[['MA5',0,acc,1],['MA20',1,warm,1.3],['MA60',2,vio,1.3]].map(([nm,k,col,w])=>({name:nm,type:'line',data:ma[k],symbol:'none',connectNulls:false,lineStyle:{width:w,color:col,opacity:.9},itemStyle:{color:col},z:3,emphasis:{disabled:true}})),
+    ...KMAS.map(([w,cv],k)=>vis[k]?{name:'MA'+w,type:'line',data:ma[k],symbol:'none',connectNulls:false,lineStyle:{width:w>=50?1.4:1,color:css(cv),opacity:.9},itemStyle:{color:css(cv)},z:3,emphasis:{disabled:true}}:null).filter(Boolean),
     {name:'量',type:'bar',xAxisIndex:1,yAxisIndex:1,data:S.map((x,i)=>({value:x[5],itemStyle:{color:x[4]>=x[1]?up:dn,opacity:.65}})),barMaxWidth:14,emphasis:{disabled:true}}];
   o.tooltip.formatter=qs=>{const i=qs[0].dataIndex,x=S[i],p=S[i-1],ch=p?(x[4]/p[4]-1)*100:null,m=MI[i];
     const L=[`<b>${x[0]}</b>　<b class="${sg(ch)}">${pc(ch)}</b>`,`開 ${fmt(x[1],2)}　高 ${fmt(x[2],2)}　低 ${fmt(x[3],2)}　收 <b>${fmt(x[4],2)}</b>`,`量 ${x[5]==null?'—':fmt(x[5]/1e6,2)}M`,
-      `MA5 ${ma[0][i]==null?'—':fmt(ma[0][i],2)}　MA20 ${ma[1][i]==null?'—':fmt(ma[1][i],2)}　MA60 ${ma[2][i]==null?'—':fmt(ma[2][i],2)}`];
+      KMAS.map(([w],k)=>vis[k]?`MA${w} ${ma[k][i]==null?'—':fmt(ma[k][i],2)}`:null).filter(Boolean).join('　')];
     if(m)L.push(`<span class="pill ${m.sec?'o':m.sp==null?'':m.sp>=0?'g':'r'}">📅 ${m.fq.replace(/^FY/,'')} ${m.sec?'SEC 申報':m.flash?'財報快訊':'財報'}</span> ${m.d}${{bmo:' 盤前',amc:' 盤後'}[m.hr]||''}${m.sp!=null?`　EPS 驚喜 <b class="${sg(m.sp)}">${pc(m.sp)}</b>`:''}${m.rx!=null?`　首日 <b class="${sg(m.rx)}">${pc(m.rx)}</b>`:''}${m.m?' 🎯':''}`);
     return L.join('<br>')};
   c.setOption(o,true);c.resize();
-  const km=window.__kmeta;$('uK').textContent=`美元｜含 MA5／20／60${km&&km.id===D.id?`｜更新 ${(km.updated||'').slice(5,10).replace('-','/')}`:'｜股價即時（FinMind）'}${KD.some(x=>x[1]===x[2]&&x[2]===x[3])?'｜部分日只有收盤':''}`;
+  const km=window.__kmeta;$('uK').textContent=`美元｜MA 5／20／50／200${km&&km.id===D.id?`｜更新 ${(km.updated||'').slice(5,10).replace('-','/')}`:'｜股價即時（FinMind）'}${KD.some(x=>x[1]===x[2]&&x[2]===x[3])?'｜部分日只有收盤':''}`;
 }
-$('kRange').addEventListener('click',e=>{const b=e.target.closest('button[data-n]');if(!b)return;KN=+b.dataset.n;renderK()});
+$('kRange').addEventListener('click',e=>{const b=e.target.closest('button[data-n]');if(b){KN=+b.dataset.n;renderK();return}
+  const m=e.target.closest('.kma span[data-w]');if(m){const h=kHidden(),w=+m.dataset.w;h.has(w)?h.delete(w):h.add(w);if(h.size>=KMAS.length)h.delete(w);kHideSave(h);renderK()}});
 // ---------- 預估模型 ----------
 function model(){
   const q1=(+$('iQ1').value||0)/100,nm=(+$('iNm').value||0)/100,qg=(+$('iQg').value||0)/100,yg=(+$('iYg').value||0)/100;
