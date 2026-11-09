@@ -61,7 +61,7 @@ select.ch.on{background-color:var(--sel);color:var(--selfg);font-weight:700}
 .km-s .pv.off{opacity:.6;flex:0 0 auto}
 .km.vld .km-cv{opacity:.35}
 .tg.cy{background:var(--warm)}
-.sh-cv.rv{height:210px}
+.sh-cv.rv{height:var(--rvh,210px)}
 .sh-t{font-size:12.5px;line-height:1.5;margin:4px 0 2px}.sh-t b{font-weight:900}.sh-t .pill{display:inline-block;padding:0 6px;border-radius:9px;background:#f6e1bd;color:#4a3000;font:700 11.5px var(--f-num)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .sh-t .pill{background:#463821;color:#f0d9b0}}
 .cnt button{color:var(--accent);font-weight:700;padding:0 4px}
@@ -105,7 +105,7 @@ select.ch.on{background-color:var(--sel);color:var(--selfg);font-weight:700}
 /* iOS 15.4+：dvh 會隨 Safari 工具列收放變動，底邊直接貼工具列上緣 */
 @supports (height:100dvh){.ov{bottom:auto;height:calc(100dvh - var(--ovtop,0px))}}.ov .sh{max-height:100%;padding-bottom:calc(12px + env(safe-area-inset-bottom))}
 /* Safari 網址列蓋住底部時 visualViewport 可能沒反映：非主畫面 App 模式一律多留 90px 捲動墊，最後一行捲得上來 */
-@media (display-mode:browser){.ov .sh::after{content:'';display:block;height:130px}}
+@supports not (height:100dvh){@media (display-mode:browser){.ov .sh::after{content:'';display:block;height:130px}}}
 .sh{background:var(--card);width:100%;max-height:92dvh;border-radius:14px 14px 0 0;padding:8px 10px calc(10px + env(safe-area-inset-bottom));overflow:auto;box-shadow:0 -4px 20px rgba(0,0,0,.2)}
 .sh-h{display:flex;align-items:center;gap:6px;margin:-8px -10px 2px;padding:8px 6px 6px 4px;position:sticky;top:-8px;z-index:3;background:var(--card);border-bottom:1px solid var(--line)}
 .sh-h b{font-size:17px;font-weight:900;white-space:nowrap}
@@ -449,15 +449,20 @@ function drawRiver(cv,v,opt){const dpr=window.devicePixelRatio||1,W=cv.clientWid
   g.strokeStyle=pc;g.lineWidth=mini?1.6:2.2;g.lineJoin='round';g.beginPath();rr.forEach((r,j)=>{j?g.lineTo(X(j),Y(r[1])):g.moveTo(X(j),Y(r[1]))});g.stroke();
   {const r=rr[m-1],y=Y(r[1]);g.fillStyle=pc;g.beginPath();g.arc(X(m-1),y,mini?2:3,0,Math.PI*2);g.fill();if(!mini){g.fillRect(W-padR+1,y-7,padR-2,14);g.fillStyle=css('--card');g.textAlign='left';g.font='600 10px '+css('--f-num');g.fillText(pxFmt(r[1]),W-padR+4,y)}}
   if(!mini){g.fillStyle=mu;g.font='10px '+css('--f-num');g.textAlign='center';g.textBaseline='bottom';let ly='';rr.forEach((r,j)=>{const yy=r[0].slice(2,4);if(yy!==ly){ly=yy;if(j>0)g.fillText(yy+'年',X(j),Hh-1)}})}}
+// 兩張河流圖的高度＝卡片可視高 − 其他內容高，平分，夾在 110～210px
+function fitRiv(){const sh=$('sh'),a=$('shPe'),b=$('shPb');if(!a||!b)return;document.documentElement.style.setProperty('--rvh','0px');
+  const pad=parseFloat(getComputedStyle(sh).paddingTop)+parseFloat(getComputedStyle(sh).paddingBottom),sp=parseFloat(getComputedStyle(sh,'::after').height)||0,avail=$('ov').clientHeight-pad,used=sh.scrollHeight-pad-sp;
+  const h=Math.max(110,Math.min(210,Math.floor((avail-used-6)/2)));document.documentElement.style.setProperty('--rvh',h+'px')}
+addEventListener('resize',()=>{if(openI>=0&&MODE==='v'&&$('shPe')){const v=VAL[SHR[openI].c];if(v){fitRiv();drawRiver($('shPe'),v,{kind:'pe'});drawRiver($('shPb'),v,{kind:'pb'})}}});
 function fillSheetV(){const r=SHR[openI];if(!r)return closeSheet();const v=VAL[r.c],S=SUM&&SUM.d[r.c];
   const line=(lab,x,p,ms)=>x==null?`<div class="sh-t"><b>${lab}</b>：${lab==='本益比'?'近四季虧損，本益比不適用':'—'}</div>`:`<div class="sh-t"><b>${lab}</b> 目前 <b>${x} 倍</b>，位在 <span class="pill">${vBand(ms,x)}</span> 帶，高於近 ${v.yrs} 年 <b class="${p>=80?'up':p<=20?'dn':''}">${p==null?'—':p+'%'}</b> 的月份</div>`;
   $('sh').innerHTML=`<div class="sh-h"><button class="nv" id="shPrev" ${openI<=0?'disabled':''} aria-label="上一檔">‹</button><span class="mid"><b>${esc(r.n)}</b><span class="cd">${esc(r.c)}</span></span>${v&&v.cyc?'<span class="ntag" style="background:var(--warm)">循環股</span>':''}<span class="px ${cls(r.chg)}">${pxFmt(v?v.px:r.px)}</span><span class="chg ${cls(r.chg)}">${pct(r.chg,2)}</span><button class="nv" id="shNext" ${openI>=SHR.length-1?'disabled':''} aria-label="下一檔">›</button><button class="x" id="shX" aria-label="關閉">×</button></div>
     ${v?(()=>{const PE=`${line('本益比',v.pe,v.pePct,v.pem)}<canvas class="sh-cv rv" id="shPe"></canvas><div class="leg" style="margin-bottom:6px"><span>色帶＝近四季 EPS × ${v.pem.join('／')} 倍</span></div>`,
       PB=`${line('淨值比',v.pb,v.pbPct,v.pbm)}<canvas class="sh-cv rv" id="shPb"></canvas><div class="leg" style="margin-bottom:6px"><span>色帶＝每股淨值 × ${v.pbm.join('／')} 倍</span>${S&&S[4]!=null?`<span>殖利率 ${S[4]}%</span>`:''}${S&&S[5]!=null?`<span>營收年增 ${S[5]}%</span>`:''}</div>`;
-      return (v.cyc?PB+PE:PE+PB)+`<div class="sh-t" style="color:var(--muted)">${v.cyc?`<b style="color:var(--warm)">循環股</b>（${esc(v.why)}）：主尺用淨值比，EPS 高峰時本益比會偏低、谷底時偏高`:`一般股（${esc(v.why)}）：主尺用本益比`}・近四季 ROE ≈ <b class="${v.roe!=null&&v.roe<5?'dn':''}">${v.roe==null?'—':v.roe+'%'}</b>${v.roe!=null&&v.roe<5?'（淨值報酬低，淨值比低可能是價值陷阱）':''} <button id="cycBtn" style="color:var(--accent);font-weight:700">${v.cyc?'取消循環股':'標為循環股'}</button></div>`})()+`<div class="sh-t" style="color:var(--muted);font-size:11px">資料：${esc(v.src)}・beta v1109e・月底收盤 ${esc(v.riv[v.riv.length-1][0])}${S?'・目前倍數＝證交所／櫃買 '+esc(String(SUM.pxAsof||'')):''}</div>`
+      return (v.cyc?PB+PE:PE+PB)+`<div class="sh-t" style="color:var(--muted)">${v.cyc?`<b style="color:var(--warm)">循環股</b>（${esc(v.why)}）：主尺用淨值比，EPS 高峰時本益比會偏低、谷底時偏高`:`一般股（${esc(v.why)}）：主尺用本益比`}・近四季 ROE ≈ <b class="${v.roe!=null&&v.roe<5?'dn':''}">${v.roe==null?'—':v.roe+'%'}</b>${v.roe!=null&&v.roe<5?'（淨值報酬低，淨值比低可能是價值陷阱）':''} <button id="cycBtn" style="color:var(--accent);font-weight:700">${v.cyc?'取消循環股':'標為循環股'}</button></div>`})()+`<div class="sh-t" style="color:var(--muted);font-size:11px">資料：${esc(v.src)}・v1109f・月底收盤 ${esc(v.riv[v.riv.length-1][0])}${S?'・目前倍數＝證交所／櫃買 '+esc(String(SUM.pxAsof||'')):''}</div>`
     :`<div class="empty">${VCUR[r.c]==null&&VAL[r.c]===null?'讀不到這檔的估值歷史':'估值資料讀取中…'}</div>`}
     <div class="sh-seg">${shCnt(true)}<a href="index.html#${esc(r.c)}">財報・估值 →</a></div>`;
-  if(v){drawRiver($('shPe'),v,{kind:'pe'});drawRiver($('shPb'),v,{kind:'pb'});$('cycBtn').onclick=()=>cycToggle(r.c)}
+  if(v){fitRiv();drawRiver($('shPe'),v,{kind:'pe'});drawRiver($('shPb'),v,{kind:'pb'});$('cycBtn').onclick=()=>cycToggle(r.c)}
   $('shX').onclick=closeSheet;$('shPrev').onclick=()=>{openI--;fillSheet();$('sh').scrollTop=0};$('shNext').onclick=()=>{openI++;fillSheet();$('sh').scrollTop=0};const n2=$('shNext2');if(n2)n2.onclick=()=>{openI++;fillSheet();$('sh').scrollTop=0};
 }
 // ---- 放大卡 ----
