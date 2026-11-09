@@ -8,7 +8,9 @@ src,dst=sys.argv[1],sys.argv[2];s=open(src,encoding='utf-8').read()
 def rep(old,new,n=1):
     global s;assert s.count(old)==n,(s.count(old),old[:80]);s=s.replace(old,new)
 rep('''.ov{top:var(--ovtop,0)}.ov .sh{max-height:100%}''',
-    '''.ov{top:var(--ovtop,0);bottom:var(--ovbot,0)}.ov .sh{max-height:100%;padding-bottom:calc(12px + env(safe-area-inset-bottom))}''')
+    '''.ov{top:var(--ovtop,0);bottom:var(--ovbot,0)}.ov .sh{max-height:100%;padding-bottom:calc(12px + env(safe-area-inset-bottom))}
+/* Safari 網址列蓋住底部時 visualViewport 可能沒反映：非主畫面 App 模式一律多留 90px 捲動墊，最後一行捲得上來 */
+@media (display-mode:browser){.ov .sh::after{content:\'\';display:block;height:90px}}''')
 rep('''function ovTop(){const hd=document.querySelector('.hd');if(!hd)return;const b=Math.max(0,Math.round(hd.getBoundingClientRect().bottom));document.documentElement.style.setProperty('--ovtop',b+'px')}
 addEventListener('resize',()=>{if(openI>=0)ovTop()});if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(openI>=0)ovTop()});''',
     '''function ovTop(){const hd=document.querySelector('.hd');if(!hd)return;const b=Math.max(0,Math.round(hd.getBoundingClientRect().bottom));document.documentElement.style.setProperty('--ovtop',b+'px');
