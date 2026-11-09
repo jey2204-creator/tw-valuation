@@ -3254,7 +3254,7 @@
    "exchange": "NASDAQ",
    "date": "2026/11/03 盤後",
    "reaction": {
-    "text": "首日收盤 +1.0%（約 $489，11/4）；11/5 再跌 −17.3%",
+    "text": "首日收盤 +1.0%（約 $489，11/4）；11/5 板塊殺盤 −17.3%（$404.40）、11/6 反彈 +11.0%（$449.04）",
     "dir": "up",
     "pct": 1.0
    },
@@ -3468,6 +3468,11 @@
      "d": "flat",
      "t": "GAAP EPS $1.46：客戶認股權證重估 $11.0 億非現金費用；Q4 毛利率指引 55%",
      "w": "權證費用隨股價波動每季重估，不影響現金但會持續干擾 GAAP 數字；毛利率小降反映 Data Center 機櫃系統比重上升"
+    },
+    {
+     "d": "down",
+     "t": "財報後第二天（11/5）跌 17.3%：期中選舉民主黨掌國會＋德州等州資料中心停建疑慮引發 AI 板塊殺盤（SOXX −11%、MU −15%、NVDA −8%），非公司因素；11/6 反彈 +11%",
+     "w": "市場把「AI capex 政策風險」重新定價，Q4 170 億指引能否兌現要多看一個變數：客戶資料中心的建置進度"
     }
    ],
    "other": [
@@ -3679,6 +3684,10 @@
     [
      "前幾季數字：Q4'25 新聞稿",
      "https://ir.amd.com/news-events/press-releases/detail/1276/amd-reports-fourth-quarter-and-full-year-2025-financial"
+    ],
+    [
+     "11/5 板塊殺盤原因（Motley Fool）",
+     "https://www.fool.com/investing/2026/11/05/why-amd-stock-is-down-today/"
     ]
    ]
   }
