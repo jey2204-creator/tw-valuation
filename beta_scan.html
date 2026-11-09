@@ -30,7 +30,7 @@ body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:14
 a{color:var(--accent);text-decoration:none}
 .num{font-family:var(--f-num);font-variant-numeric:tabular-nums}
 .up{color:var(--up)}.dn{color:var(--down)}
-.hd{position:sticky;top:0;z-index:5;background:var(--bg);padding:6px 8px 4px;border-bottom:1px solid var(--line)}
+.hd{position:sticky;top:0;z-index:21;background:var(--bg);padding:6px 8px 4px;border-bottom:1px solid var(--line)}
 .row{display:flex;align-items:center;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:2px}
 .row::-webkit-scrollbar{display:none}
 .row+.row{margin-top:5px}
@@ -100,6 +100,8 @@ select.ch.on{background-color:var(--sel);color:var(--selfg);font-weight:700}
 .foot{padding:4px 12px 12px;font-size:11px;color:var(--muted);line-height:1.5}
 /* 放大卡（bottom sheet） */
 .ov{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:20;display:flex;align-items:flex-end}
+/* 2026-11-09 放大卡頂到產業列：遮罩 top 由 JS 設為產業列底邊，卡片最高佔滿遮罩 */
+.ov{top:var(--ovtop,0)}.ov .sh{max-height:100%}
 .sh{background:var(--card);width:100%;max-height:92dvh;border-radius:14px 14px 0 0;padding:8px 10px calc(10px + env(safe-area-inset-bottom));overflow:auto;box-shadow:0 -4px 20px rgba(0,0,0,.2)}
 .sh-h{display:flex;align-items:center;gap:6px;margin:-8px -10px 2px;padding:8px 6px 6px 4px;position:sticky;top:-8px;z-index:3;background:var(--card);border-bottom:1px solid var(--line)}
 .sh-h b{font-size:17px;font-weight:900;white-space:nowrap}
@@ -453,7 +455,9 @@ function fillSheetV(){const r=SHR[openI];if(!r)return closeSheet();const v=VAL[r
 }
 // ---- 放大卡 ----
 let SHR=[];
-function openSheet(R,i){SHR=R;openI=i;$('ov').hidden=false;document.body.style.overflow='hidden';fillSheet()}
+function ovTop(){const hd=document.querySelector('.hd');if(!hd)return;const b=Math.max(0,Math.round(hd.getBoundingClientRect().bottom));document.documentElement.style.setProperty('--ovtop',b+'px')}
+addEventListener('resize',()=>{if(openI>=0)ovTop()});if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(openI>=0)ovTop()});
+function openSheet(R,i){SHR=R;openI=i;ovTop();$('ov').hidden=false;document.body.style.overflow='hidden';fillSheet()}
 function closeSheet(){$('ov').hidden=true;document.body.style.overflow='';openI=-1}
 function fillSheet(){return MODE==='v'?fillSheetV():fillSheetK()}
 function fillSheetK(){const r=SHR[openI];if(!r)return closeSheet();const last=r.bars[r.bars.length-1];
@@ -474,6 +478,7 @@ function fillSheetK(){const r=SHR[openI];if(!r)return closeSheet();const last=r.
   $('shPrev').onclick=()=>{openI--;fillSheet();$('sh').scrollTop=0};$('shNext').onclick=()=>{openI++;fillSheet();$('sh').scrollTop=0};
 }
 $('ov').addEventListener('click',e=>{if(e.target===$('ov'))closeSheet()});
+document.querySelector('.hd').addEventListener('click',()=>{if(openI>=0)closeSheet()},true);
 addEventListener('keydown',e=>{if(openI<0)return;if(e.key==='Escape')closeSheet();if(e.key==='ArrowLeft'&&openI>0){openI--;fillSheet()}if(e.key==='ArrowRight'&&openI<SHR.length-1){openI++;fillSheet()}});
 {let x0=null;$('sh').addEventListener('touchstart',e=>{x0=e.touches[0].clientX},{passive:true});$('sh').addEventListener('touchend',e=>{if(x0==null)return;const dx=e.changedTouches[0].clientX-x0;x0=null;if(Math.abs(dx)<60)return;if(dx<0&&openI<SHR.length-1){openI++;fillSheet()}else if(dx>0&&openI>0){openI--;fillSheet()}},{passive:true})}
 let rt;addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>{render();if(openI>=0)fillSheet()},150)});
