@@ -92,7 +92,7 @@ section.card{background:var(--card);border:1px solid var(--line);border-radius:1
 .foot{font-size:11px;color:var(--muted);margin:1px 0 4px;line-height:1.45}
 #cK{height:300px}
 .krange{display:flex;gap:6px;margin:4px 0 0;align-items:center}
-.krange button{font:inherit;font-size:11.5px;border:1px solid var(--line);background:var(--card);color:var(--muted);border-radius:999px;padding:1px 9px;cursor:pointer}
+.krange button{font:inherit;font-size:11.5px;white-space:nowrap;line-height:1.5;border:1px solid var(--line);background:var(--card);color:var(--muted);border-radius:999px;padding:1px 9px;cursor:pointer}
 .krange button.on{background:var(--b4);color:var(--fg);font-weight:700;border-color:transparent}
 .krange .kma{margin-left:auto;font-size:11px;color:var(--muted);font-family:IBM Plex Mono,ui-monospace,monospace}
 .pill{display:inline-block;font-size:11.5px;font-weight:700;border-radius:999px;padding:1px 8px;background:var(--b4);color:var(--fg)}
@@ -513,7 +513,7 @@ html{scroll-behavior:smooth}
 <section class="card" id="kline" hidden>
   <h2>日 K 線 <small id="uK">美元｜含 MA5／20／60</small></h2>
   <p class="take" id="tK"></p>
-  <div class="krange" id="kRange"><button data-n="60">3 月</button><button data-n="120" class="on">6 月</button><button data-n="250">1 年</button><button data-n="520">2 年</button><span class="kma" id="kMa"></span></div>
+  <div class="krange" id="kRange"><button data-n="60">3月</button><button data-n="120" class="on">6月</button><button data-n="250">1年</button><button data-n="520">2年</button><span class="kma" id="kMa"></span></div>
   <div class="chart" id="cK"></div>
   <p class="foot" id="fK">紅漲綠跌（台股習慣）。▲▼ 標記＝財報公布後首個交易日（紅＝EPS beat、綠＝miss、灰＝無預估或只有 SEC 申報日），點標記看該季驚喜率與首日漲跌。下方為成交量（百萬股）。雙指縮放、拖曳可移動區間。</p>
 </section>
@@ -1141,7 +1141,7 @@ async function loadK(d){
 const kMA=(a,n,i)=>i<n-1?null:+(sum(a.slice(i-n+1,i+1).map(x=>x[4]))/n).toFixed(2);
 // 財報標記：自動層 hist（真正公布日＋盤前／盤後 → 首個反應交易日）為主，沒有的季用 SEC 申報日（灰）
 function kMarks(dates){const A=AUTOQ[D.id],H=A?histOf(D.id):[],di=Object.fromEntries(dates.map((d,i)=>[d,i])),out=[];
-  const nextIdx=d=>{let i=dates.findIndex(x=>x>=d);return i};
+  const nextIdx=d=>{if(!d||d<dates[0]||d>dates[dates.length-1])return -1;return dates.findIndex(x=>x>=d)};
   const react=(d,hr)=>{if(!d)return -1;const i=hr==='bmo'?nextIdx(d):(di[d]!=null?di[d]+1:nextIdx(d));return i>=0&&i<dates.length?i:-1};
   const used=new Set();
   for(const h of H){const i=react(h[4],h[5]);if(i<0)continue;used.add(i);out.push({i,fq:h[0],sp:h[3],rx:h[6],d:h[4],hr:h[5],m:h[8]})}
@@ -1163,9 +1163,9 @@ function renderK(){
   $('kMa').innerHTML=`<span style="color:${acc}">MA5 ${ma[0][n-1]==null?'—':fmt(ma[0][n-1],2)}</span>　<span style="color:${warm}">MA20 ${m20==null?'—':fmt(m20,2)}</span>　<span style="color:${vio}">MA60 ${m60==null?'—':fmt(m60,2)}</span>`;
   document.querySelectorAll('#kRange button').forEach(b=>b.classList.toggle('on',+b.dataset.n===KN));
   const o=base(),c=mk('cK');delete o.legend;
-  o.grid=[{left:6,right:6,top:10,height:'62%',containLabel:true},{left:6,right:6,top:'78%',bottom:4,containLabel:true}];
+  o.grid=[{left:6,right:16,top:14,height:'61%',containLabel:true},{left:6,right:16,top:'78%',bottom:4,containLabel:true}];
   o.xAxis=[{type:'category',data:dates,gridIndex:0,axisLabel:{show:false},axisTick:{show:false},axisLine:{lineStyle:{color:css('--line')}},boundaryGap:true,min:'dataMin',max:'dataMax'},
-    {type:'category',data:dates,gridIndex:1,axisTick:{show:false},axisLine:{lineStyle:{color:css('--line')}},axisLabel:{...o.xAxis.axisLabel,formatter:v=>v.slice(2).replace(/-/g,'/').slice(0,5)},boundaryGap:true,min:'dataMin',max:'dataMax'}];
+    {type:'category',data:dates,gridIndex:1,axisTick:{show:false},axisLine:{lineStyle:{color:css('--line')}},axisLabel:{...o.xAxis.axisLabel,showMaxLabel:true,hideOverlap:true,formatter:v=>v.slice(2).replace(/-/g,'/').slice(0,5)},boundaryGap:true,min:'dataMin',max:'dataMax'}];
   o.yAxis=[{...o.yAxis,gridIndex:0,scale:true,splitNumber:4},{...o.yAxis,gridIndex:1,scale:false,splitNumber:2,axisLabel:{...o.yAxis.axisLabel,formatter:v=>v>=1e9?(v/1e9).toFixed(1)+'B':v>=1e6?(v/1e6).toFixed(0)+'M':v>=1e3?(v/1e3).toFixed(0)+'K':v},splitLine:{show:false}}];
   o.axisPointer={link:[{xAxisIndex:'all'}],label:{backgroundColor:css('--card'),color:css('--fg'),fontSize:10}};
   o.dataZoom=[{type:'inside',xAxisIndex:[0,1],start:0,end:100,zoomOnMouseWheel:true,moveOnMouseMove:true,minValueSpan:15}];
