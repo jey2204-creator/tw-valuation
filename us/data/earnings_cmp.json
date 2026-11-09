@@ -3247,6 +3247,440 @@
      "https://www.cnbc.com/2026/11/02/apple-aapl-q4-2026-earnings-live-updates.html"
     ]
    ]
+  },
+  {
+   "ticker": "AMD",
+   "name": "AMD",
+   "exchange": "NASDAQ",
+   "date": "2026/11/03 盤後",
+   "reaction": {
+    "text": "首日收盤 +1.0%（約 $489，11/4）；11/5 再跌 −17.3%",
+    "dir": "up",
+    "pct": 1.0
+   },
+   "kpi": [
+    {
+     "n": "營收（億）",
+     "v": "1,338",
+     "e": "預期 1,309",
+     "s": 2.2
+    },
+    {
+     "n": "Non-GAAP EPS",
+     "v": "2.09",
+     "e": "預期 1.95",
+     "s": 7.2
+    },
+    {
+     "n": "Data Center 營收（億）",
+     "v": "85.5",
+     "e": "YoY +97%",
+     "s": null,
+     "label": "近翻倍"
+    },
+    {
+     "n": "Q4 營收指引（億）",
+     "v": "170",
+     "e": "預期 162",
+     "s": 4.9
+    }
+   ],
+   "kpiNote": "營收 1,338 億（+45%）超過指引上緣、Data Center 85.5 億近翻倍（占 64%）、Non-GAAP EPS 2.09 勝共識 1.95；Q4 指引 170 億 ±3%（YoY +66%、QoQ +27%）高於街上 162 億，盤後 +7～8%。GAAP EPS 只有 1.46，是客戶認股權證（OpenAI 協議）重估的 11.0 億非現金費用（約 $0.66／股）所致。⚠️ 自動層 Finnhub 的 26Q3 EPS 實際 1.66／預期 1.63 疑似複製 26Q2 數字，以財報 2.09／LSEG 共識 1.95 為準；Finnhub 營收共識 132.2 億 vs LSEG 130.9 億，營收實際自動層為空。",
+   "surprise": {
+    "labels": [
+     "營收",
+     "Non-GAAP EPS",
+     "Q4 營收指引",
+     "Q4 毛利率指引"
+    ],
+    "data": [
+     2.2,
+     7.2,
+     4.9,
+     -0.5
+    ],
+    "min": -5,
+    "max": 12,
+    "note": "共識採 LSEG（營收 130.9 億、EPS $1.95、Q4 營收 162 億；Investing.com 整理為 130.6 億／$1.94）；Q4 Non-GAAP 毛利率指引 55% vs StreetAccount 共識 55.3%（−0.3 個百分點，以 −0.5% 呈現）。"
+   },
+   "charts": [
+    {
+     "title": "🧩 各分部營收 YoY：Data Center 近翻倍、遊戲腰斬",
+     "open": true,
+     "type": "bar",
+     "fmt": "pct",
+     "horizontal": true,
+     "min": -110,
+     "max": 125,
+     "labels": [
+      "Data Center",
+      "Embedded",
+      "Client（PC）",
+      "Gaming"
+     ],
+     "datasets": [
+      {
+       "label": "YoY",
+       "data": [
+        97,
+        29,
+        7,
+        -40
+       ],
+       "color": "accent"
+      }
+     ],
+     "note": "Data Center 85.5 億（+97%）、Embedded 11.1 億（+29%）、Client 29.5 億（+7%）、Gaming 7.7 億（−40%）。Client＋Gaming 合計 37.2 億（−8%），Q4 指引再 QoQ 下滑 20% 以上。"
+    },
+    {
+     "title": "🏗️ Data Center vs 其他分部營收（億美元）",
+     "open": true,
+     "type": "bar",
+     "fmt": "num",
+     "labels": [
+      "Q3'25",
+      "Q4'25",
+      "Q1'26",
+      "Q2'26",
+      "Q3'26"
+     ],
+     "datasets": [
+      {
+       "label": "Data Center",
+       "data": [
+        43.4,
+        53.8,
+        57.8,
+        67.2,
+        85.5
+       ],
+       "color": "accent"
+      },
+      {
+       "label": "其他分部合計",
+       "data": [
+        49.1,
+        48.9,
+        44.8,
+        48.2,
+        48.3
+       ],
+       "color": "est"
+      }
+     ],
+     "note": "Data Center 四季內從 47% 升到 64% 的營收占比；管理層預告 Q4 Data Center 再 QoQ +50%、Data Center AI（Instinct）營收將在 Q4 超越伺服器 CPU，2027 Data Center 占比 >80%。數字取自各季新聞稿。"
+    },
+    {
+     "title": "📊 Data Center 營業利益率",
+     "open": false,
+     "type": "line",
+     "fmt": "pct",
+     "min": 15,
+     "max": 40,
+     "labels": [
+      "Q3'25",
+      "Q4'25",
+      "Q1'26",
+      "Q2'26",
+      "Q3'26"
+     ],
+     "datasets": [
+      {
+       "label": "Data Center 營業利益率",
+       "data": [
+        24.7,
+        32.6,
+        27.7,
+        31.3,
+        33.7
+       ],
+       "color": "accent"
+      }
+     ],
+     "note": "Data Center 營業利益 28.8 億、利益率 33.7%（去年 24.7%）；公司整體 Non-GAAP 毛利率 56%（+2 pts）、營業利益率 29%。Q4 毛利率指引 55%，略低於 Q3。依各季新聞稿分部表計算。"
+    },
+    {
+     "title": "💸 營業現金流 vs CapEx（億美元）",
+     "open": false,
+     "type": "bar",
+     "fmt": "num",
+     "labels": [
+      "Q3'25",
+      "Q4'25",
+      "Q1'26",
+      "Q2'26",
+      "Q3'26"
+     ],
+     "datasets": [
+      {
+       "label": "營業現金流",
+       "data": [
+        17.9,
+        23.0,
+        29.6,
+        23.7,
+        12.0
+       ],
+       "color": "est"
+      },
+      {
+       "label": "CapEx",
+       "data": [
+        2.6,
+        2.2,
+        3.9,
+        8.1,
+        6.5
+       ],
+       "color": "accent"
+      }
+     ],
+     "note": "Q3 自由現金流 5.5 億（去年 15.3 億，−64%）：營業現金流被存貨季增約 30 億（至 114.6 億）吃掉，CapEx 6.5 億（+151%）為備產能。管理層說「需求高於供給」，會持續投資存貨與產能。營業現金流為持續營業口徑，取自各季新聞稿。"
+    }
+   ],
+   "impact": [
+    {
+     "d": "up",
+     "t": "Data Center 營收 $85.5 億（+97%），營業利益率 34%",
+     "w": "MI455X 第三季開始量產出貨，Anthropic、Meta、Microsoft、OpenAI、Oracle 首批 Helios 機櫃上線；EPYC 伺服器營收也翻倍以上"
+    },
+    {
+     "d": "up",
+     "t": "Q4 指引 $170 億 ±3% 高於共識 $162 億，Data Center QoQ +50%",
+     "w": "管理層並預告 2027 營收成長逾 80%、營業費用成長不到營收成長的一半，獲利槓桿是盤後上漲主因"
+    },
+    {
+     "d": "up",
+     "t": "OpenAI 選用 Turin EPYC 當自研加速器主機 CPU；Venice 平台承諾數 240+（比 Turin 多 20%）",
+     "w": "CPU 與 GPU 一起進入超大型客戶的機架，伺服器市場 2030 TAM 估 $2,200 億"
+    },
+    {
+     "d": "down",
+     "t": "自由現金流 $5.5 億（−64%）、存貨季增 $30 億至 $115 億、CapEx +151%",
+     "w": "供不應求下先囤料備貨；現金流落後獲利，要看 Q4 出貨能否把存貨變回現金"
+    },
+    {
+     "d": "down",
+     "t": "Gaming −40%、Client＋Gaming 利益率 15%（去年 21%），Q4 再 QoQ −20% 以上",
+     "w": "管理層預期 2027 PC 市場雙位數衰退，消費端拖累會延續"
+    },
+    {
+     "d": "flat",
+     "t": "GAAP EPS $1.46：客戶認股權證重估 $11.0 億非現金費用；Q4 毛利率指引 55%",
+     "w": "權證費用隨股價波動每季重估，不影響現金但會持續干擾 GAAP 數字；毛利率小降反映 Data Center 機櫃系統比重上升"
+    }
+   ],
+   "other": [
+    {
+     "t": "營收 YoY",
+     "c": [
+      [
+       "實際",
+       "+45%"
+      ],
+      [
+       "QoQ",
+       "+16%"
+      ],
+      [
+       "指引上緣",
+       "超越"
+      ]
+     ]
+    },
+    {
+     "t": "Non-GAAP 淨利（億）",
+     "c": [
+      [
+       "本季",
+       "34.7"
+      ],
+      [
+       "去年",
+       "19.7"
+      ],
+      [
+       "tag",
+       "up",
+       "+77%"
+      ]
+     ]
+    },
+    {
+     "t": "毛利率",
+     "c": [
+      [
+       "GAAP",
+       "54%"
+      ],
+      [
+       "Non-GAAP",
+       "56%"
+      ],
+      [
+       "Q4 指引",
+       "55%"
+      ]
+     ]
+    },
+    {
+     "t": "Data Center（億）",
+     "c": [
+      [
+       "營收",
+       "85.5"
+      ],
+      [
+       "YoY",
+       "+97%"
+      ],
+      [
+       "營業利益",
+       "28.8"
+      ],
+      [
+       "利益率",
+       "34%"
+      ]
+     ]
+    },
+    {
+     "t": "Client＋Gaming（億）",
+     "c": [
+      [
+       "營收",
+       "37.2"
+      ],
+      [
+       "YoY",
+       "−8%"
+      ],
+      [
+       "營業利益",
+       "5.7"
+      ],
+      [
+       "利益率",
+       "15%"
+      ]
+     ]
+    },
+    {
+     "t": "Embedded（億）",
+     "c": [
+      [
+       "營收",
+       "11.1"
+      ],
+      [
+       "YoY",
+       "+29%"
+      ],
+      [
+       "營業利益",
+       "4.5"
+      ],
+      [
+       "利益率",
+       "41%"
+      ]
+     ]
+    },
+    {
+     "t": "現金流（億）",
+     "c": [
+      [
+       "營業現金流",
+       "12.0"
+      ],
+      [
+       "CapEx",
+       "6.5"
+      ],
+      [
+       "自由現金流",
+       "5.5"
+      ],
+      [
+       "tag",
+       "down",
+       "−64%"
+      ]
+     ]
+    },
+    {
+     "t": "Q4 指引",
+     "c": [
+      [
+       "營收（億）",
+       "170 ±3%"
+      ],
+      [
+       "Non-GAAP 毛利率",
+       "55%"
+      ],
+      [
+       "營業費用（億）",
+       "37.5"
+      ]
+     ]
+    },
+    {
+     "t": "一次性（億）",
+     "c": [
+      [
+       "認股權證重估",
+       "−11.0"
+      ],
+      [
+       "EPS 影響",
+       "−$0.66"
+      ],
+      [
+       "GAAP EPS",
+       "1.46"
+      ]
+     ]
+    }
+   ],
+   "sources": [
+    [
+     "AMD 第三季新聞稿（IR）",
+     "https://ir.amd.com/news-events/press-releases/detail/1303/amd-reports-third-quarter-2026-financial-results"
+    ],
+    [
+     "法說會逐字稿重點（Investing.com）",
+     "https://www.investing.com/news/transcripts/earnings-call-transcript-amd-tops-q3-2026-estimates-as-stock-jumps-after-hours-93CH-4996894"
+    ],
+    [
+     "LSEG／StreetAccount 共識與盤後（BigGo Finance）",
+     "https://finance.biggo.com/news/8ac6492d-643e-4b3e-8944-0b5e8348def1"
+    ],
+    [
+     "財報數字整理（StockTitan）",
+     "https://www.stocktitan.net/news/AMD/amd-reports-third-quarter-2026-financial-7j6jzo29buqw.html"
+    ],
+    [
+     "CNBC：盤後 +8%、Data Center 近翻倍",
+     "https://www.cnbc.com/2026/11/03/amd-amd-q3-earnings-report-2026-.html"
+    ],
+    [
+     "首日後走勢：11/4 +1.0%、11/5 −17.3%（Trefis）",
+     "https://www.trefis.com/stock/amd/articles/623346/what-just-happened-to-amd-stock/2026-11-06"
+    ],
+    [
+     "前幾季數字：Q2'26 新聞稿",
+     "https://ir.amd.com/news-events/press-releases/detail/1295/amd-reports-second-quarter-2026-financial-results"
+    ],
+    [
+     "前幾季數字：Q1'26 新聞稿",
+     "https://ir.amd.com/news-events/press-releases/detail/1284/amd-reports-first-quarter-2026-financial-results"
+    ],
+    [
+     "前幾季數字：Q4'25 新聞稿",
+     "https://ir.amd.com/news-events/press-releases/detail/1276/amd-reports-fourth-quarter-and-full-year-2025-financial"
+    ]
+   ]
   }
  ]
 }
