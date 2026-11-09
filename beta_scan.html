@@ -101,9 +101,11 @@ select.ch.on{background-color:var(--sel);color:var(--selfg);font-weight:700}
 /* 放大卡（bottom sheet） */
 .ov{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:20;display:flex;align-items:flex-end}
 /* 2026-11-09 放大卡頂到產業列：遮罩 top 由 JS 設為產業列底邊，卡片最高佔滿遮罩 */
-.ov{top:var(--ovtop,0);bottom:var(--ovbot,0)}.ov .sh{max-height:100%;padding-bottom:calc(12px + env(safe-area-inset-bottom))}
+.ov{top:var(--ovtop,0);bottom:var(--ovbot,0)}
+/* iOS 15.4+：dvh 會隨 Safari 工具列收放變動，底邊直接貼工具列上緣 */
+@supports (height:100dvh){.ov{bottom:auto;height:calc(100dvh - var(--ovtop,0px))}}.ov .sh{max-height:100%;padding-bottom:calc(12px + env(safe-area-inset-bottom))}
 /* Safari 網址列蓋住底部時 visualViewport 可能沒反映：非主畫面 App 模式一律多留 90px 捲動墊，最後一行捲得上來 */
-@media (display-mode:browser){.ov .sh::after{content:'';display:block;height:90px}}
+@media (display-mode:browser){.ov .sh::after{content:'';display:block;height:130px}}
 .sh{background:var(--card);width:100%;max-height:92dvh;border-radius:14px 14px 0 0;padding:8px 10px calc(10px + env(safe-area-inset-bottom));overflow:auto;box-shadow:0 -4px 20px rgba(0,0,0,.2)}
 .sh-h{display:flex;align-items:center;gap:6px;margin:-8px -10px 2px;padding:8px 6px 6px 4px;position:sticky;top:-8px;z-index:3;background:var(--card);border-bottom:1px solid var(--line)}
 .sh-h b{font-size:17px;font-weight:900;white-space:nowrap}
