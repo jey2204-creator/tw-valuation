@@ -2089,7 +2089,7 @@ function renderY10(){
         if(g>0&&p0.ib>0&&g/p0.ib>=1)v+=`有息負債從 ${p0.ttm?'近四季':p0.l} 的 ${big(p0.ib)} 億增到 ${big(ld.ib)} 億（×${fmt(ld.ib/p0.ib,1)}），要對照現金流頁看是擴產還是在補營運缺口。`}}
     foot=`柱：期末總負債拆成有息（橘＝借款、公司債、租賃）與無息（灰＝應付帳款、合約負債、應付費用等）；線：現金及約當現金（藍）、有息負債比＝有息負債 ÷ 總資產（橘虛線，右軸）。${v}無息負債多半是對供應商或客戶的議價力，不是壞事；真正要還的是有息那段。`;
   }else if(Y10T==='i'){
-    o.yAxis.scale=false;o.grid={...o.grid,right:40,top:46};o.legend={...o.legend,itemGap:7,itemWidth:9,textStyle:{...o.legend.textStyle,fontSize:10}};
+    o.yAxis.scale=false;o.grid={...o.grid,right:66,top:46};o.legend={...o.legend,itemGap:7,itemWidth:9,textStyle:{...o.legend.textStyle,fontSize:10}};
     const hasIS=R.some(x=>x.cgr!=null&&x.om!=null),split=hasIS&&R.some(x=>x.sxr!=null)&&R.every(x=>x.oxr==null||x.sxr!=null);
     const dark=/^#?[0-3]/.test(css('--bg').replace('#','')),cRd=dark?'#b59cff':'#7a5bd0',CAPB=180;
     // 每期一根柱＝每 100 元營收：成本＋費用＋營業利益（虧損時營業利益往下畫）；費用拆得出來就分 推銷／管理等（＝費用合計−推銷−研發）／研發
@@ -2106,7 +2106,7 @@ function renderY10(){
     const sb=(name,k,col,op,lc)=>{const b0=bar(name,k,col,big);b0.stack='i';b0.barCategoryGap=Q?'16%':'24%';
       b0.data=b0.data.map((d,i)=>({...d,value:V[i][k],itemStyle:{...d.itemStyle,borderRadius:0,opacity:(d.itemStyle.opacity||1)*(op||1)}}));b0.itemStyle={color:col,opacity:op||1};
       b0.label={show:true,position:'inside',fontSize:9,opacity:1,color:lc||'#fff',fontFamily:'IBM Plex Mono',formatter:p=>{const v=P[p.dataIndex][k];return show(p.dataIndex)&&v!=null&&Math.abs(p.value)>=12?String(Math.round(v)):''}};return b0};
-    const pl=(n,k,col,dash,sgn)=>{const l0=line(n,k,col,1,dash);l0.data=LN.map(x=>x[k]);l0.lineStyle.width=1.5;l0.endLabel.formatter=p=>p.value==null?'':(sgn&&p.value>0?'+':'')+fmt(p.value,sgn?1:0)+'%';return l0};
+    const pl=(n,k,col,dash,sgn)=>{const l0=line(n,k,col,1,dash);l0.data=LN.map(x=>x[k]);l0.lineStyle.width=1.5;l0.endLabel.formatter=p=>p.value==null?'':(sgn?'業外 ':'稅率 ')+(sgn&&p.value>0?'+':'')+fmt(p.value,sgn?1:0)+'%';return l0};
     if(hasIS){
       const B=split?[sb('成本','cgr',mu,.45,fg),sb('推銷','sxr',warm),sb('管理','adr',warm,.5,fg),sb('研發','rdr',cRd),sb('營業利益','om',acc2)]:[sb('成本','cgr',mu,.45,fg),sb('營業費用','oxr',warm),sb('營業利益','om',acc2)];
       B[0].markLine={silent:true,symbol:'none',label:{show:false},lineStyle:{color:mu,type:'dotted',opacity:.6},data:[{yAxis:lminI+(lmaxI-lminI)*.755},...(lminI<0?[{yAxis:0,lineStyle:{color:mu,type:'solid',opacity:.8}}]:[])]};
@@ -2215,7 +2215,7 @@ function renderY10(){
     const i=R.length-1;o.series.slice().forEach(se=>{if(se.type!=='line')return;se.symbolSize=(v,p)=>p.dataIndex===i?0:3;const v=se.data[i];if(v==null)return;o.series.push({type:'scatter',tooltip:{show:false},yAxisIndex:se.yAxisIndex||0,data:[[FL.l,v]],symbolSize:6,z:5,silent:true,itemStyle:{color:css('--card'),borderColor:se.lineStyle.color,borderWidth:1.5}})})}
   ch.setOption(o,true);ch.resize();{const li={p:[0,1,2],r:o.series.map((x,i)=>x.type==='line'?i:-1).filter(i=>i>=0),l:[2,3],b:[8,9],d:[1,2],u:[0,1,2,3],i:o.series.map((x,i)=>x.type==='line'?i:-1).filter(i=>i>=0)}[Y10T];if(li)spreadEnd(ch,o,li);else ch.setOption({graphic:{elements:[]}},{replaceMerge:['graphic']})}
   if(FL)foot+=`${FL.l} 為公司 ${D.injOn||''} 公告的自結數（財報快訊），FinMind 進資料後自動換成正式值。`;
-  $('fY10').textContent=(Y10.adj?`已分割還原（×${Y10.adj}）：公司做過分割／面額變更，分割前的 EPS、股利、股價已換到現在的股數基準，跟當年新聞的數字不同但前後可比。 `:'')+foot+' 資料：FinMind，進這一頁才即時抓，手機快取 12 小時。'+(Y10T==='l'?' v1109e':Y10T==='b'?' v1110d':Y10T==='i'?' v1110i':'');
+  $('fY10').textContent=(Y10.adj?`已分割還原（×${Y10.adj}）：公司做過分割／面額變更，分割前的 EPS、股利、股價已換到現在的股數基準，跟當年新聞的數字不同但前後可比。 `:'')+foot+' 資料：FinMind，進這一頁才即時抓，手機快取 12 小時。'+(Y10T==='l'?' v1109e':Y10T==='b'?' v1110d':Y10T==='i'?' v1110j':'');
   // 明細表（年度）
   const c=(v,d)=>v==null?'—':fmt(v,d),cp=v=>v==null?'—':`<span class="${sg(v)}">${pct(v,0)}</span>`;
   $('tbY10').innerHTML='<thead><tr><th>年度</th><th>營收億</th><th>年增</th><th>毛利率</th><th>營益率</th><th>淨利率</th><th>費用率</th><th>業外億</th><th>稅率</th><th>EPS</th><th>EPS年增</th><th>現金股利</th><th>配息率</th><th>殖利率</th><th>ROE</th><th>負債比</th><th>流動比</th><th>速動比</th><th>有息負債</th><th>淨負債</th><th>利息保障</th><th>自由現金流</th><th>年均PE</th></tr></thead><tbody>'+

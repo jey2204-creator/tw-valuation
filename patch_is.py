@@ -63,7 +63,7 @@ rep("""  if(Y10T==='b'&&Q)R=R.slice(-12);""",
 rep("""  }else if(Y10T==='b'){
     o.yAxis.scale=false;o.grid={...o.grid,right:40,top:46};""",
 """  }else if(Y10T==='i'){
-    o.yAxis.scale=false;o.grid={...o.grid,right:40,top:46};o.legend={...o.legend,itemGap:7,itemWidth:9,textStyle:{...o.legend.textStyle,fontSize:10}};
+    o.yAxis.scale=false;o.grid={...o.grid,right:66,top:46};o.legend={...o.legend,itemGap:7,itemWidth:9,textStyle:{...o.legend.textStyle,fontSize:10}};
     const hasIS=R.some(x=>x.cgr!=null&&x.om!=null),split=hasIS&&R.some(x=>x.sxr!=null)&&R.every(x=>x.oxr==null||x.sxr!=null);
     const dark=/^#?[0-3]/.test(css('--bg').replace('#','')),cRd=dark?'#b59cff':'#7a5bd0',CAPB=180;
     // 每期一根柱＝每 100 元營收：成本＋費用＋營業利益（虧損時營業利益往下畫）；費用拆得出來就分 推銷／管理等（＝費用合計−推銷−研發）／研發
@@ -80,7 +80,7 @@ rep("""  }else if(Y10T==='b'){
     const sb=(name,k,col,op,lc)=>{const b0=bar(name,k,col,big);b0.stack='i';b0.barCategoryGap=Q?'16%':'24%';
       b0.data=b0.data.map((d,i)=>({...d,value:V[i][k],itemStyle:{...d.itemStyle,borderRadius:0,opacity:(d.itemStyle.opacity||1)*(op||1)}}));b0.itemStyle={color:col,opacity:op||1};
       b0.label={show:true,position:'inside',fontSize:9,opacity:1,color:lc||'#fff',fontFamily:'IBM Plex Mono',formatter:p=>{const v=P[p.dataIndex][k];return show(p.dataIndex)&&v!=null&&Math.abs(p.value)>=12?String(Math.round(v)):''}};return b0};
-    const pl=(n,k,col,dash,sgn)=>{const l0=line(n,k,col,1,dash);l0.data=LN.map(x=>x[k]);l0.lineStyle.width=1.5;l0.endLabel.formatter=p=>p.value==null?'':(sgn&&p.value>0?'+':'')+fmt(p.value,sgn?1:0)+'%';return l0};
+    const pl=(n,k,col,dash,sgn)=>{const l0=line(n,k,col,1,dash);l0.data=LN.map(x=>x[k]);l0.lineStyle.width=1.5;l0.endLabel.formatter=p=>p.value==null?'':(sgn?'業外 ':'稅率 ')+(sgn&&p.value>0?'+':'')+fmt(p.value,sgn?1:0)+'%';return l0};
     if(hasIS){
       const B=split?[sb('成本','cgr',mu,.45,fg),sb('推銷','sxr',warm),sb('管理','adr',warm,.5,fg),sb('研發','rdr',cRd),sb('營業利益','om',acc2)]:[sb('成本','cgr',mu,.45,fg),sb('營業費用','oxr',warm),sb('營業利益','om',acc2)];
       B[0].markLine={silent:true,symbol:'none',label:{show:false},lineStyle:{color:mu,type:'dotted',opacity:.6},data:[{yAxis:lminI+(lmaxI-lminI)*.755},...(lminI<0?[{yAxis:0,lineStyle:{color:mu,type:'solid',opacity:.8}}]:[])]};
@@ -124,7 +124,7 @@ rep("""<td>${c(x.nm,1)}</td><td>${c(x.eps,2)}</td>""",
     """<td>${c(x.nm,1)}</td><td>${c(x.oxr,1)}</td><td>${c(x.nop,0)}</td><td>${x.etr==null?'—':c(x.etr,0)+'%'}</td><td>${c(x.eps,2)}</td>""")
 
 # 11. 版本標
-rep("""(Y10T==='l'?' v1109e':Y10T==='b'?' v1110d':'')""", """(Y10T==='l'?' v1109e':Y10T==='b'?' v1110d':Y10T==='i'?' v1110i':'')""")
+rep("""(Y10T==='l'?' v1109e':Y10T==='b'?' v1110d':'')""", """(Y10T==='l'?' v1109e':Y10T==='b'?' v1110d':Y10T==='i'?' v1110j':'')""")
 
 open(dst, 'w', encoding='utf-8').write(s)
 print('ok', n0, '->', len(s))
