@@ -540,7 +540,7 @@ details.ind.hot summary b{color:var(--up)}
   <h2 style="display:flex;align-items:center;gap:8px;white-space:nowrap">10年財報 <small id="y10U">年度</small><span class="segm" id="y10Per" style="margin-left:auto"><button type="button" aria-pressed="true" data-p="y">年</button><button type="button" aria-pressed="false" data-p="q">季</button></span></h2>
   <div class="y10k" id="y10K"></div>
   <p class="take" id="tY10"></p>
-  <div class="y10tab" id="y10Tab"><button type="button" data-t="g">📈 營收</button><button type="button" data-t="p">💹 三率</button><button type="button" data-t="e">💰 EPS股利</button><button type="button" data-t="r">🏦 ROE負債</button><button type="button" data-t="l">💳 負債</button><button type="button" data-t="d">💸 股利</button><button type="button" data-t="u">🧮 杜邦</button><button type="button" data-t="c">💵 現金流</button></div>
+  <div class="y10tab" id="y10Tab"><button type="button" data-t="g">📈 營收</button><button type="button" data-t="p">💹 三率</button><button type="button" data-t="e">💰 EPS股利</button><button type="button" data-t="r">🏦 ROE負債</button><button type="button" data-t="l">💳 負債</button><button type="button" data-t="b">⚖️ 資產負債</button><button type="button" data-t="d">💸 股利</button><button type="button" data-t="u">🧮 杜邦</button><button type="button" data-t="c">💵 現金流</button></div>
   <div class="chart" id="cY10" style="height:210px"></div>
   <div class="y10info" id="y10Info" hidden><div class="t"><b id="y10IL"></b><span id="y10IS"></span><i id="y10IM">全部 ▾</i><button type="button" id="y10IX" aria-label="收起">✕</button></div><div class="a" id="y10IA"></div></div>
   <p class="foot" id="fY10"></p>
@@ -1855,6 +1855,12 @@ function buildY10(fs,bs,cf,dv,px,star){
   const bsum=re=>{const o={};bs.forEach(r=>{if(r.value==null)return;const nm=(r.origin_name||'').trim();if(re.test(nm))o[r.date]=(o[r.date]||0)+r.value});return o};
   const IBRE=/^(短期借款|應付短期票券|一年或一營業週期內到期(之)?(長期負債|長期借款|應付公司債)|一年內到期(之)?(長期負債|長期借款|應付公司債)|長期借款|應付公司債|租賃負債)/,
     IB=bsum(IBRE),LEASE=bsum(/^租賃負債/),CASH=b(['CashAndCashEquivalents'],/^現金及約當現金$/);
+  // 資產負債頁籤：應收（帳款＋票據，含關係人）、存貨、不動產廠房設備、流動資產／流動負債合計、預付款項；_per 結尾的是占比列，不能加進來
+  const bsumV=re=>{const o={};bs.forEach(r=>{if(r.value==null||/_per$/.test(r.type||''))return;const nm=(r.origin_name||'').trim();if(re.test(nm))o[r.date]=(o[r.date]||0)+r.value});return o};
+  const ARRE=/^應收(帳款|票據)([－\-—]\s*關係人)?(淨額)?$/,AR=bsumV(ARRE),INV=b(['Inventories'],/^存貨(淨額|合計)?$/),
+    PPE=b(['PropertyPlantAndEquipment'],/^不動產、廠房及設備(淨額|合計)?$/),CA=b(['CurrentAssets'],/^流動資產(合計|總計|總額)$/),
+    CL=b(['CurrentLiabilities'],/^流動負債(合計|總計|總額)$/),PREP=b(['Prepayments'],/^預付款項$/);
+  if(location.search.includes('dbg'))window.__y10dbgB=[...new Set(bs.filter(r=>!/_per$/.test(r.type||'')&&/應收|存貨|不動產、廠房|流動資產|流動負債|預付/.test(r.origin_name||'')).map(r=>r.type+'｜'+r.origin_name))];
   if(location.search.includes('dbg'))window.__y10dbgL=[...new Set(bs.filter(r=>IBRE.test((r.origin_name||'').trim())||/借款|公司債|票券|租賃/.test(r.origin_name||'')).map(r=>r.type+'｜'+r.origin_name))];
   const OCF=toQuarterS(serT(cf,['CashFlowsFromOperatingActivities','NetCashInflowFromOperatingActivities'])),
     CX=toQuarter(cfItem(cf,['取得不動產、廠房及設備'],['PropertyAndPlantAndEquipment','AcquisitionOfPropertyPlantAndEquipment','PaymentsToAcquirePropertyPlantAndEquipment']));
@@ -1866,7 +1872,8 @@ function buildY10(fs,bs,cf,dv,px,star){
     let eps=EPS[d];if(eps==null&&NI[d]!=null&&CAP[d])eps=NI[d]/(CAP[d]/10);
     Qa.push({d,y,n,l:`${String(y).slice(2)}Q${n}`,rev:e8(rv),gp:e8(GP[d]),op:e8(OP[d]),ni:e8(NI[d]),eps,ocf:e8(OCF[`${y}-${n}`]),cx:e8(CX[`${y}-${n}`]),
       eq:e8(eqAt(d)),ta:e8(TA[d]),tl:e8(tlAt(d)),pre:e8(PRE[d]),intx:INT[d]==null?null:e8(Math.abs(INT[d])),
-      ib:TA[d]!=null?e8(IB[d]||0):null,lease:e8(LEASE[d]||0),cash:e8(CASH[d])})});
+      ib:TA[d]!=null?e8(IB[d]||0):null,lease:e8(LEASE[d]||0),cash:e8(CASH[d]),
+      ar:e8(AR[d]),inv:e8(INV[d]),ppe:e8(PPE[d]),ca:e8(CA[d]),cl:e8(CL[d]),prep:e8(PREP[d])})});
   if(Qa.length<4)return null;
   // 分割還原：名稱帶 *（面額非 10 元＝做過分割／面額變更）的公司，FinMind 的舊 EPS、股利、股價都是分割前的數字。
   // 用「母公司淨利 ÷ EPS」反推每季隱含股數，跟最新一季差超過 30% 就把舊數字乘上比例換到現在的股數基準；
@@ -1888,6 +1895,11 @@ function buildY10(fs,bs,cf,dv,px,star){
   // 負債結構：tl 總負債、ib 有息、nib 無息＝總負債−有息、cash 現金、nd 淨負債＝有息−現金、ibr 有息負債比(%總資產)、nde 淨負債／權益(%)、ndy 淨負債÷淨利（幾年還清）
   const dbt=(z,ni)=>{const tl=z.tl,ib=z.ib,cash=z.cash;if(tl==null||ib==null)return {tl,ib:null,nib:null,cash,nd:null,ibr:null,nde:null,ndy:null};
     const nd=cash!=null?ib-cash:null;return {tl,ib,lease:z.lease,nib:Math.max(0,tl-ib),cash,nd,ibr:z.ta?ib/z.ta*100:null,nde:nd!=null&&z.eq>0?nd/z.eq*100:null,ndy:nd!=null&&nd>0&&ni>0?nd/ni:null}};
+  // 資產負債：ta 總資產＝cash＋ar＋inv＋ppe＋oa(其他)；資金來源＝cl 流動負債＋ncl 非流動負債＋eqt 權益（ta−tl，含非控制權益）；
+  // cr 流動比＝流動資產÷流動負債、qr 速動比＝(流動資產−存貨−預付)÷流動負債（%）；aiw 應收＋存貨占總資產(%)
+  const bsx=z=>{const ta=z.ta;if(ta==null)return {};const tl=z.tl,cl=z.cl,oa=Math.max(0,ta-(z.cash||0)-(z.ar||0)-(z.inv||0)-(z.ppe||0));
+    return {ta,ar:z.ar,inv:z.inv,ppe:z.ppe,oa,cl,ncl:tl==null?null:cl==null?tl:Math.max(0,tl-cl),eqt:tl==null?null:ta-tl,
+      cr:z.ca!=null&&cl>0?z.ca/cl*100:null,qr:z.ca!=null&&cl>0?(z.ca-(z.inv||0)-(z.prep||0))/cl*100:null,aiw:ta>0?((z.ar||0)+(z.inv||0))/ta*100:null}};
   const row=(l,qs,y,ttm)=>{const rev=S(qs,'rev'),gp=S(qs,'gp'),op=S(qs,'op'),ni=S(qs,'ni'),eps=S(qs,'eps'),ocf=S(qs,'ocf'),cx=S(qs,'cx');
     const z=qs[qs.length-1],pz=Qa.find(x=>x.y===z.y-1&&x.n===z.n),eqA=z.eq!=null?(pz&&pz.eq!=null?(z.eq+pz.eq)/2:z.eq):null,
       taA=z.ta!=null?(pz&&pz.ta!=null?(z.ta+pz.ta)/2:z.ta):null,pre=S(qs,'pre'),intx=S(qs,'intx');
@@ -1895,7 +1907,7 @@ function buildY10(fs,bs,cf,dv,px,star){
       pc=ttm?(lastPx&&lastPx.close):PY[y]&&PY[y].c,pa=ttm?(lastPx&&lastPx.close):PY[y]&&PY[y].s/PY[y].n;
     return {l,y,ttm,rev,gm:P(gp,rev),om:P(op,rev),nm:P(ni,rev),ni,eps,ocf,fcf:ocf!=null&&cx!=null?ocf-cx:null,cx,
       roe:ni!=null&&eqA>0?ni/eqA*100:null,debt:z.tl!=null&&z.ta?z.tl/z.ta*100:null,div:dd?dd.c:null,sdiv:dd?dd.s:null,
-      ...dbt(z,ni),
+      ...dbt(z,ni),...bsx(z),
       po:dd&&eps>0?dd.c/eps*100:null,close:pc||null,pe:pa&&eps>0?pa/eps:null,
       yld:dd&&pa>0?dd.c/pa*100:null,at:rev!=null&&taA>0?rev/taA:null,lev:taA>0&&eqA>0?taA/eqA:null,cov:pre!=null&&intx>0?(pre+intx)/intx:null}};
   const A=[];[...new Set(Qa.map(x=>x.y))].sort().forEach(y=>{const qs=Qa.filter(x=>x.y===y);if(qs.length===4)A.push(row(String(y),qs,y,false))});
@@ -1911,12 +1923,12 @@ function buildY10(fs,bs,cf,dv,px,star){
     const ni4=c4?S(c4,'ni'):null,eqA=x.eq!=null?(c4&&c4[0]&&ly&&ly.eq!=null?(x.eq+ly.eq)/2:x.eq):null,
       taA=x.ta!=null?(c4&&ly&&ly.ta!=null?(x.ta+ly.ta)/2:x.ta):null,rev4=c4?S(c4,'rev'):null,pre4=c4?S(c4,'pre'):null,int4=c4?S(c4,'intx'):null;
     return {l:x.l,rev:x.rev,gm:P(x.gp,x.rev),om:P(x.op,x.rev),nm:P(x.ni,x.rev),ni:x.ni,eps:x.eps,ocf:x.ocf,fcf:x.ocf!=null&&x.cx!=null?x.ocf-x.cx:null,
-      roe:ni4!=null&&eqA>0?ni4/eqA*100:null,debt:x.tl!=null&&x.ta?x.tl/x.ta*100:null,...dbt(x,ni4),at:rev4!=null&&taA>0?rev4/taA:null,lev:taA>0&&eqA>0?taA/eqA:null,cov:pre4!=null&&int4>0?(pre4+int4)/int4:null,ry:ly&&ly.rev?(x.rev/ly.rev-1)*100:null,ey:ly&&ly.eps>0&&x.eps!=null?(x.eps/ly.eps-1)*100:null}});
+      roe:ni4!=null&&eqA>0?ni4/eqA*100:null,debt:x.tl!=null&&x.ta?x.tl/x.ta*100:null,...dbt(x,ni4),...bsx(x),at:rev4!=null&&taA>0?rev4/taA:null,lev:taA>0&&eqA>0?taA/eqA:null,cov:pre4!=null&&int4>0?(pre4+int4)/int4:null,ry:ly&&ly.rev?(x.rev/ly.rev-1)*100:null,ey:ly&&ly.eps>0&&x.eps!=null?(x.eps/ly.eps-1)*100:null}});
   const rr=o=>{const k={et:o.et};for(const [a,v] of Object.entries(o))k[a]=typeof v==='number'?(['eps','div','sdiv','at','lev','ndy'].includes(a)?r2(v):r1(v)):v;return k};
   return {A:A.slice(-12).map(rr),Q:Qr.slice(-40).map(rr),asof:lq.l,adj:adjK?Math.round(adjK*100)/100:null,intSrc:INTSRC};
 }
 async function loadY10(id){
-  const k='y10v7_'+id,c=store.get(k);
+  const k='y10v8_'+id,c=store.get(k);
   if(c&&Date.now()-c.t<12*3600e3&&c.v){Y10=c.v;Y10L=null;renderY10();return}
   if(Y10L===id)return;Y10L=id;
   $('cY10').hidden=true;$('tY10').innerHTML='<div class="y10msg">⏳ 正在向 FinMind 抓 11 年財報（約 5–10 秒）…</div>';
@@ -1929,7 +1941,7 @@ async function loadY10(id){
     const v=buildY10(fs,bs,cf,dv,px,nm.includes('*'));Y10L=null;
     if(!v){$('tY10').innerHTML='<div class="y10msg">歷史財報不足 4 季，無法顯示</div>';return}
     Y10=v;try{store.set(k,{t:Date.now(),v})}catch(e){}
-    if(!localStorage.getItem(k))try{Object.keys(localStorage).filter(x=>x.startsWith('y10v2_')||x.startsWith('y10v3_')||x.startsWith('y10v4_')||x.startsWith('y10v5_')||x.startsWith('y10v6_')||x.startsWith('y10v7_')).forEach(x=>localStorage.removeItem(x));store.set(k,{t:Date.now(),v})}catch(e){}
+    if(!localStorage.getItem(k))try{Object.keys(localStorage).filter(x=>x.startsWith('y10v2_')||x.startsWith('y10v3_')||x.startsWith('y10v4_')||x.startsWith('y10v5_')||x.startsWith('y10v6_')||x.startsWith('y10v7_')||x.startsWith('y10v8_')).forEach(x=>localStorage.removeItem(x));store.set(k,{t:Date.now(),v})}catch(e){}
     renderY10();
   }catch(e){Y10L=null;if(Y10ID!==id)return;
     $('tY10').innerHTML=`<div class="y10msg">⚠️ ${e.message}<br><button type="button" id="y10Re">重試</button></div>`;
@@ -1984,6 +1996,7 @@ function renderY10(){
     FL={l:x[0],fl:true,rev:x[1],gm:x[2],om:x[3],nm:x[4],eps:x[5],ni:x[4]!=null?Math.round(x[1]*x[4]/10)/10:null,ry:ly&&ly.rev?Math.round((x[1]/ly.rev-1)*1000)/10:null,ey:ly&&ly.eps>0&&x[5]!=null?Math.round((x[5]/ly.eps-1)*1000)/10:null};
     R=[...R.slice(1),FL]}
   if(Y10T==='d')R=F;   // 股利頁籤不畫近4季
+  if(Y10T==='b'&&Q)R=R.slice(-12);   // 資產負債一期兩根柱，季模式只畫近 12 季
   $('y10U').textContent=Q?`${R.length}季`:`${R.length}年${R.some(x=>x.ttm)?'+近4季':''}`;
   {const el=$('y10Info');if(el){el.hidden=true;el.classList.remove('open');$('y10IM').textContent='全部 ▾'}}
   $('y10Per').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.p===Y10P));
@@ -2058,6 +2071,39 @@ function renderY10(){
       if(p0&&lk.length>=3&&p0!==ld){const g=ld.ib-p0.ib,ni=R.filter(x=>x.ni!=null).slice(-3);
         if(g>0&&p0.ib>0&&g/p0.ib>=1)v+=`有息負債從 ${p0.ttm?'近四季':p0.l} 的 ${big(p0.ib)} 億增到 ${big(ld.ib)} 億（×${fmt(ld.ib/p0.ib,1)}），要對照現金流頁看是擴產還是在補營運缺口。`}}
     foot=`柱：期末總負債拆成有息（橘＝借款、公司債、租賃）與無息（灰＝應付帳款、合約負債、應付費用等）；線：現金及約當現金（藍）、有息負債比＝有息負債 ÷ 總資產（橘虛線，右軸）。${v}無息負債多半是對供應商或客戶的議價力，不是壞事；真正要還的是有息那段。`;
+  }else if(Y10T==='b'){
+    o.yAxis.scale=false;o.grid={...o.grid,right:40,top:46};o.legend={...o.legend,itemGap:7,itemWidth:9,textStyle:{...o.legend.textStyle,fontSize:10}};
+    const mx=Math.max(1,...R.map(x=>x.ta||0));
+    // 上下分格（同一個座標區）：柱子壓在下面 64%，流動比／速動比兩條線用右軸換算後固定落在最上面一條（80%～96% 高度），互不重疊
+    let lmaxB;{const st=nice5(mx/4);lmaxB=mx/.64;o.yAxis={...o.yAxis,min:0,max:lmaxB,interval:st,axisLabel:{...o.yAxis.axisLabel,formatter:v=>v<=mx*1.04&&Math.abs(v/st-Math.round(v/st))<1e-6?echarts.format.addCommas(v):''},splitLine:{...o.yAxis.splitLine,show:false}}}
+    const CAPR=500,rv=R.flatMap(x=>[x.cr,x.qr]).filter(v=>v!=null).map(v=>Math.min(v,CAPR)),rhi0=rv.length?Math.max(...rv):150,rlo0=rv.length?Math.min(...rv):100,rpad=Math.max(rhi0-rlo0,rhi0*.08,10),rmid=(rhi0+rlo0)/2,
+      rlo=rhi0-rlo0<rpad?rmid-rpad/2:rlo0,rhi=rhi0-rlo0<rpad?rmid+rpad/2:rhi0,rS=(rhi-rlo)/.16,rmin=rlo-.8*rS;
+    o.yAxis=[o.yAxis,{...o.yAxis,min:rmin,max:rmin+rS,interval:undefined,splitLine:{show:false},axisLabel:{show:false}}];
+    const dark=/^#?[0-3]/.test(css('--bg').replace('#','')),cInv=dark?'#b59cff':'#7a5bd0',cPpe=dark?'#8fa3bd':'#5f7390';
+    const sb=(name,k,col,stack,op)=>{const b0=bar(name,k,col,big);b0.stack=stack;b0.label={show:false};b0.barGap='10%';b0.barCategoryGap=Q?'24%':'26%';
+      b0.data=b0.data.map(d=>({...d,itemStyle:{...d.itemStyle,borderRadius:0,opacity:(d.itemStyle.opacity||1)*(op||1)}}));b0.itemStyle={color:col,opacity:op||1};return b0};
+    const A5=[sb('現金','cash',acc,'a'),sb('應收','ar',acc2,'a'),sb('存貨','inv',cInv,'a'),sb('固定資產','ppe',cPpe,'a'),sb('其他資產','oa',mu,'a',.3)],
+      L3=[sb('流動負債','cl',warm,'f'),sb('長期負債','ncl',warm,'f',.45),sb('權益','eqt',fg,'f',.55)];
+    A5[4].label={...lab(v=>v,fg),formatter:p=>{const x=R[p.dataIndex];return (Q?p.dataIndex===R.length-1:show(p.dataIndex))&&x.ta!=null?big(x.ta):''}};
+    const pl=(n,k,col,dash)=>{const l0=line(n,k,col,1,dash);l0.data=R.map(x=>x[k]==null?null:Math.min(x[k],CAPR));l0.lineStyle.width=1.5;l0.endLabel.formatter=p=>p.value==null?'':(p.value>=CAPR?'>'+CAPR:fmt(p.value,0))+'%';return l0};
+    A5[0].markLine={silent:true,symbol:'none',label:{show:false},lineStyle:{color:mu,type:'dotted',opacity:.6},data:[{yAxis:lmaxB*.755}]};
+    o.series=[...A5,...L3,pl('流動比','cr',fg),pl('速動比','qr',fg,true)];
+    const ld=[...R].reverse().find(x=>x.ta!=null),p0=R.find(x=>x.ta!=null),fin=/金融|保險|證券|銀行/.test(indOfStock());
+    let v='';
+    if(ld){const lbl=ld.ttm?'最新一季':ld.l,sh=k=>ld[k]==null?'—':fmt(ld[k]/ld.ta*100,0)+'%';
+      v=`${lbl}總資產 ${big(ld.ta)} 億：現金 ${sh('cash')}、應收 ${sh('ar')}、存貨 ${sh('inv')}、固定資產 ${sh('ppe')}、其他 ${sh('oa')}；錢的來源：${ld.cl==null?`負債 ${sh('ncl')}`:`流動負債 ${sh('cl')}、長期負債 ${sh('ncl')}`}、權益 ${sh('eqt')}。`;
+      if(fin)v+='金融業的資產＝放款／投資、負債＝存款／保費，沒有流動、非流動之分，這一頁不適用。';
+      else{
+        if(ld.cr!=null)v+=(ld.cr>=150&&ld.qr>=100?'🟢':ld.cr<100?'🔴':'🟠')+` 流動比 ${fmt(ld.cr,0)}%、速動比 ${fmt(ld.qr,0)}%`+
+          (ld.cr>=150&&ld.qr>=100?'，一年內要還的錢手上的流動資產夠付。':ld.cr<100?'，流動資產不夠付一年內到期的負債，要靠營業現金流或借新還舊（電信、通路、航空這類收現快的行業天生偏低，搭配現金流頁看）。':'，短期資金偏緊，要看營業現金流穩不穩。');
+        else v+='財報沒有流動資產／流動負債合計，無法算流動比。';
+        if(p0&&p0!==ld&&p0.aiw!=null&&ld.aiw!=null){const d=ld.aiw-p0.aiw,l0=p0.ttm?'最新一季':p0.l;
+          if(d>=5)v+=`⚠️ 應收＋存貨占總資產從 ${l0} 的 ${fmt(p0.aiw,0)}% 升到 ${fmt(ld.aiw,0)}%，錢卡在客戶和倉庫的比例變高，對照存貨健康度卡與營收有沒有跟上。`;
+          else if(d<=-5)v+=`應收＋存貨占總資產從 ${fmt(p0.aiw,0)}% 降到 ${fmt(ld.aiw,0)}%，資產變輕。`}
+        if(p0&&p0!==ld&&p0.ppe>0&&ld.ppe!=null&&ld.ppe/p0.ppe>=1.5){const pm=ld.ppe/p0.ppe,rm=p0.rev>0&&ld.rev>0?ld.rev/p0.rev:null;
+          v+=`固定資產 ×${fmt(pm,1)}`+(rm!=null?`、同期營收 ×${fmt(rm,1)}`+(pm>rm*1.3?'，擴產跑在營收前面，要看新產能有沒有訂單填滿。':'，產能有換到營收。'):'。')}}}
+    foot=`每期兩根柱等高（資產＝負債＋權益）：左柱＝錢放在哪（藍 現金、青 應收、紫 存貨、灰藍 固定資產、淡灰 其他），右柱＝錢從哪來（橘 流動負債＝一年內要還、淡橘 長期負債、深灰 權益＝股東的錢）。線（畫在柱子上方獨立一格，只看走勢與尾端數字）：流動比＝流動資產 ÷ 流動負債（實線）、速動比＝再扣掉存貨與預付（虛線），>150%／>100% 算安全。${Q?'季模式只畫近 12 季。':''}${v}有息／無息負債與現金對比看「💳 負債」頁籤。`+
+      (window.__y10dbgB?' 【偵錯】資產負債科目：'+(window.__y10dbgB.join('；')||'無'):'');
   }else if(Y10T==='d'){
     o.yAxis.scale=false;o.grid.right=40;o.yAxis=[o.yAxis,{...o.yAxis,scale:false,min:0,splitLine:{show:false},axisLabel:{show:false}}];
     const pl=line('配息率','po',warm,1),yl=line('殖利率','yld',acc,1);pl.data=R.map(x=>x.po==null?null:Math.min(x.po,150));pl.endLabel.formatter=p=>p.value==null?'':(p.value>=150?'>150':fmt(p.value,0))+'%';yl.endLabel.formatter=p=>p.value==null?'':fmt(p.value,1)+'%';
@@ -2089,7 +2135,7 @@ function renderY10(){
     L.push(`營收 ${f(x.rev,0)} 億（年增 ${pct(x.ry,1)}）`);L.push(`毛利率 ${f(x.gm,1)}%・營益率 ${f(x.om,1)}%・淨利率 ${f(x.nm,1)}%`);
     L.push(`EPS ${f(x.eps,2)} 元（年增 ${x.et||(x.ey==null?'—':pct(x.ey,0))}）`+(x.div!=null?`・現金股利 ${f(x.div,2)}${x.po!=null?`（配息率 ${fmt(x.po,0)}%）`:''}`:''));
     L.push(`ROE ${f(x.roe,1)}%・負債比 ${f(x.debt,1)}%`+(x.cov!=null?`・利息保障 ${x.cov>=50?'>50':fmt(x.cov,1)} 倍`:''));
-    if(x.ib!=null)L.push(`有息負債 ${f(x.ib,0)}・無息 ${f(x.nib,0)}・現金 ${f(x.cash,0)} 億`+(x.nd!=null?`・${x.nd<=0?'淨現金 '+f(-x.nd,0):'淨負債 '+f(x.nd,0)} 億`:''));if(x.at!=null)L.push(`周轉率 ${fmt(x.at,2)} 次・權益乘數 ${fmt(x.lev,2)} 倍`+(x.yld!=null?`・殖利率 ${fmt(x.yld,1)}%`:''));if(x.ocf!=null)L.push(`營業現金流 ${f(x.ocf)}・自由現金流 ${f(x.fcf)}・淨利 ${f(x.ni)} 億`);
+    if(x.ib!=null)L.push(`有息負債 ${f(x.ib,0)}・無息 ${f(x.nib,0)}・現金 ${f(x.cash,0)} 億`+(x.nd!=null?`・${x.nd<=0?'淨現金 '+f(-x.nd,0):'淨負債 '+f(x.nd,0)} 億`:''));if(x.ta!=null)L.push(`總資產 ${f(x.ta,0)} 億：現金 ${f(x.cash,0)}・應收 ${f(x.ar,0)}・存貨 ${f(x.inv,0)}・固定資產 ${f(x.ppe,0)}・其他 ${f(x.oa,0)}`+(x.cr!=null?`｜流動比 ${fmt(x.cr,0)}%・速動比 ${fmt(x.qr,0)}%`:''));if(x.at!=null)L.push(`周轉率 ${fmt(x.at,2)} 次・權益乘數 ${fmt(x.lev,2)} 倍`+(x.yld!=null?`・殖利率 ${fmt(x.yld,1)}%`:''));if(x.ocf!=null)L.push(`營業現金流 ${f(x.ocf)}・自由現金流 ${f(x.fcf)}・淨利 ${f(x.ni)} 億`);
     if(x.pe!=null)L.push(`${x.ttm?'目前':'年均'}本益比 ${fmt(x.pe,1)} 倍`);return L};
   // 薄條：第一行只放目前頁籤相關的數字，其餘放展開區
   const y10Info=x=>{if(!x)return;const el=$('y10Info'),lab=x.ttm?'近四季':x.l+(x.fl?'（自結）':''),T=Y10T,up=v=>v==null?'—':`<span class="${v>0?'up':v<0?'dn':''}">${pct(v,T==='g'?1:0)}</span>`;
@@ -2099,19 +2145,20 @@ function renderY10(){
     else if(T==='e')m=`EPS ${f(x.eps,2)}・年增 ${x.et||up(x.ey)}`+(x.div!=null?`・股利 ${f(x.div,2)}`:'');
     else if(T==='r')m=`ROE ${f(x.roe,1)}%・負債比 ${f(x.debt,1)}%`+(x.cov!=null?`・利息保障 ${x.cov>=50?'>50':fmt(x.cov,1)} 倍`:'');
     else if(T==='l')m=x.ib==null?'無負債明細':`有息 ${f(x.ib,0)}・無息 ${f(x.nib,0)}・現金 ${f(x.cash,0)}`+(x.nd!=null?`・<b>${x.nd<=0?'淨現金 '+f(-x.nd,0):'淨負債 '+f(x.nd,0)}</b> 億`:' 億');
+    else if(T==='b')m=x.ta==null?'無資產負債資料':`資產 <b>${f(x.ta,0)}</b> 億＝負債 ${f(x.tl,0)}＋權益 ${f(x.eqt,0)}`+(x.cr!=null?`・流動比 ${fmt(x.cr,0)}%・速動 ${fmt(x.qr,0)}%`:'');
     else if(T==='d')m=`股利 ${f(x.div,2)} 元・配息率 ${x.po==null?'—':fmt(x.po,0)+'%'}・殖利率 ${x.yld==null?'—':fmt(x.yld,1)+'%'}`;
     else if(T==='u')m=`ROE ${f(x.roe,1)}%＝淨利率 ${f(x.nm,1)}% × 周轉 ${x.at==null?'—':fmt(x.at,2)} × 乘數 ${x.lev==null?'—':fmt(x.lev,2)}`;
     else m=`營業現金流 ${f(x.ocf,0)}・自由現金流 ${f(x.fcf,0)}・淨利 ${f(x.ni,0)} 億`;
     $('y10IL').textContent=lab;$('y10IS').innerHTML=m;$('y10IA').innerHTML=y10Lines(x).join('<br>');el.hidden=false};
   if(FL&&o.series.length){o.series[0].markArea={silent:true,itemStyle:{color:rgba(warm,.14)},label:{show:true,position:'insideBottom',fontSize:9,color:warm,formatter:'快訊'},data:[[{xAxis:FL.l},{xAxis:FL.l}]]};
     const i=R.length-1;o.series.slice().forEach(se=>{if(se.type!=='line')return;se.symbolSize=(v,p)=>p.dataIndex===i?0:3;const v=se.data[i];if(v==null)return;o.series.push({type:'scatter',tooltip:{show:false},yAxisIndex:se.yAxisIndex||0,data:[[FL.l,v]],symbolSize:6,z:5,silent:true,itemStyle:{color:css('--card'),borderColor:se.lineStyle.color,borderWidth:1.5}})})}
-  ch.setOption(o,true);ch.resize();{const li={p:[0,1,2],r:o.series.map((x,i)=>x.type==='line'?i:-1).filter(i=>i>=0),l:[2,3],d:[1,2],u:[0,1,2,3]}[Y10T];if(li)spreadEnd(ch,o,li);else ch.setOption({graphic:{elements:[]}},{replaceMerge:['graphic']})}
+  ch.setOption(o,true);ch.resize();{const li={p:[0,1,2],r:o.series.map((x,i)=>x.type==='line'?i:-1).filter(i=>i>=0),l:[2,3],b:[8,9],d:[1,2],u:[0,1,2,3]}[Y10T];if(li)spreadEnd(ch,o,li);else ch.setOption({graphic:{elements:[]}},{replaceMerge:['graphic']})}
   if(FL)foot+=`${FL.l} 為公司 ${D.injOn||''} 公告的自結數（財報快訊），FinMind 進資料後自動換成正式值。`;
-  $('fY10').textContent=(Y10.adj?`已分割還原（×${Y10.adj}）：公司做過分割／面額變更，分割前的 EPS、股利、股價已換到現在的股數基準，跟當年新聞的數字不同但前後可比。 `:'')+foot+' 資料：FinMind，進這一頁才即時抓，手機快取 12 小時。'+(Y10T==='l'?' v1109e':'');
+  $('fY10').textContent=(Y10.adj?`已分割還原（×${Y10.adj}）：公司做過分割／面額變更，分割前的 EPS、股利、股價已換到現在的股數基準，跟當年新聞的數字不同但前後可比。 `:'')+foot+' 資料：FinMind，進這一頁才即時抓，手機快取 12 小時。'+(Y10T==='l'?' v1109e':Y10T==='b'?' v1110d':'');
   // 明細表（年度）
   const c=(v,d)=>v==null?'—':fmt(v,d),cp=v=>v==null?'—':`<span class="${sg(v)}">${pct(v,0)}</span>`;
-  $('tbY10').innerHTML='<thead><tr><th>年度</th><th>營收億</th><th>年增</th><th>毛利率</th><th>營益率</th><th>淨利率</th><th>EPS</th><th>EPS年增</th><th>現金股利</th><th>配息率</th><th>殖利率</th><th>ROE</th><th>負債比</th><th>有息負債</th><th>淨負債</th><th>利息保障</th><th>自由現金流</th><th>年均PE</th></tr></thead><tbody>'+
-    [...A].reverse().map(x=>`<tr class="${x.ttm?'ttm':''}"><td>${x.ttm?'近四季':x.l}</td><td>${c(x.rev,0)}</td><td>${cp(x.ry)}</td><td>${c(x.gm,1)}</td><td>${c(x.om,1)}</td><td>${c(x.nm,1)}</td><td>${c(x.eps,2)}</td><td>${x.et?`<span class="${x.et==='轉盈'?'up':'dn'}">${x.et}</span>`:cp(x.ey)}</td><td>${c(x.div,2)}${x.sdiv?`<sup title="另配股票股利 ${x.sdiv} 元">+股</sup>`:''}</td><td>${c(x.po,0)}${x.po!=null?'%':''}</td><td>${c(x.yld,1)}${x.yld!=null?'%':''}</td><td>${c(x.roe,1)}</td><td>${c(x.debt,1)}</td><td>${c(x.ib,0)}</td><td>${x.nd==null?'—':`<span class="${x.nd<=0?'up':''}">${c(x.nd,0)}</span>`}</td><td>${x.cov==null?'—':x.cov>=50?'>50':x.cov<1?'<span class="dn">&lt;1</span>':c(x.cov,1)}</td><td>${c(x.fcf,0)}</td><td>${c(x.pe,1)}</td></tr>`).join('')+'</tbody>';
+  $('tbY10').innerHTML='<thead><tr><th>年度</th><th>營收億</th><th>年增</th><th>毛利率</th><th>營益率</th><th>淨利率</th><th>EPS</th><th>EPS年增</th><th>現金股利</th><th>配息率</th><th>殖利率</th><th>ROE</th><th>負債比</th><th>流動比</th><th>速動比</th><th>有息負債</th><th>淨負債</th><th>利息保障</th><th>自由現金流</th><th>年均PE</th></tr></thead><tbody>'+
+    [...A].reverse().map(x=>`<tr class="${x.ttm?'ttm':''}"><td>${x.ttm?'近四季':x.l}</td><td>${c(x.rev,0)}</td><td>${cp(x.ry)}</td><td>${c(x.gm,1)}</td><td>${c(x.om,1)}</td><td>${c(x.nm,1)}</td><td>${c(x.eps,2)}</td><td>${x.et?`<span class="${x.et==='轉盈'?'up':'dn'}">${x.et}</span>`:cp(x.ey)}</td><td>${c(x.div,2)}${x.sdiv?`<sup title="另配股票股利 ${x.sdiv} 元">+股</sup>`:''}</td><td>${c(x.po,0)}${x.po!=null?'%':''}</td><td>${c(x.yld,1)}${x.yld!=null?'%':''}</td><td>${c(x.roe,1)}</td><td>${c(x.debt,1)}</td><td>${x.cr==null?'—':`<span class="${x.cr<100?'dn':''}">${c(x.cr,0)}</span>`}</td><td>${c(x.qr,0)}</td><td>${c(x.ib,0)}</td><td>${x.nd==null?'—':`<span class="${x.nd<=0?'up':''}">${c(x.nd,0)}</span>`}</td><td>${x.cov==null?'—':x.cov>=50?'>50':x.cov<1?'<span class="dn">&lt;1</span>':c(x.cov,1)}</td><td>${c(x.fcf,0)}</td><td>${c(x.pe,1)}</td></tr>`).join('')+'</tbody>';
 }
 $('y10').addEventListener('click',e=>{if(!Y10||!e.target.closest('#y10K,[data-y10t],#tY10 .pill'))return;const o=$('y10').classList.toggle('open');const t=$('y10').querySelector('[data-y10t]');if(t)t.textContent=o?'收起 ▴':'依據 ▾'});
 $('y10IX').addEventListener('click',e=>{e.stopPropagation();$('y10Info').hidden=true;try{mk('cY10').dispatchAction({type:'hideTip'})}catch(_){}});
