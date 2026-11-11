@@ -179,6 +179,9 @@ span.asof{white-space:nowrap}
 .lst .cd{font-family:var(--f-num);font-size:11.5px;color:var(--muted);margin-left:4px}
 .lst .role{font-size:11.5px;color:var(--muted);line-height:1.35}
 .lst .sub{display:block;font-size:11px;color:var(--muted)}
+.lst .sub.askc{cursor:pointer;text-decoration:underline dotted;text-underline-offset:2px;padding:3px 0 3px 6px;margin:-3px 0 -3px -6px;-webkit-tap-highlight-color:transparent;white-space:nowrap}
+.lst .sub.askc i{font-style:normal;font-size:9px;margin-left:1px;opacity:.75;text-decoration:none;display:inline-block}
+.lst .sub.askc:active{opacity:.5}
 .lst .cap{display:block;font-size:11px;color:var(--muted);font-family:var(--f-num)}.lst .cap b{color:var(--warm);font-weight:600}
 .crown{margin-left:3px;font-size:12px}
 .lst th[data-k]{cursor:pointer;user-select:none}
@@ -2693,11 +2696,11 @@ function table(el,items,sortKey,mode){
   else el.innerHTML=`<thead><tr>${th('cap','股票')}${th('px','收盤')}${COLS.map(c=>th(...c)).join('')}</tr></thead><tbody>`+rows.map(([id,role])=>{
     const c=sv(id,'close'),ch=sv(id,'chg'),y=sv(id,'yoy'),ym=sv(id,'ym');
     if(DENSE)return `<tr data-id="${id}"><td><span class="nm">${nameOf(id)}</span>${crown(id)}<span class="cd">${id}</span>${denseName(id)}${role&&el.dataset.note==='1'?`<div class="role">${role}</div>`:''}</td>
-      <td>${fmt(c,c!=null&&c<100?2:c!=null&&c<1000?1:0)}<span class="sub ${sign(ch)}">${pct(ch,2)}</span></td>
+      <td>${fmt(c,c!=null&&c<100?2:c!=null&&c<1000?1:0)}<span class="sub askc ${sign(ch)}" role="link" aria-label="問 Google AI 漲跌原因">${pct(ch,2)}${ch==null?'':'<i>🔍</i>'}</span></td>
       <td>${fmt(sv(id,'pe'),1)}${nbFlag(id)}${epsDense(id)}</td><td>${fmt(sv(id,'pb'),2)}<span class="sub">殖${sv(id,'yld')==null?'—':fmt(sv(id,'yld'),1)+'%'}</span></td>
       <td class="${sign(y)}">${pct(y)}<span class="sub" ${ym&&S.revYM&&ym<S.revYM?'style="color:var(--warm)" title="尚未公布最新月份"':''}>${ym?(+ym.slice(5))+'月':''}</span></td></tr>`;
     return `<tr data-id="${id}"><td><span class="nm">${nameOf(id)}</span>${crown(id)}<span class="cd">${id}</span>${capLine(id)}${salCell(id)}${aiCell(id)}${role?`<div class="role">${role}</div>`:''}</td>
-      <td>${fmt(c,c!=null&&c<100?2:c!=null&&c<1000?1:0)}<span class="sub ${sign(ch)}">${pct(ch,2)}</span></td>
+      <td>${fmt(c,c!=null&&c<100?2:c!=null&&c<1000?1:0)}<span class="sub askc ${sign(ch)}" role="link" aria-label="問 Google AI 漲跌原因">${pct(ch,2)}${ch==null?'':'<i>🔍</i>'}</span></td>
       <td>${fmt(sv(id,'pe'),1)}${epsCell(id)}</td><td>${fmt(sv(id,'pb'),2)}<span class="sub">殖 ${sv(id,'yld')==null?'—':fmt(sv(id,'yld'),1)+'%'}</span></td>
       <td class="${sign(y)}">${pct(y)}<span class="sub" ${ym&&S.revYM&&ym<S.revYM?'style="color:var(--warm)" title="尚未公布最新月份"':''}>${ym?(+ym.slice(5))+'月':''}</span></td></tr>`}).join('')+'</tbody>';
   el.onclick=e=>{const h=e.target.closest('th[data-k]');if(h){const nk=h.dataset.k,cs=el.dataset.sort||'',cur=cs.split(':');
@@ -2705,7 +2708,9 @@ function table(el,items,sortKey,mode){
     else if(nk==='m_vr'){const i=VR_CYCLE.indexOf(cs);el.dataset.sort=VR_CYCLE[i<0?0:(i+1)%VR_CYCLE.length]}
     else if(nk==='cap'&&md==='v'&&(SA||AI)){const cy=capCycle(),i=cy.indexOf(cs);el.dataset.sort=cy[i<0?0:(i+1)%cy.length]}
     else el.dataset.sort=cur[0]===nk?(cur[1]==='-1'?nk+':1':''):nk+':-1';table(el,items,undefined,mode);return}
-    const r=e.target.closest('tr[data-id]');if(r)location.hash=r.dataset.id};
+    const r=e.target.closest('tr[data-id]');
+    const ak=e.target.closest('.askc');if(ak&&r){const id=r.dataset.id,ch=sv(id,'chg');if(ch!=null){e.preventDefault();const d=S&&S.pxAsof?+S.pxAsof.slice(4,6)+'/'+ +S.pxAsof.slice(6,8):'';window.open(askUrl(nameOf(id),id,ch,d),'_blank','noopener');return}}
+    if(r)location.hash=r.dataset.id};
 }
 function aiPending(fav){const el=$('aiBox');if(!AI){el.hidden=true;return}
   let mine=[];try{mine=Object.values((store.get('themeCfg')||{}).themes||{}).flatMap(t=>(t.stocks||[]).map(x=>x[0]))}catch(e){}   // themeCfg.themes 是 {id:主題} 物件：自訂＋改過的內建主題（存在手機）＋自選
