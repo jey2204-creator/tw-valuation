@@ -14,6 +14,9 @@ def rep(old, new, cnt=1):
     assert s.count(old) == cnt, (s.count(old), old[:80])
     s = s.replace(old, new)
 
+# 0. 新頁籤「🔀 三大現金流」（data-t="f"），放在原本「💵 現金流」右邊；原頁籤（營業現金流／自由現金流／淨利）保留不動
+rep('<button type="button" data-t="c">💵 現金流</button>', '<button type="button" data-t="c">💵 現金流</button><button type="button" data-t="f">🔀 三大現金流</button>')
+
 # 1. buildY10：現金流量表多抓 投資／籌資活動淨現金流、發放現金股利、買回庫藏股、現金增資
 rep("""  const eqAt=d=>EQP[d]!=null?EQP[d]:EQ[d]!=null?EQ[d]:null,tlAt=""",
 """  // 現金流頁籤：投資／籌資活動淨現金流（保留正負號）＋發放現金股利、買回庫藏股、現金增資（取絕對值）。現金流量表是年初累計，拆成單季；
@@ -54,16 +57,16 @@ rep("x.startsWith('y10v8_')||x.startsWith('y10v9_')).forEach", "x.startsWith('y1
 rep("if(c&&Date.now()-c.t<12*3600e3&&c.v){Y10=c.v;Y10L=null;renderY10();return}", "if(c&&Date.now()-c.t<12*3600e3&&c.v&&!location.search.includes('dbg')){Y10=c.v;Y10L=null;renderY10();return}")
 
 # 5. 季模式只畫近 20 季
-rep("""  if(Y10T==='i'&&Q)R=R.slice(-20);""", """  if((Y10T==='i'||Y10T==='c')&&Q)R=R.slice(-20);""")
+rep("""  if(Y10T==='i'&&Q)R=R.slice(-20);""", """  if((Y10T==='i'||Y10T==='f')&&Q)R=R.slice(-20);""")
 
 # 6. 頁籤 'c' 的圖
 rep("""  }else{
     o.series=[bar('營業現金流','ocf',acc,big),{...bar('自由現金流','fcf',acc2,big),label:{show:false}},{...line('母公司淨利','ni',fg),endLabel:{show:false}}];
     foot='自由現金流＝營業現金流 − 資本支出（取得不動產、廠房及設備）。長期淨利有、自由現金流卻常是負的＝賺的錢都要再投資或卡在應收／存貨。';
   }""",
-"""  }else if(!R.some(x=>x.ocf!=null&&x.icf!=null&&x.fnf!=null)){
+"""  }else if(Y10T!=='f'||!R.some(x=>x.ocf!=null&&x.icf!=null&&x.fnf!=null)){
     o.series=[bar('營業現金流','ocf',acc,big),{...bar('自由現金流','fcf',acc2,big),label:{show:false}},{...line('母公司淨利','ni',fg),endLabel:{show:false}}];
-    foot='自由現金流＝營業現金流 − 資本支出（取得不動產、廠房及設備）。長期淨利有、自由現金流卻常是負的＝賺的錢都要再投資或卡在應收／存貨。資料源沒有投資／籌資活動現金流科目，這一頁只畫營業與自由現金流。'+
+    foot='自由現金流＝營業現金流 − 資本支出（取得不動產、廠房及設備）。長期淨利有、自由現金流卻常是負的＝賺的錢都要再投資或卡在應收／存貨。'+(Y10T==='f'?'資料源沒有投資／籌資活動現金流科目，這一頁只畫營業與自由現金流。':'這一頁看「賺的錢有沒有變成現金」；錢花去哪、從哪來看右邊「🔀 三大現金流」頁籤。')+
       (window.__y10dbgC?' 【偵錯】現金流量表科目：'+(window.__y10dbgC.join('；')||'無'):'');
   }else{
     o.yAxis.scale=false;o.grid={...o.grid,right:72,top:46};o.legend={...o.legend,itemGap:7,itemWidth:9,textStyle:{...o.legend.textStyle,fontSize:10}};
@@ -112,7 +115,7 @@ rep("""  }else{
             (pr.fcf<=0?`，但${est?'該年':''}自由現金流是負的 ⚠️ 等於借錢或拿老本發股利，撐不久。`:pay>pr.fcf?`，是${est?`該年自由現金流 ${big(pr.fcf)} 億`:'自由現金流'}的 ${fmt(pay/pr.fcf*100,0)}% ⚠️ 發的比賺到的自由現金多，差額來自借款或手上現金。`:`，占${est?`該年自由現金流 ${big(pr.fcf)} 億的`:'自由現金流'} ${fmt(pay/pr.fcf*100,0)}%，付得起。`)}
         if(ld.capi>0)v+=`🏭 現金增資 ${big(ld.capi)} 億`+(ld.dib>0?`、有息負債增加 ${big(ld.dib)} 億`:'')+`；${ld.dib>ld.capi?'資金主要靠借款':'資金主要靠增資，股本變大會稀釋 EPS'}。`;
         else if(ld.dib!=null&&ld.ib>0&&Math.abs(ld.dib)>=Math.max(1,ld.ib*.1))v+=`🏭 有息負債${ld.ttm||Q?'':'這一年'}${ld.dib>0?'增加':'減少'} ${big(Math.abs(ld.dib))} 億`+(ld.dib>0?(ld.fnf>0?'，籌資流入主要是借來的；利息負擔看「🏦 ROE負債」的利息保障倍數。':'。'):'，在還債。')}}
-    foot=`每期一根柱：零線以上＝現金流入、以下＝流出；藍 營業（本業收到的現金）、橘 投資（買設備／轉投資，通常為負）、紫 籌資（借款／增資為正，還債／發股利為負）。實線＝自由現金流（營業現金流 − 資本支出）；最上面一格的虛線＝期末現金（只看走勢與尾端數字）。${Q?'季模式只畫近 20 季，單季波動大，型態以年模式為準。':''}${v}`+
+    foot=`每期一根柱：零線以上＝現金流入、以下＝流出；藍 營業（本業收到的現金）、橘 投資（買設備／轉投資，通常為負）、紫 籌資（借款／增資為正，還債／發股利為負）。實線＝自由現金流（營業現金流 − 資本支出）；最上面一格的虛線＝期末現金（只看走勢與尾端數字）。這一頁看「錢花去哪、從哪來」；賺的錢有沒有變成現金（跟淨利比）看左邊「💵 現金流」頁籤。${Q?'季模式只畫近 20 季，單季波動大，型態以年模式為準。':''}${v}`+
       (window.__y10dbgC?' 【偵錯】現金流量表科目：'+(window.__y10dbgC.join('；')||'無'):'');
   }""")
 
@@ -120,18 +123,18 @@ rep("""  }else{
 rep("""if(x.ocf!=null)L.push(`營業現金流 ${f(x.ocf)}・自由現金流 ${f(x.fcf)}・淨利 ${f(x.ni)} 億`);""",
 """if(x.ocf!=null)L.push(`營業現金流 ${f(x.ocf)}`+(x.icf!=null?`・投資 ${f(x.icf)}・籌資 ${f(x.fnf)}`:'')+`・自由現金流 ${f(x.fcf)}・淨利 ${f(x.ni)} 億`+(x.divp>0?`｜發放股利 ${f(x.divp)}`:'')+(x.buyb>0?`・買回 ${f(x.buyb)}`:'')+(x.capi>0?`・現金增資 ${f(x.capi)}`:''));""")
 rep("""    else m=`營業現金流 ${f(x.ocf,0)}・自由現金流 ${f(x.fcf,0)}・淨利 ${f(x.ni,0)} 億`;""",
-"""    else m=x.icf==null?`營業現金流 ${f(x.ocf,0)}・自由現金流 ${f(x.fcf,0)}・淨利 ${f(x.ni,0)} 億`:`營業 ${f(x.ocf,0)}・投資 ${f(x.icf,0)}・籌資 ${f(x.fnf,0)}・<b>自由 ${f(x.fcf,0)}</b> 億`;""")
+"""    else m=T!=='f'||x.icf==null?`營業現金流 ${f(x.ocf,0)}・自由現金流 ${f(x.fcf,0)}・淨利 ${f(x.ni,0)} 億`:`營業 ${f(x.ocf,0)}・投資 ${f(x.icf,0)}・籌資 ${f(x.fnf,0)}・<b>自由 ${f(x.fcf,0)}</b> 億`;""")
 
 # 8. 端點標籤避讓：自由現金流、期末現金兩條線
 rep("""u:[0,1,2,3],i:o.series.map((x,i)=>x.type==='line'?i:-1).filter(i=>i>=0)}[Y10T];""",
-    """u:[0,1,2,3],i:o.series.map((x,i)=>x.type==='line'?i:-1).filter(i=>i>=0),c:o.series.length>3?o.series.map((x,i)=>x.type==='line'?i:-1).filter(i=>i>=0):null}[Y10T];""")
+    """u:[0,1,2,3],i:o.series.map((x,i)=>x.type==='line'?i:-1).filter(i=>i>=0),f:o.series.length>3?o.series.map((x,i)=>x.type==='line'?i:-1).filter(i=>i>=0):null}[Y10T];""")
 
 # 9. 明細表加「營業現金」「投資現金」「籌資現金」欄（接在自由現金流前面）
 rep("""<th>利息保障</th><th>自由現金流</th>""", """<th>利息保障</th><th>營業現金</th><th>投資現金</th><th>籌資現金</th><th>自由現金流</th>""")
 rep("""<td>${c(x.fcf,0)}</td><td>${c(x.pe,1)}</td>""", """<td>${c(x.ocf,0)}</td><td>${c(x.icf,0)}</td><td>${c(x.fnf,0)}</td><td>${c(x.fcf,0)}</td><td>${c(x.pe,1)}</td>""")
 
 # 10. 版本標
-rep("""Y10T==='i'?' v1110j':'')""", """Y10T==='i'?' v1110j':Y10T==='c'?' v1111b':'')""")
+rep("""Y10T==='i'?' v1110j':'')""", """Y10T==='i'?' v1110j':Y10T==='f'?' v1111c':'')""")
 
 open(dst, 'w', encoding='utf-8').write(s)
 print('ok', n0, '->', len(s))

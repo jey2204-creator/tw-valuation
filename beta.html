@@ -540,7 +540,7 @@ details.ind.hot summary b{color:var(--up)}
   <h2 style="display:flex;align-items:center;gap:8px;white-space:nowrap">10年財報 <small id="y10U">年度</small><span class="segm" id="y10Per" style="margin-left:auto"><button type="button" aria-pressed="true" data-p="y">年</button><button type="button" aria-pressed="false" data-p="q">季</button></span></h2>
   <div class="y10k" id="y10K"></div>
   <p class="take" id="tY10"></p>
-  <div class="y10tab" id="y10Tab"><button type="button" data-t="g">📈 營收</button><button type="button" data-t="p">💹 三率</button><button type="button" data-t="i">🧾 損益</button><button type="button" data-t="e">💰 EPS股利</button><button type="button" data-t="r">🏦 ROE負債</button><button type="button" data-t="l">💳 負債</button><button type="button" data-t="b">⚖️ 資產負債</button><button type="button" data-t="d">💸 股利</button><button type="button" data-t="u">🧮 杜邦</button><button type="button" data-t="c">💵 現金流</button></div>
+  <div class="y10tab" id="y10Tab"><button type="button" data-t="g">📈 營收</button><button type="button" data-t="p">💹 三率</button><button type="button" data-t="i">🧾 損益</button><button type="button" data-t="e">💰 EPS股利</button><button type="button" data-t="r">🏦 ROE負債</button><button type="button" data-t="l">💳 負債</button><button type="button" data-t="b">⚖️ 資產負債</button><button type="button" data-t="d">💸 股利</button><button type="button" data-t="u">🧮 杜邦</button><button type="button" data-t="c">💵 現金流</button><button type="button" data-t="f">🔀 三大現金流</button></div>
   <div class="chart" id="cY10" style="height:210px"></div>
   <div class="y10info" id="y10Info" hidden><div class="t"><b id="y10IL"></b><span id="y10IS"></span><i id="y10IM">全部 ▾</i><button type="button" id="y10IX" aria-label="收起">✕</button></div><div class="a" id="y10IA"></div></div>
   <p class="foot" id="fY10"></p>
@@ -2029,7 +2029,7 @@ function renderY10(){
     FL={l:x[0],fl:true,rev:x[1],gm:x[2],om:x[3],nm:x[4],eps:x[5],ni:x[4]!=null?Math.round(x[1]*x[4]/10)/10:null,ry:ly&&ly.rev?Math.round((x[1]/ly.rev-1)*1000)/10:null,ey:ly&&ly.eps>0&&x[5]!=null?Math.round((x[5]/ly.eps-1)*1000)/10:null};
     R=[...R.slice(1),FL]}
   if(Y10T==='d')R=F;   // 股利頁籤不畫近4季
-  if((Y10T==='i'||Y10T==='c')&&Q)R=R.slice(-20);   // 損益柱內要標數字，季模式只畫近 20 季
+  if((Y10T==='i'||Y10T==='f')&&Q)R=R.slice(-20);   // 損益柱內要標數字，季模式只畫近 20 季
   if(Y10T==='b'&&Q)R=R.slice(-12);   // 資產負債一期兩根柱，季模式只畫近 12 季
   $('y10U').textContent=Q?`${R.length}季`:`${R.length}年${R.some(x=>x.ttm)?'+近4季':''}`;
   {const el=$('y10Info');if(el){el.hidden=true;el.classList.remove('open');$('y10IM').textContent='全部 ▾'}}
@@ -2202,9 +2202,9 @@ function renderY10(){
       dec=`${lab(a0)}→${lab(a1)} ROE ${fmt(a0.roe,1)}%→${fmt(a1.roe,1)}%（${pct(ch,0)}）${Math.abs(L)>0.01?`，主要來自「${c[0][0]}」（占變化 ${fmt(Math.abs(c[0][1]/L)*100,0)}%）${c[1]&&Math.abs(c[1][1]/L)>=0.25?`、其次${c[1][0]}`:''}`:''}；`+
         (c[0][0]==='槓桿'&&c[0][1]>0&&L>0?'靠加槓桿把 ROE 拉高，品質較差；':c[0][0]==='淨利率'&&L>0?'靠獲利率提升，品質最好；':c[0][0]==='周轉率'&&L>0?'靠資產用得更有效率；':'')}
     foot=`杜邦拆解：ROE ≈ 淨利率 × 資產周轉率（營收 ÷ 平均總資產，右軸）× 權益乘數（平均總資產 ÷ 平均母公司權益，右軸）${Q?'，季模式用近四季':''}。${dec}淨利率驅動＝定價力，周轉率驅動＝效率，槓桿驅動＝借錢，三者同樣的 ROE 風險完全不同。`;
-  }else if(!R.some(x=>x.ocf!=null&&x.icf!=null&&x.fnf!=null)){
+  }else if(Y10T!=='f'||!R.some(x=>x.ocf!=null&&x.icf!=null&&x.fnf!=null)){
     o.series=[bar('營業現金流','ocf',acc,big),{...bar('自由現金流','fcf',acc2,big),label:{show:false}},{...line('母公司淨利','ni',fg),endLabel:{show:false}}];
-    foot='自由現金流＝營業現金流 − 資本支出（取得不動產、廠房及設備）。長期淨利有、自由現金流卻常是負的＝賺的錢都要再投資或卡在應收／存貨。資料源沒有投資／籌資活動現金流科目，這一頁只畫營業與自由現金流。'+
+    foot='自由現金流＝營業現金流 − 資本支出（取得不動產、廠房及設備）。長期淨利有、自由現金流卻常是負的＝賺的錢都要再投資或卡在應收／存貨。'+(Y10T==='f'?'資料源沒有投資／籌資活動現金流科目，這一頁只畫營業與自由現金流。':'這一頁看「賺的錢有沒有變成現金」；錢花去哪、從哪來看右邊「🔀 三大現金流」頁籤。')+
       (window.__y10dbgC?' 【偵錯】現金流量表科目：'+(window.__y10dbgC.join('；')||'無'):'');
   }else{
     o.yAxis.scale=false;o.grid={...o.grid,right:72,top:46};o.legend={...o.legend,itemGap:7,itemWidth:9,textStyle:{...o.legend.textStyle,fontSize:10}};
@@ -2253,7 +2253,7 @@ function renderY10(){
             (pr.fcf<=0?`，但${est?'該年':''}自由現金流是負的 ⚠️ 等於借錢或拿老本發股利，撐不久。`:pay>pr.fcf?`，是${est?`該年自由現金流 ${big(pr.fcf)} 億`:'自由現金流'}的 ${fmt(pay/pr.fcf*100,0)}% ⚠️ 發的比賺到的自由現金多，差額來自借款或手上現金。`:`，占${est?`該年自由現金流 ${big(pr.fcf)} 億的`:'自由現金流'} ${fmt(pay/pr.fcf*100,0)}%，付得起。`)}
         if(ld.capi>0)v+=`🏭 現金增資 ${big(ld.capi)} 億`+(ld.dib>0?`、有息負債增加 ${big(ld.dib)} 億`:'')+`；${ld.dib>ld.capi?'資金主要靠借款':'資金主要靠增資，股本變大會稀釋 EPS'}。`;
         else if(ld.dib!=null&&ld.ib>0&&Math.abs(ld.dib)>=Math.max(1,ld.ib*.1))v+=`🏭 有息負債${ld.ttm||Q?'':'這一年'}${ld.dib>0?'增加':'減少'} ${big(Math.abs(ld.dib))} 億`+(ld.dib>0?(ld.fnf>0?'，籌資流入主要是借來的；利息負擔看「🏦 ROE負債」的利息保障倍數。':'。'):'，在還債。')}}
-    foot=`每期一根柱：零線以上＝現金流入、以下＝流出；藍 營業（本業收到的現金）、橘 投資（買設備／轉投資，通常為負）、紫 籌資（借款／增資為正，還債／發股利為負）。實線＝自由現金流（營業現金流 − 資本支出）；最上面一格的虛線＝期末現金（只看走勢與尾端數字）。${Q?'季模式只畫近 20 季，單季波動大，型態以年模式為準。':''}${v}`+
+    foot=`每期一根柱：零線以上＝現金流入、以下＝流出；藍 營業（本業收到的現金）、橘 投資（買設備／轉投資，通常為負）、紫 籌資（借款／增資為正，還債／發股利為負）。實線＝自由現金流（營業現金流 − 資本支出）；最上面一格的虛線＝期末現金（只看走勢與尾端數字）。這一頁看「錢花去哪、從哪來」；賺的錢有沒有變成現金（跟淨利比）看左邊「💵 現金流」頁籤。${Q?'季模式只畫近 20 季，單季波動大，型態以年模式為準。':''}${v}`+
       (window.__y10dbgC?' 【偵錯】現金流量表科目：'+(window.__y10dbgC.join('；')||'無'):'');
   }
   o.tooltip.className='y10tt';o.tooltip.transitionDuration=0;
@@ -2276,13 +2276,13 @@ function renderY10(){
     else if(T==='b')m=x.ta==null?'無資產負債資料':`資產 <b>${f(x.ta,0)}</b> 億＝負債 ${f(x.tl,0)}＋權益 ${f(x.eqt,0)}`+(x.cr!=null?`・流動比 ${fmt(x.cr,0)}%・速動 ${fmt(x.qr,0)}%`:'');
     else if(T==='d')m=`股利 ${f(x.div,2)} 元・配息率 ${x.po==null?'—':fmt(x.po,0)+'%'}・殖利率 ${x.yld==null?'—':fmt(x.yld,1)+'%'}`;
     else if(T==='u')m=`ROE ${f(x.roe,1)}%＝淨利率 ${f(x.nm,1)}% × 周轉 ${x.at==null?'—':fmt(x.at,2)} × 乘數 ${x.lev==null?'—':fmt(x.lev,2)}`;
-    else m=x.icf==null?`營業現金流 ${f(x.ocf,0)}・自由現金流 ${f(x.fcf,0)}・淨利 ${f(x.ni,0)} 億`:`營業 ${f(x.ocf,0)}・投資 ${f(x.icf,0)}・籌資 ${f(x.fnf,0)}・<b>自由 ${f(x.fcf,0)}</b> 億`;
+    else m=T!=='f'||x.icf==null?`營業現金流 ${f(x.ocf,0)}・自由現金流 ${f(x.fcf,0)}・淨利 ${f(x.ni,0)} 億`:`營業 ${f(x.ocf,0)}・投資 ${f(x.icf,0)}・籌資 ${f(x.fnf,0)}・<b>自由 ${f(x.fcf,0)}</b> 億`;
     $('y10IL').textContent=lab;$('y10IS').innerHTML=m;$('y10IA').innerHTML=y10Lines(x).join('<br>');el.hidden=false};
   if(FL&&o.series.length){o.series[0].markArea={silent:true,itemStyle:{color:rgba(warm,.14)},label:{show:true,position:'insideBottom',fontSize:9,color:warm,formatter:'快訊'},data:[[{xAxis:FL.l},{xAxis:FL.l}]]};
     const i=R.length-1;o.series.slice().forEach(se=>{if(se.type!=='line')return;se.symbolSize=(v,p)=>p.dataIndex===i?0:3;const v=se.data[i];if(v==null)return;o.series.push({type:'scatter',tooltip:{show:false},yAxisIndex:se.yAxisIndex||0,data:[[FL.l,v]],symbolSize:6,z:5,silent:true,itemStyle:{color:css('--card'),borderColor:se.lineStyle.color,borderWidth:1.5}})})}
-  ch.setOption(o,true);ch.resize();{const li={p:[0,1,2],r:o.series.map((x,i)=>x.type==='line'?i:-1).filter(i=>i>=0),l:[2,3],b:[8,9],d:[1,2],u:[0,1,2,3],i:o.series.map((x,i)=>x.type==='line'?i:-1).filter(i=>i>=0),c:o.series.length>3?o.series.map((x,i)=>x.type==='line'?i:-1).filter(i=>i>=0):null}[Y10T];if(li)spreadEnd(ch,o,li);else ch.setOption({graphic:{elements:[]}},{replaceMerge:['graphic']})}
+  ch.setOption(o,true);ch.resize();{const li={p:[0,1,2],r:o.series.map((x,i)=>x.type==='line'?i:-1).filter(i=>i>=0),l:[2,3],b:[8,9],d:[1,2],u:[0,1,2,3],i:o.series.map((x,i)=>x.type==='line'?i:-1).filter(i=>i>=0),f:o.series.length>3?o.series.map((x,i)=>x.type==='line'?i:-1).filter(i=>i>=0):null}[Y10T];if(li)spreadEnd(ch,o,li);else ch.setOption({graphic:{elements:[]}},{replaceMerge:['graphic']})}
   if(FL)foot+=`${FL.l} 為公司 ${D.injOn||''} 公告的自結數（財報快訊），FinMind 進資料後自動換成正式值。`;
-  $('fY10').textContent=(Y10.adj?`已分割還原（×${Y10.adj}）：公司做過分割／面額變更，分割前的 EPS、股利、股價已換到現在的股數基準，跟當年新聞的數字不同但前後可比。 `:'')+foot+' 資料：FinMind，進這一頁才即時抓，手機快取 12 小時。'+(Y10T==='l'?' v1109e':Y10T==='b'?' v1110d':Y10T==='i'?' v1110j':Y10T==='c'?' v1111b':'');
+  $('fY10').textContent=(Y10.adj?`已分割還原（×${Y10.adj}）：公司做過分割／面額變更，分割前的 EPS、股利、股價已換到現在的股數基準，跟當年新聞的數字不同但前後可比。 `:'')+foot+' 資料：FinMind，進這一頁才即時抓，手機快取 12 小時。'+(Y10T==='l'?' v1109e':Y10T==='b'?' v1110d':Y10T==='i'?' v1110j':Y10T==='f'?' v1111c':'');
   // 明細表（年度）
   const c=(v,d)=>v==null?'—':fmt(v,d),cp=v=>v==null?'—':`<span class="${sg(v)}">${pct(v,0)}</span>`;
   $('tbY10').innerHTML='<thead><tr><th>年度</th><th>營收億</th><th>年增</th><th>毛利率</th><th>營益率</th><th>淨利率</th><th>費用率</th><th>業外億</th><th>稅率</th><th>EPS</th><th>EPS年增</th><th>現金股利</th><th>配息率</th><th>殖利率</th><th>ROE</th><th>負債比</th><th>流動比</th><th>速動比</th><th>有息負債</th><th>淨負債</th><th>利息保障</th><th>營業現金</th><th>投資現金</th><th>籌資現金</th><th>自由現金流</th><th>年均PE</th></tr></thead><tbody>'+
