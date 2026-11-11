@@ -16,7 +16,7 @@
 欄位用關鍵字比對（中英文都認），官方改名不會整支掛掉；每個來源原始回應存 data/notice/raw_*.json。
 歷史：data/notice/hist.json {YYYYMMDD: {att:[代號…], dis:[代號…]}} 保留 150 天 → 連續天數、近 10／30 日次數。
 環境變數：BACKFILL=天數（手動跑時回補證交所注意名單歷史，預設抓近 14 天；第一次建議 45）
-權證／可轉債等 6 碼代號一律略過，只留股票、ETF。
+權證（6 碼）／可轉債（5 碼）代號一律略過，只留股票、ETF（2026-11-11 補 5 碼）。
 """
 import json, os, re, time, datetime as dt, urllib.request
 from pathlib import Path
@@ -125,9 +125,15 @@ def code_of(row):
     c = re.sub(r"\s", "", c)
     if not re.fullmatch(r"\d{4,6}[A-Z]?", c):
         return ""
-    if len(re.sub(r"\D", "", c)) == 6 and not c.startswith("00"):   # 權證／可轉債／TDR
+    if skip_code(c):
         return ""
     return c
+
+
+def skip_code(c):
+    """權證（6 碼）／可轉債（5 碼，如 62075 雷科五）／TDR 略過；00 開頭的 ETF（00878、006208、00679B）保留。"""
+    n = len(re.sub(r"\D", "", str(c)))
+    return n in (5, 6) and not str(c).startswith("00")
 
 
 LIST = {r[0]: (r[1], r[2]) for r in load(DATA / "list.json", []) if len(r) >= 3}
@@ -238,6 +244,9 @@ ASOF = max(dates) if dates else TODAY
 
 # ---------------------------------------------------------------- 歷史：來源回傳的每一天都記（櫃買會回兩天）；手動回補證交所
 hist = {k: v for k, v in load(HIST, {}).items() if re.fullmatch(r"20\d{6}", k)}
+for v in hist.values():   # 舊紀錄裡的可轉債一併清掉
+    for k in ("att", "dis"):
+        v[k] = [c for c in v.get(k, []) if not skip_code(c)]
 by_day = {}
 for v in att:
     by_day.setdefault(v["d"] or ASOF, set()).add(v["c"])
@@ -267,7 +276,7 @@ def stats(c):
 # ---------------------------------------------------------------- 處置歷史（2026-10-29）：每筆看過的處置（含已結束）併進 dis_hist.json
 # 證交所一次拉得到 60 天，上櫃 OpenAPI 只回最近兩天 → 靠每日累積（上櫃歷史自 2026/10/29 起才完整）
 DHIST = NDIR / "dis_hist.json"
-dh = {k: v for k, v in load(DHIST, {}).items() if isinstance(v, dict) and v.get("end")}
+dh = {k: v for k, v in load(DHIST, {}).items() if isinstance(v, dict) and v.get("end") and not skip_code(v.get("c", ""))}
 for v in dis:
     if v.get("start") and v.get("end"):
         dh[f"{v['c']}|{v['start']}"] = {"c": v["c"], "n": v["n"], "m": v["m"], "start": v["start"], "end": v["end"],
