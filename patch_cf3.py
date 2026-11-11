@@ -50,6 +50,9 @@ rep("""ocf:x.ocf,fcf:x.ocf!=null&&x.cx!=null?x.ocf-x.cx:null,
 rep("const k='y10v9_'+id,c=store.get(k);", "const k='y10v10_'+id,c=store.get(k);")
 rep("x.startsWith('y10v8_')||x.startsWith('y10v9_')).forEach", "x.startsWith('y10v8_')||x.startsWith('y10v9_')||x.startsWith('y10v10_')).forEach")
 
+# 4b. 網址帶 dbg 時不讀快取（偵錯科目清單只在重新抓資料時產生）
+rep("if(c&&Date.now()-c.t<12*3600e3&&c.v){Y10=c.v;Y10L=null;renderY10();return}", "if(c&&Date.now()-c.t<12*3600e3&&c.v&&!location.search.includes('dbg')){Y10=c.v;Y10L=null;renderY10();return}")
+
 # 5. 季模式只畫近 20 季
 rep("""  if(Y10T==='i'&&Q)R=R.slice(-20);""", """  if((Y10T==='i'||Y10T==='c')&&Q)R=R.slice(-20);""")
 
@@ -126,7 +129,7 @@ rep("""<th>利息保障</th><th>自由現金流</th>""", """<th>利息保障</th
 rep("""<td>${c(x.fcf,0)}</td><td>${c(x.pe,1)}</td>""", """<td>${c(x.ocf,0)}</td><td>${c(x.icf,0)}</td><td>${c(x.fnf,0)}</td><td>${c(x.fcf,0)}</td><td>${c(x.pe,1)}</td>""")
 
 # 10. 版本標
-rep("""Y10T==='i'?' v1110j':'')""", """Y10T==='i'?' v1110j':Y10T==='c'?' v1110m':'')""")
+rep("""Y10T==='i'?' v1110j':'')""", """Y10T==='i'?' v1110j':Y10T==='c'?' v1111a':'')""")
 
 open(dst, 'w', encoding='utf-8').write(s)
 print('ok', n0, '->', len(s))
