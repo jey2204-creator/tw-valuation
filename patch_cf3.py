@@ -102,12 +102,14 @@ rep("""  }else{
         const fk=ok.filter(x=>x.fcf!=null),nf=fk.filter(x=>x.fcf<0).length;
         if(ld.fcf!=null)v+=`自由現金流 ${sgn(ld.fcf)} 億`+(fk.length>=4?`（圖上 ${fk.length} 期有 ${nf} 期為負）`:'')+(ld.fcf<0?(ld.ocf>0?'，營業賺的被資本支出吃光，':'，')+'缺口要靠借款、增資或手上現金補。':'。');
         // 股利＋買回：現金流量表有「發放現金股利」就用實付數；沒有就用 每股股利 × 股數（淨利 ÷ EPS）估，只在年模式的完整年度估
-        let pay=null,est=false;
+        // 股利＋買回 vs 自由現金流：現金流量表有「發放現金股利」就用實付數（FinMind 實測沒有這個科目）；
+        // 沒有就用最近一個股利已公告完的完整年度估：每股股利 × 股數（淨利 ÷ EPS），跟該年度自由現金流比（上半年時去年股利可能還沒公告完，往前一年）
+        let pay=null,est=false,pr=ld;
         if(ld.divp!=null&&ld.divp>0)pay=ld.divp+(ld.buyb||0);
-        else if(!Q&&!ld.ttm&&ld.div>0&&ld.eps>0&&ld.ni>0){pay=ld.div*ld.ni/ld.eps;est=true}
-        if(pay!=null&&pay>0&&ld.fcf!=null){const br=ld.buyb>0?`（含買回庫藏股 ${big(ld.buyb)} 億）`:'';
-          v+=`💰 ${est?'該年度盈餘配發的現金股利約':'實際發出股利'+(ld.buyb>0?'＋買回':'')} ${big(pay)} 億${est?'':br}`+
-            (ld.fcf<=0?'，但自由現金流是負的 ⚠️ 等於借錢或拿老本發股利，撐不久。':pay>ld.fcf?`，是自由現金流的 ${fmt(pay/ld.fcf*100,0)}% ⚠️ 發的比賺到的自由現金多，差額來自借款或手上現金。`:`，占自由現金流 ${fmt(pay/ld.fcf*100,0)}%，付得起。`)}
+        else{const nw=new Date(),cut=nw.getFullYear()-(nw.getMonth()<6?2:1);pr=[...F].reverse().find(x=>x.y<=cut&&x.div>0&&x.eps>0&&x.ni>0&&x.fcf!=null);if(pr){pay=pr.div*pr.ni/pr.eps;est=true}}
+        if(pay!=null&&pay>0&&pr&&pr.fcf!=null){const br=ld.buyb>0?`（含買回庫藏股 ${big(ld.buyb)} 億）`:'';
+          v+=`💰 ${est?`${pr.l} 年度盈餘配發的現金股利約 ${big(pay)} 億（每股 ${fmt(pr.div,2)} 元 × 股數）`:'實際發出股利'+(ld.buyb>0?'＋買回':'')+` ${big(pay)} 億${br}`}`+
+            (pr.fcf<=0?`，但${est?'該年':''}自由現金流是負的 ⚠️ 等於借錢或拿老本發股利，撐不久。`:pay>pr.fcf?`，是${est?`該年自由現金流 ${big(pr.fcf)} 億`:'自由現金流'}的 ${fmt(pay/pr.fcf*100,0)}% ⚠️ 發的比賺到的自由現金多，差額來自借款或手上現金。`:`，占${est?`該年自由現金流 ${big(pr.fcf)} 億的`:'自由現金流'} ${fmt(pay/pr.fcf*100,0)}%，付得起。`)}
         if(ld.capi>0)v+=`🏭 現金增資 ${big(ld.capi)} 億`+(ld.dib>0?`、有息負債增加 ${big(ld.dib)} 億`:'')+`；${ld.dib>ld.capi?'資金主要靠借款':'資金主要靠增資，股本變大會稀釋 EPS'}。`;
         else if(ld.dib!=null&&ld.ib>0&&Math.abs(ld.dib)>=Math.max(1,ld.ib*.1))v+=`🏭 有息負債${ld.ttm||Q?'':'這一年'}${ld.dib>0?'增加':'減少'} ${big(Math.abs(ld.dib))} 億`+(ld.dib>0?(ld.fnf>0?'，籌資流入主要是借來的；利息負擔看「🏦 ROE負債」的利息保障倍數。':'。'):'，在還債。')}}
     foot=`每期一根柱：零線以上＝現金流入、以下＝流出；藍 營業（本業收到的現金）、橘 投資（買設備／轉投資，通常為負）、紫 籌資（借款／增資為正，還債／發股利為負）。實線＝自由現金流（營業現金流 − 資本支出）；最上面一格的虛線＝期末現金（只看走勢與尾端數字）。${Q?'季模式只畫近 20 季，單季波動大，型態以年模式為準。':''}${v}`+
@@ -129,7 +131,7 @@ rep("""<th>利息保障</th><th>自由現金流</th>""", """<th>利息保障</th
 rep("""<td>${c(x.fcf,0)}</td><td>${c(x.pe,1)}</td>""", """<td>${c(x.ocf,0)}</td><td>${c(x.icf,0)}</td><td>${c(x.fnf,0)}</td><td>${c(x.fcf,0)}</td><td>${c(x.pe,1)}</td>""")
 
 # 10. 版本標
-rep("""Y10T==='i'?' v1110j':'')""", """Y10T==='i'?' v1110j':Y10T==='c'?' v1111a':'')""")
+rep("""Y10T==='i'?' v1110j':'')""", """Y10T==='i'?' v1110j':Y10T==='c'?' v1111b':'')""")
 
 open(dst, 'w', encoding='utf-8').write(s)
 print('ok', n0, '->', len(s))
