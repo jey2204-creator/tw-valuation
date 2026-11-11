@@ -1,0 +1,13 @@
+{
+  "updated": "2026-11-11",
+  "base": "4Q25",
+  "what": "TrendForce 一般型 DRAM（conventional DRAM）合約價季增率；各季為當季季初的預估區間，之後若有結算實績再改 k 為 act 並填 lo／hi",
+  "q": [
+    {"q": "1Q26", "lo": 90, "hi": 95, "k": "fc", "note": "三星、海力士拒簽長約，伺服器 DRAM 報價直接開 +60～70%", "u": "https://technews.tw/2026/01/06/samsung-sk-hynix-dram-price-raise/"},
+    {"q": "2Q26", "lo": 58, "hi": 63, "k": "fc", "note": "原廠產能轉向 HBM／伺服器並採「補漲」拉平各類產品價差；兩家轉向 3～5 年長約（LTA）", "u": "https://technews.tw/2026/04/10/peak-dram-prices-samsung-sk-hynix/"},
+    {"q": "3Q26", "lo": 13, "hi": 18, "k": "fc", "note": "放緩原因是消費端買方接近可承受上限，不是供給改善；三星目標仍喊 +20%", "u": "https://hao.cnyes.com/post/257656"},
+    {"q": "4Q26", "lo": 18, "hi": 22, "k": "fc", "note": "TrendForce 10/20 預估季增約 20%；CSP 伺服器拉貨、DDR4 退場收緊供給", "u": "https://www.stockhub.kr/en/news/news_b7244c205001"},
+    {"q": "1Q27", "lo": null, "hi": null, "k": "wait", "note": "等 TrendForce 12 月中旬的 1Q27 價格預估——這是出場計畫的檢查點", "u": "https://www.trendforce.com/research-tags/dram"}
+  ],
+  "rule": {"hold": 20, "cut": 10, "q": "1Q27", "note": "草案：1Q27 預估季增 ≥ hold% 續抱、< cut% 執行減碼；事先寫死，避免屆時被敘事帶著走"}
+}

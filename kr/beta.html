@@ -326,6 +326,12 @@ details.ind .in{padding:0 12px 12px}
 html{scroll-behavior:smooth}
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 [hidden]{display:none!important}
+/* ---- 📈 DRAM 合約價動能 #dram ---- */
+.dmph{display:inline-block;font-size:11.5px;font-weight:700;border-radius:6px;padding:1px 7px;white-space:nowrap}
+.dmph.f{background:var(--b5)}.dmph.s{background:var(--b4)}.dmph.d{background:var(--b3)}.dmph.r{background:var(--b2)}.dmph.w{background:transparent;border:1px solid var(--line);color:var(--muted);font-weight:500}
+#dmRule label{display:inline-flex;align-items:center;gap:4px;font-size:13px;margin-right:12px}#dmRule input{width:56px;font:inherit;font-family:var(--f-num);font-size:14px;padding:3px 6px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg);text-align:right}
+#dmRule .vd{font-weight:700}
+.lst td.nt{white-space:normal;text-align:left;font-family:var(--f-body);font-size:12px;color:var(--muted);line-height:1.4;min-width:200px}
 /* ---- 🏆 市值排行 #rank：同 .lst 表格；首頁入口同台股站 .srlink ---- */
 /* 📅 首頁財報卡（比照美股站）：本週＝待公布倒數、已公布＝近 14 天公布的暫定／季報，chip 兩檔一行 */
 .ecard h2{flex-wrap:nowrap;white-space:nowrap;gap:5px}.ecard .etab{display:inline-flex;flex:none;border:1px solid var(--line);border-radius:999px;overflow:hidden;margin:0;gap:0}.ecard .etab button{font:inherit;font-size:11px;font-weight:600;color:var(--muted);background:var(--bg);border:0;padding:2px 6px;cursor:pointer;white-space:nowrap;border-radius:0}.ecard .etab button.on{color:#fff;background:var(--accent)}
@@ -382,6 +388,7 @@ html{scroll-behavior:smooth}
     <p class="legend" id="tLeg" hidden>各主題中位數。<span id="tLegC"><i class="cv">5/7</i>＝7 檔裡只有 5 檔有值（虧損、資料不足不算），檔數少時別當成整個主題。</span>營收年增＝最新一季對比去年同季；EPS 年增＝近四季合計對比前四季；PEG＝本益比 ÷ EPS 年增，<span class="cheap">&lt;1</span>、<span class="pricey">&gt;2</span>；本月至今＝收盤對比上月底；外資持股＝主題內中位數，外資是韓股主力，持股比轉折常領先股價。</p>
   </div>
   <a class="srlink" id="srLink" href="#salary" hidden><b>💰 薪資排行</b><span id="srSub"></span></a>
+  <a class="srlink" id="dmLink" href="#dram" hidden><b>📈 DRAM 價格動能</b><span id="dmSub"></span></a>
   <div id="groups"></div>
   <p class="legend" id="gLegend" hidden>清單欄位：收盤價（日漲跌，台幣模式為固定匯率換算）　本益比／淨值比。<span class="pill">循環</span> 循環股以淨值比為主；外資持股比在主題頁與個股頁</p>
   <section class="card" id="exp" hidden>
@@ -428,6 +435,29 @@ html{scroll-behavior:smooth}
   <p id="sHead"></p>
   <div class="panel"><div class="tbl"><table class="lst" id="sTbl"></table></div></div>
   <p class="legend" id="sFoot"></p>
+</div>
+
+<!-- ===== DRAM 合約價動能：#dram（資料 data/dram.json，手動維護：每季 TrendForce 價格預估出來補一列） ===== -->
+<div id="dramPage" hidden>
+  <div class="top"><a href="#">← 全部主題</a><span class="meta" id="dmAsof" style="margin-left:auto"></span></div>
+  <h1>📈 DRAM 合約價動能</h1>
+  <p class="tsum" id="dmTake">載入中…</p>
+  <section class="card">
+    <p class="xsub">季增率 vs 加速度（%）</p>
+    <div class="chart" id="cDmQ" role="img" aria-label="DRAM 合約價季增率與加速度"></div>
+    <p class="foot">線＝一般型 DRAM 合約價季增率（區間中值）；柱＝加速度＝這季季增率減上季季增率（百分點）。價格還在漲但柱轉負，就是「漲勢放緩」；連續兩季負柱是動能相位切換的訊號</p>
+    <p class="xsub">累積價格指數（<span id="dmBase"></span>＝100）</p>
+    <div class="chart short" id="cDmI" role="img" aria-label="DRAM 合約價累積指數"></div>
+    <p class="foot" id="fDmI"></p>
+  </section>
+  <div class="panel"><div class="tbl"><table class="lst" id="dmTbl"></table></div></div>
+  <section class="card" id="dmRule">
+    <h2>🧭 決策檢查點</h2>
+    <p class="take" id="dmRuleTake"></p>
+    <div class="mrow"><label>續抱 ≥ <input type="number" id="dmHold" step="1"> %</label><label>減碼 &lt; <input type="number" id="dmCut" step="1"> %</label><button type="button" class="act" id="dmReset">還原預設</button></div>
+    <p class="foot" id="dmRuleFoot"></p>
+  </section>
+  <p class="legend" id="dmFoot"></p>
 </div>
 
 <!-- ===== 財報公布倒數：#calendar（資料來自 index.json 的 earn 欄：fetch_kr.py 以 OpenDART 公示搜尋的去年同季暫定業績公告日 ＋ 季報申報日推算） ===== -->
@@ -1337,25 +1367,85 @@ function backPaint(id){const t=themeOfStock(id);$('back').href=t?'#t/'+t.id:'#';
 let HOMEY=0;
 function route(){
   const raw=decodeURIComponent(location.hash.slice(1)),id=raw.toUpperCase();
-  const em=/^edit(?:\/([a-z0-9_-]+))?$/.exec(raw),rk=raw.toLowerCase()==='rank',sr=raw.toLowerCase()==='salary',cam=/^calendar(?:\/(wait|pre|done))?$/i.exec(raw),ca=!!cam;if(cam&&cam[1])CA.tab=cam[1].toLowerCase();   // #calendar/done 直接開「已公布」頁籤；編輯頁 #edit、#edit/{主題}（小寫，跟代號 EDIT 分開）
-  if(!em&&!rk&&!sr&&!ca&&ALIAS[id]&&!IDX.some(s=>s.id===id)){location.replace('#'+ALIAS[id]);return}   // #FB → #META
-  const tm=/^t\/([a-z0-9_-]+)$/i.exec(raw),tid=tm?tm[1].toLowerCase():null,h=em?raw:rk?'rank':sr?'salary':ca?'calendar':tid?'t/'+tid:id;   // 主題頁 #t/pcb
+  const em=/^edit(?:\/([a-z0-9_-]+))?$/.exec(raw),rk=raw.toLowerCase()==='rank',sr=raw.toLowerCase()==='salary',dm=raw.toLowerCase()==='dram',cam=/^calendar(?:\/(wait|pre|done))?$/i.exec(raw),ca=!!cam;if(cam&&cam[1])CA.tab=cam[1].toLowerCase();   // #calendar/done 直接開「已公布」頁籤；編輯頁 #edit、#edit/{主題}（小寫，跟代號 EDIT 分開）
+  if(!em&&!rk&&!sr&&!ca&&!dm&&ALIAS[id]&&!IDX.some(s=>s.id===id)){location.replace('#'+ALIAS[id]);return}   // #FB → #META
+  const tm=/^t\/([a-z0-9_-]+)$/i.exec(raw),tid=tm?tm[1].toLowerCase():null,h=em?raw:rk?'rank':sr?'salary':ca?'calendar':dm?'dram':tid?'t/'+tid:id;   // 主題頁 #t/pcb
   bkTrack(h);
-  $('themePage').hidden=!tid;$('rankPage').hidden=!rk;$('srank').hidden=!sr;$('calPage').hidden=!ca;$('editList').hidden=!em||!!em[1];$('editTheme').hidden=!em||!em[1];const stk=!tid&&!em&&!rk&&!sr&&!ca&&isStk(id);
+  $('themePage').hidden=!tid;$('rankPage').hidden=!rk;$('srank').hidden=!sr;$('calPage').hidden=!ca;$('dramPage').hidden=!dm;$('editList').hidden=!em||!!em[1];$('editTheme').hidden=!em||!em[1];const stk=!tid&&!em&&!rk&&!sr&&!ca&&!dm&&isStk(id);
   if(!stk){$('pnav').hidden=true;document.body.classList.remove('pn');pnShut();qToggle(false)}
-  if((tid||rk||sr||ca)&&VPREV==='home')HOMEY=scrollY;   // 從首頁點卡片進主題：記住首頁捲到哪
+  if((tid||rk||sr||ca||dm)&&VPREV==='home')HOMEY=scrollY;   // 從首頁點卡片進主題：記住首頁捲到哪
   if(em){$('stock').hidden=true;$('home').hidden=true;document.title='編輯主題';if(em[1])openEditor(em[1],HPREV);else renderOrder();scrollTo(0,0)}
   else if(tid){$('stock').hidden=true;$('home').hidden=true;themeRender(tid);scrollTo(0,0)}
   else if(sr){$('stock').hidden=true;$('home').hidden=true;document.title='韓股員工薪資排行';renderSal();scrollTo(0,0)}
   else if(ca){$('stock').hidden=true;$('home').hidden=true;document.title='韓股財報公布倒數';renderCal();scrollTo(0,0)}
+  else if(dm){$('stock').hidden=true;$('home').hidden=true;document.title='DRAM 合約價動能';dmRender();scrollTo(0,0)}
   else if(rk){$('stock').hidden=true;$('home').hidden=true;document.title='韓股市值排行';rkLoad().then(rkRender);scrollTo(0,0)}
   else if(stk){const k=KEEP;KEEP=null;if(!D||D.id!==id){if(!k)scrollTo(0,0);load(id).then(()=>{if(k)requestAnimationFrame(()=>goSec(k))})}else{$('home').hidden=true;$('stock').hidden=false;pnPaint(id);setTimeout(()=>Object.values(charts).forEach(c=>c.resize()),0);k?goSec(k):scrollTo(0,0)}}
   else{$('stock').hidden=true;$('home').hidden=false;document.title='韓股估值看板';if(!$('q').value.trim())cardsRender();Object.values(charts).forEach(c=>c.resize());
     if(id==='EXP')requestAnimationFrame(()=>{if(!$('exp').hidden)$('exp').scrollIntoView()});   // 個股頁「看趨勢 →」：回首頁捲到出口卡
     if(VPREV==='edit')requestAnimationFrame(()=>scrollTo(0,$('tsec').getBoundingClientRect().top+scrollY-8));   // 編輯完回首頁：停在主題卡
     if(VPREV==='theme'){const y=HOMEY,pt=HPREV;requestAnimationFrame(()=>{scrollTo(0,y);const c=document.querySelector(`a.tcard[href="#${pt}"]`)||document.querySelector(`.tlt tr[data-t="${pt.replace(/^t\//,'')}"]`);if(c){c.classList.remove('bkflash');void c.offsetWidth;c.classList.add('bkflash')}})}}
-  bkRestore(h);VPREV=stk?'stock':em?'edit':tid||rk||sr||ca?'theme':'home';HPREV=h;
+  bkRestore(h);VPREV=stk?'stock':em?'edit':tid||rk||sr||ca||dm?'theme':'home';HPREV=h;
 }
+// ---------- 📈 DRAM 合約價動能（data/dram.json，手動維護）----------
+// q：[{q 季, lo, hi 季增率區間 %, k: fc 季初預估｜act 結算實績｜wait 待公布, note, u}]；rule：{hold, cut, q} 檢查點門檻（可在頁面改，存 localStorage kr_dram_rule）
+let DM=null;
+function dmModel(){
+  if(!DM||!DM.q||!DM.q.length)return null;
+  let idx=100;const rows=DM.q.map((r,i)=>{const mid=r.lo!=null&&r.hi!=null?(r.lo+r.hi)/2:null;return {...r,mid}});
+  rows.forEach((r,i)=>{const p=rows[i-1];r.acc=r.mid!=null&&p&&p.mid!=null?+(r.mid-p.mid).toFixed(1):null;if(r.mid!=null){idx*=1+r.mid/100;r.idx=+idx.toFixed(0)}else r.idx=null;
+    r.ph=r.mid==null?['w','⏳ 待公布']:r.mid<0?['f','🔴 轉跌']:r.acc==null?(r.mid>=30?['f','🔥 爆發']:['r','🟢 上漲']):r.acc<=-20?['d','🟡 急減速']:r.acc<0?['s','🟠 減速']:r.mid>=30?['f','🔥 加速']:['r','🟢 回穩']});
+  const have=rows.filter(r=>r.mid!=null),last=have[have.length-1],negs=(()=>{let n=0;for(let i=have.length-1;i>=0&&have[i].acc!=null&&have[i].acc<0;i--)n++;return n})();
+  return {rows,have,last,negs};
+}
+const dmRuleGet=()=>{const d=DM&&DM.rule||{hold:20,cut:10};try{const j=JSON.parse(localStorage.getItem('kr_dram_rule')||'null');if(j&&isFinite(j.hold)&&isFinite(j.cut))return {...d,...j}}catch(e){}return {...d}};
+function dmHome(){const el=$('dmLink');if(!el)return;const M=dmModel();if(!M){el.hidden=true;return}const L=M.last;
+  $('dmSub').innerHTML=`${L.q} ${L.k==='act'?'實績':'預估'} <b class="${sgc(L.mid)}">${pct(L.mid,0)}</b>・加速度 <b class="${sgc(L.acc)}">${L.acc==null?'—':(L.acc>0?'+':'')+L.acc} pp</b>・指數 ${L.idx} →`;el.hidden=false}
+function dmRender(){
+  const M=dmModel();if(!M){$('dmTake').textContent='沒有 data/dram.json';return}
+  const {rows,have,last:L,negs}=M,x1=css('--accent'),x2=css('--warm'),x3=css('--accent2'),mut=css('--muted');
+  $('dmAsof').textContent=`更新 ${DM.updated||''}`;$('dmBase').textContent=DM.base||'';
+  const ph=r=>`<span class="dmph ${r.ph[0]}">${r.ph[1]}</span>`;
+  const wait=rows.find(r=>r.mid==null);
+  $('dmTake').innerHTML=`${ph(L)} ${L.q} 一般型 DRAM 合約價${L.k==='act'?'結算':'預估'}季增 <strong>${L.lo}～${L.hi}%</strong>（中值 ${pct(L.mid,1)}），加速度 <strong>${L.acc==null?'—':(L.acc>0?'+':'')+L.acc} pp</strong>，累積指數 <strong>${L.idx}</strong>（${DM.base}＝100，約 <strong>${(L.idx/100).toFixed(1)} 倍</strong>）。`+
+    (negs>=2?`加速度已連續 <strong>${negs} 季為負</strong>——價格還在漲，但動能相位是「減速後的平台期」，不是重新加速。`:negs===1?`加速度本季轉負，再一季就是相位切換訊號。`:`加速度為正，漲勢仍在延續。`)+
+    (wait?`<br>下一個數字：<strong>${wait.q}</strong> ${esc(wait.note||'')}`:'');
+  // 圖 1：季增率（線）＋加速度（柱）
+  {const c=mk('cDmQ'),o=base(),xs=rows.map(r=>r.q+(r.k==='fc'?'E':r.k==='wait'?'?':''));
+   o.xAxis.data=xs;o.yAxis.scale=false;o.yAxis.axisLabel.formatter='{value}%';o.grid.top=30;o.grid.right=30;
+   const lbl=pos=>({show:true,position:pos,fontFamily:'IBM Plex Mono',fontSize:10,color:mut,formatter:p=>p.value==null?'':(p.value>0&&pos!=='top'?'+':'')+p.value});
+   o.series=[{name:'加速度（pp）',type:'bar',barCategoryGap:'45%',data:rows.map(r=>r.acc==null?null:{value:r.acc,itemStyle:{color:r.acc<0?x2:x3,borderRadius:r.acc<0?[0,0,4,4]:[4,4,0,0]}}),label:lbl('inside'),z:1,
+       markLine:{silent:true,symbol:'none',label:{show:false},lineStyle:{color:mut,type:'dashed',width:1,opacity:.6},data:[{yAxis:0}]}},
+     {name:'季增率（中值）',type:'line',data:rows.map(r=>r.mid),symbol:'circle',symbolSize:8,lineStyle:{width:2.5,color:x1},itemStyle:{color:x1,borderColor:css('--card'),borderWidth:2},label:lbl('top'),z:3,connectNulls:false}];
+   o.tooltip.formatter=ps=>{const i=ps[0].dataIndex,r=rows[i];let h=`<b>${r.q}</b> ${r.ph[1]}`;if(r.mid!=null)h+=`<br>季增 ${r.lo}～${r.hi}%（中值 ${r.mid}%）${r.k==='fc'?'・季初預估':'・結算'}`;if(r.acc!=null)h+=`<br>加速度 ${r.acc>0?'+':''}${r.acc} pp`;if(r.idx!=null)h+=`<br>累積指數 ${r.idx}`;return h};
+   c.setOption(o,true)}
+  // 圖 2：累積指數
+  {const c=mk('cDmI'),o=base(),xs=[DM.base,...rows.map(r=>r.q)],ys=[100,...rows.map(r=>r.idx)];
+   o.xAxis.data=xs;o.yAxis.scale=false;o.grid.top=24;o.grid.right=34;o.legend.show=false;
+   o.series=[{type:'line',data:ys,areaStyle:{color:x1,opacity:.1},symbol:'circle',symbolSize:7,lineStyle:{width:2.5,color:x1},itemStyle:{color:x1,borderColor:css('--card'),borderWidth:2},connectNulls:false,
+     label:{show:true,position:'top',fontFamily:'IBM Plex Mono',fontSize:10,color:mut,formatter:p=>p.value==null?'':p.value}}];
+   o.tooltip.formatter=ps=>{const p=ps[0];return `<b>${p.name}</b><br>指數 ${p.value??'—'}`};
+   c.setOption(o,true)}
+  $('fDmI').textContent=`各季中值連乘：${have.map(r=>`(1${r.mid>=0?'+':''}${r.mid}%)`).join('×')}＝${(L.idx/100).toFixed(2)} 倍。看指數知道「漲了多少」，看加速度知道「還在不在加速」——出場看後者，不看前者`;
+  // 表
+  const sg=v=>v==null?'—':`${v>0?'+':''}${v}`;
+  $('dmTbl').innerHTML='<thead><tr><th>季</th><th>季增率</th><th>中值</th><th>加速度</th><th>指數</th><th>相位</th><th style="text-align:left">備註</th></tr></thead><tbody>'+
+    rows.map(r=>`<tr><td><b>${r.q}</b><span class="sub" style="display:block;font-size:10.5px;color:var(--muted);white-space:nowrap">${r.k==='act'?'結算':r.k==='fc'?'季初預估':'待公布'}</span></td><td>${r.mid==null?'—':`${r.lo}～${r.hi}%`}</td><td class="${sgc(r.mid)}">${r.mid==null?'—':pct(r.mid,1)}</td><td class="${sgc(r.acc)}">${r.acc==null?'—':sg(r.acc)+' pp'}</td><td>${r.idx??'—'}</td><td style="text-align:left">${ph(r)}</td><td class="nt">${esc(r.note||'')}${r.u?` <a href="${esc(r.u)}" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none">↗</a>`:''}</td></tr>`).join('')+'</tbody>';
+  // 決策檢查點
+  dmRulePaint();
+  $('dmFoot').textContent=`資料：TrendForce 各季「一般型 DRAM（conventional DRAM）合約價」季增預估區間，手動維護於 kr/data/dram.json（每季預估出來補一列；有結算實績再把 k 改 act）。加速度 = 本季中值 − 上季中值。相位：加速度 ≤ −20 pp 急減速、< 0 減速、≥ 0 且季增 ≥ 30% 加速／爆發、其餘回穩；季增 < 0 轉跌。`;
+}
+function dmRulePaint(){
+  const M=dmModel();if(!M)return;const R=dmRuleGet(),tq=R.q||'',tr=M.rows.find(r=>r.q===tq),h=$('dmHold'),cu=$('dmCut');
+  if(document.activeElement!==h)h.value=R.hold;if(document.activeElement!==cu)cu.value=R.cut;
+  let v;
+  if(!tr||tr.mid==null)v=`檢查點 <strong>${esc(tq)}</strong> 的預估還沒出來。先寫死：預估季增 <strong>≥ ${R.hold}%</strong> 續抱、<strong>&lt; ${R.cut}%</strong> 減碼、中間 ${R.cut}～${R.hold}% 減一半。等數字出來再回來看，不要到時候才想門檻。`;
+  else{const m=tr.mid,act=m>=R.hold?['vu','✅ 續抱']:m<R.cut?['vd','⛔ 減碼']:['','⚠️ 減一半'];v=`<strong>${esc(tq)}</strong> 預估中值 <strong>${pct(m,1)}</strong> → <span class="${act[0]}">${act[1]}</span>（門檻：≥ ${R.hold}% 續抱、&lt; ${R.cut}% 減碼）。<br>⚠️ 現在想改門檻？先問自己：是數字變了，還是故事變了。`}
+  $('dmRuleTake').innerHTML=v;
+  $('dmRuleFoot').textContent=(DM.rule&&DM.rule.note?DM.rule.note+'。':'')+'門檻存在這台裝置（localStorage），改了不會同步到別台。';
+}
+['dmHold','dmCut'].forEach(id=>$(id).addEventListener('change',()=>{const h=+$('dmHold').value,c=+$('dmCut').value;if(!isFinite(h)||!isFinite(c))return;localStorage.setItem('kr_dram_rule',JSON.stringify({hold:h,cut:c}));dmRulePaint()}));
+$('dmReset').addEventListener('click',()=>{localStorage.removeItem('kr_dram_rule');dmRulePaint()});
 // ---------- 💰 員工薪資（data/salary.json，kr/fetch_salary.py 從 OpenDART 年報「직원 현황」等抓）----------
 // d[代號] = {avg 平均薪資(韓元), avgPrev, avgChg %, emp 員工數, empPrev, ten 平均年資, tot 薪資總額(億韓元), ctr 約聘%, m 男平均, f 女平均,
 //            exAvg 非登記高管平均, exN, top 最高個人報酬, topNm, topPos, yr 年度, filed, url}
@@ -1774,9 +1864,10 @@ addEventListener('hashchange',route);
   IDX=a||[];EXP=b;$('eN').textContent=IDX.length;
   await rkLoad();   // 「市值排行」自訂主題要用
   try{const r=await fetch('data/salary.json?t='+Date.now());if(r.ok)SA=await r.json()}catch(e){}
+  try{const r=await fetch('data/dram.json?t='+Date.now());if(r.ok)DM=await r.json()}catch(e){}
   fetch('../data/salary.json?t='+Date.now()).then(r=>r.ok?r.json():null).then(j=>{if(j){TWSA=j;if(D&&!$('stock').hidden)salLine(D.id)}}).catch(()=>{});   // 台股薪資：對應台股旁小字
   BASE=baseThemes();applyCfg();syStat();syncRun();
-  homeRender();srHome();caHome();try{expRender()}catch(e){console.error(e)}route();
+  homeRender();srHome();caHome();try{dmHome()}catch(e){console.error(e)}try{expRender()}catch(e){console.error(e)}route();
   // 主題卡的年增／PEG／本月至今／市值要讀各個股檔（各約 30KB）；讀完重畫卡片與主題頁
   loadStats().then(statsRefresh);
 })();
@@ -1785,7 +1876,7 @@ addEventListener('hashchange',route);
 function twFade(){const t=$('tw');t.classList.toggle('more',t.scrollWidth-t.clientWidth-t.scrollLeft>4)}
 $('tw').addEventListener('scroll',twFade,{passive:true});
 let rt;addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>{Object.values(charts).forEach(c=>c.resize());twFade()},120)});
-matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{if(D&&!$('stock').hidden)render();try{expRender()}catch(e){}});
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{if(D&&!$('stock').hidden)render();try{expRender()}catch(e){}if(!$('dramPage').hidden)try{dmRender()}catch(e){}});
 </script>
 <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "1d5b7d7f9e9b4171b25487fae2dfeea9"}'></script><!-- End Cloudflare Web Analytics -->
 </body>
