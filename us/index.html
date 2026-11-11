@@ -531,6 +531,12 @@ html{scroll-behavior:smooth}
   <div class="chart" id="cMar"></div>
   <p class="foot">淨利率以歸屬母公司淨利計算；財報沒有毛利科目時以營收 − 營業成本推算，都沒有則不顯示</p>
 </section>
+<section class="card" id="ni" hidden>
+  <h2>淨利 <small id="uNi"></small></h2>
+  <p class="take" id="tNi"></p>
+  <div class="chart" id="cNi"></div>
+  <p class="foot" id="fNi"></p>
+</section>
 <section class="card" id="eps">
   <h2>EPS <small id="uEps">稀釋｜美元</small></h2>
   <p class="take" id="tEps"></p>
@@ -799,7 +805,7 @@ function xLast(o,c){const xs=[].concat(o.xAxis),gs=[].concat(o.grid);
       formatter:(v,i)=>i===n-1?`{b|${v}}`:v,
       rich:{b:{fontWeight:'bold',color:css('--fg'),fontFamily:'IBM Plex Mono, ui-monospace, monospace',fontSize:fs}}}})}
 // 季度圖 X 軸對齊：量每張圖實際左右邊界（含 Y 軸標籤），取最大值統一套用，同一季在每張圖落在同一條垂直線；只對齊共用同一組季度（S）的圖
-const QIDS=['cRev','cMar','cEps','cCap','cFcf','cGrow','cFcfq','cWc','cShr','cBal'];
+const QIDS=['cRev','cMar','cNi','cEps','cCap','cFcf','cGrow','cFcfq','cWc','cShr','cBal'];
 function alignX(fresh){
   if(fresh)QIDS.forEach(id=>{if(charts[id])charts[id].__g0=null});
   const cs=QIDS.map(id=>charts[id]).filter(c=>c&&c.getDom().offsetWidth>50&&c.getOption()&&c.getOption().grid);if(cs.length<2)return;
@@ -871,6 +877,8 @@ function yoyOf(i){const p=Q[prevYearIdx(i)];if(!p||!p[2])return null;return +((Q
 // 前一季必須真的是上一季（季末相隔約 3 個月），否則不顯示季增
 const isPrevQ=(a,b)=>!!(a&&b&&a[9]&&b[9]&&(new Date(b[9])-new Date(a[9]))/864e5>=80&&(new Date(b[9])-new Date(a[9]))/864e5<=100);
 function ttm(i){const P=D.freq==='Q'?4:1;if(i<P-1)return null;const w=Q.slice(i-P+1,i+1);if(D.freq==='Q'&&!w.every((x,j)=>!j||isPrevQ(w[j-1],x)))return null;const s=w.map(x=>x[6]);return s.some(x=>x==null)?null:+sum(s).toFixed(2)}
+const niOf=x=>x&&x[2]!=null&&x[5]!=null?x[2]*x[5]/100:null;   // 淨利（百萬美元）
+const niOdd=x=>x[4]==null||x[5]==null?0:x[5]-x[4]>5?1:(x[4]>0&&x[4]-x[5]>15?-1:0);   // 疑一次性：1 收益、−1 損失
 function mk(id){if(!charts[id])charts[id]=echarts.init($(id));return charts[id]}
 function base(){
   const t={color:css('--muted'),fontFamily:'IBM Plex Mono, ui-monospace, monospace',fontSize:10};
@@ -919,6 +927,16 @@ function header(){
   $('tEps').innerHTML=q1[6]==null?'財報沒有 EPS 資料':`${qlbl(q1)} EPS <strong>${ap()}${pf(q1[6])}</strong> ${cur()}${isPrevQ(q0,q1)&&q0[6]>0?`，季增 ${((q1[6]/q0[6]-1)*100).toFixed(0)}%`:''}${t1!=null&&D.freq==='Q'?`；近四季 <strong>${ap()}${pf(t1)}</strong>`:''}`;
   $('uEps').textContent=`稀釋｜${cur()}`;
   $('fEps').textContent=(D.freq==='Q'?'柱：單季稀釋 EPS　線：近四季累計（右軸）。10-K 的第四季 = 全年 − 前三季':'年度稀釋 EPS（只有年報）')+fxFoot();
+  // 淨利：資料層沒有淨利欄，用 營收 × 淨利率 反推（淨利率存到小數 1 位，誤差約營收的 ±0.05%）
+  const NI=Q.map((x,i)=>[i,niOf(x)]).filter(x=>x[1]!=null),hasNI=NI.length>=2;$('ni').hidden=!hasNI;
+  if(hasNI){const [i,v]=NI[NI.length-1],x=Q[i],p=Q[prevYearIdx(i)],pvn=p?niOf(p):null,pq=Q[i-1],qn0=isPrevQ(pq,x)?niOf(pq):null,
+      w=Q.slice(i-3,i+1),ok=D.freq==='Q'&&w.length===4&&w.every((y,j)=>(!j||isPrevQ(w[j-1],y))&&niOf(y)!=null),t4=ok?sum(w.map(niOf)):null,
+      w0=Q.slice(i-7,i-3),ok0=ok&&w0.length===4&&w0.every((y,j)=>(!j||isPrevQ(w0[j-1],y))&&niOf(y)!=null),t40=ok0?sum(w0.map(niOf)):null,o=niOdd(x);
+    const g=(a,b)=>b>0?(a<0?'<strong>轉虧</strong>':`${a>=b?'增':'減'} <strong>${Math.abs(a/b-1)>9.99?'>999':Math.abs((a/b-1)*100).toFixed(0)}%</strong>`):(a>0?'<strong>轉盈</strong>':'');
+    const na=m=>amt(m,!fxOn()&&U.k===1e3&&Math.abs(m)<1e4?2:undefined);
+    $('tNi').innerHTML=`${qlbl(x)} 淨利 <strong>${ap()}${na(v)}</strong>${v<0?'<span class="pill b">虧損</span>':''}${pvn!=null&&g(v,pvn)?`，年${g(v,pvn)}`:''}${qn0!=null&&g(v,qn0)?`，季${g(v,qn0)}`:''}${t4!=null?`；近四季 <strong>${ap()}${na(t4)}</strong>${t40!=null&&g(t4,t40)?`（年${g(t4,t40)}）`:''}`:''}${o?` <span class="pill">疑一次性${o>0?'收益':'損失'}</span> 淨利率 ${x[5]}% vs 營益率 ${x[4]}%`:''}`;
+    $('uNi').textContent=`${un()}｜${D.freq==='Q'?'日曆季':'會計年度'}`;
+    $('fNi').textContent=`柱：${D.freq==='Q'?'單季':'年度'}淨利（歸屬母公司，GAAP；以 營收 × 淨利率 反推，與財報有四捨五入誤差）　線：年增率（右軸 %，去年同期虧損不算）。橘色柱＝淨利率高於營益率 5 個百分點以上，或本業賺錢但淨利率低於營益率 15 個百分點以上，可能含一次性業外損益，看趨勢時先跳過${fxFoot()}`}
   // 河流
   const pct=(arr,v)=>{const a=arr.filter(x=>x!=null);return Math.round(a.filter(x=>x<=v).length/a.length*100)};
   const band=(ms,v)=>{for(let i=ms.length-1;i>=0;i--)if(v>=ms[i])return i===ms.length-1?`${ms[i]} 倍以上`:`${ms[i]}–${ms[i+1]} 倍`;return `${ms[0]} 倍以下`};
@@ -982,7 +1000,7 @@ function header(){
   if(hasBL){const [i,c1,d1]=BL[BL.length-1],n1=c1-(d1||0),p=BL.length>=5?BL[BL.length-5]:null,np=p?p[1]-(p[2]||0):null;
     $('tBal').innerHTML=`${qlbl(Q[i])} 現金＋短投 <strong>${ap()}${camt(c1)}</strong>、債務 <strong>${d1==null?'無申報':ap()+camt(d1)}</strong> → 淨現金 <strong>${ap()}${camt(n1)}</strong>${np!=null?`（一年前 ${ap()}${camt(np)}）`:''}${n1<0?(np!=null&&n1<np?'<span class="pill b">淨負債擴大</span>':'<span class="pill b">淨負債</span>'):''}`;
     $('uBal').textContent=`${capU()}｜季末`}
-  $('chips').innerHTML=(D.demand?'<a href="#capex" data-s>CapEx</a>':'')+'<a href="#rev" data-s>營收</a>'+(KD&&KD.length?'<a href="#kline" data-s>K線</a>':'')+(hasG?'<a href="#grow" data-s>成長</a>':'')+'<a href="#margin" data-s>三率</a><a href="#eps" data-s>EPS</a>'+(RH.length>=2?'<a href="#beat" data-s>判讀</a>':'')+(hasF?'<a href="#fcf" data-s>現金流</a>':'')+(hasFQ?'<a href="#fcfq" data-s>FCF品質</a>':'')+(hasWC?'<a href="#wc" data-s>庫存應收</a>':'')+(hasSB?'<a href="#shr" data-s>股數SBC</a>':'')+(hasBL?'<a href="#bal" data-s>現金債務</a>':'')+'<a href="#fwd" data-s>預估EPS</a><a href="#pe" data-s>本益比河流</a><a href="#pb" data-s>淨值比河流</a>';
+  $('chips').innerHTML=(D.demand?'<a href="#capex" data-s>CapEx</a>':'')+'<a href="#rev" data-s>營收</a>'+(KD&&KD.length?'<a href="#kline" data-s>K線</a>':'')+(hasG?'<a href="#grow" data-s>成長</a>':'')+'<a href="#margin" data-s>三率</a>'+(hasNI?'<a href="#ni" data-s>淨利</a>':'')+'<a href="#eps" data-s>EPS</a>'+(RH.length>=2?'<a href="#beat" data-s>判讀</a>':'')+(hasF?'<a href="#fcf" data-s>現金流</a>':'')+(hasFQ?'<a href="#fcfq" data-s>FCF品質</a>':'')+(hasWC?'<a href="#wc" data-s>庫存應收</a>':'')+(hasSB?'<a href="#shr" data-s>股數SBC</a>':'')+(hasBL?'<a href="#bal" data-s>現金債務</a>':'')+'<a href="#fwd" data-s>預估EPS</a><a href="#pe" data-s>本益比河流</a><a href="#pb" data-s>淨值比河流</a>';
   window.__FQ=FQ;window.__RH=RH;window.__WC={dio,dso,istate,hasWC,hasSB,hasBL};
 }
 // ---------- 📊 財報判讀 #beat：AUTOQ[id] = {fq, epsEst, epsAct, epsSurp, revEst, revAct, revSurp, px.react, hist[[fq, est, act, surp, date, hour, react, 'sec'?]]} ----------
@@ -1059,6 +1077,14 @@ function render(){
   {const o=base(),c=mk('cMar');o.xAxis.data=S.map(qlbl);o.yAxis.axisLabel.formatter='{value}%';o.tooltip.valueFormatter=v=>v==null?'—':v+'%';
    o.series=[['毛利率',3,acc],['營益率',4,acc2],['淨利率',5,warm]].filter(([,i])=>S.some(x=>x[i]!=null)).map(([nm,i,col],k)=>({name:nm,type:'line',data:S.map(x=>x[i]),lineStyle:{width:2,color:col},itemStyle:{color:col,borderWidth:1.5},endLabel:{show:true,formatter:p=>p.value,color:col,fontSize:10,fontFamily:'IBM Plex Mono'},markArea:k===0&&D.inj?FLASH_AREA(warm,D.inj):undefined}));
    o.grid.right=34;dots(o);xLast(o,c);c.setOption(o,true);spreadEnd(c,o)}
+  if(!$('ni').hidden){const o=base(),c=mk('cNi');o.xAxis.data=S.map(qlbl);o.yAxis.scale=false;
+   o.yAxis=[o.yAxis,{...o.yAxis,scale:true,splitLine:{show:false},axisLabel:{...o.yAxis.axisLabel,formatter:'{value}%'}}];
+   const ny=i=>{const p=Q[prevYearIdx(i)],a=niOf(Q[i]),b=p?niOf(p):null;return a!=null&&b>0?Math.max(-300,Math.min(900,+((a/b-1)*100).toFixed(0))):null};
+   o.tooltip.formatter=ps=>{const i=st+ps[0].dataIndex,x=Q[i],v=niOf(x),od=niOdd(x);return `<b>${qtip(i)}</b><br>淨利 ${v==null?'—':ap()+amt(v,fxOn()?1:U.k===1e3?2:0)}<br>年增 ${ny(i)??'—'}%<br>淨利率 ${x[5]??'—'}%｜營益率 ${x[4]??'—'}%${od?`<br>⚠️ 疑一次性${od>0?'收益':'損失'}`:''}`};
+   o.series=[{name:`淨利(${un()})`,type:'bar',data:S.map(x=>{const v=mval(niOf(x)),col=niOdd(x)?warm:acc,b=flashBar(x,v,col),it=typeof b==='object'&&b?b:{value:v,itemStyle:niOdd(x)?{color:warm+'b3'}:undefined};return v!=null&&v<0?{...it,label:{position:'bottom'}}:it}),itemStyle:{color:acc,borderRadius:[2,2,0,0]},barCategoryGap:'25%',markArea:D.inj?FLASH_AREA(warm,D.inj):undefined,
+       label:{show:true,position:'top',fontSize:9,color:css('--muted'),fontFamily:'IBM Plex Mono',formatter:p=>p.dataIndex===S.length-1&&p.value!=null?(Math.abs(p.value)>=100?fmt(p.value,0):p.value):''}},
+     {name:'年增率',type:'line',yAxisIndex:1,data:S.map((x,j)=>ny(st+j)),symbol:'none',connectNulls:false,lineStyle:{width:2,color:warm},itemStyle:{color:warm}}];
+   dots(o);xLast(o,c);c.setOption(o,true)}
   {const o=base(),c=mk('cEps');o.xAxis.data=S.map(qlbl);o.yAxis.scale=false;
    o.yAxis=[o.yAxis,{...o.yAxis,splitLine:{show:false}}];
    o.tooltip.formatter=ps=>{const i=st+ps[0].dataIndex;return `<b>${qtip(i)}</b><br>EPS ${ap()}${pf(Q[i][6])}${D.freq==='Q'?`<br>近四季 ${ap()}${pf(ttm(i))}`:''}`};
