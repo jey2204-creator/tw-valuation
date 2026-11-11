@@ -1,5 +1,5 @@
 {
- "asof": "2026-11-12 02:15 JST",
+ "asof": "2026-11-12 05:14 JST",
  "errors": [],
  "stocks": {
   "8035": {
@@ -790,7 +790,7 @@
  "tdnet": {
   "days_scanned": 2,
   "rows": 305,
-  "new_records": 2,
+  "new_records": 0,
   "backfill": false
  },
  "validate_tdnet": {
@@ -820,10 +820,10 @@
   "mismatch": []
  },
  "fx_src": {
-  "usdtwd": 32.887001037597656,
-  "usdjpy": 159.92999267578125
+  "usdtwd": 32.88199996948242,
+  "usdjpy": 159.86399841308594
  },
- "fx_jpytwd": 0.20563,
+ "fx_jpytwd": 0.20569,
  "ok": [
   "8035",
   "6857",
