@@ -113,6 +113,9 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 <div class="list" id="list"><div class="empty">讀取中…</div></div>
 <p class="foot" id="foot"></p>
 <script>
+function ntStale(N){const a=N&&N.asof,m=N&&N.mkAsof;if(!a||!m)return '';const f=d=>(+d.slice(4,6))+'/'+(+d.slice(6));const L=['上市','上櫃'].filter(k=>!m[k]||m[k]<a);if(L.length!==1)return '';const k=L[0];return `⚠️ ${k}名單還停在 ${m[k]?f(m[k]):'前一日'}（${k==='上櫃'?'櫃買':'證交所'}尚未公布 ${f(a)}），目前只有${k==='上櫃'?'上市':'上櫃'}，稍晚自動補上`}
+function ntDemo(N){if(N&&N.asof&&/[?&]stale=1/.test(location.search)){const d=new Date(+N.asof.slice(0,4),+N.asof.slice(4,6)-1,+N.asof.slice(6)-1);N.mkAsof={'上市':N.asof,'上櫃':''+d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0')}}return N}
+
 function mzN(s){return String(s||'').replace(/每\s*([一二三四五六七八九十]+)\s*分鐘/,(m,c)=>{const d='一二三四五六七八九'.indexOf.bind('一二三四五六七八九');let n=0;const i=c.indexOf('十');if(i<0)n=d(c)+1;else n=(i>0?d(c[i-1])+1:1)*10+(i<c.length-1?d(c[i+1])+1:0);return '每'+n+'分鐘'})}
 
 const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -177,7 +180,8 @@ function paint(){
   $('note').innerHTML=T[TAB].tip;
   const R=rows(),all=(D[TAB]||[]).length;LR=R;
   const up=R.filter(x=>(K[x.c]||{}).chg>0).length;
-  $('cnt').innerHTML=`<b>${R.length}</b>／${all} 檔・名單 ${md(D.asof)}・今日上漲 <b>${up}</b> 檔・點卡片展開原因・ⓘ 看說明`;
+  ntDemo(D);const stl=(TAB==='att'||TAB==='pre')?ntStale(D):'';
+  $('cnt').innerHTML=(stl?`<div style="color:#b45309;font-weight:600;margin-bottom:2px">${stl}</div>`:'')+`<b>${R.length}</b>／${all} 檔・名單 ${md(D.asof)}・今日上漲 <b>${up}</b> 檔・點卡片展開原因・ⓘ 看說明`;
   if(!R.length){$('list').innerHTML=`<div class="empty">${all?'這個市場沒有':'目前沒有'}${T[TAB].title}</div>`;return}
   $('list').innerHTML=R.map((x,i)=>{const k=K[x.c];const cs=TAB==='dpost'?'post':(TAB==='dis'||TAB==='dend')?'dis':(x.warn||TAB==='pre')?'warn':'';
     const tags=[];const ra=['dend','dpost'].includes(TAB)?retAfter(x.c,x.end):null;
