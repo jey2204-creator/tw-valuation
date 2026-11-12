@@ -12,6 +12,8 @@
 
 輸出 d[代號] = [週%, 月%, 季%, 量比, 外資5日(張), 投信5日(張), 外資20日(張), 投信20日(張), 投信連買天數, 外資連買天數, 🔥]
   週／月／季 = 對比 5／20／60 個交易日前的收盤（未還原除權息）
+  2026/11/12 起另輸出 dc[代號] = [月%, 季%]（日曆日：對比上個月／三個月前同一天，休市取前一交易日；跟 XQ 一致）、calBase={m,q}；
+  網頁的月／季與 🔥 都改用 dc，d 內的 20／60 交易日版保留備用
   量比 = 近 5 日均量 ÷ 近 20 日均量
   🔥 = 月% > 0、量比 ≥ 1.5、且外資或投信 5 日買超 ≥ 5 日成交量的 1%
 用法：python fetch_momentum.py
@@ -424,7 +426,8 @@ def compute():
             return n
         vol5 = sum(v5) if v5 else 0
         big = vol5 > 0 and max(f5, t5) >= vol5 * 0.01
-        fire = 1 if (m is not None and m > 0 and vr is not None and vr >= 1.5 and big) else 0
+        mf = mc if mc is not None else m    # 2026/11/12：🔥 的月漲幅也改用日曆日
+        fire = 1 if (mf is not None and mf > 0 and vr is not None and vr >= 1.5 and big) else 0
         k = lambda x: round(x / 1000)       # 股 → 張
         if all(x is None for x in (w, m, q, vr)) and not idays:
             continue
