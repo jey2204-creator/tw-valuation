@@ -286,6 +286,10 @@ dh = {k: v for k, v in sorted(dh.items()) if v["start"] >= cut_old}
 DHIST.write_text(json.dumps(dh, ensure_ascii=False, separators=(",", ":")))
 
 # ---------------------------------------------------------------- 整理輸出
+MK_ASOF = {}                                                                     # 2026-11-12：上市／上櫃各自最新的注意名單日（櫃買常晚更新）
+for v in att:
+    if v.get("d"):
+        MK_ASOF[v["m"]] = max(MK_ASOF.get(v["m"], ""), v["d"])
 att = {v["c"]: v for v in att if (v["d"] or ASOF) == ASOF}                        # 只留最新一天
 dis = {v["c"]: v for v in dis if not v["end"] or v["end"] > ASOF}                 # 處置期未結束（迄日＝名單日的已結束）
 pre = {v["c"]: v for v in pre}
@@ -315,7 +319,7 @@ for v in sorted(dh.values(), key=lambda x: x["end"], reverse=True):
                          "ago": sum(1 for d in days if d > v["end"])}
 dpost = sorted(dpost.values(), key=lambda x: (x["ago"], x["c"]))
 
-out = {"updated": NOW.strftime("%Y-%m-%dT%H:%MZ"), "asof": ASOF, "histDays": len(days),
+out = {"updated": NOW.strftime("%Y-%m-%dT%H:%MZ"), "asof": ASOF, "mkAsof": MK_ASOF, "histDays": len(days),
        "dend": dend, "dpost": dpost,
        "att": sorted(att.values(), key=lambda x: (-x["streak"], -x["n10"], x["c"])),
        "dis": sorted(dis.values(), key=lambda x: (x["end"] or "9", x["c"])),
