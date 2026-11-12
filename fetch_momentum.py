@@ -366,6 +366,23 @@ def compute():
     idays = [x for x in days if "iL" in x[1].get("src", []) and x[1].get("i")]
     ids = sorted({c for _, r in pdays[-5:] for c in r["p"]})
     out = {}
+    # 2026/11/12：日曆日版月／季（跟 XQ 一致）＝對比「上個月／三個月前同一天」的收盤；那天休市就取之前最近的交易日
+    stems = [s for s, _ in pdays]
+
+    def cal_n(months):
+        if not stems:
+            return None, None
+        t = dt.datetime.strptime(stems[-1], "%Y%m%d").date()
+        y, mo = t.year, t.month - months
+        while mo <= 0:
+            y, mo = y - 1, mo + 12
+        last = (dt.date(y + (mo == 12), mo % 12 + 1, 1) - dt.timedelta(days=1)).day
+        tgt = f"{y:04d}{mo:02d}{min(t.day, last):02d}"
+        idx = max((i for i, s in enumerate(stems) if s <= tgt), default=None)
+        return (len(stems) - 1 - idx, stems[idx]) if idx is not None else (None, None)
+    nM, baseM = cal_n(1)
+    nQ, baseQ = cal_n(3)
+    outc = {}
 
     def ret(cl, n):
         """收盤對比 n 個交易日前；當天沒成交就往前找最近一筆"""
@@ -382,6 +399,9 @@ def compute():
         cl = [v[0] for v in pv]
         vo = [v[1] if len(v) > 1 else None for v in pv]
         w, m, q = ret(cl, 5), ret(cl, 20), ret(cl, 60)
+        mc, qc = (ret(cl, nM) if nM else None), (ret(cl, nQ) if nQ else None)
+        if mc is not None or qc is not None:
+            outc[c] = [mc, qc]
         v5 = [x for x in vo[-5:] if x is not None]
         v20 = [x for x in vo[-20:] if x is not None]
         vr = round((sum(v5) / len(v5)) / (sum(v20) / len(v20)), 2) if v5 and v20 and sum(v20) > 0 else None
@@ -412,6 +432,7 @@ def compute():
             out[c] = [w, m, q, vr, k(f5), k(t5), k(f20), k(t20), streak(ti), streak(fi), fire]
         else:                                # 沒有法人資料 → 顯示「—」而不是 0
             out[c] = [w, m, q, vr, None, None, None, None, None, None, 0]
+    compute.cal = dict(dc=outc, calBase=dict(m=baseM, q=baseQ))
     return out, pdays, idays
 
 
@@ -470,7 +491,7 @@ def main():
     res = dict(updated=dt.datetime.utcnow().strftime("%Y-%m-%dT%H:%MZ"),
                asof=pdays[-1][0] if pdays else None, instAsof=idays[-1][0] if idays else None,
                nPx=len(pdays), nInst=len(idays), firstPx=pdays[0][0] if pdays else None,
-               fields=FIELDS, req=nreq, secs=int(time.time() - T0), fails=fails, errors=errs[:30], diag={k: (v[:12] if isinstance(v, list) and k.endswith("_dates") else v) for k, v in diag.items()}, d=d)
+               fields=FIELDS, req=nreq, secs=int(time.time() - T0), fails=fails, errors=errs[:30], diag={k: (v[:12] if isinstance(v, list) and k.endswith("_dates") else v) for k, v in diag.items()}, d=d, **getattr(compute, 'cal', {}))
     (OUT / "momentum.json").write_text(json.dumps(res, ensure_ascii=False, separators=(",", ":")), "utf-8")
     print(f"momentum.json: {len(d)} 檔，股價 {len(pdays)} 天、法人 {len(idays)} 天，請求 {nreq} 次，錯誤 {len(errs)}")
 
