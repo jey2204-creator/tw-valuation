@@ -332,3 +332,10 @@ if _old.get("asof") and _old["asof"] < ASOF:
     (NDIR / "prev.json").write_text(json.dumps(_old, ensure_ascii=False, separators=(",", ":")))
 OUT.write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")))
 print(f"asof {ASOF}: 注意 {len(att)}（上市 {sum(v['m']=='上市' for v in att.values())}）、處置 {len(dis)}、快達 {len(pre)}、快結束 {len(dend)}、剛結束 {len(dpost)}；dis_hist {len(dh)} 筆；hist {len(days)} 天；src {DIAG['src']}；fail {DIAG['fail']}")
+
+# 2026-11-13：名單日「當日數字」快照（首頁注意股主題表切日期用）
+try:
+    import notice_mo
+    notice_mo.main()
+except Exception as e:
+    print("notice_mo 失敗：", e)
