@@ -178,6 +178,7 @@ const T={att:{def:'連續天',title:'注意股',tip:'<b>注意股</b>＝交易�
   dpost:{def:'結束日',title:'剛結束',tip:'<b>✅ 剛結束</b>＝最近 <b>10 個交易日內</b>處置結束（已恢復逐筆撮合）。卡片「結束後」＝從處置最後一天收盤到最新收盤的累計漲跌；K 圖紅色底色＝處置期間，可直接看處置前、中、後的價量。又進新一輪處置的股票不在這裡（在「處置」）。樣本：上市回補近 60 天，上櫃自 2026/10/29 起累積。'}};
 async function init(){
   const [r,rp]=await Promise.all(['data/notice.json','data/notice/prev.json'].map(u=>fetch(u+'?t='+Math.floor(Date.now()/3e5)).catch(()=>null)));
+  try{const aj=await fetch('data/adj.json?t='+Math.floor(Date.now()/36e5)).then(r=>r.ok?r.json():null).catch(()=>null);ADJ=aj&&aj.ev||{}}catch(e){}
   D=r&&r.ok?await r.json():null;try{PREV=rp&&rp.ok?await rp.json():null}catch(e){PREV=null}
   if(!D){$('list').innerHTML='<div class="empty">還沒有名單資料（排程第一次跑完後才有）</div>';return}
   ntDemo(D);if(PREV&&!(PREV.asof&&PREV.asof<D.asof))PREV=null;
@@ -191,24 +192,27 @@ async function init(){
   await ensureK();
   paint();
 }
+let ADJ={};   /* 還原係數（2026-11-13）：只用在漲幅數字，小 K 線不還原 */
+const adjF=(c,a,b)=>(ADJ[c]||[]).reduce((k,[d,f])=>String(a)<d&&d<=String(b)?k*f:k,1);
 async function loadShard(g){if(SHARD[g]!==undefined)return SHARD[g];SHARD[g]=null;try{const r=await fetch('data/chip_s/'+g+'.json?t='+Math.floor(Date.now()/600000));if(r.ok)SHARD[g]=await r.json()}catch(e){}return SHARD[g]}
 // 列＝[收盤,成交張,外資,投信,自營,資增減,券增減,資餘額,開,高,低,MA240]
 function kinfo(c){const s=SHARD[c.slice(0,2)];if(!s||!s.d||!s.d[c])return null;const days=s.days,rows=s.d[c],bars=[];
   rows.forEach((r,i)=>{if(!r||r[0]==null)return;const cl=r[0],o=r[8]??cl,h=r[9]??Math.max(o,cl),l=r[10]??Math.min(o,cl);bars.push({d:days[i],o,h,l,c:cl,v:r[1]||0,f:r[2],t:r[3]})});
   if(bars.length<6)return null;const n=bars.length,last=bars[n-1],prev=bars[n-2];
+  const rt=b=>b&&b.c?last.c/(b.c*adjF(c,b.d,last.d))-1:null;   /* 還原後漲幅：基準價 × 之後發生的除權息／減資／面額變更係數 */
   const ma=(w,i)=>i-w+1<0?null:bars.slice(i-w+1,i+1).reduce((a,x)=>a+x.c,0)/w;
   const v5=bars.slice(-6,-1).reduce((a,x)=>a+x.v,0)/5;
-  const c6=bars[n-7]?last.c/bars[n-7].c-1:null;
+  const c6=rt(bars[n-7]);
   const hi20=Math.max(...bars.slice(-21,-1).map(x=>x.h));
   const sum=(k,w)=>{let a=0,g=false;bars.slice(-w).forEach(x=>{if(x[k]!=null){a+=x[k];g=true}});return g?a:null};
-  const w=bars[n-6]?last.c/bars[n-6].c-1:null;
+  const w=rt(bars[n-6]);
   const ld=last.d,tm=new Date(+ld.slice(0,4),+ld.slice(4,6)-2,1),eom=new Date(tm.getFullYear(),tm.getMonth()+1,0).getDate(),tg=''+tm.getFullYear()+String(tm.getMonth()+1).padStart(2,'0')+String(Math.min(+ld.slice(6),eom)).padStart(2,'0');
-  let bi=-1;bars.forEach((b,j)=>{if(b.d<=tg)bi=j});const mo=bi>=0?last.c/bars[bi].c-1:null;
-  return {bars,px:last.c,d:last.d,w,mo,chg:prev.c?last.c/prev.c-1:null,vr:v5?last.v/v5:null,c6,hi20,ma20:ma(20,n-1),ma60:ma(60,n-1),t5:sum('t',5),f5:sum('f',5)}}
+  let bi=-1;bars.forEach((b,j)=>{if(b.d<=tg)bi=j});const mo=bi>=0?rt(bars[bi]):null;
+  return {bars,px:last.c,d:last.d,w,mo,chg:rt(prev),vr:v5?last.v/v5:null,c6,hi20,ma20:ma(20,n-1),ma60:ma(60,n-1),t5:sum('t',5),f5:sum('f',5)}}
 // 結束後累計漲跌：處置最後一天（≤迄日的最後一根）收盤 → 最新收盤
 function retAfter(c,end){const k=K[c];if(!k||!end)return null;let i=-1;k.bars.forEach((b,j)=>{if(b.d<=end)i=j});
   if(i<0)return null;if(i>=k.bars.length-1)return {ret:0,n:0};
-  return {ret:k.bars[k.bars.length-1].c/k.bars[i].c-1,n:k.bars.length-1-i}}
+  {const L=k.bars[k.bars.length-1],B=k.bars[i];return {ret:L.c/(B.c*adjF(c,B.d,L.d))-1,n:k.bars.length-1-i}}}
 function rows(){let R=LST(TAB).filter(x=>!MK||x.m===MK);
   const k=c=>K[c]||{};
   const def=TAB==='dend'?x=>-(x.left??9):TAB==='dpost'?x=>-(x.ago??99):TAB==='dis'?x=>-( +(x.end||'99999999')):TAB==='pre'?x=>(x.n10||0)*100+(x.n30||0):x=>(x.streak||0)*1000+(x.n10||0);
@@ -256,7 +260,7 @@ function paint(){
     </article>`}).join('');
   const io=new IntersectionObserver(es=>{es.forEach(e=>{if(!e.isIntersecting)return;const el=e.target,cv=el.querySelector('canvas.kv');if(cv&&!cv.dataset.done){const x=LR[+el.dataset.i]||{};drawMini(cv,K[el.dataset.c],x.start?{s:x.start,e:x.end}:null);cv.dataset.done=1}io.unobserve(el)})},{rootMargin:'300px 0px'});
   $('list').querySelectorAll('.nc').forEach(el=>io.observe(el));
-  $('foot').innerHTML=`小圖＝近 40 根日K（<span class="num" style="color:var(--ma20)">━</span> 20日線、<span class="num" style="color:var(--ma60)">━</span> 60日線、紅虛線＝前 20 日最高，<b>紅色底色＝處置期間</b>），底下一條＝投信每日買賣超（紅買綠賣）。6日＝近六個交易日漲幅；量比＝今日量 ÷ 前 5 日均量；「結束後」＝處置最後一天收盤到最新收盤的累計漲跌。名單每個交易日 17:25 後自動更新（資料 ${esc(D.updated||'')}，本站歷史 ${D.histDays} 天）。處置歷史自動累積中——<a href="stats.html">📊 處置後統計</a>看結束後 1／3／5／10 日報酬與勝率。漲幅鈕連點＝日→週→月（週＝5 個交易日前、月＝上個月同一天）。預設顯示「目前適用」的名單（前一晚公布、今天盤中適用，跟 XQ 同步）；當晚新公布的在日期選單「🆕 明日」。本頁不構成投資建議。 v1113f`;
+  $('foot').innerHTML=`小圖＝近 40 根日K（<span class="num" style="color:var(--ma20)">━</span> 20日線、<span class="num" style="color:var(--ma60)">━</span> 60日線、紅虛線＝前 20 日最高，<b>紅色底色＝處置期間</b>），底下一條＝投信每日買賣超（紅買綠賣）。6日＝近六個交易日漲幅；量比＝今日量 ÷ 前 5 日均量；「結束後」＝處置最後一天收盤到最新收盤的累計漲跌。名單每個交易日 17:25 後自動更新（資料 ${esc(D.updated||'')}，本站歷史 ${D.histDays} 天）。處置歷史自動累積中——<a href="stats.html">📊 處置後統計</a>看結束後 1／3／5／10 日報酬與勝率。漲幅鈕連點＝日→週→月（週＝5 個交易日前、月＝上個月同一天；漲幅數字已還原除權息、減資、面額變更，跟 XQ 一致，小 K 線為原始價）。預設顯示「目前適用」的名單（前一晚公布、今天盤中適用，跟 XQ 同步）；當晚新公布的在日期選單「🆕 明日」。本頁不構成投資建議。 v1113h`;
 }
 function drawMini(cv,r,band){if(!r)return;const dpr=window.devicePixelRatio||1,W=cv.clientWidth,Hh=cv.clientHeight;if(!W||!Hh)return;
   cv.width=Math.round(W*dpr);cv.height=Math.round(Hh*dpr);const g=cv.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,W,Hh);
