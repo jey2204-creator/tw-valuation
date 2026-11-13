@@ -22,12 +22,12 @@ rep('''  <span class="lab">市場</span><button data-m="" aria-pressed="true">�
   <span class="sep"></span>
   <span class="lab">排序</span>''',
     '''  <select id="daySel" aria-label="名單日期"><option value="">最新</option></select>
-  <span class="sep"></span><button data-m="" aria-pressed="true">全部</button><button data-m="上市">上市</button><button data-m="上櫃">上櫃</button><button id="noteBtn" aria-pressed="false" aria-label="說明">ⓘ</button>
+  <span class="sep"></span><button data-m="" aria-pressed="true">全部</button><button data-m="上市">上市</button><button data-m="上櫃">上櫃</button><a class="sc" id="scanLink" href="scan.html#natt">📈 掃 K 線</a><button id="noteBtn" aria-pressed="false" aria-label="說明">ⓘ</button>
   <span class="brk"></span>
   ''')
 rep('<button data-s="chg">漲幅</button>', '<button data-s="chg" id="chgBtn">漲幅</button>')
-rep('📈 掃 K 線</a><button id="noteBtn" aria-pressed="false" aria-label="說明">ⓘ</button>', '📈 掃 K 線</a>')
-rep('.sb #noteBtn{width:24px;padding:0;font-size:14px;color:var(--muted)}', '.sb #noteBtn{width:24px;padding:0;font-size:14px;color:var(--muted);margin-left:auto}')
+rep('\n  <a class="sc" id="scanLink" href="scan.html#natt">📈 掃 K 線</a><button id="noteBtn" aria-pressed="false" aria-label="說明">ⓘ</button>', '')
+rep("toStats?'📊 處置後統計':'📈 掃 K 線'", "toStats?'📊 統計':'📈 掃 K 線'")
 # ② 提醒縮成一行
 rep("return `⚠️ ${k}名單還停在 ${m[k]?f(m[k]):'前一日'}（${k==='上櫃'?'櫃買':'證交所'}尚未公布 ${f(a)}），目前只有${k==='上櫃'?'上市':'上櫃'}，稍晚自動補上`}", "return `⚠️ ${k}還停在 ${m[k]?f(m[k]):'前一日'}，目前只有${k==='上櫃'?'上市':'上櫃'}`}")
 rep('font-weight:600;margin-bottom:2px">${stl}</div>', 'font-weight:600;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${stl}</div>')
@@ -86,5 +86,5 @@ rep("檔・名單 ${md(D.asof)}・今日上漲", "檔・名單 ${md(DAY||D.asof)
 rep("    if(k){if(k.c6!=null&&!['dend','dpost'].includes(TAB))",
     "    if(k&&CHGP!=='d'&&k[CHGK()]!=null)tags.push(`<span class=\"tg\">${CHGP==='w'?'週':'月'} <b class=\"${cls(k[CHGK()])}\">${pct(k[CHGK()])}</b></span>`);\n"
     "    if(k){if(k.c6!=null&&!['dend','dpost'].includes(TAB))")
-rep("本頁不構成投資建議。`;", "漲幅鈕連點＝日→週→月（週＝5 個交易日前、月＝上個月同一天）。本頁不構成投資建議。 v1113c`;")
+rep("本頁不構成投資建議。`;", "漲幅鈕連點＝日→週→月（週＝5 個交易日前、月＝上個月同一天）。本頁不構成投資建議。 v1113d`;")
 open('notice.html' if prod else 'beta_notice.html', 'w', encoding='utf-8').write(t)
