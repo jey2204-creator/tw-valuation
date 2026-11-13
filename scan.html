@@ -78,6 +78,8 @@ select.ch.on{background-color:var(--sel);color:var(--selfg);font-weight:700}
 .km.hot{border-color:var(--up);box-shadow:0 0 0 1px var(--up) inset}
 .km-h{display:flex;align-items:baseline;gap:4px;min-width:0;line-height:15px}
 .km-h b{font-size:12.5px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+/* 2026-11-13 長股名縮字，避免被截成「雷…」 */
+.km-h{gap:3px}.km-h b.n4{font-size:10.5px;letter-spacing:-.03em}.km-h b.n5{font-size:9px;letter-spacing:-.04em}
 .km-h .cd{font:600 9px var(--f-num);color:var(--muted);letter-spacing:.02em;flex:none}
 .km-h .rk{font:600 9px var(--f-num);color:var(--muted);flex:none}
 .km-s{display:flex;align-items:center;gap:2px;font:600 9.5px var(--f-num);line-height:14px;white-space:nowrap;overflow:hidden;letter-spacing:-.02em}
@@ -307,13 +309,13 @@ function render(){
   $('cnt').innerHTML=all?`<b>${R.length}</b>／${all} 檔${missTxt}・最新 ${md(DK)}${nSt?`・<b>${nSt}</b> 檔仍為昨收（排最後）`:''}・<b>${ROWS.filter(r=>r.d20!=null&&r.d20>=0).length}</b> 檔站上月線・<b>${ROWS.filter(r=>r.d60!=null&&r.d60>=0).length}</b> 檔站上季線・投信連買≥3 <b>${ROWS.filter(r=>r.ts>=3).length}</b> 檔・點小卡放大`:'';
   if(!R.length){$('grid').innerHTML=`<div class="empty">${all?'沒有符合篩選條件的股票':'這個清單讀不到日K'+(MISS.length?'（'+MISS.map(c=>esc(mn(c))).join('、')+'）':'')}</div>`;return}
   $('grid').innerHTML=R.map((r,i)=>`<article class="km${r.brk&&r.chg>0?' hot':''}" data-i="${i}" role="button" tabindex="0">
-    <div class="km-h"><span class="rk">${i+1}</span><b>${esc(r.n)}</b><span class="cd">${esc(r.c)}</span>${r.split?'<span class="cd" title="近 130 日有分割／股數變動，價位概略還原">⚠</span>':''}${liveTag(r)}${nbadge(r.c)}</div>
+    <div class="km-h"><span class="rk">${i+1}</span>${nmB(r.n)}<span class="cd">${esc(r.c)}</span>${r.split?'<span class="cd" title="近 130 日有分割／股數變動，價位概略還原">⚠</span>':''}${liveTag(r)}${nbadge(r.c)}</div>
     <div class="km-s"><span class="${cls(r.chg)}${r.stale?' st':''}" title="${r.stale?'昨天收盤的漲跌幅':''}">${r.stale?'昨':''}${pct(r.chg)}</span>${CHGP!=='d'?`<span class="${cls(r[CHGK()])}">${CHGP==='w'?'週':'月'}${pct(r[CHGK()])}</span>`:''}<span class="vr${r.vr>=1.5?' hi':''}">量${r.vr==null?'—':r.vr.toFixed(1)+'×'}</span>${badge(r.ts,'投')}${badge(r.fs,'外')}</div>
     <canvas class="km-cv"></canvas></article>`).join('');
   const io=new IntersectionObserver(es=>{es.forEach(e=>{if(!e.isIntersecting)return;const el=e.target,cv=el.querySelector('canvas');if(!cv.dataset.done){drawK(cv,R[+el.dataset.i],N,{mini:true});cv.dataset.done=1}io.unobserve(el)})},{rootMargin:'300px 0px'});
   if(window.VIO)VIO.disconnect();window.VIO=new IntersectionObserver(es=>{es.forEach(e=>{const c=R[+e.target.dataset.i]&&R[+e.target.dataset.i].c;if(!c)return;e.isIntersecting?VISIBLE.add(c):VISIBLE.delete(c)})},{rootMargin:'120px 0px'});
   $('grid').querySelectorAll('.km').forEach(el=>{io.observe(el);VIO.observe(el);el.onclick=()=>openSheet(R,+el.dataset.i);el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openSheet(R,+el.dataset.i)}}});
-  $('foot').innerHTML=`小卡＝近 ${N} 根日K（<span class="num" style="color:var(--ma20)">━</span> 20日線、<span class="num" style="color:var(--ma60)">━</span> 60日線、紅虛線＝前 20 日最高），下面兩條＝投信／外資每日買賣超（紅買綠賣）。「榜序」＝照名單原本順序（買超前 20 的第 1～20 名、注意股連續天數、處置剩餘日），只在這些名單出現、進入時預設；「日漲」鈕連點循環日／週（5 日）／月（20 日）漲幅排序；量比＝今日量 ÷ 前 5 日均量；投／外＝連續買（▲）賣（▼）天數；紅框＝今天上漲且觸及前 20 日高；⚠＝近 130 日有分割（價位概略還原，未還原除權息）。<b>注N</b>＝連 N 天列注意、<b>快N</b>＝快達處置、<b>處N</b>＝處置中剩 N 個交易日（名單每日 17:25 更新）；K 棒底下 <span style="color:#e0a800">●</span>＝那天被列注意、<span style="color:var(--up)">●</span>＝處置期間（上市 9/14 起、上櫃 10/27 起有紀錄）。K 棒上<span style="background:var(--up);opacity:.25">　　</span>淡紅底＝處置期間（起迄來自官方公告，迄日當天算結束）。選注意／快達／處置／快結束／剛結束任一名單時，最左邊的日期選單可看前幾天的名單（K 棒照舊畫到最新交易日，虛線＝那天）；過去的快達處置名單為估算（近10日≥5次或近30日≥11次）；<b>畢N</b>＝處置結束後第 N 個交易日。投信／外資／土洋買超前 20 也可用日期選單看前幾天的名單（9/29 起累積），小卡 <b>榜N</b>＝連續 N 天上榜，K 棒底下的彩色點＝那天在這個榜上。盤中最右邊虛線框那根＝<b>今天即時 K 棒</b>（每 60 秒更新畫面上看得到的小卡；小卡右上小標 <b>即</b>＝即時、<b>延</b>＝Yahoo 延遲約 20 分、<b>未</b>＝今天還沒成交（漲停／跌停鎖死常見）、<b>昨</b>＝還是昨收、○＝這輪沒拿到報價；開盤初期「昨」的小卡漲幅顯示「昨▲x%」並排在最後，排序只比同一天的數字）。名單有股票讀不到日K（新掛牌、ETF、已下市）時統計列會標「N 檔無日K」並列出名稱，收盤後排程更新前也先顯示它。籌碼資料近 60 個交易日，K 線 130 日；分片資料與估值看板個股頁同一份。`;
+  $('foot').innerHTML=`小卡＝近 ${N} 根日K（<span class="num" style="color:var(--ma20)">━</span> 20日線、<span class="num" style="color:var(--ma60)">━</span> 60日線、紅虛線＝前 20 日最高），下面兩條＝投信／外資每日買賣超（紅買綠賣）。「榜序」＝照名單原本順序（買超前 20 的第 1～20 名、注意股連續天數、處置剩餘日），只在這些名單出現、進入時預設；「日漲」鈕連點循環日／週（5 日）／月（20 日）漲幅排序；量比＝今日量 ÷ 前 5 日均量；投／外＝連續買（▲）賣（▼）天數；紅框＝今天上漲且觸及前 20 日高；⚠＝近 130 日有分割（價位概略還原，未還原除權息）。<b>注N</b>＝連 N 天列注意、<b>快N</b>＝快達處置、<b>處N</b>＝處置中剩 N 個交易日（名單每日 17:25 更新）；K 棒底下 <span style="color:#e0a800">●</span>＝那天被列注意、<span style="color:var(--up)">●</span>＝處置期間（上市 9/14 起、上櫃 10/27 起有紀錄）。K 棒上<span style="background:var(--up);opacity:.25">　　</span>淡紅底＝處置期間（起迄來自官方公告，迄日當天算結束）。選注意／快達／處置／快結束／剛結束任一名單時，最左邊的日期選單可看前幾天的名單（K 棒照舊畫到最新交易日，虛線＝那天）；過去的快達處置名單為估算（近10日≥5次或近30日≥11次）；<b>畢N</b>＝處置結束後第 N 個交易日。投信／外資／土洋買超前 20 也可用日期選單看前幾天的名單（9/29 起累積），小卡 <b>榜N</b>＝連續 N 天上榜，K 棒底下的彩色點＝那天在這個榜上。盤中最右邊虛線框那根＝<b>今天即時 K 棒</b>（每 60 秒更新畫面上看得到的小卡；漲幅前面有「昨」＝還是昨收、沒有＝今天即時；小卡右上小標只標例外：<b>延</b>＝Yahoo 延遲約 20 分、<b>未</b>＝今天還沒成交（漲停／跌停鎖死常見）、○＝這輪沒拿到報價；開盤初期「昨」的小卡漲幅顯示「昨▲x%」並排在最後，排序只比同一天的數字）。名單有股票讀不到日K（新掛牌、ETF、已下市）時統計列會標「N 檔無日K」並列出名稱，收盤後排程更新前也先顯示它。籌碼資料近 60 個交易日，K 線 130 日；分片資料與估值看板個股頁同一份。`;
 }
 // ---- 畫 K：mini（小卡）與 full（放大卡） ----
 function drawK(cv,r,NN,opt){
@@ -430,7 +432,7 @@ function valCnt(){const all=ROWS.length,n=ROWS.filter(r=>VAL[r.c]).length,bad=RO
   const mb=$('vMore');if(mb)mb.onclick=()=>{valKick()}}
 function renderV(){const R=rows();if(!R.length){$('grid').innerHTML=`<div class="empty">${ROWS.length?'沒有符合篩選條件的股票（估值資料還沒讀完的不算）':'這個清單讀不到資料'}</div>`;valCnt();return}
   $('grid').innerHTML=R.map((r,i)=>{const v=VAL[r.c];return `<article class="km${v?'':' vld'}${v&&v.mainPct>=80?' hot':''}" data-i="${i}" data-c="${esc(r.c)}" role="button" tabindex="0">
-    <div class="km-h"><span class="rk">${i+1}</span><b>${esc(r.n)}</b><span class="cd">${esc(r.c)}</span>${v&&v.cyc?`<span class="tg cy" style="margin-left:auto" title="循環股（${esc(v.why)}）：以淨值比為主尺">循</span>`:''}${nbadge(r.c)}</div>
+    <div class="km-h"><span class="rk">${i+1}</span>${nmB(r.n)}<span class="cd">${esc(r.c)}</span>${v&&v.cyc?`<span class="tg cy" style="margin-left:auto" title="循環股（${esc(v.why)}）：以淨值比為主尺">循</span>`:''}${nbadge(r.c)}</div>
     <div class="km-s">${vStat(r.c)}</div>
     <canvas class="km-cv"></canvas></article>`}).join('');
   const io=new IntersectionObserver(es=>{es.forEach(e=>{if(!e.isIntersecting)return;const el=e.target,cv=el.querySelector('canvas'),v=VAL[el.dataset.c];if(!cv.dataset.done&&v){drawRiver(cv,v,{mini:true,kind:mainRv(v)});cv.dataset.done=1}io.unobserve(el)})},{rootMargin:'300px 0px'});
@@ -512,11 +514,12 @@ function tpe(){const d=new Date(Date.now()+8*3600e3);return {ymd:d.toISOString()
 function marketOpenNow(){const t=tpe();return t.dow>=1&&t.dow<=5&&t.min>=8*60+59&&t.min<=13*60+36}
 function shardLatest(){let m='';Object.values(SHARD).forEach(s=>{if(s&&s.days&&s.days.length)m=s.days[s.days.length-1]>m?s.days[s.days.length-1]:m});return m}
 // 2026-10-30：小卡狀態小標 即＝即時、延＝Yahoo 延遲、未＝今天還沒成交（常見於開盤即漲停／跌停鎖死）、昨＝還是昨收（等下一輪）、○＝這輪沒拿到報價
+function nmB(n){const L=[...String(n)].length;return `<b${L>=5?' class="n5"':L===4?' class="n4"':''}>${esc(n)}</b>`}
 function liveTag(r){const lb=r.bars[r.bars.length-1];
-  if(lb&&lb.live)return `<span class="lv${lb.live==='yahoo'?' dl':''}" title="${lb.live==='yahoo'?'Yahoo 延遲約 20 分':'即時'} ${esc((lb.lt||'').slice(0,5))}">${lb.live==='yahoo'?'延':'即'}</span>`;
+  if(lb&&lb.live)return lb.live==='yahoo'?`<span class="lv dl" title="Yahoo 延遲約 20 分 ${esc((lb.lt||'').slice(0,5))}">延</span>`:'';   // 2026-11-13 即時不標
   const q=LIVE.get(r.c);if(q&&q.miss)return '<span class="lv dl" title="這輪沒取得今天報價，下一輪再試">○</span>';
   if(q&&q.d&&lb&&q.d>lb.d)return '<span class="lv dl" title="今天還沒有成交（開盤即漲停／跌停鎖死時常見），K 棒仍是昨收">未</span>';
-  if(r.stale)return '<span class="lv st" title="還是昨天的收盤，等即時更新">昨</span>';return ''}
+  return ''}   // 2026-11-13 昨收不再標小標（第二列已有「昨▲x%」）
 function liveWant(){const t=tpe();if(document.visibilityState!=='visible')return false;if(marketOpenNow())return true;
   // 收盤後：分片最新日 < 今天（排程還沒跑）就補問一次
   // 2026-10-30：以前只補問「一次」，那一輪若只拿到部分報價（MIS 偶爾漏股、富果額度用完、Yahoo 查不到），其他小卡就整個下午卡在「昨」。
