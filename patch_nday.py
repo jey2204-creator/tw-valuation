@@ -15,14 +15,16 @@ rep('.sb{display:flex;gap:4px;align-items:center;font-size:12px;color:var(--mute
     '.sb{display:flex;flex-wrap:wrap;gap:4px;align-items:center;font-size:12px;color:var(--muted);padding:4px 8px 0}\n'
     '.sb .brk{flex-basis:100%;height:0}\n'
     '.sb select{flex:none;height:26px;padding:0 4px;border-radius:13px;border:1px solid var(--accent);background:var(--card);color:var(--fg);font-size:16px;font-weight:700;max-width:46vw}\n'
-    '.sb select.old{background:#fef3c7;border-color:#b45309;color:#7c2d12}')
+    '.sb select.old{background:#fef3c7;border-color:#b45309;color:#7c2d12}\n'
+    '.sb #chgBtn i{font-style:normal;font-weight:400;opacity:.45;padding:0 1px}\n'
+    '.sb #chgBtn i.on{font-weight:800;opacity:1;text-decoration:underline;text-underline-offset:2px}')
 rep('''  <span class="lab">市場</span><button data-m="" aria-pressed="true">全部</button><button data-m="上市">上市</button><button data-m="上櫃">上櫃</button>
   <span class="sep"></span>
   <span class="lab">排序</span>''',
     '''  <select id="daySel" aria-label="名單日期"><option value="">最新</option></select>
   <span class="sep"></span><button data-m="" aria-pressed="true">全部</button><button data-m="上市">上市</button><button data-m="上櫃">上櫃</button>
   <span class="brk"></span>
-  <span class="lab">排序</span>''')
+  ''')
 rep('<button data-s="chg">漲幅</button>', '<button data-s="chg" id="chgBtn">漲幅</button>')
 
 # ---- 狀態與歷史名單
@@ -70,7 +72,7 @@ rep("  return {bars,px:last.c,d:last.d,chg:prev.c?last.c/prev.c-1:null,vr:v5?las
     "  return {bars,px:last.c,d:last.d,w,mo,chg:prev.c?last.c/prev.c-1:null,vr:v5?last.v/v5:null,c6,")
 rep("function rows(){let R=(D[TAB]||[]).filter(x=>!MK||x.m===MK);", "function rows(){let R=LST(TAB).filter(x=>!MK||x.m===MK);")
 rep("const key={def,chg:x=>k(x.c).chg??-9,", "const key={def,chg:x=>k(x.c)[CHGK()]??-9,")
-rep("  $('defBtn').textContent=T[TAB].def;", "  $('defBtn').textContent=T[TAB].def;$('chgBtn').textContent=CHGP==='w'?'週漲幅':CHGP==='m'?'月漲幅':'漲幅';")
+rep("  $('defBtn').textContent=T[TAB].def;", "  $('defBtn').textContent=T[TAB].def;$('chgBtn').innerHTML='漲幅 '+[['d','日'],['w','週'],['m','月']].map(([k,n])=>`<i class="${k===CHGP?'on':''}">${n}</i>`).join('·');$('chgBtn').title='連點切換 日→週→月';")
 rep("  $('scanLink').href=toStats?'stats.html':'scan.html#n'+TAB;", "  $('scanLink').href=toStats?'stats.html':'scan.html#n'+TAB;")
 rep("const R=rows(),all=(D[TAB]||[]).length;LR=R;", "const R=rows(),all=LST(TAB).length;LR=R;")
 rep("ntDemo(D);const stl=(TAB==='att'||TAB==='pre')?ntStale(D):'';",
@@ -79,5 +81,5 @@ rep("檔・名單 ${md(D.asof)}・今日上漲", "檔・名單 ${md(DAY||D.asof)
 rep("    if(k){if(k.c6!=null&&!['dend','dpost'].includes(TAB))",
     "    if(k&&CHGP!=='d'&&k[CHGK()]!=null)tags.push(`<span class=\"tg\">${CHGP==='w'?'週':'月'} <b class=\"${cls(k[CHGK()])}\">${pct(k[CHGK()])}</b></span>`);\n"
     "    if(k){if(k.c6!=null&&!['dend','dpost'].includes(TAB))")
-rep("本頁不構成投資建議。`;", "漲幅鈕連點＝日→週→月（週＝5 個交易日前、月＝上個月同一天）。本頁不構成投資建議。 v1113a`;")
+rep("本頁不構成投資建議。`;", "漲幅鈕連點＝日→週→月（週＝5 個交易日前、月＝上個月同一天）。本頁不構成投資建議。 v1113b`;")
 open('notice.html' if prod else 'beta_notice.html', 'w', encoding='utf-8').write(t)
