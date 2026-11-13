@@ -5,6 +5,7 @@
 輸出 {"asof": 最新名單日, "fields": [...], "d": {YYYYMMDD: {代號: [週%, 月%, 季%, 量比, 外資5日(張), 投信5日(張), 收盤, 當日漲跌%]}}}
   週＝5 個交易日前；月／季＝上個月／三個月前同一天（休市取前一交易日）——跟 fetch_momentum.py 的 dc 一致
   量比＝近 5 日均量 ÷ 近 20 日均量；法人不足 5 天的給 null
+2026/11/13 起另輸出 a[名單日][代號] = [週%, 月%, 季%, 當日漲跌%]（還原除權息／減資／面額變更後，係數來自 data/adj.json；只收有差異的）
 每個名單日只收當天五名單會用到的代號（注意、處置中、快達處置估算、處置剛結束、近 10 個名單日列過注意的），保留 40 個名單日。
 由 fetch_notice.py 結尾呼叫；也可單獨跑：python notice_mo.py
 """
@@ -99,6 +100,26 @@ def main():
         v = recs[k][1]["p"].get(c)
         return v[0] if v and v[0] else None
 
+    ADJ = load(DATA / "adj.json", {}).get("ev", {})
+
+    def aclose(c, k, i):
+        """第 k 個交易日的收盤，還原到第 i 個交易日的價位（k 之後、i 以前的除權息／減資／面額變更連乘）"""
+        x = close(c, k)
+        if x:
+            for d, f, *_ in ADJ.get(c, []):
+                if stems[k] < d <= stems[i]:
+                    x *= f
+        return x
+
+    def ret_a(c, i, k):
+        now = close(c, i)
+        if now is None or k is None or k < 0:
+            return None
+        base = next((x for x in (aclose(c, j, i) for j in range(k, -1, -1)) if x), None)
+        if base is None:
+            base = next((x for x in (aclose(c, j, i) for j in range(k + 1, min(k + 3, i))) if x), None)
+        return round((now / base - 1) * 100, 1) if base else None
+
     def ret(c, i, k):
         """收盤對比第 k 個交易日；基準日沒成交往前找最近一筆，再不行往後 3 天內"""
         now = close(c, i)
@@ -139,8 +160,23 @@ def main():
             row[c] = [ret(c, i, i - 5), ret(c, i, iM), ret(c, i, iQ), vr, f5, t5, cl,
                       round((cl / pv - 1) * 100, 2) if pv else None]
         out[day] = row
+    # 2026/11/13：還原版（跟 XQ 一致）→ a[名單日][代號] = [週%, 月%, 季%, 當日漲跌%]，只收跟未還原不同的；每次全部重算
+    adj_out = {}
+    for day, row in out.items():
+        if day not in pos:
+            continue
+        i = pos[day]
+        iM, iQ = cal_idx(i, 1), cal_idx(i, 3)
+        for c, v in row.items():
+            if not any(stems[max(0, (iQ or 0) - 1)] < d <= day for d, *_ in ADJ.get(c, [])):
+                continue
+            pv = next((x for x in (aclose(c, j, i) for j in range(i - 1, max(-1, i - 6), -1)) if x), None)
+            a = [ret_a(c, i, i - 5), ret_a(c, i, iM), ret_a(c, i, iQ), round((v[6] / pv - 1) * 100, 2) if pv and v[6] else None]
+            if a != [v[0], v[1], v[2], v[7]]:
+                adj_out.setdefault(day, {})[c] = a
     res = {"updated": dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%MZ"), "asof": max(out) if out else None,
-           "pxAsof": stems[-1] if stems else None, "fields": FIELDS, "d": {k: out[k] for k in sorted(out)}}
+           "pxAsof": stems[-1] if stems else None, "fields": FIELDS, "d": {k: out[k] for k in sorted(out)},
+           "a": {k: adj_out[k] for k in sorted(adj_out)}}
     OUT.write_text(json.dumps(res, ensure_ascii=False, separators=(",", ":")), "utf-8")
     print(f"notice_mo: {len(out)} 個名單日、共 {sum(len(v) for v in out.values())} 筆，最新 {res['asof']}（價到 {res['pxAsof']}）")
 

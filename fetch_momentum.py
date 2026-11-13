@@ -14,6 +14,7 @@
   週／月／季 = 對比 5／20／60 個交易日前的收盤（未還原除權息）
   2026/11/12 起另輸出 dc[代號] = [月%, 季%]（日曆日：對比上個月／三個月前同一天，休市取前一交易日；跟 XQ 一致）、calBase={m,q}；
   網頁的月／季與 🔥 都改用 dc，d 內的 20／60 交易日版保留備用
+  2026/11/13 起另輸出 da[代號] = [週%, 月%, 季%]（還原除權息／減資／面額變更後；係數來自 fetch_adj.py 的 data/adj.json，只收有差異的代號）
   量比 = 近 5 日均量 ÷ 近 20 日均量
   🔥 = 月% > 0、量比 ≥ 1.5、且外資或投信 5 日買超 ≥ 5 日成交量的 1%
 用法：python fetch_momentum.py
@@ -385,6 +386,12 @@ def compute():
     nM, baseM = cal_n(1)
     nQ, baseQ = cal_n(3)
     outc = {}
+    # 2026/11/13：還原版週／月／季（除權息、減資、面額變更；跟 XQ 一致）→ da[代號] = [週%, 月%, 季%]，只收跟未還原不同的
+    try:
+        ADJ = json.loads((OUT / "adj.json").read_text("utf-8")).get("ev", {})
+    except Exception:
+        ADJ = {}
+    outa = {}
 
     def ret(cl, n):
         """收盤對比 n 個交易日前；當天沒成交就往前找最近一筆"""
@@ -404,6 +411,18 @@ def compute():
         mc, qc = (ret(cl, nM) if nM else None), (ret(cl, nQ) if nQ else None)
         if mc is not None or qc is not None:
             outc[c] = [mc, qc]
+        evs = [(d, f) for d, f, *_ in ADJ.get(c, []) if stems and stems[0] < d <= stems[-1]]
+        if evs:
+            cla = []
+            for sdt, x in zip(stems, cl):
+                k = 1.0
+                for d, f in evs:
+                    if sdt < d:
+                        k *= f
+                cla.append(x * k if x else x)
+            a = [ret(cla, 5), ret(cla, nM) if nM else None, ret(cla, nQ) if nQ else None]
+            if a != [w, mc, qc]:
+                outa[c] = a
         v5 = [x for x in vo[-5:] if x is not None]
         v20 = [x for x in vo[-20:] if x is not None]
         vr = round((sum(v5) / len(v5)) / (sum(v20) / len(v20)), 2) if v5 and v20 and sum(v20) > 0 else None
@@ -435,7 +454,7 @@ def compute():
             out[c] = [w, m, q, vr, k(f5), k(t5), k(f20), k(t20), streak(ti), streak(fi), fire]
         else:                                # 沒有法人資料 → 顯示「—」而不是 0
             out[c] = [w, m, q, vr, None, None, None, None, None, None, 0]
-    compute.cal = dict(dc=outc, calBase=dict(m=baseM, q=baseQ))
+    compute.cal = dict(dc=outc, calBase=dict(m=baseM, q=baseQ), da=outa)
     return out, pdays, idays
 
 

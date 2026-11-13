@@ -50,6 +50,11 @@ jobs:
         env:
           FORCE: ${{ github.event.inputs.force_headcount || '' }}
         run: python fetch_headcount.py 2>&1 | tee "$RUNNER_TEMP/hc.log"
+      - name: 還原係數（除權息／減資／面額變更；週月季還原用，失敗沿用舊檔）
+        id: adj
+        continue-on-error: true
+        timeout-minutes: 5
+        run: python fetch_adj.py 2>&1 | tee "$RUNNER_TEMP/adj.log"
       - name: 股價動能＋法人（動能模式用）
         id: mom
         continue-on-error: true
