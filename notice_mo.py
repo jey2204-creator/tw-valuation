@@ -100,6 +100,10 @@ def main():
         v = recs[k][1]["p"].get(c)
         return v[0] if v and v[0] else None
 
+    def cur(c, i):
+        """名單日當天沒成交（暫停交易／零成交）→ 用之前 5 個交易日內最近一筆收盤當現價（2026-11-13，跟 XQ 一致）"""
+        return next((x for x in (close(c, j) for j in range(i, max(-1, i - 5), -1)) if x), None)
+
     ADJ = load(DATA / "adj.json", {}).get("ev", {})
 
     def aclose(c, k, i):
@@ -112,7 +116,7 @@ def main():
         return x
 
     def ret_a(c, i, k):
-        now = close(c, i)
+        now = cur(c, i)
         if now is None or k is None or k < 0:
             return None
         base = next((x for x in (aclose(c, j, i) for j in range(k, -1, -1)) if x), None)
@@ -122,7 +126,7 @@ def main():
 
     def ret(c, i, k):
         """收盤對比第 k 個交易日；基準日沒成交往前找最近一筆，再不行往後 3 天內"""
-        now = close(c, i)
+        now = cur(c, i)
         if now is None or k is None or k < 0:
             return None
         base = next((x for x in (close(c, j) for j in range(k, -1, -1)) if x), None)
@@ -145,9 +149,10 @@ def main():
         idays = [(s, r) for s, r in irecs if s <= day]
         row = {}
         for c in sorted(codes_for(day, hist, dh, ldays, extra)):
-            cl = close(c, i)
+            cl = cur(c, i)
             if cl is None:
                 continue
+            traded = close(c, i) is not None
             vo = [recs[j][1]["p"].get(c) for j in range(max(0, i - 19), i + 1)]
             vo = [v[1] for v in vo if v and len(v) > 1 and v[1] is not None]
             v5 = vo[-5:]
@@ -158,7 +163,7 @@ def main():
             t5 = round(sum(x[1] for x in iv[-5:]) / 1000) if len(iv) >= 5 else None
             pv = next((x for x in (close(c, j) for j in range(i - 1, max(-1, i - 6), -1)) if x), None)
             row[c] = [ret(c, i, i - 5), ret(c, i, iM), ret(c, i, iQ), vr, f5, t5, cl,
-                      round((cl / pv - 1) * 100, 2) if pv else None]
+                      round((cl / pv - 1) * 100, 2) if pv and traded else None]
         out[day] = row
     # 2026/11/13：還原版（跟 XQ 一致）→ a[名單日][代號] = [週%, 月%, 季%, 當日漲跌%]，只收跟未還原不同的；每次全部重算
     adj_out = {}
@@ -171,7 +176,7 @@ def main():
             if not any(stems[max(0, (iQ or 0) - 1)] < d <= day for d, *_ in ADJ.get(c, [])):
                 continue
             pv = next((x for x in (aclose(c, j, i) for j in range(i - 1, max(-1, i - 6), -1)) if x), None)
-            a = [ret_a(c, i, i - 5), ret_a(c, i, iM), ret_a(c, i, iQ), round((v[6] / pv - 1) * 100, 2) if pv and v[6] else None]
+            a = [ret_a(c, i, i - 5), ret_a(c, i, iM), ret_a(c, i, iQ), round((v[6] / pv - 1) * 100, 2) if pv and v[6] and close(c, i) else None]
             if a != [v[0], v[1], v[2], v[7]]:
                 adj_out.setdefault(day, {})[c] = a
     res = {"updated": dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%MZ"), "asof": max(out) if out else None,

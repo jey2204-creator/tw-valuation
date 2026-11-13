@@ -395,12 +395,14 @@ def compute():
 
     def ret(cl, n):
         """收盤對比 n 個交易日前；當天沒成交就往前找最近一筆"""
-        if len(cl) <= n or cl[-1] is None:
+        # 2026/11/13：最新一天沒成交（暫停交易／零成交）→ 用最近 5 個交易日內最後一筆收盤當現價，基準日照市場交易日算（跟 XQ 一致）
+        cur = next((x for x in reversed(cl[-5:]) if x), None)
+        if len(cl) <= n or cur is None:
             return None
         base = next((x for x in reversed(cl[:len(cl) - n]) if x), None)
         if base is None:                     # 基準日沒成交（暫停交易等）→ 往後找 3 個交易日內最近的一筆
             base = next((x for x in cl[len(cl) - n:len(cl) - n + 3] if x), None)
-        return round((cl[-1] / base - 1) * 100, 1) if base else None
+        return round((cur / base - 1) * 100, 1) if base else None
 
     for c in ids:
         # 舊交易日被 prune() 瘦身成只剩收盤 [close] → 成交量取不到時當 None（2026/10/28 起曾因此 IndexError 整支停擺）
