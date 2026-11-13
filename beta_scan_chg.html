@@ -220,7 +220,7 @@ async function init(){
 }
 function paintBar(){const V=MODE==='v';document.querySelectorAll('#sortBar .vs').forEach(b=>b.hidden=!V);document.querySelectorAll('#sortBar button[data-k=vr],#sortBar button[data-k=ts],#sortBar button[data-k=fs],#sortBar button[data-k=d20],#sortBar button[data-k=h20],#sortBar .f[data-f]').forEach(b=>b.hidden=V);document.querySelector('#sortBar .per').hidden=V;document.querySelector('#sortBar .rv').hidden=!V;
   document.querySelectorAll('#sortBar .mode button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.m===MODE)));document.querySelectorAll('#sortBar .rv button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.r===RV)));document.querySelectorAll('#sortBar .f[data-vf]').forEach(b=>b.setAttribute('aria-pressed',String(!!VF[b.dataset.vf])));
-  const cb=document.querySelector('#sortBar button[data-k=chg]');cb.innerHTML=[['d','日'],['w','週'],['m','月']].map(([k,n])=>`<i class="${k===CHGP?'on':''}">${n}</i>`).join('·');cb.title='連點切換 日→週→月漲幅';document.querySelectorAll('#sortBar button').forEach(b=>{if(b.dataset.k)b.setAttribute('aria-pressed',String(b.dataset.k===sortK));else if(b.dataset.f)b.setAttribute('aria-pressed',String(!!FL[b.dataset.f]));else if(b.dataset.n)b.setAttribute('aria-pressed',String(+b.dataset.n===N))})}
+  const cb=document.querySelector('#sortBar button[data-k=chg]');cb.innerHTML=[['d','日'],['w','週'],['m','月']].map(([k,n])=>`<i class="${k===CHGP?'on':''}">${n}</i>`).join('·');cb.title='連點切換 日→週→月漲幅（週＝5 個交易日前、月＝上個月同一天）';document.querySelectorAll('#sortBar button').forEach(b=>{if(b.dataset.k)b.setAttribute('aria-pressed',String(b.dataset.k===sortK));else if(b.dataset.f)b.setAttribute('aria-pressed',String(!!FL[b.dataset.f]));else if(b.dataset.n)b.setAttribute('aria-pressed',String(+b.dataset.n===N))})}
 async function pick(sel){cur=sel;
   document.querySelectorAll('#themes button').forEach(b=>b.setAttribute('aria-pressed',String((sel.kind==='t'&&b.dataset.t===sel.id)||(sel.kind==='n'&&b.dataset.n===sel.id))));
   {const on=document.querySelector('#themes button[aria-pressed=true]');if(on)on.scrollIntoView({inline:'center',block:'nearest'})}
@@ -291,11 +291,13 @@ function build(c){const s=SHARD[c.slice(0,2)];if(!s||!s.d||!s.d[c])return null;c
   const dp=DH?Object.values(DH).filter(v=>v&&v.c===c&&v.start&&v.end).map(v=>[v.start,v.end]):[];
   const nd=HIST?Object.fromEntries(Object.entries(HIST).filter(([d,v])=>(v.att||[]).includes(c)).map(([d])=>[d,'y'])):{};
   if(TOPK&&THIST)Object.entries(THIST).forEach(([d,v])=>{if((v[TOPK]||[]).includes(c))nd[d]=TOPK});
-  return {c,n:NAME[c]||c,bars,nd,dp,d:last.d,live:!!last.live,px:last.c,chg:prev.c?last.c/prev.c-1:null,chg5:n>5&&bars[n-6].c?last.c/bars[n-6].c-1:null,chg20:n>20&&bars[n-21].c?last.c/bars[n-21].c-1:null,vr:v5?last.v/v5:null,ts:streak('t'),fs:streak('f'),t5:sum('t',5),f5:sum('f',5),t20:sum('t',20),f20:sum('f',20),
+  return {c,n:NAME[c]||c,bars,nd,dp,d:last.d,live:!!last.live,px:last.c,chg:prev.c?last.c/prev.c-1:null,chg5:n>5&&bars[n-6].c?last.c/bars[n-6].c-1:null,chg20:calM(bars),vr:v5?last.v/v5:null,ts:streak('t'),fs:streak('f'),t5:sum('t',5),f5:sum('f',5),t20:sum('t',20),f20:sum('f',20),
     split,ma5,ma20,ma60,m240:last.m240,d20:ma20?last.c/ma20-1:null,d60:ma60?last.c/ma60-1:null,d240:last.m240?last.c/last.m240-1:null,hi20,brk:last.h>=hi20,pos60:hi60>lo60?(last.c-lo60)/(hi60-lo60):null,
     arr:ma5!=null&&ma20!=null&&ma60!=null?(ma5>ma20&&ma20>ma60?'多頭排列':ma5<ma20&&ma20<ma60?'空頭排列':'糾結'):'—'}}
 // 漲幅連點循環（2026-10-29）：日→週（5 日）→月（20 日），按鈕文字跟著變
 const CHGK=()=>CHGP==='w'?'chg5':CHGP==='m'?'chg20':'chg';
+function calM(bars){const n=bars.length;if(n<2)return null;const last=bars[n-1],ld=String(last.d),tm=new Date(+ld.slice(0,4),+ld.slice(4,6)-2,1),eom=new Date(tm.getFullYear(),tm.getMonth()+1,0).getDate(),tg=''+tm.getFullYear()+String(tm.getMonth()+1).padStart(2,'0')+String(Math.min(+ld.slice(6),eom)).padStart(2,'0');
+  let bi=-1;for(let j=0;j<n;j++){if(String(bars[j].d)<=tg)bi=j}return bi>=0&&bars[bi].c?last.c/bars[bi].c-1:null}
 function rows(){return MODE==='v'?rowsV():rowsK()}
 function rowsK(){let R=ROWS.filter(r=>(!FL.ma20||(r.d20!=null&&r.d20>=0))&&(!FL.ma60||(r.d60!=null&&r.d60>=0))&&(!FL.ts3||r.ts>=3)&&(!FL.vr12||(r.vr!=null&&r.vr>=1.2)));
   const ck=CHGK();const key={li:r=>-r.li,chg:r=>r.stale&&ck==='chg'?-99:(r[ck]??-9),vr:r=>r.stale?-99:(r.vr??-9),ts:r=>r.ts,fs:r=>r.fs,d20:r=>r.d20??-9,h20:r=>(r.brk?10:0)+(r.hi20?r.px/r.hi20:0)}[sortK];
