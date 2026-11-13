@@ -46,6 +46,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 .sb .brk{flex-basis:100%;height:0}
 .sb select{flex:none;height:26px;padding:0 4px;border-radius:13px;border:1px solid var(--accent);background:var(--card);color:var(--fg);font-size:16px;font-weight:500;max-width:40vw}
 .sb select.old{background:#fef3c7;border-color:#b45309;color:#7c2d12}
+.sb select.nx{background:#dbeafe;border-color:#1d4ed8;color:#1e3a8a}
 .sb #chgBtn i{font-style:normal;font-weight:400;opacity:.45;padding:0 1px}
 .sb #chgBtn i.on{font-weight:800;opacity:1;text-decoration:underline;text-underline-offset:2px}
 .sb::-webkit-scrollbar{display:none}
@@ -133,7 +134,15 @@ const cls=x=>x>0?'up':x<0?'dn':'';
 const md=d=>d?+d.slice(4,6)+'/'+ +d.slice(6,8):'';
 let D=null,TAB='att',MK='',SORT='def',SHARD={},K={},LR=[];
 let DAY='',HIST=null,DH=null,NAMES={},HR=null,CHGP='d';   // DAY=''＝最新；HR＝選定日回推的五名單；CHGP＝漲幅鈕 d／w／m
-const LST=k=>(DAY&&HR?HR[k]:D[k])||[];const CHGK=()=>CHGP==='w'?'w':CHGP==='m'?'mo':'chg';
+let PREV=null,CURD='',NEXTD='';   // CURD＝目前適用的名單日（同 XQ）；NEXTD＝今晚新公布、下個交易日才適用的名單日（沒有就是 ''）
+const TODAY=(()=>{const q=(location.search.match(/[?&]today=(\d{8})/)||[])[1];if(q)return q;return new Date(Date.now()+8*3600e3).toISOString().slice(0,10).replace(/-/g,'')})();
+const SRC=()=>(DAY===D.asof?D:PREV&&DAY===PREV.asof?PREV:HR)||D;
+const LST=k=>SRC()[k]||[];
+const missMk=()=>{const m=D.mkAsof;if(!m)return '';const L=['上市','上櫃'].filter(k=>!m[k]||m[k]<D.asof);return L.length===1?L[0]:''};
+// 目前適用 vs 明日：同一頁籤的代號差異（上櫃還沒公布時，上櫃股不算移出，標待公布）
+function nxInfo(k){if(!NEXTD||!PREV||!['att','dis','pre'].includes(k))return null;const a=PREV[k]||[],b=D[k]||[],A=new Set(a.map(x=>x.c)),B=new Set(b.map(x=>x.c)),mm=k==='dis'?'':missMk();
+  return {A,B,mm,add:b.filter(x=>!A.has(x.c)).length,keep:a.filter(x=>B.has(x.c)).length,out:a.filter(x=>!B.has(x.c)&&x.m!==mm).length,wait:mm?a.filter(x=>!B.has(x.c)&&x.m===mm).length:0}}
+const CHGK=()=>CHGP==='w'?'w':CHGP==='m'?'mo':'chg';
 const WK='日一二三四五六';const wkd=d=>WK[new Date(+d.slice(0,4),+d.slice(4,6)-1,+d.slice(6)).getDay()];
 function wdCount(a,b){if(!a||!b||a>=b)return 0;let n=0;const x=new Date(+a.slice(0,4),+a.slice(4,6)-1,+a.slice(6));for(let i=0;i<120;i++){x.setDate(x.getDate()+1);const s=x.getFullYear()+String(x.getMonth()+1).padStart(2,'0')+String(x.getDate()).padStart(2,'0');if(s>b)break;if(x.getDay()%6)n++}return n}
 // 用 hist.json＋dis_hist.json 回推選定日的五名單（原因全文只有最新一天有；快達處置一律用次數估算）
@@ -152,14 +161,15 @@ function histAll(day){const nm=c=>(NAMES[c]||[])[0]||c,mk=c=>(NAMES[c]||[])[1]||
 function tabCnt(){$('nAtt').textContent=LST('att').length;$('nDis').textContent=LST('dis').length;$('nPre').textContent=LST('pre').length;$('nEnd').textContent=LST('dend').length;$('nPost').textContent=LST('dpost').length}
 async function ensureK(){const codes=[...new Set(['att','dis','pre','dend','dpost'].flatMap(k=>LST(k).map(x=>x.c)))];
   await Promise.all([...new Set(codes.map(c=>c.slice(0,2)))].map(g=>loadShard(g)));codes.forEach(c=>{if(K[c]===undefined)K[c]=kinfo(c)})}
-async function setDay(d){DAY=d&&d!==D.asof?d:'';$('daySel').classList.toggle('old',!!DAY);
-  if(DAY){if(!HIST){const [h,dh,ls]=await Promise.all(['data/notice/hist.json','data/notice/dis_hist.json','data/list.json'].map(u=>fetch(u+'?t='+Math.floor(Date.now()/3e5)).then(r=>r.ok?r.json():null).catch(()=>null)));HIST=h||{};DH=dh||{};(ls||[]).forEach(r=>NAMES[r[0]]=[r[1],r[2]])}
-    HR=histAll(DAY);$('list').innerHTML='<div class="empty">讀取中…</div>';await ensureK()}else HR=null;
-  tabCnt();paint()}
-async function fillDays(){try{const r=await fetch('data/notice/hist.json?t='+Math.floor(Date.now()/3e5));if(!r.ok)return;HIST0=await r.json()}catch(e){return}
-  const ds=Object.keys(HIST0).filter(d=>d<D.asof&&(HIST0[d].att||[]).length).sort().reverse().slice(0,40);
-  $('daySel').innerHTML=`<option value="">${md(D.asof)}（${wkd(D.asof)}）</option>`+ds.map(d=>`<option value="${d}">${md(d)}（${wkd(d)}）</option>`).join('');
-  $('daySel').onchange=e=>setDay(e.target.value)}
+async function setDay(d){DAY=d||CURD;const sel=$('daySel');sel.value=DAY;sel.classList.toggle('nx',!!NEXTD&&DAY===NEXTD);sel.classList.toggle('old',DAY!==CURD&&DAY!==NEXTD);
+  if(DAY!==D.asof&&!(PREV&&DAY===PREV.asof)){if(!HIST){const [h,dh,ls]=await Promise.all(['data/notice/hist.json','data/notice/dis_hist.json','data/list.json'].map(u=>fetch(u+'?t='+Math.floor(Date.now()/3e5)).then(r=>r.ok?r.json():null).catch(()=>null)));HIST=h||{};DH=dh||{};(ls||[]).forEach(r=>NAMES[r[0]]=[r[1],r[2]])}
+    HR=histAll(DAY);$('list').innerHTML='<div class="empty">讀取中…</div>'}else HR=null;
+  await ensureK();tabCnt();paint()}
+async function fillDays(){const sel=$('daySel');const head=()=>`<option value="${CURD}">適用 ${md(CURD)}</option>`+(NEXTD?`<option value="${NEXTD}">🆕明日 ${md(NEXTD)}</option>`:'');
+  sel.innerHTML=head();sel.value=DAY;sel.onchange=e=>setDay(e.target.value);
+  try{const r=await fetch('data/notice/hist.json?t='+Math.floor(Date.now()/3e5));if(!r.ok)return;HIST0=await r.json()}catch(e){return}
+  const ds=Object.keys(HIST0).filter(d=>d<CURD&&(HIST0[d].att||[]).length).sort().reverse().slice(0,40);
+  sel.innerHTML=head()+ds.map(d=>`<option value="${d}">${md(d)}（${wkd(d)}）</option>`).join('');sel.value=DAY}
 let HIST0=null;
 const T={att:{def:'連續天',title:'注意股',tip:'<b>注意股</b>＝交易所依「最近六日漲幅、週轉率、本益比、成交量放大」等標準公布的過熱警示。<b>不是買進訊號</b>——被列注意後常見高開低走；若手上有，把它當減碼提醒。連續天數＝連續幾個交易日都在名單上；次數用本站紀錄算（上市已回補 2026/9/14 起，上櫃自 2026/10/27 起累積，所以上櫃 30 日次數前期會偏少）。'},
   dis:{def:'結束日',title:'處置股',tip:'<b>處置股</b>＝注意次數達標後改為「分盤撮合」（約每 2 分鐘撮合一次；2026/8/10 新制前為 5 或 20 分鐘）、可能要求預收款券，流動性大降、不能當沖。處置期間通常 5 個交易日（同時因當沖占比過高被列注意者 7 個；新制前為 10／12 個）。排序預設＝越快結束越前面；K 圖紅色底色＝處置期間。'},
@@ -167,17 +177,18 @@ const T={att:{def:'連續天',title:'注意股',tip:'<b>注意股</b>＝交易�
   dend:{def:'剩餘日',title:'快結束',tip:'<b>⏳ 快結束</b>＝處置中、<b>3 個交易日內</b>恢復正常撮合的股票。<b>結束≠利多</b>——常見說法是「處置結束會噴」，但也可能主力早在分盤期間出完貨；先看「📊 處置後統計」的歷史勝率，再決定要不要當訊號。K 圖紅色底色＝處置期間。'},
   dpost:{def:'結束日',title:'剛結束',tip:'<b>✅ 剛結束</b>＝最近 <b>10 個交易日內</b>處置結束（已恢復逐筆撮合）。卡片「結束後」＝從處置最後一天收盤到最新收盤的累計漲跌；K 圖紅色底色＝處置期間，可直接看處置前、中、後的價量。又進新一輪處置的股票不在這裡（在「處置」）。樣本：上市回補近 60 天，上櫃自 2026/10/29 起累積。'}};
 async function init(){
-  const r=await fetch('data/notice.json?t='+Math.floor(Date.now()/3e5)).catch(()=>null);
-  D=r&&r.ok?await r.json():null;
+  const [r,rp]=await Promise.all(['data/notice.json','data/notice/prev.json'].map(u=>fetch(u+'?t='+Math.floor(Date.now()/3e5)).catch(()=>null)));
+  D=r&&r.ok?await r.json():null;try{PREV=rp&&rp.ok?await rp.json():null}catch(e){PREV=null}
   if(!D){$('list').innerHTML='<div class="empty">還沒有名單資料（排程第一次跑完後才有）</div>';return}
-  tabCnt();fillDays();
+  ntDemo(D);if(PREV&&!(PREV.asof&&PREV.asof<D.asof))PREV=null;
+  if(PREV&&D.asof>=TODAY){CURD=PREV.asof;NEXTD=D.asof}else{CURD=D.asof;NEXTD=''}
+  DAY=CURD;tabCnt();fillDays();
+  $('cnt').addEventListener('click',e=>{if(e.target.closest('#toNx')){e.preventDefault();setDay(NEXTD)}});
   const h=location.hash.slice(1);if(['att','dis','pre','dend','dpost'].includes(h))TAB=h;
   document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{TAB=b.dataset.tab;history.replaceState(null,'','#'+TAB);paint()});
   $('bar').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.id==='noteBtn'){const on=$('note').classList.toggle('hid');b.setAttribute('aria-pressed',String(!on));return}if(b.dataset.m!=null)MK=b.dataset.m;else if(b.dataset.s){if(b.dataset.s==='chg'&&SORT==='chg')CHGP=CHGP==='d'?'w':CHGP==='w'?'m':'d';SORT=b.dataset.s}paint()});
   $('list').addEventListener('click',e=>{if(e.target.closest('a'))return;const c=e.target.closest('.nc');if(c)c.classList.toggle('open')});
-  const codes=[...new Set([...D.att,...D.dis,...D.pre,...(D.dend||[]),...(D.dpost||[])].map(x=>x.c))];
-  await Promise.all([...new Set(codes.map(c=>c.slice(0,2)))].map(g=>loadShard(g)));
-  codes.forEach(c=>K[c]=kinfo(c));
+  await ensureK();
   paint();
 }
 async function loadShard(g){if(SHARD[g]!==undefined)return SHARD[g];SHARD[g]=null;try{const r=await fetch('data/chip_s/'+g+'.json?t='+Math.floor(Date.now()/600000));if(r.ok)SHARD[g]=await r.json()}catch(e){}return SHARD[g]}
@@ -216,11 +227,17 @@ function paint(){
   $('note').innerHTML=T[TAB].tip;
   const R=rows(),all=LST(TAB).length;LR=R;
   const up=R.filter(x=>(K[x.c]||{}).chg>0).length;
-  ntDemo(D);const stl=DAY?`📅 ${md(DAY)} 名單・K 線與漲跌為最新（${md(D.asof)}）`:(TAB==='att'||TAB==='pre')?ntStale(D):'';
-  $('cnt').innerHTML=(stl?`<div style="color:#b45309;font-weight:600;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${stl}</div>`:'')+`<b>${R.length}</b>／${all} 檔・名單 ${md(DAY||D.asof)}・今日上漲 <b>${up}</b> 檔・點卡片展開原因・ⓘ 看說明`;
+  const ni=nxInfo(TAB),stale=(DAY===D.asof&&(TAB==='att'||TAB==='pre'))?ntStale(D):'';let stl='',stc='#b45309';
+  if(stale)stl=stale;
+  else if(DAY===CURD){if(ni){stc='var(--accent)';stl=`🆕 明日新增 <b>${ni.add}</b>・續列 ${ni.keep}・移出 ${ni.out}${ni.wait?`・${ni.mm}待公布 ${ni.wait}`:''}　<a href="#" id="toNx" style="font-weight:800">看明日 ›</a>`}}
+  else if(DAY===NEXTD){stc='var(--accent)';stl=`🆕 ${md(NEXTD)} 公布・下個交易日適用（XQ 明天才顯示）`}
+  else stl=`📅 ${md(DAY)} 名單・K 線與漲跌為最新（${md(D.asof)}）`;
+  $('cnt').innerHTML=(stl?`<div style="color:${stc};font-weight:600;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${stl}</div>`:'')+`<b>${R.length}</b>／${all} 檔・${md(DAY)} 公布${DAY===CURD&&NEXTD?'（今日適用）':''}・今日上漲 <b>${up}</b> 檔`;
   if(!R.length){$('list').innerHTML=`<div class="empty">${all?'這個市場沒有':'目前沒有'}${T[TAB].title}</div>`;return}
   $('list').innerHTML=R.map((x,i)=>{const k=K[x.c];const cs=TAB==='dpost'?'post':(TAB==='dis'||TAB==='dend')?'dis':(x.warn||TAB==='pre')?'warn':'';
     const tags=[];const ra=['dend','dpost'].includes(TAB)?retAfter(x.c,x.end):null;
+    if(ni&&DAY===CURD)tags.push(ni.B.has(x.c)?'<span class="tg g">明日續列</span>':ni.mm&&x.m===ni.mm?'<span class="tg g">明日待公布</span>':'<span class="tg a">明日移出</span>');
+    if(ni&&DAY===NEXTD&&!ni.A.has(x.c))tags.push('<span class="tg r">🆕 新增</span>');
     if(TAB==='att'){tags.push(`<span class="tg y">連 <b>${x.streak||1}</b> 天</span>`);tags.push(`<span class="tg${x.warn?' o':''}">10日 <b>${x.n10??'—'}</b>・30日 <b>${x.n30??'—'}</b> 次</span>`);if(x.warn)tags.push('<span class="tg o">⚠ 快達處置</span>');if(x.cnt)tags.push(`<span class="tg g">官方累計 <b>${fmt(x.cnt)}</b></span>`)}
     if(TAB==='dis'){tags.push(`<span class="tg r">處置 ${esc(x.startMd||'?')}～${esc(x.endMd||'?')}${x.left!=null?`・剩 <b>${x.left}</b> 日`:''}</span>`);if(x.measure)tags.push(`<span class="tg o">${esc(mzN(x.measure))}</span>`);if(x.n30)tags.push(`<span class="tg g">30日注意 <b>${x.n30}</b> 次</span>`)}
     if(TAB==='pre'){tags.push(`<span class="tg o">10日 <b>${x.n10??'—'}</b>・30日 <b>${x.n30??'—'}</b> 次</span>`);if(x.est)tags.push('<span class="tg g">估算</span>')}
@@ -239,7 +256,7 @@ function paint(){
     </article>`}).join('');
   const io=new IntersectionObserver(es=>{es.forEach(e=>{if(!e.isIntersecting)return;const el=e.target,cv=el.querySelector('canvas.kv');if(cv&&!cv.dataset.done){const x=LR[+el.dataset.i]||{};drawMini(cv,K[el.dataset.c],x.start?{s:x.start,e:x.end}:null);cv.dataset.done=1}io.unobserve(el)})},{rootMargin:'300px 0px'});
   $('list').querySelectorAll('.nc').forEach(el=>io.observe(el));
-  $('foot').innerHTML=`小圖＝近 40 根日K（<span class="num" style="color:var(--ma20)">━</span> 20日線、<span class="num" style="color:var(--ma60)">━</span> 60日線、紅虛線＝前 20 日最高，<b>紅色底色＝處置期間</b>），底下一條＝投信每日買賣超（紅買綠賣）。6日＝近六個交易日漲幅；量比＝今日量 ÷ 前 5 日均量；「結束後」＝處置最後一天收盤到最新收盤的累計漲跌。名單每個交易日 17:25 後自動更新（資料 ${esc(D.updated||'')}，本站歷史 ${D.histDays} 天）。處置歷史自動累積中——<a href="stats.html">📊 處置後統計</a>看結束後 1／3／5／10 日報酬與勝率。漲幅鈕連點＝日→週→月（週＝5 個交易日前、月＝上個月同一天）。本頁不構成投資建議。 v1113d`;
+  $('foot').innerHTML=`小圖＝近 40 根日K（<span class="num" style="color:var(--ma20)">━</span> 20日線、<span class="num" style="color:var(--ma60)">━</span> 60日線、紅虛線＝前 20 日最高，<b>紅色底色＝處置期間</b>），底下一條＝投信每日買賣超（紅買綠賣）。6日＝近六個交易日漲幅；量比＝今日量 ÷ 前 5 日均量；「結束後」＝處置最後一天收盤到最新收盤的累計漲跌。名單每個交易日 17:25 後自動更新（資料 ${esc(D.updated||'')}，本站歷史 ${D.histDays} 天）。處置歷史自動累積中——<a href="stats.html">📊 處置後統計</a>看結束後 1／3／5／10 日報酬與勝率。漲幅鈕連點＝日→週→月（週＝5 個交易日前、月＝上個月同一天）。預設顯示「目前適用」的名單（前一晚公布、今天盤中適用，跟 XQ 同步）；當晚新公布的在日期選單「🆕 明日」。本頁不構成投資建議。 v1113e`;
 }
 function drawMini(cv,r,band){if(!r)return;const dpr=window.devicePixelRatio||1,W=cv.clientWidth,Hh=cv.clientHeight;if(!W||!Hh)return;
   cv.width=Math.round(W*dpr);cv.height=Math.round(Hh*dpr);const g=cv.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,W,Hh);
