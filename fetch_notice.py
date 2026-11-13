@@ -325,5 +325,10 @@ out = {"updated": NOW.strftime("%Y-%m-%dT%H:%MZ"), "asof": ASOF, "mkAsof": MK_AS
        "dis": sorted(dis.values(), key=lambda x: (x["end"] or "9", x["c"])),
        "pre": sorted(pre.values(), key=lambda x: (-x["n10"], x["c"])),
        "diag": DIAG}
+# 2026-11-13：名單日換日時，把上一份完整名單留成 prev.json（注意頁預設顯示「目前適用」＝前一晚公布的，跟 XQ 同步）
+_old = load(OUT, {})
+if _old.get("asof") and _old["asof"] < ASOF:
+    _old.pop("diag", None)
+    (NDIR / "prev.json").write_text(json.dumps(_old, ensure_ascii=False, separators=(",", ":")))
 OUT.write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")))
 print(f"asof {ASOF}: 注意 {len(att)}（上市 {sum(v['m']=='上市' for v in att.values())}）、處置 {len(dis)}、快達 {len(pre)}、快結束 {len(dend)}、剛結束 {len(dpost)}；dis_hist {len(dh)} 筆；hist {len(days)} 天；src {DIAG['src']}；fail {DIAG['fail']}")
