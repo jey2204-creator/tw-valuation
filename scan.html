@@ -172,7 +172,7 @@ const pxFmt=p=>p==null?'—':p>=1000?fmt(p,0):p>=100?fmt(p,1):fmt(p,2);
 const pct=(x,d=1)=>x==null?'—':(x>0?'▲':x<0?'▼':'')+Math.abs(x*100).toFixed(d)+'%';
 const cls=x=>x>0?'up':x<0?'dn':'';
 const md=d=>d?+d.slice(4,6)+'/'+ +d.slice(6,8):'';
-let MISS=[],RANKED=false,CHGP='d',NAME={},MKT={},IND={},THEMES=[],NOTICE=null,NMAP={},PMAP=null,HIST=null,DH=null,HDAYS=[],THIST=null,TDAYS=[],TOPL=null,NDATE='',CUR_IDS=[],cur=null,sortK='chg',N=40,FL={ma20:false,ma60:false,ts3:false,vr12:false},SHARD={},ROWS=[],openI=-1,shN=80;
+let MISS=[],RANKED=false,CHGP='d',NAME={},MKT={},IND={},THEMES=[],NOTICE=null,NXT=null,NDAYS=[],NMAP={},PMAP=null,HIST=null,DH=null,HDAYS=[],THIST=null,TDAYS=[],TOPL=null,NDATE='',CUR_IDS=[],cur=null,sortK='chg',N=40,FL={ma20:false,ma60:false,ts3:false,vr12:false},SHARD={},ROWS=[],openI=-1,shN=80;
 // ---- 主題清單：data/themes.json ＋ 手機裡改過／自訂的主題（themeCfg，與估值看板同一份）＋ 自選（fav） ----
 const AUTO_IDS=['itop','ftop','btop','natt','npre','ndis','nend','npost'];   // 自動主題（與首頁同一份順序）
 function themesAll(base){const c=store.get('themeCfg')||{},order=c.order||[],hidden=c.hidden||[],mine=c.themes||{};const bm={};base.forEach(t=>bm[t.id]=t);
@@ -184,12 +184,14 @@ function themesAll(base){const c=store.get('themeCfg')||{},order=c.order||[],hid
 async function init(){
   try{const p=localStorage.getItem('scanChgP');if(['d','w','m'].includes(p))CHGP=p;const n=+localStorage.getItem('scanN');if([20,40,60].includes(n))N=n;const m=localStorage.getItem('scanMode');if(m==='v'){MODE='v';sortK=SK_V}const rv=localStorage.getItem('scanRv');if(rv==='pb'||rv==='pe')RV=rv}catch(e){}paintBar();
   valInit();
-  const [L,T,TOP,NT]=await Promise.all([fetch('data/list.json?t='+Date.now()).then(r=>r.json()).catch(()=>[]),fetch('data/themes.json?t='+Date.now()).then(r=>r.json()).catch(()=>({themes:[]})),fetch('data/itrust_top.json?t='+Date.now()).then(r=>r.json()).catch(()=>null),fetch('data/notice.json?t='+Math.floor(Date.now()/3e5)).then(r=>r.ok?r.json():null).catch(()=>null)]);
+  const [L,T,TOP,NT0,PV]=await Promise.all([fetch('data/list.json?t='+Date.now()).then(r=>r.json()).catch(()=>[]),fetch('data/themes.json?t='+Date.now()).then(r=>r.json()).catch(()=>({themes:[]})),fetch('data/itrust_top.json?t='+Date.now()).then(r=>r.json()).catch(()=>null),fetch('data/notice.json?t='+Math.floor(Date.now()/3e5)).then(r=>r.ok?r.json():null).catch(()=>null),fetch('data/notice/prev.json?t='+Math.floor(Date.now()/3e5)).then(r=>r.ok?r.json():null).catch(()=>null)]);
+  // 2026-11-13：跟 XQ 同步——最新名單日 >= 今天且有前一份快照 → NT＝前一份（今日適用），NXT＝最新那份（🆕 明日）
+  let NT=NT0;NXT=null;{const TD=(()=>{const q=(location.search.match(/[?&]today=(\d{8})/)||[])[1];if(q)return q;return new Date(Date.now()+8*3600e3).toISOString().slice(0,10).replace(/-/g,'')})();if(NT0&&PV&&PV.asof&&PV.asof<NT0.asof&&NT0.asof>=TD){NXT=NT0;NT=PV}}
   NOTICE=NT;NMAP={};
   // 歷史名單（2026-10-29）：data/notice/hist.json {YYYYMMDD:{att:[…],dis:[…]}}，選「注意股」時可切到前幾天的名單；K 線底下畫 🟡 被列注意、🔴 處置的日子
   // 2026-10-29：五名單（注意／快達／處置／快結束／剛結束）都能看前幾天；處置期間來自 data/notice/dis_hist.json {代號|起日:{c,n,m,start,end,r,measure}}
   try{[HIST,DH]=await Promise.all([fetch('data/notice/hist.json?t='+Math.floor(Date.now()/3e5)).then(r=>r.ok?r.json():null),fetch('data/notice/dis_hist.json?t='+Math.floor(Date.now()/3e5)).then(r=>r.ok?r.json():null).catch(()=>null)])}catch(e){HIST=null}
-  if(HIST){HDAYS=Object.keys(HIST).filter(d=>HIST[d].att&&HIST[d].att.length).sort().reverse().slice(0,30);
+  if(HIST){HDAYS=Object.keys(HIST).filter(d=>HIST[d].att&&HIST[d].att.length).sort().reverse().slice(0,30);NDAYS=NXT?[NXT.asof,NT.asof,...HDAYS.filter(d=>d<NT.asof)]:HDAYS;
     $('ndSel').addEventListener('change',e=>{NDATE=e.target.value;pick(cur)})}if(NT){(NT.att||[]).forEach(x=>NMAP[x.c]={k:x.warn?'o':'y',n:x.streak||1,r:x.r});(NT.pre||[]).forEach(x=>{if(!NMAP[x.c]||NMAP[x.c].k==='y')NMAP[x.c]={k:'o',n:(NMAP[x.c]||{}).n||0,r:x.r}});(NT.dis||[]).forEach(x=>NMAP[x.c]={k:'r',n:x.left,r:x.r,end:x.endMd})}
   // 投本比自動主題（與估值看板同一份 data/itrust_top.json）：投信／外資／土洋前 20，每天自動換名單
   // 2026-10-30：itrust_top.json 的 hist {YYYYMMDD:{it:[…],fi:[…],both:[…]}}＝每個名單日的前 20 代號（top_extract.py 累積 150 天）
@@ -232,10 +234,10 @@ async function pick(sel){cur=sel;
   // 注意／處置名單（2026-10-29）：notice.html 的「掃 K 線」入口 → #n/att|dis|pre，名單來自 data/notice.json
   if(sel.kind==='n'&&!NOTICE){try{NOTICE=await fetch('data/notice.json?t='+Math.floor(Date.now()/3e5)).then(r=>r.ok?r.json():null)}catch(e){NOTICE=null}}
   const NN={att:'🟡 注意股',dis:'🔴 處置股',pre:'🟠 快達處置'};
-  const isT=sel.kind==='t'&&(sel.id in TKEY)&&!!THIST,DAYS=isT?TDAYS:HDAYS,isN=sel.kind==='t'&&(NSET.has(sel.id)||isT);$('ndSel').hidden=!(isN&&DAYS.length);
-  if(isN){if(!NDATE||!(isT?THIST:HIST)[NDATE])NDATE=DAYS[0]||'';
-    $('ndSel').innerHTML=DAYS.map(d=>`<option value="${d}">📅 ${md(d)} 名單・${d===DAYS[0]?(isT?(TOPL[TKEY[sel.id]]||[]):((NOTICE&&NOTICE[NKEY[sel.id]])||[])).length:histList(sel.id,d).length} 檔</option>`).join('');$('ndSel').value=NDATE}
-  const past=isN&&NDATE&&DAYS[0]&&NDATE!==DAYS[0];TOPK=isT?TKEY[sel.id]:'';
+  const isT=sel.kind==='t'&&(sel.id in TKEY)&&!!THIST,DAYS=isT?TDAYS:NDAYS,D0=(!isT&&NXT?NOTICE.asof:DAYS[0])||'',isN=sel.kind==='t'&&(NSET.has(sel.id)||isT);$('ndSel').hidden=!(isN&&DAYS.length);
+  if(isN){if(!NDATE||!(isT?THIST:HIST)[NDATE])NDATE=D0;
+    $('ndSel').innerHTML=DAYS.map(d=>`<option value="${d}">${!isT&&NXT&&d===NXT.asof?'🆕 明日':!isT&&NXT&&d===D0?'✅ 適用':'📅'} ${md(d)} 名單・${d===D0?(isT?(TOPL[TKEY[sel.id]]||[]):((NOTICE&&NOTICE[NKEY[sel.id]])||[])).length:histList(sel.id,d).length} 檔</option>`).join('');$('ndSel').value=NDATE}
+  const past=isN&&NDATE&&D0&&NDATE!==D0;TOPK=isT?TKEY[sel.id]:'';
   $('sortLi').hidden=!isN;if(isN&&!RANKED)sortK='li';else if(!isN&&sortK==='li')sortK=MODE==='v'?'peh':'chg';RANKED=isN;paintBar();
   const PL=past?histList(sel.id,NDATE):null;PMAP=past?Object.fromEntries(PL.map(x=>[x.c,x])):null;
   const ids=past?PL.map(x=>x.c):sel.kind==='n'?((NOTICE&&NOTICE[sel.id])||[]).map(x=>x.c):sel.kind==='t'?(THEMES.find(t=>t.id===sel.id)||{stocks:[]}).stocks.map(x=>x[0]):(IND[sel.id]||[]);
