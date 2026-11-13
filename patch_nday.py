@@ -14,7 +14,7 @@ def rep(a, b, n=1):
 rep('.sb{display:flex;gap:4px;align-items:center;font-size:12px;color:var(--muted);padding:4px 8px 0;overflow-x:auto;scrollbar-width:none}',
     '.sb{display:flex;flex-wrap:wrap;gap:4px;align-items:center;font-size:12px;color:var(--muted);padding:4px 8px 0}\n'
     '.sb .brk{flex-basis:100%;height:0}\n'
-    '.sb select{flex:none;height:26px;padding:0 4px;border-radius:13px;border:1px solid var(--accent);background:var(--card);color:var(--fg);font-size:16px;font-weight:700;max-width:46vw}\n'
+    '.sb select{flex:none;height:26px;padding:0 4px;border-radius:13px;border:1px solid var(--accent);background:var(--card);color:var(--fg);font-size:16px;font-weight:500;max-width:40vw}\n'
     '.sb select.old{background:#fef3c7;border-color:#b45309;color:#7c2d12}\n'
     '.sb #chgBtn i{font-style:normal;font-weight:400;opacity:.45;padding:0 1px}\n'
     '.sb #chgBtn i.on{font-weight:800;opacity:1;text-decoration:underline;text-underline-offset:2px}')
@@ -22,10 +22,15 @@ rep('''  <span class="lab">市場</span><button data-m="" aria-pressed="true">�
   <span class="sep"></span>
   <span class="lab">排序</span>''',
     '''  <select id="daySel" aria-label="名單日期"><option value="">最新</option></select>
-  <span class="sep"></span><button data-m="" aria-pressed="true">全部</button><button data-m="上市">上市</button><button data-m="上櫃">上櫃</button>
+  <span class="sep"></span><button data-m="" aria-pressed="true">全部</button><button data-m="上市">上市</button><button data-m="上櫃">上櫃</button><button id="noteBtn" aria-pressed="false" aria-label="說明">ⓘ</button>
   <span class="brk"></span>
   ''')
 rep('<button data-s="chg">漲幅</button>', '<button data-s="chg" id="chgBtn">漲幅</button>')
+rep('📈 掃 K 線</a><button id="noteBtn" aria-pressed="false" aria-label="說明">ⓘ</button>', '📈 掃 K 線</a>')
+rep('.sb #noteBtn{width:24px;padding:0;font-size:14px;color:var(--muted)}', '.sb #noteBtn{width:24px;padding:0;font-size:14px;color:var(--muted);margin-left:auto}')
+# ② 提醒縮成一行
+rep("return `⚠️ ${k}名單還停在 ${m[k]?f(m[k]):'前一日'}（${k==='上櫃'?'櫃買':'證交所'}尚未公布 ${f(a)}），目前只有${k==='上櫃'?'上市':'上櫃'}，稍晚自動補上`}", "return `⚠️ ${k}還停在 ${m[k]?f(m[k]):'前一日'}，目前只有${k==='上櫃'?'上市':'上櫃'}`}")
+rep('font-weight:600;margin-bottom:2px">${stl}</div>', 'font-weight:600;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${stl}</div>')
 
 # ---- 狀態與歷史名單
 rep("let D=null,TAB='att',MK='',SORT='def',SHARD={},K={},LR=[];",
@@ -56,7 +61,7 @@ rep("let D=null,TAB='att',MK='',SORT='def',SHARD={},K={},LR=[];",
     "  tabCnt();paint()}\n"
     "async function fillDays(){try{const r=await fetch('data/notice/hist.json?t='+Math.floor(Date.now()/3e5));if(!r.ok)return;HIST0=await r.json()}catch(e){return}\n"
     "  const ds=Object.keys(HIST0).filter(d=>d<D.asof&&(HIST0[d].att||[]).length).sort().reverse().slice(0,40);\n"
-    "  $('daySel').innerHTML=`<option value=\"\">${md(D.asof)}（${wkd(D.asof)}）最新</option>`+ds.map(d=>`<option value=\"${d}\">${md(d)}（${wkd(d)}）</option>`).join('');\n"
+    "  $('daySel').innerHTML=`<option value=\"\">${md(D.asof)}（${wkd(D.asof)}）</option>`+ds.map(d=>`<option value=\"${d}\">${md(d)}（${wkd(d)}）</option>`).join('');\n"
     "  $('daySel').onchange=e=>setDay(e.target.value)}\n"
     "let HIST0=null;")
 
@@ -76,10 +81,10 @@ rep("  $('defBtn').textContent=T[TAB].def;", "  $('defBtn').textContent=T[TAB].d
 rep("  $('scanLink').href=toStats?'stats.html':'scan.html#n'+TAB;", "  $('scanLink').href=toStats?'stats.html':'scan.html#n'+TAB;")
 rep("const R=rows(),all=(D[TAB]||[]).length;LR=R;", "const R=rows(),all=LST(TAB).length;LR=R;")
 rep("ntDemo(D);const stl=(TAB==='att'||TAB==='pre')?ntStale(D):'';",
-    "ntDemo(D);const stl=DAY?`📅 歷史名單 ${md(DAY)}（${wkd(DAY)}）——K 線、漲跌、量比是最新交易日 ${md(D.asof)} 的；原因全文只有最新一天有`:(TAB==='att'||TAB==='pre')?ntStale(D):'';")
+    "ntDemo(D);const stl=DAY?`📅 ${md(DAY)} 名單・K 線與漲跌為最新（${md(D.asof)}）`:(TAB==='att'||TAB==='pre')?ntStale(D):'';")
 rep("檔・名單 ${md(D.asof)}・今日上漲", "檔・名單 ${md(DAY||D.asof)}・今日上漲")
 rep("    if(k){if(k.c6!=null&&!['dend','dpost'].includes(TAB))",
     "    if(k&&CHGP!=='d'&&k[CHGK()]!=null)tags.push(`<span class=\"tg\">${CHGP==='w'?'週':'月'} <b class=\"${cls(k[CHGK()])}\">${pct(k[CHGK()])}</b></span>`);\n"
     "    if(k){if(k.c6!=null&&!['dend','dpost'].includes(TAB))")
-rep("本頁不構成投資建議。`;", "漲幅鈕連點＝日→週→月（週＝5 個交易日前、月＝上個月同一天）。本頁不構成投資建議。 v1113b`;")
+rep("本頁不構成投資建議。`;", "漲幅鈕連點＝日→週→月（週＝5 個交易日前、月＝上個月同一天）。本頁不構成投資建議。 v1113c`;")
 open('notice.html' if prod else 'beta_notice.html', 'w', encoding='utf-8').write(t)

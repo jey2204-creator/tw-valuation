@@ -44,7 +44,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 .tab[aria-pressed=true] b{opacity:1}
 .sb{display:flex;flex-wrap:wrap;gap:4px;align-items:center;font-size:12px;color:var(--muted);padding:4px 8px 0}
 .sb .brk{flex-basis:100%;height:0}
-.sb select{flex:none;height:26px;padding:0 4px;border-radius:13px;border:1px solid var(--accent);background:var(--card);color:var(--fg);font-size:16px;font-weight:700;max-width:46vw}
+.sb select{flex:none;height:26px;padding:0 4px;border-radius:13px;border:1px solid var(--accent);background:var(--card);color:var(--fg);font-size:16px;font-weight:500;max-width:40vw}
 .sb select.old{background:#fef3c7;border-color:#b45309;color:#7c2d12}
 .sb #chgBtn i{font-style:normal;font-weight:400;opacity:.45;padding:0 1px}
 .sb #chgBtn i.on{font-weight:800;opacity:1;text-decoration:underline;text-underline-offset:2px}
@@ -53,7 +53,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 .sb button,.sb a.sc{flex:none;height:24px;line-height:24px;padding:0 8px;border-radius:12px;border:1px solid var(--line);background:var(--card);font-size:12px;color:var(--fg);white-space:nowrap}
 .sb button[aria-pressed=true]{background:var(--sel);color:var(--selfg);border-color:var(--sel);font-weight:700}
 .sb a.sc{color:var(--accent);border-color:var(--accent);font-weight:700;margin-left:auto}
-.sb #noteBtn{width:24px;padding:0;font-size:14px;color:var(--muted)}
+.sb #noteBtn{width:24px;padding:0;font-size:14px;color:var(--muted);margin-left:auto}
 .sb #noteBtn[aria-pressed=true]{background:var(--sel);color:var(--selfg);border-color:var(--sel)}
 .sb .sep{flex:none;width:1px;height:16px;background:var(--line);margin:0 2px}
 .cnt{padding:4px 10px 0;font-size:11.5px;color:var(--muted)}
@@ -109,17 +109,17 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 </div>
 <div class="sb" id="bar">
   <select id="daySel" aria-label="名單日期"><option value="">最新</option></select>
-  <span class="sep"></span><button data-m="" aria-pressed="true">全部</button><button data-m="上市">上市</button><button data-m="上櫃">上櫃</button>
+  <span class="sep"></span><button data-m="" aria-pressed="true">全部</button><button data-m="上市">上市</button><button data-m="上櫃">上櫃</button><button id="noteBtn" aria-pressed="false" aria-label="說明">ⓘ</button>
   <span class="brk"></span>
   <button data-s="def" aria-pressed="true" id="defBtn">連續天</button><button data-s="chg" id="chgBtn">漲幅</button><button data-s="vr">量比</button><button data-s="n30" id="n30Btn">30日次數</button><button data-s="ret" id="retBtn" hidden>結束後</button>
-  <a class="sc" id="scanLink" href="scan.html#natt">📈 掃 K 線</a><button id="noteBtn" aria-pressed="false" aria-label="說明">ⓘ</button>
+  <a class="sc" id="scanLink" href="scan.html#natt">📈 掃 K 線</a>
 </div>
 <div class="cnt" id="cnt"></div>
 <div class="note hid" id="note"></div>
 <div class="list" id="list"><div class="empty">讀取中…</div></div>
 <p class="foot" id="foot"></p>
 <script>
-function ntStale(N){const a=N&&N.asof,m=N&&N.mkAsof;if(!a||!m)return '';const f=d=>(+d.slice(4,6))+'/'+(+d.slice(6));const L=['上市','上櫃'].filter(k=>!m[k]||m[k]<a);if(L.length!==1)return '';const k=L[0];return `⚠️ ${k}名單還停在 ${m[k]?f(m[k]):'前一日'}（${k==='上櫃'?'櫃買':'證交所'}尚未公布 ${f(a)}），目前只有${k==='上櫃'?'上市':'上櫃'}，稍晚自動補上`}
+function ntStale(N){const a=N&&N.asof,m=N&&N.mkAsof;if(!a||!m)return '';const f=d=>(+d.slice(4,6))+'/'+(+d.slice(6));const L=['上市','上櫃'].filter(k=>!m[k]||m[k]<a);if(L.length!==1)return '';const k=L[0];return `⚠️ ${k}還停在 ${m[k]?f(m[k]):'前一日'}，目前只有${k==='上櫃'?'上市':'上櫃'}`}
 function ntDemo(N){if(N&&N.asof&&/[?&]stale=1/.test(location.search)){const d=new Date(+N.asof.slice(0,4),+N.asof.slice(4,6)-1,+N.asof.slice(6)-1);N.mkAsof={'上市':N.asof,'上櫃':''+d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0')}}return N}
 
 function mzN(s){return String(s||'').replace(/每\s*([一二三四五六七八九十]+)\s*分鐘/,(m,c)=>{const d='一二三四五六七八九'.indexOf.bind('一二三四五六七八九');let n=0;const i=c.indexOf('十');if(i<0)n=d(c)+1;else n=(i>0?d(c[i-1])+1:1)*10+(i<c.length-1?d(c[i+1])+1:0);return '每'+n+'分鐘'})}
@@ -159,7 +159,7 @@ async function setDay(d){DAY=d&&d!==D.asof?d:'';$('daySel').classList.toggle('ol
   tabCnt();paint()}
 async function fillDays(){try{const r=await fetch('data/notice/hist.json?t='+Math.floor(Date.now()/3e5));if(!r.ok)return;HIST0=await r.json()}catch(e){return}
   const ds=Object.keys(HIST0).filter(d=>d<D.asof&&(HIST0[d].att||[]).length).sort().reverse().slice(0,40);
-  $('daySel').innerHTML=`<option value="">${md(D.asof)}（${wkd(D.asof)}）最新</option>`+ds.map(d=>`<option value="${d}">${md(d)}（${wkd(d)}）</option>`).join('');
+  $('daySel').innerHTML=`<option value="">${md(D.asof)}（${wkd(D.asof)}）</option>`+ds.map(d=>`<option value="${d}">${md(d)}（${wkd(d)}）</option>`).join('');
   $('daySel').onchange=e=>setDay(e.target.value)}
 let HIST0=null;
 const T={att:{def:'連續天',title:'注意股',tip:'<b>注意股</b>＝交易所依「最近六日漲幅、週轉率、本益比、成交量放大」等標準公布的過熱警示。<b>不是買進訊號</b>——被列注意後常見高開低走；若手上有，把它當減碼提醒。連續天數＝連續幾個交易日都在名單上；次數用本站紀錄算（上市已回補 2026/9/14 起，上櫃自 2026/10/27 起累積，所以上櫃 30 日次數前期會偏少）。'},
@@ -217,8 +217,8 @@ function paint(){
   $('note').innerHTML=T[TAB].tip;
   const R=rows(),all=LST(TAB).length;LR=R;
   const up=R.filter(x=>(K[x.c]||{}).chg>0).length;
-  ntDemo(D);const stl=DAY?`📅 歷史名單 ${md(DAY)}（${wkd(DAY)}）——K 線、漲跌、量比是最新交易日 ${md(D.asof)} 的；原因全文只有最新一天有`:(TAB==='att'||TAB==='pre')?ntStale(D):'';
-  $('cnt').innerHTML=(stl?`<div style="color:#b45309;font-weight:600;margin-bottom:2px">${stl}</div>`:'')+`<b>${R.length}</b>／${all} 檔・名單 ${md(DAY||D.asof)}・今日上漲 <b>${up}</b> 檔・點卡片展開原因・ⓘ 看說明`;
+  ntDemo(D);const stl=DAY?`📅 ${md(DAY)} 名單・K 線與漲跌為最新（${md(D.asof)}）`:(TAB==='att'||TAB==='pre')?ntStale(D):'';
+  $('cnt').innerHTML=(stl?`<div style="color:#b45309;font-weight:600;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${stl}</div>`:'')+`<b>${R.length}</b>／${all} 檔・名單 ${md(DAY||D.asof)}・今日上漲 <b>${up}</b> 檔・點卡片展開原因・ⓘ 看說明`;
   if(!R.length){$('list').innerHTML=`<div class="empty">${all?'這個市場沒有':'目前沒有'}${T[TAB].title}</div>`;return}
   $('list').innerHTML=R.map((x,i)=>{const k=K[x.c];const cs=TAB==='dpost'?'post':(TAB==='dis'||TAB==='dend')?'dis':(x.warn||TAB==='pre')?'warn':'';
     const tags=[];const ra=['dend','dpost'].includes(TAB)?retAfter(x.c,x.end):null;
@@ -240,7 +240,7 @@ function paint(){
     </article>`}).join('');
   const io=new IntersectionObserver(es=>{es.forEach(e=>{if(!e.isIntersecting)return;const el=e.target,cv=el.querySelector('canvas.kv');if(cv&&!cv.dataset.done){const x=LR[+el.dataset.i]||{};drawMini(cv,K[el.dataset.c],x.start?{s:x.start,e:x.end}:null);cv.dataset.done=1}io.unobserve(el)})},{rootMargin:'300px 0px'});
   $('list').querySelectorAll('.nc').forEach(el=>io.observe(el));
-  $('foot').innerHTML=`小圖＝近 40 根日K（<span class="num" style="color:var(--ma20)">━</span> 20日線、<span class="num" style="color:var(--ma60)">━</span> 60日線、紅虛線＝前 20 日最高，<b>紅色底色＝處置期間</b>），底下一條＝投信每日買賣超（紅買綠賣）。6日＝近六個交易日漲幅；量比＝今日量 ÷ 前 5 日均量；「結束後」＝處置最後一天收盤到最新收盤的累計漲跌。名單每個交易日 17:25 後自動更新（資料 ${esc(D.updated||'')}，本站歷史 ${D.histDays} 天）。處置歷史自動累積中——<a href="stats.html">📊 處置後統計</a>看結束後 1／3／5／10 日報酬與勝率。漲幅鈕連點＝日→週→月（週＝5 個交易日前、月＝上個月同一天）。本頁不構成投資建議。 v1113b`;
+  $('foot').innerHTML=`小圖＝近 40 根日K（<span class="num" style="color:var(--ma20)">━</span> 20日線、<span class="num" style="color:var(--ma60)">━</span> 60日線、紅虛線＝前 20 日最高，<b>紅色底色＝處置期間</b>），底下一條＝投信每日買賣超（紅買綠賣）。6日＝近六個交易日漲幅；量比＝今日量 ÷ 前 5 日均量；「結束後」＝處置最後一天收盤到最新收盤的累計漲跌。名單每個交易日 17:25 後自動更新（資料 ${esc(D.updated||'')}，本站歷史 ${D.histDays} 天）。處置歷史自動累積中——<a href="stats.html">📊 處置後統計</a>看結束後 1／3／5／10 日報酬與勝率。漲幅鈕連點＝日→週→月（週＝5 個交易日前、月＝上個月同一天）。本頁不構成投資建議。 v1113c`;
 }
 function drawMini(cv,r,band){if(!r)return;const dpr=window.devicePixelRatio||1,W=cv.clientWidth,Hh=cv.clientHeight;if(!W||!Hh)return;
   cv.width=Math.round(W*dpr);cv.height=Math.round(Hh*dpr);const g=cv.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,W,Hh);
