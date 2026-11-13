@@ -280,6 +280,9 @@ function build(c){const s=SHARD[c.slice(0,2)];if(!s||!s.d||!s.d[c])return null;c
   const q=LIVE.get(c);if(q&&!q.miss&&q.d&&bars.length&&q.d>bars[bars.length-1].d&&(q.o!=null||q.z!=null)){const o=q.o??q.z??q.pz,z=q.z??q.pz??q.b1??q.a1??o;/* 2026-10-30：MIS 快照沒成交價（z='-'）時依序用前一筆成交價→最佳買價→賣價，最後才用開盤價（以前直接用開盤價，麗臺 109 vs 實際 103.5） */bars.push({d:q.d,o,h:q.h??Math.max(o,z),l:q.l??Math.min(o,z),c:z,v:q.v||0,f:null,t:null,m240:null,live:q.src||'live',lt:q.t})}
   if(bars.length<6)return null;
   // 2026-11-13：漲幅數字用還原價（data/adj.json），小 K 線不還原 → 先記下原始收盤 rc，漲幅＝最新 ÷（基準原始收盤 × 之後的還原係數）
+  // 2026-11-13：MD＝市場交易日（分片的 days＋今天的即時日），ML＝市場最新日；週／月的基準日照它算，當天沒成交的股票才會跟 XQ 一致
+  const MD=days.map(String);{let g='';LIVE.forEach(v=>{if(v&&!v.miss&&v.d&&String(v.d)>g)g=String(v.d)});if(g>MD[MD.length-1])MD.push(g)}const ML=MD[MD.length-1];
+  const barAt=k=>{const t=MD[MD.length-1-k];if(!t)return null;let b=null;for(const x of bars){if(String(x.d)<=t)b=x;else break}return b};
   bars.forEach(b=>b.rc=b.c);const adjF=(a,z)=>((window.ADJ||{})[c]||[]).reduce((k,[d,f])=>String(a)<d&&d<=String(z)?k*f:k,1);
   // 分割／減資等大跳空（台股漲跌幅 10%，單日變動超過 ±35% 視為股數變動）：把之前的價位概略還原，否則小卡會被壓扁
   let split=false;for(let i=1;i<bars.length;i++){const k=bars[i].o/bars[i-1].c;if(k<0.65||k>1.55){split=true;for(let j=0;j<i;j++){const b=bars[j];b.o*=k;b.h*=k;b.l*=k;b.c*=k;b.v=Math.round(b.v/k)}}}
@@ -295,13 +298,13 @@ function build(c){const s=SHARD[c.slice(0,2)];if(!s||!s.d||!s.d[c])return null;c
   const dp=DH?Object.values(DH).filter(v=>v&&v.c===c&&v.start&&v.end).map(v=>[v.start,v.end]):[];
   const nd=HIST?Object.fromEntries(Object.entries(HIST).filter(([d,v])=>(v.att||[]).includes(c)).map(([d])=>[d,'y'])):{};
   if(TOPK&&THIST)Object.entries(THIST).forEach(([d,v])=>{if((v[TOPK]||[]).includes(c))nd[d]=TOPK});
-  return {c,n:NAME[c]||c,bars,nd,dp,d:last.d,live:!!last.live,px:last.c,chg:prev.rc?last.rc/(prev.rc*adjF(prev.d,last.d))-1:null,chg5:n>5&&bars[n-6].rc?last.rc/(bars[n-6].rc*adjF(bars[n-6].d,last.d))-1:null,chg20:calM(bars,adjF),vr:v5?last.v/v5:null,ts:streak('t'),fs:streak('f'),t5:sum('t',5),f5:sum('f',5),t20:sum('t',20),f20:sum('f',20),
+  return {c,n:NAME[c]||c,bars,nd,dp,d:last.d,live:!!last.live,px:last.c,chg:prev.rc?last.rc/(prev.rc*adjF(prev.d,last.d))-1:null,chg5:(b=>b&&b.rc?last.rc/(b.rc*adjF(b.d,ML))-1:null)(barAt(5)),chg20:calM(bars,adjF,ML),vr:v5?last.v/v5:null,ts:streak('t'),fs:streak('f'),t5:sum('t',5),f5:sum('f',5),t20:sum('t',20),f20:sum('f',20),
     split,ma5,ma20,ma60,m240:last.m240,d20:ma20?last.c/ma20-1:null,d60:ma60?last.c/ma60-1:null,d240:last.m240?last.c/last.m240-1:null,hi20,brk:last.h>=hi20,pos60:hi60>lo60?(last.c-lo60)/(hi60-lo60):null,
     arr:ma5!=null&&ma20!=null&&ma60!=null?(ma5>ma20&&ma20>ma60?'多頭排列':ma5<ma20&&ma20<ma60?'空頭排列':'糾結'):'—'}}
 // 漲幅連點循環（2026-10-29）：日→週（5 日）→月（20 日），按鈕文字跟著變
 const CHGK=()=>CHGP==='w'?'chg5':CHGP==='m'?'chg20':'chg';
-function calM(bars,adjF){const n=bars.length;if(n<2)return null;const last=bars[n-1],ld=String(last.d),tm=new Date(+ld.slice(0,4),+ld.slice(4,6)-2,1),eom=new Date(tm.getFullYear(),tm.getMonth()+1,0).getDate(),tg=''+tm.getFullYear()+String(tm.getMonth()+1).padStart(2,'0')+String(Math.min(+ld.slice(6),eom)).padStart(2,'0');
-  let bi=-1;for(let j=0;j<n;j++){if(String(bars[j].d)<=tg)bi=j}if(adjF&&bi>=0&&bars[bi].rc)return last.rc/(bars[bi].rc*adjF(bars[bi].d,last.d))-1;return bi>=0&&bars[bi].c?last.c/bars[bi].c-1:null}
+function calM(bars,adjF,ML){const n=bars.length;if(n<2)return null;const last=bars[n-1],ld=String(ML||last.d),tm=new Date(+ld.slice(0,4),+ld.slice(4,6)-2,1),eom=new Date(tm.getFullYear(),tm.getMonth()+1,0).getDate(),tg=''+tm.getFullYear()+String(tm.getMonth()+1).padStart(2,'0')+String(Math.min(+ld.slice(6),eom)).padStart(2,'0');
+  let bi=-1;for(let j=0;j<n;j++){if(String(bars[j].d)<=tg)bi=j}if(adjF&&bi>=0&&bars[bi].rc)return last.rc/(bars[bi].rc*adjF(bars[bi].d,ld))-1;return bi>=0&&bars[bi].c?last.c/bars[bi].c-1:null}
 function rows(){return MODE==='v'?rowsV():rowsK()}
 function rowsK(){let R=ROWS.filter(r=>(!FL.ma20||(r.d20!=null&&r.d20>=0))&&(!FL.ma60||(r.d60!=null&&r.d60>=0))&&(!FL.ts3||r.ts>=3)&&(!FL.vr12||(r.vr!=null&&r.vr>=1.2)));
   const ck=CHGK();const key={li:r=>-r.li,chg:r=>r.stale&&ck==='chg'?-99:(r[ck]??-9),vr:r=>r.stale?-99:(r.vr??-9),ts:r=>r.ts,fs:r=>r.fs,d20:r=>r.d20??-9,h20:r=>(r.brk?10:0)+(r.hi20?r.px/r.hi20:0)}[sortK];
