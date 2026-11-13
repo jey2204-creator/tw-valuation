@@ -72,7 +72,7 @@ rep("  return {bars,px:last.c,d:last.d,chg:prev.c?last.c/prev.c-1:null,vr:v5?las
     "  return {bars,px:last.c,d:last.d,w,mo,chg:prev.c?last.c/prev.c-1:null,vr:v5?last.v/v5:null,c6,")
 rep("function rows(){let R=(D[TAB]||[]).filter(x=>!MK||x.m===MK);", "function rows(){let R=LST(TAB).filter(x=>!MK||x.m===MK);")
 rep("const key={def,chg:x=>k(x.c).chg??-9,", "const key={def,chg:x=>k(x.c)[CHGK()]??-9,")
-rep("  $('defBtn').textContent=T[TAB].def;", "  $('defBtn').textContent=T[TAB].def;$('chgBtn').innerHTML='漲幅 '+[['d','日'],['w','週'],['m','月']].map(([k,n])=>`<i class="${k===CHGP?'on':''}">${n}</i>`).join('·');$('chgBtn').title='連點切換 日→週→月';")
+rep("  $('defBtn').textContent=T[TAB].def;", "  $('defBtn').textContent=T[TAB].def;$('chgBtn').innerHTML='漲幅 '+[['d','日'],['w','週'],['m','月']].map(([k,n])=>`<i class=\"${k===CHGP?'on':''}\">${n}</i>`).join('·');$('chgBtn').title='連點切換 日→週→月';")
 rep("  $('scanLink').href=toStats?'stats.html':'scan.html#n'+TAB;", "  $('scanLink').href=toStats?'stats.html':'scan.html#n'+TAB;")
 rep("const R=rows(),all=(D[TAB]||[]).length;LR=R;", "const R=rows(),all=LST(TAB).length;LR=R;")
 rep("ntDemo(D);const stl=(TAB==='att'||TAB==='pre')?ntStale(D):'';",
