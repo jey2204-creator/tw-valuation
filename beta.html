@@ -691,7 +691,7 @@ function ntHistSrc(day){const H=NHIST||{},days=Object.keys(H).filter(d=>d<=day&&
   const pre=[...set].filter(c=>!act[c]).map(c=>({c,n10:cnt(c,10),n30:cnt(c,30),est:true})).filter(x=>x.n10>=5||x.n30>=11).sort((x,y)=>y.n10-x.n10);
   return {asof:day,att:a,dis,pre,dend:dis.filter(x=>x.left<=3),dpost:Object.values(post).map(v=>({...dz(v),ago:ntWd(v.end,day)})).sort((x,y)=>x.ago-y.ago)}}
 function ntSrc(day){return day===NT.asof?NT:NTN&&day===NTN.asof?NTN:NHIST?ntHistSrc(day):null}
-function ntDayOpts(){const cur=NDAY||NT.asof,o=[[NT.asof,(NTN?'適用 ':'')+ntMd(NT.asof)+(NTN?'':'（'+ntWk(NT.asof)+'）')]];if(NTN)o.push([NTN.asof,'🆕明日 '+ntMd(NTN.asof)]);
+function ntDayOpts(){const cur=NDAY||NT.asof,o=[];if(NTN)o.push([NTN.asof,'🆕明日 '+ntMd(NTN.asof)]);o.push([NT.asof,(NTN?'適用 ':'')+ntMd(NT.asof)+(NTN?'':'（'+ntWk(NT.asof)+'）')]);
   Object.keys(NHIST||{}).filter(d=>d<NT.asof&&(NHIST[d].att||[]).length).sort().reverse().slice(0,40).forEach(d=>o.push([d,ntMd(d)+'（'+ntWk(d)+'）']));
   return o.map(([v,l])=>`<option value="${v}"${v===cur?' selected':''}>${l}</option>`).join('')}
 function ntHead(id){const d=NCUR,isNx=NTN&&d===NTN.asof;

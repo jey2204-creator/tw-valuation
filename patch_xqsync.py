@@ -39,7 +39,10 @@ c = rep(c, "fetch('data/notice.json?t='+Math.floor(Date.now()/3e5)).then(r=>r.ok
         "  let NT=NT0;NXT=null;{const TD=" + TODAYJS + ";if(NT0&&PV&&PV.asof&&PV.asof<NT0.asof&&NT0.asof>=TD){NXT=NT0;NT=PV}}\n"
         "  NOTICE=NT;NMAP={};")
 c = rep(c, "HDAYS=Object.keys(HIST).filter(d=>HIST[d].att&&HIST[d].att.length).sort().reverse().slice(0,30);",
-        "HDAYS=Object.keys(HIST).filter(d=>HIST[d].att&&HIST[d].att.length).sort().reverse().slice(0,30);NDAYS=NXT?[NT.asof,NXT.asof,...HDAYS.filter(d=>d<NT.asof)]:HDAYS;")
-c = rep(c, "DAYS=isT?TDAYS:HDAYS,isN=", "DAYS=isT?TDAYS:NDAYS,isN=")
-c = rep(c, "`<option value=\"${d}\">📅 ${md(d)} 名單・", "`<option value=\"${d}\">${!isT&&NXT&&d===NXT.asof?'🆕 明日':!isT&&NXT&&d===DAYS[0]?'✅ 適用':'📅'} ${md(d)} 名單・")
+        "HDAYS=Object.keys(HIST).filter(d=>HIST[d].att&&HIST[d].att.length).sort().reverse().slice(0,30);NDAYS=NXT?[NXT.asof,NT.asof,...HDAYS.filter(d=>d<NT.asof)]:HDAYS;")
+c = rep(c, "DAYS=isT?TDAYS:HDAYS,isN=", "DAYS=isT?TDAYS:NDAYS,D0=(!isT&&NXT?NOTICE.asof:DAYS[0])||'',isN=")   # D0＝預設那天（適用）；選單順序是 明日→適用→更早
+c = rep(c, "NDATE=DAYS[0]||'';", "NDATE=D0;")
+c = rep(c, "const past=isN&&NDATE&&DAYS[0]&&NDATE!==DAYS[0];", "const past=isN&&NDATE&&D0&&NDATE!==D0;")
+c = rep(c, "`<option value=\"${d}\">📅 ${md(d)} 名單・", "`<option value=\"${d}\">${!isT&&NXT&&d===NXT.asof?'🆕 明日':!isT&&NXT&&d===D0?'✅ 適用':'📅'} ${md(d)} 名單・")
+c = rep(c, "名單・${d===DAYS[0]?(isT?", "名單・${d===D0?(isT?")
 open('scan.html' if prod else 'beta_scan_xq.html', 'w', encoding='utf-8').write(c)

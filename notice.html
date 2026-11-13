@@ -165,7 +165,7 @@ async function setDay(d){DAY=d||CURD;const sel=$('daySel');sel.value=DAY;sel.cla
   if(DAY!==D.asof&&!(PREV&&DAY===PREV.asof)){if(!HIST){const [h,dh,ls]=await Promise.all(['data/notice/hist.json','data/notice/dis_hist.json','data/list.json'].map(u=>fetch(u+'?t='+Math.floor(Date.now()/3e5)).then(r=>r.ok?r.json():null).catch(()=>null)));HIST=h||{};DH=dh||{};(ls||[]).forEach(r=>NAMES[r[0]]=[r[1],r[2]])}
     HR=histAll(DAY);$('list').innerHTML='<div class="empty">讀取中…</div>'}else HR=null;
   await ensureK();tabCnt();paint()}
-async function fillDays(){const sel=$('daySel');const head=()=>`<option value="${CURD}">適用 ${md(CURD)}</option>`+(NEXTD?`<option value="${NEXTD}">🆕明日 ${md(NEXTD)}</option>`:'');
+async function fillDays(){const sel=$('daySel');const head=()=>(NEXTD?`<option value="${NEXTD}">🆕明日 ${md(NEXTD)}</option>`:'')+`<option value="${CURD}">適用 ${md(CURD)}</option>`;
   sel.innerHTML=head();sel.value=DAY;sel.onchange=e=>setDay(e.target.value);
   try{const r=await fetch('data/notice/hist.json?t='+Math.floor(Date.now()/3e5));if(!r.ok)return;HIST0=await r.json()}catch(e){return}
   const ds=Object.keys(HIST0).filter(d=>d<CURD&&(HIST0[d].att||[]).length).sort().reverse().slice(0,40);
@@ -256,7 +256,7 @@ function paint(){
     </article>`}).join('');
   const io=new IntersectionObserver(es=>{es.forEach(e=>{if(!e.isIntersecting)return;const el=e.target,cv=el.querySelector('canvas.kv');if(cv&&!cv.dataset.done){const x=LR[+el.dataset.i]||{};drawMini(cv,K[el.dataset.c],x.start?{s:x.start,e:x.end}:null);cv.dataset.done=1}io.unobserve(el)})},{rootMargin:'300px 0px'});
   $('list').querySelectorAll('.nc').forEach(el=>io.observe(el));
-  $('foot').innerHTML=`小圖＝近 40 根日K（<span class="num" style="color:var(--ma20)">━</span> 20日線、<span class="num" style="color:var(--ma60)">━</span> 60日線、紅虛線＝前 20 日最高，<b>紅色底色＝處置期間</b>），底下一條＝投信每日買賣超（紅買綠賣）。6日＝近六個交易日漲幅；量比＝今日量 ÷ 前 5 日均量；「結束後」＝處置最後一天收盤到最新收盤的累計漲跌。名單每個交易日 17:25 後自動更新（資料 ${esc(D.updated||'')}，本站歷史 ${D.histDays} 天）。處置歷史自動累積中——<a href="stats.html">📊 處置後統計</a>看結束後 1／3／5／10 日報酬與勝率。漲幅鈕連點＝日→週→月（週＝5 個交易日前、月＝上個月同一天）。預設顯示「目前適用」的名單（前一晚公布、今天盤中適用，跟 XQ 同步）；當晚新公布的在日期選單「🆕 明日」。本頁不構成投資建議。 v1113e`;
+  $('foot').innerHTML=`小圖＝近 40 根日K（<span class="num" style="color:var(--ma20)">━</span> 20日線、<span class="num" style="color:var(--ma60)">━</span> 60日線、紅虛線＝前 20 日最高，<b>紅色底色＝處置期間</b>），底下一條＝投信每日買賣超（紅買綠賣）。6日＝近六個交易日漲幅；量比＝今日量 ÷ 前 5 日均量；「結束後」＝處置最後一天收盤到最新收盤的累計漲跌。名單每個交易日 17:25 後自動更新（資料 ${esc(D.updated||'')}，本站歷史 ${D.histDays} 天）。處置歷史自動累積中——<a href="stats.html">📊 處置後統計</a>看結束後 1／3／5／10 日報酬與勝率。漲幅鈕連點＝日→週→月（週＝5 個交易日前、月＝上個月同一天）。預設顯示「目前適用」的名單（前一晚公布、今天盤中適用，跟 XQ 同步）；當晚新公布的在日期選單「🆕 明日」。本頁不構成投資建議。 v1113f`;
 }
 function drawMini(cv,r,band){if(!r)return;const dpr=window.devicePixelRatio||1,W=cv.clientWidth,Hh=cv.clientHeight;if(!W||!Hh)return;
   cv.width=Math.round(W*dpr);cv.height=Math.round(Hh*dpr);const g=cv.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,W,Hh);
