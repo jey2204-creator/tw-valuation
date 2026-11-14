@@ -48,6 +48,14 @@ for th, items, tw in THEMES:
         c, zh, f = it[:3]
         CFG.setdefault(c, dict(theme=th, zh=zh, flags=f.replace("O", ""), tw=tw))   # 第一次出現的主題＝主要主題
 STOCKS = list(CFG)
+# 口徑變更（事業分拆、改列停業單位等）：新財報的累計營收／營業利益改成新口徑，但上一期累計還是舊口徑，
+# 「本期累計 − 上期累計」算出來的單季會失真，之後四季的營收年增也是新舊口徑互比。
+# 填法：代號 → (會計年度底 YYYY-MM, 第幾季起改口徑, 說明)。只做標記（q 第 15 欄）與提示，不改動原本的數字：
+#   1＝變更當季（單季營收、利益率不可用）　2＝之後四季（單季數字可用，但營收年增不可比）
+# 第 1 季就改口徑時單季沒問題（累計＝單季），那一季起四季都標 2。新的分拆案要手動加一行。
+BASIS_BREAK = {
+    "4004": ("2026-12", 3, "2026/7～9 月起石化事業（Crasus Chemical，2026/10/1 部分分拆）改列停業單位"),
+}
 # 給網頁用的主題清單：[{t: 主題, tw: 對應台股, m: [[代號, 角色, 選配]]}]
 THEME_META = [dict(t=th, tw=tw, m=[[it[0], it[3] if len(it) > 3 else "", "O" in it[2]] for it in items])
               for th, items, tw in THEMES]
@@ -709,6 +717,17 @@ def build(code, jq_recs, td_recs, master):
     q = [[x["cal"], x["fis"], x["sales"], x["om"], x["odm"], x["nm"], x["eps"], x["np"], x["sh"], x["end"],
           x["first"], x["src"], x["fy_end"], x["k"]] for x in Q]
     note = []
+    bb = BASIS_BREAK.get(code)
+    if bb:
+        fy0, k0, why = bb
+        seq = lambda x: (int(x["fy_end"][:4]) - int(fy0[:4])) * 4 + x["k"] - k0     # 距離變更季幾季（同一個決算月）
+        for row, x in zip(q, Q):
+            n = seq(x) if x["fy_end"][5:7] == fy0[5:7] else None
+            row.append(None if n is None else 1 if n == 0 and k0 > 1 else 2 if (0 <= n <= 3 if k0 == 1 else 1 <= n <= 4) else None)
+        if any(row[14] for row in q):
+            hit = next((x["cal"] for row, x in zip(q, Q) if row[14]), "")
+            note.append(f"口徑變更：{why}。" + (f"{hit} 單季營收與利益率是新舊口徑相減，不可用；" if k0 > 1 else "") +
+                        "之後四季的營收年增也不可比。淨利、EPS、本益比不受影響")
     if splits:
         note.append("每股數字已依分割調整：" + "、".join(f"{d} 1拆{n:g}" for d, n in splits if d >= f"{TODAY.year - YEARS}"))
     if len(Q) < 8:
@@ -730,14 +749,16 @@ def build(code, jq_recs, td_recs, master):
 # ======================= 首頁／主題頁用的統計（預先算好放進 index.bin，前端只解密一次） =======================
 def stat_of(d):
     """回傳 {ry 營收年增%, ey 近四季EPS年增%, ek 虧損／轉盈, peg, mtd 本月至今%, ny 單季淨利年增%,
-    pg 營業利益進度%, pgp 去年同期進度%, pk 第幾季累計}；算不出來的鍵不放。規則同台股／美股站的 statOf。
+    pg 營業利益進度%, pgp 去年同期進度%, pk 第幾季累計, bb 口徑變更}；算不出來的鍵不放。規則同台股／美股站的 statOf。
     q 欄位：2 營收 6 EPS 7 淨利 12 會計年度底 13 第幾季"""
     o, q, L = {}, d.get("q") or [], d.get("last") or {}
     if q:
         lq = q[-1]
         fy, k = lq[12][:7], lq[13]
         p = next((x for x in q if x[12][:7] == ym_add(fy, -1) and x[13] == k), None)
-        if p and p[2] and p[2] > 0 and lq[2] is not None:
+        if len(lq) > 14 and lq[14]:
+            o["bb"] = lq[14]                                      # 口徑變更期間：營收年增不可比，不給 ry
+        elif p and p[2] and p[2] > 0 and lq[2] is not None:
             o["ry"] = round((lq[2] / p[2] - 1) * 100, 1)
         if p and p[7] and p[7] > 0 and lq[7] is not None:
             o["ny"] = round((lq[7] / p[7] - 1) * 100, 1)

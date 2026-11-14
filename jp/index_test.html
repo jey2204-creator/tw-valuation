@@ -426,9 +426,10 @@ const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 let IDX=[],THM=null,BY={},THEMES=[],ROLES={},D=null,L,R,Q,PEM,PBM,KEY=null,META=null;const charts={};
 // index.bin stocks[]：id name jname theme tw cyc close chg pe pb fpe lq date cap rev4 fx
-//   ＋ fetch_jp.py stat_of() 預先算好的：ry 營收年增 ey 近四季EPS年增 ek 虧損／轉盈 peg mtd 本月至今 ny 淨利年增 pg 營業利益進度 pgp 去年同期進度 pk 第幾季累計
+//   ＋ fetch_jp.py stat_of() 預先算好的：ry 營收年增 ey 近四季EPS年增 ek 虧損／轉盈 peg mtd 本月至今 ny 淨利年增 pg 營業利益進度 pgp 去年同期進度 pk 第幾季累計 bb 口徑變更（有 bb 就沒有 ry）
 // index.bin themes[]：{t 主題, tw 對應台股, m [[代號, 角色, 選配]]}
 // q 欄位：0日曆季 1會計季 2營收(百萬日圓) 3營益率 4經常利益率 5淨利率 6EPS 7淨利(百萬) 8平均股數(百萬股) 9季末 10公布日 11來源(J/T) 12會計年度底 13第幾季
+//   14口徑變更（fetch_jp.py BASIS_BREAK；多數股票沒有這欄）：1＝變更當季，單季營收與利益率是新舊口徑相減、不可用；2＝之後四季，營收年增不可比
 // riv 欄位：0年月 1收盤 2近四季EPS 3每股淨值 4PE 5PB
 // fc：fy、label、hist[[公布日,營收,營業利益,經常利益,淨利,EPS,來源]]、h1[公布日,…]、ytd{k,per_end,sales,op,odp,np,eps}、prior{sales,op,odp,np}(%)
 
@@ -500,7 +501,8 @@ function bands(vals){
 const fyOf=x=>x[12].slice(0,7);
 // 前一年同季：用（會計年度, 第幾季）找，不靠陣列位置，中間缺季也能算
 const pyIdx=i=>{const x=Q[i];return Q.findIndex(z=>fyOf(z)===addY(fyOf(x),-1)&&z[13]===x[13])};
-function yoyOf(i){const p=Q[pyIdx(i)];return p&&p[2]?+((Q[i][2]/p[2]-1)*100).toFixed(1):null}
+const bbOf=x=>x&&x[14]||0;
+function yoyOf(i){if(bbOf(Q[i]))return null;const p=Q[pyIdx(i)];return p&&p[2]?+((Q[i][2]/p[2]-1)*100).toFixed(1):null}
 function ttm(i){if(i<3)return null;const s=Q.slice(i-3,i+1);
   if((new Date(s[3][9])-new Date(s[0][9]))/864e5>300||s.some(x=>x[6]==null))return null;return sum(s.map(x=>x[6]))}
 // 淨利近四季合計（百萬日圓）：四季要連續、都有值
@@ -576,9 +578,10 @@ function header(){
   // 營收
   const yy=yoyOf(qn-1);
   $('uRev').textContent=`${okuU()}｜日曆季`;$('uEps').textContent=`基本｜${cur()}`;$('fEps').textContent='柱：單季 EPS（累計相減）　線：近四季累計（右軸）。日本慣例用基本 EPS'+fxFoot();
-  $('tRev').innerHTML=`${q1[0]}（${q1[1]}）營收 <strong>${okuT(q1[2])} ${okuU()}</strong>${yy!=null?`，年增 <strong>${yy}%</strong>`:''}${q0?`，季增 <strong>${((q1[2]/q0[2]-1)*100).toFixed(1)}%</strong>`:''}`;
+  {const b1=bbOf(q1),b0=bbOf(q0);
+  $('tRev').innerHTML=`${q1[0]}（${q1[1]}）營收 <strong>${okuT(q1[2])} ${okuU()}</strong>`+(b1?` <span class="pill">口徑變更</span> ${b1===1?'這一季是新舊口徑相減，數字失真、不可用；':''}年增${b1===1||b0===1?'、季增':''}不可比`:(yy!=null?`，年增 <strong>${yy}%</strong>`:''))+(q0&&b1!==1&&b0!==1?`，季增 <strong>${((q1[2]/q0[2]-1)*100).toFixed(1)}%</strong>`:'')}
   const pc=v=>v==null?'—':v+'%';
-  $('tMar').innerHTML=q0?`${q1[0]} 營益率 <strong>${pc(q1[3])}</strong>、經常利益率 <strong>${pc(q1[4])}</strong>、淨利率 <strong>${pc(q1[5])}</strong>（前季 ${pc(q0[3])}／${pc(q0[4])}／${pc(q0[5])}）`:'';
+  $('tMar').innerHTML=bbOf(q1)===1?`<span class="pill">口徑變更</span> ${q1[0]} 的利益率是新舊口徑相減算出來的，不顯示${q0?`（前季 營益率 ${pc(q0[3])}、淨利率 ${pc(q0[5])}）`:''}`:q0?`${q1[0]} 營益率 <strong>${pc(q1[3])}</strong>、經常利益率 <strong>${pc(q1[4])}</strong>、淨利率 <strong>${pc(q1[5])}</strong>（前季 ${pc(q0[3])}／${pc(q0[4])}／${pc(q0[5])}）`:'';
   // 淨利（q[7] 是財報的歸屬母公司淨利，百萬日圓；單季 = 累計相減）
   const NI=Q.map((x,i)=>[i,x[7]]).filter(x=>x[1]!=null),hasNI=NI.length>=2;$('ni').hidden=!hasNI;
   document.querySelector('#chips a[href="#ni"]').hidden=!hasNI;
@@ -632,8 +635,8 @@ function render(){
   const acc=css('--accent'),acc2=css('--accent2'),warm=css('--warm'),vio=css('--violet'),n=20,st=Math.max(0,Q.length-n),S=Q.slice(st);
   {const o=base(),c=mk('cRev');o.xAxis.data=S.map(x=>x[0]);o.yAxis.scale=false;
    o.yAxis=[o.yAxis,{...o.yAxis,scale:true,splitLine:{show:false},axisLabel:{...o.yAxis.axisLabel,formatter:'{value}%'}}];
-   o.tooltip.formatter=p=>{const i=st+p[0].dataIndex;return `<b>${qtip(i)}</b><br>營收 ${okuT(Q[i][2])} ${okuU()}<br>年增 ${yoyOf(i)??'—'}%<br><span style="color:${css('--muted')}">來源 ${srcName[Q[i][11]]}，公布 ${Q[i][10]}</span>`};
-   o.series=[{name:`營收(${okuU()})`,type:'bar',data:S.map(x=>+okuV(x[2]).toFixed(fxOn()?1:0)),itemStyle:{color:acc,borderRadius:[2,2,0,0]},barCategoryGap:'25%'},
+   o.tooltip.formatter=p=>{const i=st+p[0].dataIndex;const bb=bbOf(Q[i]);return `<b>${qtip(i)}</b><br>營收 ${okuT(Q[i][2])} ${okuU()}<br>年增 ${yoyOf(i)??'—'}%${bb?`<br>⚠️ 口徑變更：${bb===1?'單季是新舊口徑相減，不可用':'營收年增不可比'}`:''}<br><span style="color:${css('--muted')}">來源 ${srcName[Q[i][11]]}，公布 ${Q[i][10]}</span>`};
+   o.series=[{name:`營收(${okuU()})`,type:'bar',data:S.map(x=>{const v=+okuV(x[2]).toFixed(fxOn()?1:0);return bbOf(x)===1?{value:v,itemStyle:{color:css('--muted'),opacity:.45}}:v}),itemStyle:{color:acc,borderRadius:[2,2,0,0]},barCategoryGap:'25%'},
      {name:'年增率',type:'line',yAxisIndex:1,data:S.map((x,j)=>yoyOf(st+j)),symbol:'none',connectNulls:false,lineStyle:{width:2,color:warm},itemStyle:{color:warm}}];
    xLast(o,c);c.setOption(o,true)}
   {const o=base(),c=mk('cMar');o.xAxis.data=S.map(x=>x[0]);o.yAxis.axisLabel.formatter='{value}%';o.tooltip.valueFormatter=v=>v==null?'—':v+'%';
@@ -692,10 +695,11 @@ function renderFwd(){
   let t=`依目前假設，${fyLbl(m.cur)} EPS <strong>${eps2(m.eY)}</strong>、${fyLbl(addY(m.cur,1))} <strong>${eps2(m.eN)}</strong>；以現價換算預估本益比 <strong>${pe(m.eY)}</strong>／<strong>${pe(m.eN)}</strong> 倍`;
   if(fe!=null&&fe)t+=`；自建預估比公司預估 <strong>${m.eY>=fe?'高':'低'} ${Math.abs((m.eY/fe-1)*100).toFixed(0)}%</strong>`;
   const ql=Q[Q.length-1];
+  if(window.__bb)t+=`<br><span class="pill">口徑變更</span> ${ql[0]} 單季營收是新舊口徑相減、失真，模型以它當基期會跟著偏；淨利率改用近四季平均。這檔的自建預估先不要參考，看公司預估`;
   if(window.__nmAbn)t+=`<br><span class="pill">業外影響</span> ${ql[0]} 淨利率 ${ql[5]}% 高於營益率 ${ql[3]}% 超過 5 個百分點，可能含一次性收益，預設改用近四季平均淨利率`;
   $('tFwd').innerHTML=t;
   $('lQ1').textContent=`${m.est[0].lbl} 營收季增（%）`;$('lYg').textContent=`${fyLbl(addY(m.cur,1))} 營收年增（%）`;$('iQg').parentElement.hidden=m.est.length<2;
-  $('fFwd').textContent=`EPS = 營收 × 淨利率 ÷ ${fmt(m.sh,1)} 百萬股（最新平均股數）。預設值刻意偏保守：下季季增取近四季平均（上限 15%）、之後各季減半、下年度年增取近四季營收年增的一半（上限 30%）、淨利率取${window.__nmAbn?'近四季平均':'最新一季'}。以會計年度計，菱形為公司預估。${fxFoot()}`;
+  $('fFwd').textContent=`EPS = 營收 × 淨利率 ÷ ${fmt(m.sh,1)} 百萬股（最新平均股數）。預設值刻意偏保守：下季季增取近四季平均（上限 15%）、之後各季減半、下年度年增取近四季營收年增的一半（上限 30%）、淨利率取${window.__nmAbn||window.__bb?'近四季平均':'最新一季'}。以會計年度計，菱形為公司預估。${fxFoot()}`;
 }
 function river(id,ms,col,unit){
   const c=mk(id);
@@ -725,13 +729,13 @@ async function load(id){
     let d;
     try{d=await getBin(`data/${id}.bin`)}catch(e){throw new Error(e.message==='資料檔不存在'?`尚未有 ${id} 的資料（不在追蹤清單，或排程還沒跑）`:e.name==='OperationError'?'解密失敗：密語可能已更換，請到首頁登出後重新輸入':e.message)}
     if(LOADING!==id)return;   // 載入途中又切到別檔：丟掉這次結果
-    D=d;L=D.last;R=D.riv;Q=D.q;if(L.fx)fxSeed(L.fx);fxRender();
+    D=d;L=D.last;R=D.riv;Q=D.q.map(x=>x[14]===1?Object.assign(x.slice(),{3:null,4:null,5:null}):x);if(L.fx)fxSeed(L.fx);fxRender();
     $('code').textContent=D.id;$('nm').textContent=D.name||D.id;
     if(Q.length<2)throw new Error(`${id} 的財報資料不足，無法繪圖`);
     PEM=bands(R.map(r=>r[4]));PBM=bands(R.map(r=>r[5]));
-    const ql=Q[Q.length-1],last4=Q.slice(-4);window.__nmAbn=ql[3]!=null&&ql[5]!=null&&ql[5]>ql[3]+5;
+    const ql=Q[Q.length-1],last4=Q.slice(-4);window.__nmAbn=ql[3]!=null&&ql[5]!=null&&ql[5]>ql[3]+5;window.__bb=bbOf(ql)===1;
     const nms=last4.map(x=>x[5]).filter(x=>x!=null);
-    $('iNm').value=window.__nmAbn&&nms.length?+(sum(nms)/nms.length).toFixed(1):(ql[5]??0);
+    $('iNm').value=(window.__nmAbn||window.__bb)&&nms.length?+(sum(nms)/nms.length).toFixed(1):(ql[5]??0);
     const g=Q.slice(-5).map((x,i,a)=>i?x[2]/a[i-1][2]-1:null).slice(1);const qg=g.length?clamp(sum(g)/g.length*100,-10,15):0;
     const y4=sum(Q.slice(-4).map(x=>x[2])),y0=sum(Q.slice(-8,-4).map(x=>x[2]));const yg=Q.length>=8&&y0>0?clamp((y4/y0-1)*50,-20,30):5;
     $('iQ1').value=Math.round(qg);$('iQg').value=Math.round(qg/2);$('iYg').value=Math.round(yg);
@@ -825,7 +829,7 @@ function themeRender(tid){
   $('tTw').innerHTML=t.tw.length?'<span class="lb">對應台股</span>'+t.tw.map(([c,n])=>`<a href="../#${c}"><b>${c}</b>${esc(n)}</a>`).join('')+(ORD.tw.has(t.id)?`<a class="all" href="../#t/${t.id}">台股同主題 →</a>`:''):'';
   if(LAST_TS!==tid){TS=tsGet(tid);LAST_TS=tid}
   tTable(t);
-  $('tFoot').innerHTML=`營收＝最新一季對比去年同季；EPS＝近四季合計對比前四季（「虧損」＝近四季合計 ≤ 0，「轉盈」＝前四季是虧損）；PEG＝本益比 ÷ EPS 年增，年增 &gt;300% 低基期不算${t.stocks.some(x=>BY[x[0]].cyc)?'；<span class="pill">循環</span> 股 PEG 參考性低，以淨值比河流為主':''}；本月＝最新收盤對比上月底；進度＝年初累計營業利益 ÷ 公司全年預估（括號為去年同期）。收盤為${fxOn()?'台幣（固定匯率 '+FX.rate+' 換算）':'日圓'}。${hasOpt?'<b class="opt">選配</b>＝題材股，不列入排名、👑 與中位數。':''}點欄位標題可排序，每個主題會記住上次的排序（本益比連點：本益比 → EPS年增 → PEG → 預估本益比）；點漲跌幅開 Google AI 問原因。`+
+  $('tFoot').innerHTML=`營收＝最新一季對比去年同季；EPS＝近四季合計對比前四季（「虧損」＝近四季合計 ≤ 0，「轉盈」＝前四季是虧損）；PEG＝本益比 ÷ EPS 年增，年增 &gt;300% 低基期不算${t.stocks.some(x=>BY[x[0]].cyc)?'；<span class="pill">循環</span> 股 PEG 參考性低，以淨值比河流為主':''}；本月＝最新收盤對比上月底；進度＝年初累計營業利益 ÷ 公司全年預估（括號為去年同期）。收盤為${fxOn()?'台幣（固定匯率 '+FX.rate+' 換算）':'日圓'}。${hasOpt?'<b class="opt">選配</b>＝題材股，不列入排名、👑 與中位數。':''}點欄位標題可排序，每個主題會記住上次的排序（本益比連點：本益比 → EPS年增 → PEG → 預估本益比）；點漲跌幅開 Google AI 問原因。${t.stocks.some(x=>BY[x[0]].bb)?'<span style="color:var(--warm)">口徑變更</span>＝事業分拆或改列停業單位，營收年增是新舊口徑互比，不顯示也不列入中位數。':''}`+
     (HAS_ST()?'':'<br>營收年增、EPS 年增、PEG、本月、進度還沒有資料：要等新版 fetch_jp.py 的排程跑過一次。')}
 const TSORT={cap:s=>s.cap,px:s=>s.chg,pe:s=>s.pe||null,eps:s=>s.ey,peg:s=>s.peg,fpe:s=>s.fpe||null,pb:s=>s.pb||null,ry:s=>s.ry};
 const TPE=['pe:-1','pe:1','eps:-1','peg:1','fpe:1',''],TPEL={pe:'本益比',eps:'EPS年增',peg:'PEG',fpe:'預估PE'};
@@ -835,6 +839,7 @@ function tsSet(tid,v){try{const m=JSON.parse(localStorage.getItem(TSKEY))||{};if
 function tTable(t){const el=$('tList'),[k,dir]=TS.split(':');let rows=t.stocks.slice();
   if(k&&TSORT[k]){const f=TSORT[k];rows.sort((a,b)=>{const x=f(BY[a[0]]),y=f(BY[b[0]]);if(x==null)return 1;if(y==null)return -1;return (x-y)*(+dir||-1)})}
   const lqs=rows.map(([id])=>BY[id].lq).filter(Boolean).sort(),LQ=lqs[lqs.length-1],top=topOf(t);let RK=0;
+  const RY=s=>s.ry!=null?pct(s.ry,1):s.bb?`<span class="sub" style="color:var(--warm)" title="事業分拆／改列停業單位：營收年增是新舊口徑互比，不顯示也不列入中位數。詳見個股頁">${DENSE?'口徑變':'口徑變更'}</span>`:'—';
   const th=(key,lb)=>{const on=key==='pe'?k in TPEL:k===key;return `<th data-k="${key}" class="${on?'on':''}">${key==='pe'&&on?TPEL[k]:lb}${on?(+dir>0?' ▲':' ▼'):''}</th>`};
   el.innerHTML=`<thead><tr>${th('cap','股票')}${th('px','收盤')}${th('pe','本益比')}${th('pb','淨值比')}${th('ry',DENSE?'營收':'營收年增')}</tr></thead><tbody>`+rows.map(([id,role,opt])=>{
     const s=BY[id];
@@ -848,7 +853,7 @@ function tTable(t){const el=$('tList'),[k,dir]=TS.split(':');let rows=t.stocks.s
       return `<tr data-id="${id}"><td class="sk">${rk}${nmw}<span class="dl">${id}${s.cap!=null?' '+capY(s.cap).replace(/^≈|台幣$|円$/g,''):''}${opt?' <b class="opt">選配</b>':''}</span></td>`+
         `<td>${pxT(s.close)}${chg}</td>`+
         `<td>${s.pe?fmt(s.pe,1):'—'}<span class="sub" title="近四季 EPS 年增；P＝PEG（本益比÷EPS 年增）">${d}</span></td><td>${s.pb?fmt(s.pb,2):'—'}</td>`+
-        `<td class="${sgc(s.ry)}">${s.ry!=null?pct(s.ry,1):'—'}<span class="sub"${s.lq&&s.lq!==LQ?' style="color:var(--warm)" title="跟其他檔不同季"':''}>${s.lq||''}</span></td></tr>`}
+        `<td class="${sgc(s.ry)}">${RY(s)}<span class="sub"${s.lq&&s.lq!==LQ?' style="color:var(--warm)" title="跟其他檔不同季"':''}>${s.lq||''}</span></td></tr>`}
     let e;if(s.ek)e=`<span class="sub ${s.ek==='轉盈'?'vu':'vd'}">四季 ${s.ek}</span>`;
     else if(s.ey!=null)e=`<span class="sub ${sgc(s.ey)}">四季 ${s.ey>300?'>+300%':pct(s.ey)}</span>`;else e='<span class="sub">EPS —</span>';
     if(s.peg!=null)e+=`<span class="sub ${pegc(s.peg)}">PEG ${fmt(s.peg,s.peg<10?2:1)}</span>`;else if(s.ey>300)e+='<span class="sub">低基期</span>';
@@ -857,7 +862,7 @@ function tTable(t){const el=$('tList'),[k,dir]=TS.split(':');let rows=t.stocks.s
     return `<tr data-id="${id}"><td class="sk">${rk}${nmw}<span class="cd">${id}</span><span class="cap">${capY(s.cap)}</span>${pills||role?`<div class="role">${pills}${esc(role||'')}</div>`:''}</td>`+
       `<td>${pxT(s.close)}${chg}${s.mtd!=null?`<span class="sub sm">本月 <span class="${sgc(s.mtd)}">${pct(s.mtd,1)}</span></span>`:''}</td>`+
       `<td>${s.pe?fmt(s.pe,1):'—'}${e}</td><td>${s.pb?fmt(s.pb,2):'—'}</td>`+
-      `<td class="${sgc(s.ry)}">${s.ry!=null?pct(s.ry,1):'—'}<span class="sub"${s.lq&&s.lq!==LQ?' style="color:var(--warm)" title="跟其他檔不同季"':''}>${s.lq||''}</span>${s.pg!=null?`<span class="sub sm" title="${s.pk}Q 累計營業利益 ÷ 公司全年預估${s.pgp!=null?'；去年同期 '+fmt(s.pgp,0)+'%':''}">進度 ${fmt(s.pg,0)}%${s.pgp!=null?`（${fmt(s.pgp,0)}）`:''}</span>`:''}</td></tr>`}).join('')+'</tbody>';
+      `<td class="${sgc(s.ry)}">${RY(s)}<span class="sub"${s.lq&&s.lq!==LQ?' style="color:var(--warm)" title="跟其他檔不同季"':''}>${s.lq||''}</span>${s.pg!=null?`<span class="sub sm" title="${s.pk}Q 累計營業利益 ÷ 公司全年預估${s.pgp!=null?'；去年同期 '+fmt(s.pgp,0)+'%':''}">進度 ${fmt(s.pg,0)}%${s.pgp!=null?`（${fmt(s.pgp,0)}）`:''}</span>`:''}</td></tr>`}).join('')+'</tbody>';
   el.onclick=e=>{if(e.target.closest('a.aq'))return;   // 點漲跌幅：開 Google AI，不進個股頁
     const h=e.target.closest('th[data-k]');if(h){const nk=h.dataset.k,c=TS.split(':');
       if(nk==='pe'){const i=TPE.indexOf(TS);TS=TPE[i<0?0:(i+1)%TPE.length]}else TS=c[0]===nk?(c[1]==='-1'?nk+':1':''):nk+':-1';tsSet(t.id,TS);tTable(t);return}
