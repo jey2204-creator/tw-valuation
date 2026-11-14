@@ -711,7 +711,7 @@ def read_block(recs, best, Q):
                            pg=r1(a[m] / f1 * 100) if f1 and f1 > 0 else None,
                            pgp=r1(pa["a"][m] / pf["a"][m] * 100) if pa and pf and pa["a"].get(m) is not None
                            and pf["a"].get(m) and pf["a"][m] > 0 else None,
-                           rev=r1((f1 / f0 - 1) * 100) if f0 and f0 > 0 and f1 is not None else None)
+                           rev=r1((f1 - f0) / abs(f0) * 100) if f0 and f1 is not None else None)   # 除以 |f0|：預估是虧損時，虧損縮小也算上修（正值）
             else:
                 nf = asof(nfy, disc, m)
                 row.update(a=r1(a[m]), f=r1(nf), f0=r1(f0),
