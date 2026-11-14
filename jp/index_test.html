@@ -885,6 +885,7 @@ function renderBeat(){
   ]).map(([a,b,d])=>`<div><span>${a}</span>${b}<i>${d||'&nbsp;'}</i></div>`).join('');
   // 圖：上層＝進度率（實心柱：紅＝判讀正面／綠＝負面／灰＝中性）＋去年同期進度（虛線空心柱）；年報季的柱＝全年實績 ÷ 3Q 時預估，虛線框＝100%。下層＝隔日漲跌
   const val=r=>r.k===4?(r.ach!=null?+(100+r.ach).toFixed(1):null):r.f>0&&r.a>=0?r.pg:null,ref=r=>r.k===4?(r.ach!=null?100:null):r.pg!=null&&r.f>0&&r.a>=0?r.base:null;   // 這一季自己算不出進度（虧損、沒預估）就不畫基準框，免得只剩一個空框
+  const bx=css('--fg');   // 去年同期框用文字色：中性的灰柱和框同色時，框比柱矮就完全看不到
   const ch=mk('cBeat'),o=base(),LG={...o.legend,left:0,itemGap:8,itemWidth:10,itemHeight:7,textStyle:{...o.legend.textStyle,fontSize:10.5}};
   o.legend=[{...LG,top:0,data:['進度率','去年同期']},{...LG,top:150,data:['隔日漲跌']}];
   o.grid=[{left:38,right:14,top:24,height:118,containLabel:false},{left:38,right:14,top:172,bottom:22,containLabel:false}];
@@ -896,7 +897,7 @@ function renderBeat(){
       label:{show:true,position:'top',fontSize:9,color:mu,fontFamily:'IBM Plex Mono',formatter:q=>{const r=R[q.dataIndex];return !r.m?'':r.k===4?(r.gd!=null?'新'+pc(r.gd).replace('.0',''):''):r.f!=null&&r.f<=0?'虧損預估':r.rev!=null&&Math.abs(r.rev)>=3?(r.rev>0?'↑':'↓')+Math.abs(r.rev).toFixed(0)+'%':''}}},
     {name:'_ico',type:'scatter',symbolSize:.01,silent:true,z:5,itemStyle:{color:'transparent'},data:R.map(r=>val(r)==null?0:null),   // 沒有柱的季：在底線上標那一季的判讀圖示；公司沒給全年預估就標「無預估」
       label:{show:true,position:'top',distance:2,formatter:q=>{const r=R[q.dataIndex];return r.m?`{e|${r.V[1].split(' ')[0]}}`:'{n|無預估}'},rich:{e:{fontSize:12,lineHeight:14},n:{fontSize:9,color:mu,lineHeight:12}}}},
-    {name:'去年同期',type:'bar',barGap:'-100%',barCategoryGap:'28%',z:3,silent:true,itemStyle:{color:'transparent',borderColor:mu,borderWidth:1.5,borderType:'dashed'},data:R.map(r=>({value:ref(r),itemStyle:{color:'transparent',borderColor:mu,borderWidth:1.5,borderType:'dashed',borderRadius:[2,2,0,0]}}))},
+    {name:'去年同期',type:'bar',barGap:'-100%',barCategoryGap:'28%',z:3,silent:true,itemStyle:{color:'transparent',borderColor:bx,borderWidth:1.5,borderType:'dashed'},data:R.map(r=>({value:ref(r),itemStyle:{color:'transparent',borderColor:bx,borderWidth:1.5,borderType:'dashed',borderRadius:[2,2,0,0]}}))},
     {name:'隔日漲跌',type:'bar',xAxisIndex:1,yAxisIndex:1,barCategoryGap:'28%',itemStyle:{color:mu},data:R.map(r=>r.rx==null?null:{value:r.rx,itemStyle:{color:r.rx>=0?up:dn,borderRadius:r.rx>=0?[2,2,0,0]:[0,0,2,2]}}),
       label:{show:true,position:'top',fontSize:9,color:mu,fontFamily:'IBM Plex Mono',formatter:q=>q.value==null?'':(q.value>=0?'+':'')+q.value.toFixed(1)},markLine:{silent:true,symbol:'none',lineStyle:{color:mu,type:'dashed',width:1,opacity:.6},label:{show:false},data:[{yAxis:0}]}}];
   {const vs=R.flatMap(r=>[val(r),ref(r)]).filter(v=>v!=null);if(vs.length){o.yAxis[0].max=Math.ceil(Math.max(100,...vs)*1.18/20)*20;if(Math.min(...vs)<0)o.yAxis[0].min=Math.floor(Math.min(...vs)*1.2/20)*20}}
