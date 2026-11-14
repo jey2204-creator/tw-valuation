@@ -416,6 +416,27 @@ html{scroll-behavior:smooth}
       <p class="foot" id="bkMsg" role="status"></p>
     </div>
   </details>
+  <details class="ind" id="syBox"><summary><b>☁️ 雲端同步</b><span id="sySum">未開啟</span></summary>
+    <div class="in">
+      <div id="syOff">
+        <p class="foot">手機、電腦都開同步後，改主題會自動存到你 GitHub 帳號的一個秘密 Gist，另一台開頁或切回來時就會抓到。每個瀏覽器（含加到主畫面的 App）各設定一次。日股跟美股站各用各的 Gist 檔，互不影響。</p>
+        <div id="syUsBox" hidden>
+          <p class="foot">這個瀏覽器的美股站已經開了同步，可以直接沿用同一個 token，不用再貼。</p>
+          <div class="ebar"><button type="button" class="ib pri" id="syUs">沿用美股站的 token 開啟同步</button></div>
+          <p class="foot" style="margin-top:14px">或是貼另一個 token：</p>
+        </div>
+        <p class="foot">產生 token：GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic) → Generate new token，<b>只勾 gist</b>，Expiration 選 90 days。</p>
+        <label class="efield" for="syTok">GitHub token<input id="syTok" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="ghp_…"></label>
+        <div class="ebar"><button type="button" class="ib pri" id="syGo">開啟同步</button></div>
+      </div>
+      <div id="syOn" hidden>
+        <div class="ebar" id="syCf" hidden><button type="button" class="ib pri" id="syUseCloud">用雲端版本</button><button type="button" class="ib" id="syUseLocal">用這台的版本</button></div>
+        <div class="ebar"><button type="button" class="ib" id="syNow">立即同步</button><button type="button" class="ib warn" id="syStop">關閉同步</button></div>
+      </div>
+      <p class="foot" id="syMsg" role="status"></p>
+      <p class="foot">token 只存在這個瀏覽器、只送到 api.github.com。Gist 裡只有主題名稱、股票代號、排序與隱藏設定，<b>沒有股價、財報數字，也沒有解鎖密語</b>；這個 token 讀寫得到你全部的 Gist，所以別在 Gist 放敏感資料。手機遺失就到 GitHub 撤銷 token。「登出（清除密語）」不會關閉同步，要另外按「關閉同步」。</p>
+    </div>
+  </details>
 </div>
 <div id="editTheme" class="ed" hidden>
   <div class="ehead"><a href="#edit" id="eBack">← 取消</a><span class="meta" id="eKind"></span></div>
@@ -1103,7 +1124,7 @@ function cfgGet(){let c=null;try{c=JSON.parse(localStorage.getItem(JKEY))}catch(
     th[k]={id:k,name:v.name.slice(0,40),stocks:v.stocks.filter(x=>Array.isArray(x)&&typeof x[0]==='string'&&x[0]).map(x=>[x[0].toUpperCase(),String(x[1]??'').slice(0,30),!!x[2]])}}
   const ls=a=>Array.isArray(a)?a.filter(x=>typeof x==='string'):[];
   return {order:ls(c.order),hidden:ls(c.hidden),themes:th}}
-function cfgSave(c){try{localStorage.setItem(JKEY,JSON.stringify({site:'jp',order:c.order,hidden:c.hidden,themes:c.themes,at:Date.now()}))}catch(e){}applyCfg()}   // at＝這次修改時間（之後雲端同步用來判斷哪份比較新）
+function cfgSave(c){try{localStorage.setItem(JKEY,JSON.stringify({site:'jp',order:c.order,hidden:c.hidden,themes:c.themes,at:Date.now()}))}catch(e){}applyCfg();syncDirty()}   // at＝這次修改時間，雲端同步用來判斷哪份比較新
 // 全部主題（含隱藏的）：順序＝自己拖過的 order，其餘接在後面；清單裡已經沒有的代號自動略過
 function allThemes(){
   const c=cfgGet(),bm=Object.fromEntries(BASE.map(t=>[t.id,t]));
@@ -1448,7 +1469,85 @@ $('bkLoad').addEventListener('click',()=>{let c=null;try{c=JSON.parse($('bk').va
   try{localStorage.setItem(JKEY,JSON.stringify(c))}catch(e){}cfgSave(cfgGet());renderOrder();
   $('bkMsg').textContent=`已匯入（${allThemes().length} 個主題，首頁顯示 ${THEMES.length} 個）`});
 $('bkReset').addEventListener('click',()=>{if(Date.now()-resetArm>4000){resetArm=Date.now();$('bkMsg').textContent='會刪除所有自訂主題、排序與隱藏。4 秒內再按一次確認';return}
-  cfgSave({order:[],hidden:[],themes:{}});renderOrder();$('bkMsg').textContent='已還原預設'});   // 存一份空設定（而不是刪掉），之後雲端同步才會把「還原」帶到另一台
+  cfgSave({order:[],hidden:[],themes:{}});renderOrder();$('bkMsg').textContent='已還原預設'});   // 存一份空設定（而不是刪掉），雲端同步才會把「還原」帶到另一台
+// ---------- ☁️ 雲端同步：設定存到自己 GitHub 帳號的一個秘密 Gist（描述 GDESC、檔名 GFILE）；跟美股站分開一份 ----------
+// jpSync = {token, gist, at, pend, last}：at＝最後一次跟雲端對齊時那份設定的 at；pend＝這台有改過還沒上傳
+// 判斷用「雲端 at ≠ 上次對齊的 at」而不是比大小，兩台時鐘不準也不會漏抓；兩台都有改 → 讓你選留哪份
+// 上傳的只有 jpThemeCfg（主題名稱、代號、排序、隱藏），沒有 J-Quants 數值、沒有密語
+const SKEY='jpSync',GDESC='tw-valuation jp themes',GFILE='jpThemeCfg.json',GAPI='https://api.github.com';
+let SY={},SYC=null,syT=0,syBusy=false,syPullAt=0,syWait=false;
+try{SY=JSON.parse(localStorage.getItem(SKEY))||{}}catch(e){}
+function sySave(){try{localStorage.setItem(SKEY,JSON.stringify(SY))}catch(e){}}
+const syOn=()=>!!(SY.token&&SY.gist);
+const usTok=()=>{try{const t=(JSON.parse(localStorage.getItem('usSync'))||{}).token;return typeof t==='string'&&t?t:''}catch(e){return ''}};   // 同網域的美股站 token
+function cfgRaw(){const c=cfgGet();let at=0;try{at=+(JSON.parse(localStorage.getItem(JKEY))||{}).at||0}catch(e){}return {site:'jp',...c,at}}   // 一律過 cfgGet 的檢查，髒資料不上傳
+const cfgKey=c=>JSON.stringify([c.order||[],c.hidden||[],c.themes||{}]);
+// 上傳前一定要有 at：沒有 at（=0）的話另一台會以為雲端沒變
+function cfgStamp(){const l=cfgRaw();if(!l.at)l.at=Date.now();try{localStorage.setItem(JKEY,JSON.stringify(l))}catch(e){}return l}
+function syMsg(t){$('syMsg').textContent=t}
+function syStat(){const on=syOn();$('syOff').hidden=on;$('syOn').hidden=!on;$('syCf').hidden=!SYC;$('syUsBox').hidden=on||!usTok();
+  const tm=SY.last?new Date(SY.last).toLocaleString('zh-TW',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}):'';
+  $('sySum').textContent=!on?'未開啟':SYC?'⚠️ 兩台都有改':SY.pend?'有變更待上傳':'已同步'+(tm?'・'+tm:'');
+  $('hEdit').textContent=SYC?'✏️ 編輯 ⚠️':'✏️ 編輯'}
+async function gh(path,opt={}){
+  const r=await fetch(GAPI+path,{...opt,cache:'no-store',headers:{Accept:'application/vnd.github+json',Authorization:'Bearer '+SY.token,...(opt.body?{'Content-Type':'application/json'}:{})}});
+  if(r.status===401)throw new Error('token 無效或已過期，請關閉同步後貼新的 token');
+  if(r.status===403)throw new Error('token 沒有 gist 權限，或 GitHub 暫時限流');
+  if(r.status===404)throw new Error('找不到雲端那份設定（Gist 被刪了？）請關閉同步再重開');
+  if(!r.ok)throw new Error('GitHub 回應 '+r.status);
+  return r.json()}
+async function remoteGet(){const g=await gh('/gists/'+SY.gist),f=g.files&&g.files[GFILE];if(!f)return null;
+  let txt=f.content;if(f.truncated)txt=await (await fetch(f.raw_url,{cache:'no-store'})).text();
+  try{const c=JSON.parse(txt);return c&&typeof c==='object'&&c.site==='jp'?{...c,at:+c.at||0}:null}catch(e){return null}}
+const remotePut=c=>gh('/gists/'+SY.gist,{method:'PATCH',body:JSON.stringify({files:{[GFILE]:{content:JSON.stringify(c)}}})});
+// 設定換了之後重畫目前這一頁（首頁、主題頁、編輯清單）
+function cfgRepaint(){if(!KEY)return;applyCfg();
+  if(!$('editList').hidden)renderOrder();
+  else if(!$('themePage').hidden&&CUR_T)themeRender(CUR_T);   // 主題被另一台刪掉或隱藏 → themeRender 會導回首頁
+  else if(!$('home').hidden)homeRender();
+  else if(D&&!$('stock').hidden){backPaint(D.id);pnPaint(D.id)}}
+function applyRemote(r){try{localStorage.setItem(JKEY,JSON.stringify(r))}catch(e){}
+  SY.at=r.at;SY.pend=false;SY.last=Date.now();SYC=null;sySave();cfgRepaint()}
+function syConflict(r){SYC=r;syMsg('這台跟另一台都改過設定：選要留哪一份，另一份會被蓋掉');}
+function syncDirty(){if(!syOn())return;SY.pend=true;sySave();syStat();clearTimeout(syT);syT=setTimeout(()=>syncRun(),1500)}
+// 拉＋推一次做完：雲端有別台的新版本就套用（這台也有改 → 問你），這台有改就上傳。還沒解鎖時不同步
+async function syncRun(force){
+  if(!syOn()||!KEY)return;if(syBusy){clearTimeout(syT);syT=setTimeout(()=>syncRun(force),1500);return}
+  syBusy=true;syPullAt=Date.now();
+  try{const r=await remoteGet(),l=cfgRaw();
+    if(r&&r.at!==(SY.at||0)&&cfgKey(r)!==cfgKey(l)){        // 雲端被另一台改過，內容也不一樣
+      if(SY.pend&&!force){syConflict(r);return}
+      if(!$('editTheme').hidden){syWait=true;syMsg('雲端有新版本，離開編輯頁後套用');return}
+      applyRemote(r);syMsg('已套用另一台的最新設定');return}
+    if(r&&r.at!==(SY.at||0))SY.at=r.at;                     // 內容一樣，只是時間戳不同
+    if(SY.pend||!r){const u=cfgStamp();await remotePut(u);SY.at=u.at}
+    SY.pend=false;SY.last=Date.now();sySave();syMsg('')
+  }catch(e){syMsg('同步失敗：'+e.message+'（設定仍存在這台，下次開頁再試）')}
+  finally{syBusy=false;syStat()}}
+async function syStart(t){
+  SY={token:t};syMsg('連線中…');$('syGo').disabled=$('syUs').disabled=true;
+  try{const list=await gh('/gists?per_page=100'),g=list.find(x=>x.description===GDESC&&x.files&&x.files[GFILE]),l=cfgRaw();
+    if(g){SY.gist=g.id;const r=await remoteGet();
+      if(!r){const u=cfgStamp();await remotePut(u);SY.at=u.at;SY.last=Date.now();syMsg('已開啟同步（雲端是空的，已上傳這台的設定）')}
+      else if(cfgKey(r)===cfgKey(l)){SY.at=r.at;SY.last=Date.now();syMsg('已開啟同步（兩邊設定相同）')}
+      else if(cfgKey(l)===cfgKey({})){applyRemote(r);syMsg('已開啟同步，套用雲端的設定')}   // 這台沒有任何自訂才直接套用
+      else{SY.at=-1;SY.pend=true;syConflict(r)}}
+    else{const u=cfgStamp(),n=await gh('/gists',{method:'POST',body:JSON.stringify({description:GDESC,public:false,files:{[GFILE]:{content:JSON.stringify(u)}}})});
+      SY.gist=n.id;SY.at=u.at;SY.last=Date.now();syMsg('已開啟同步，已在你的 GitHub 建立秘密 Gist 存這台的設定。另一台用同一個 token 就會抓到')}
+    sySave();$('syTok').value=''}
+  catch(e){SY={};sySave();syMsg('開啟失敗：'+e.message)}
+  finally{$('syGo').disabled=$('syUs').disabled=false;syStat()}}
+$('syGo').addEventListener('click',()=>{const t=$('syTok').value.replace(/[\s​-‍﻿]/g,'');   // 去掉貼上時夾帶的空白、換行、隱形字元
+  if(!/^(ghp_|github_pat_)[A-Za-z0-9_]{20,}$/.test(t)){const h=t.slice(0,4);syMsg(`token 格式不對：應該是 ghp_ 開頭的一長串（目前貼上的是「${h}…」開頭、${t.length} 個字）`);return}
+  syStart(t)});
+$('syUs').addEventListener('click',()=>{const t=usTok();if(t)syStart(t);else syStat()});
+$('syUseCloud').addEventListener('click',()=>{if(!SYC)return;applyRemote(SYC);syStat();syMsg('已改用雲端版本')});
+$('syUseLocal').addEventListener('click',()=>{if(!SYC)return;SY.at=SYC.at;SY.pend=true;SYC=null;sySave();syMsg('上傳這台的版本…');syncRun(true)});
+$('syNow').addEventListener('click',()=>{syMsg('同步中…');syncRun()});
+$('syStop').addEventListener('click',()=>{SY={};SYC=null;sySave();syStat();syMsg('已關閉同步，token 已從這台刪除（雲端那份 Gist 還在）')});
+// 切回這個分頁／App 時再抓一次（最多 20 秒一次）；離開編輯頁時套用剛才等著的新版本
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&Date.now()-syPullAt>20000)syncRun()});
+addEventListener('hashchange',()=>setTimeout(()=>{if(syWait&&$('editTheme').hidden){syWait=false;syncRun()}}));   // 等 route() 先切完頁
 // 拖曳排序（按住右邊 ⠿）
 const SORT={handle:'.drag',draggable:'.erow',animation:160,ghostClass:'ghost',chosenClass:'chosen',dragClass:'dragging',forceFallback:true,fallbackOnBody:true,fallbackTolerance:3,scroll:true,scrollSensitivity:80,scrollSpeed:12,bubbleScroll:true};
 if(window.Sortable){
@@ -1461,7 +1560,7 @@ async function start(){
   await twOrder();
   let bad='';
   try{const x=await getBin('data/index.bin');IDX=Array.isArray(x)?x:x.stocks;THM=Array.isArray(x)?null:x.themes}catch(e){IDX=[];THM=null;bad=e.message}
-  buildThemes();
+  buildThemes();syStat();syncRun();
   const f0=IDX.find(s=>s.fx)?.fx;if(f0)fxSeed(f0);fxRender();paintDense();
   route();
   if(bad)$('tgrid').innerHTML=`<p class="err" style="grid-column:1/-1">清單載入失敗：${esc(bad)}</p>`;
