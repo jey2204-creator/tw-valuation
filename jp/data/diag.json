@@ -1,5 +1,5 @@
 {
- "asof": "2026-11-14 20:29 JST",
+ "asof": "2026-11-14 20:48 JST",
  "errors": [],
  "stocks": {
   "8035": {
@@ -14,6 +14,7 @@
    "q_src": "JJJJJJJJJT",
    "fc_n": 1,
    "fc_fy": "2027-03",
+   "rd_n": 8,
    "eps_np_ok": "9/9",
    "splits": [
     [
@@ -41,6 +42,7 @@
    "q_src": "JJJJJJJJJT",
    "fc_n": 3,
    "fc_fy": "2027-03",
+   "rd_n": 8,
    "eps_np_ok": "9/9",
    "splits": [
     [
@@ -64,6 +66,7 @@
    "q_src": "JJJJJJJT",
    "fc_n": 0,
    "fc_fy": "2027-03",
+   "rd_n": 8,
    "eps_np_ok": "7/7",
    "splits": [
     [
@@ -87,6 +90,7 @@
    "q_src": "JJJJJJJJT",
    "fc_n": 2,
    "fc_fy": "2027-06",
+   "rd_n": 8,
    "eps_np_ok": "8/8",
    "splits": [
     [
@@ -114,6 +118,7 @@
    "q_src": "JJJJJJJJJT",
    "fc_n": 3,
    "fc_fy": "2027-03",
+   "rd_n": 8,
    "eps_np_ok": "9/9",
    "splits": [
     [
@@ -141,6 +146,7 @@
    "q_src": "JJJJJJJJJT",
    "fc_n": 3,
    "fc_fy": "2027-03",
+   "rd_n": 8,
    "eps_np_ok": "9/9",
    "splits": [],
    "std": "IFRS",
@@ -159,6 +165,7 @@
    "q_src": "JJJJJJJJJT",
    "fc_n": 3,
    "fc_fy": "2027-03",
+   "rd_n": 8,
    "eps_np_ok": "9/9",
    "splits": [],
    "std": "JP",
@@ -177,6 +184,7 @@
    "q_src": "JJJJJJJJJT",
    "fc_n": 1,
    "fc_fy": "2027-03",
+   "rd_n": 8,
    "eps_np_ok": "9/9",
    "splits": [
     [
@@ -200,6 +208,7 @@
    "q_src": "JJJJJJJJT",
    "fc_n": 1,
    "fc_fy": "2026-12",
+   "rd_n": 8,
    "eps_np_ok": "8/8",
    "splits": [],
    "std": "JP",
@@ -218,6 +227,7 @@
    "q_src": "JJJJJJJJT",
    "fc_n": 3,
    "fc_fy": "2026-12",
+   "rd_n": 8,
    "eps_np_ok": "8/8",
    "splits": [],
    "std": "IFRS",
@@ -236,6 +246,7 @@
    "q_src": "JJJJJJJJT",
    "fc_n": 3,
    "fc_fy": "2026-12",
+   "rd_n": 8,
    "eps_np_ok": "8/8",
    "splits": [
     [
@@ -259,6 +270,7 @@
    "q_src": "JJJJJJJJJT",
    "fc_n": 3,
    "fc_fy": "2027-03",
+   "rd_n": 8,
    "eps_np_ok": "9/9",
    "splits": [
     [
@@ -282,6 +294,7 @@
    "q_src": "JJJJJJJJJT",
    "fc_n": 3,
    "fc_fy": "2027-03",
+   "rd_n": 8,
    "eps_np_ok": "9/9",
    "splits": [
     [
@@ -309,6 +322,7 @@
    "q_src": "JJJJJJJJJT",
    "fc_n": 3,
    "fc_fy": "2027-03",
+   "rd_n": 8,
    "eps_np_ok": "9/9",
    "splits": [
     [
@@ -336,6 +350,7 @@
    "q_src": "JJJJJJJJJT",
    "fc_n": 3,
    "fc_fy": "2027-03",
+   "rd_n": 8,
    "eps_np_ok": "9/9",
    "splits": [
     [
@@ -363,6 +378,7 @@
    "q_src": "JJJJJJJJJT",
    "fc_n": 2,
    "fc_fy": "2027-03",
+   "rd_n": 8,
    "eps_np_ok": "9/9",
    "splits": [
     [
@@ -390,6 +406,7 @@
    "q_src": "JJJJJJJJJT",
    "fc_n": 3,
    "fc_fy": "2027-03",
+   "rd_n": 8,
    "eps_np_ok": "9/9",
    "splits": [],
    "std": "JP",
@@ -408,6 +425,7 @@
    "q_src": "JJJJJJJJJT",
    "fc_n": 3,
    "fc_fy": "2027-03",
+   "rd_n": 8,
    "eps_np_ok": "9/9",
    "splits": [
     [
@@ -431,6 +449,7 @@
    "q_src": "JJJJJJJJJT",
    "fc_n": 4,
    "fc_fy": "2027-03",
+   "rd_n": 8,
    "eps_np_ok": "9/9",
    "splits": [
     [
@@ -454,6 +473,7 @@
    "q_src": "JJJJJJJJJT",
    "fc_n": 3,
    "fc_fy": "2027-03",
+   "rd_n": 8,
    "eps_np_ok": "9/9",
    "splits": [
     [
@@ -477,6 +497,7 @@
    "q_src": "JJJJJJJJJT",
    "fc_n": 3,
    "fc_fy": "2027-03",
+   "rd_n": 8,
    "eps_np_ok": "9/9",
    "splits": [
     [
@@ -500,6 +521,7 @@
    "q_src": "JJJJJJT",
    "fc_n": 0,
    "fc_fy": "2027-03",
+   "rd_n": 7,
    "eps_np_ok": "5/6",
    "splits": [
     [
@@ -523,6 +545,7 @@
    "q_src": "JJJJJJJJJT",
    "fc_n": 3,
    "fc_fy": "2027-03",
+   "rd_n": 8,
    "eps_np_ok": "9/9",
    "splits": [
     [
@@ -546,6 +569,7 @@
    "q_src": "JJJJJJJJT",
    "fc_n": 0,
    "fc_fy": "2026-12",
+   "rd_n": 8,
    "eps_np_ok": "8/8",
    "splits": [],
    "std": "IFRS",
@@ -564,6 +588,7 @@
    "q_src": "JJJJJJJJJT",
    "fc_n": 3,
    "fc_fy": "2027-03",
+   "rd_n": 8,
    "eps_np_ok": "9/9",
    "splits": [
     [
@@ -591,6 +616,7 @@
    "q_src": "JJJJJJJJJT",
    "fc_n": 3,
    "fc_fy": "2027-03",
+   "rd_n": 8,
    "eps_np_ok": "9/9",
    "splits": [],
    "std": "IFRS",
@@ -609,6 +635,7 @@
    "q_src": "JJJJJJJJJT",
    "fc_n": 3,
    "fc_fy": "2027-03",
+   "rd_n": 8,
    "eps_np_ok": "9/9",
    "splits": [
     [
@@ -632,6 +659,7 @@
    "q_src": "JJJJJJJJJT",
    "fc_n": 3,
    "fc_fy": "2027-03",
+   "rd_n": 8,
    "eps_np_ok": "9/9",
    "splits": [
     [
@@ -659,6 +687,7 @@
    "q_src": "JJJJJJJJJT",
    "fc_n": 2,
    "fc_fy": "2027-03",
+   "rd_n": 8,
    "eps_np_ok": "9/9",
    "splits": [
     [
@@ -686,6 +715,7 @@
    "q_src": "JJJJJJTT",
    "fc_n": 1,
    "fc_fy": "2026-03",
+   "rd_n": 8,
    "eps_np_ok": "6/6",
    "splits": [
     [
@@ -713,6 +743,7 @@
    "q_src": "JJJJJJJJJT",
    "fc_n": 2,
    "fc_fy": "2027-03",
+   "rd_n": 8,
    "eps_np_ok": "9/9",
    "splits": [
     [
@@ -736,6 +767,7 @@
    "q_src": "JJJJJJJJJT",
    "fc_n": 2,
    "fc_fy": "2027-03",
+   "rd_n": 8,
    "eps_np_ok": "8/9",
    "splits": [
     [
