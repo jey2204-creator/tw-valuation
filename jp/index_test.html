@@ -131,7 +131,11 @@ section.card{background:var(--card);border:1px solid var(--line);border-radius:1
 .rchk a{color:var(--fg);font-weight:700;text-decoration:none}.rchk a small{font-family:var(--f-num);font-weight:500;color:var(--muted);margin-left:4px}
 .rchk span{display:block;color:var(--muted)}.rchk span b{font-family:var(--f-num);font-weight:600;color:var(--fg)}
 #readPage .more{font:inherit;font-size:11.5px;color:var(--accent);background:none;border:0;padding:6px 0;cursor:pointer}
-.rst td,.rst th{padding:5px 4px}
+.rst td,.rst th{padding:5px 3px}.rst td{line-height:1.25;vertical-align:top}.rst td b{display:block;font-weight:600}.rst td small{display:block;font-size:10px;color:var(--muted)}
+.rst tr.sub td{padding-block:3px;border-bottom-color:transparent}.rst tr.sub td.t{padding-left:22px;font-size:11.5px;color:var(--muted)}.rst tr.sub td b{font-size:12px}.rst td.few b,.rst td.few small{opacity:.45}
+#rStBox h2{display:flex;align-items:center;gap:8px;flex-wrap:wrap}#rStBox .seg{margin-left:auto}
+.rdm td.c i.wk{opacity:.38}#rSum span{white-space:nowrap}
+.rchk li.rgrp{color:var(--muted)}.rchk li.rgrp b{font-family:var(--f-num);color:var(--fg)}
 #readPage .pill{font-size:11.5px}#readPage .pill.ok{background:var(--b2)}#readPage .pill.mid{background:var(--b4)}#readPage .pill.bad{background:var(--b5)}
 /* ---- 📊 財報判讀 #beat（版面同美股站；日股沒有市場預估 EPS，改對「公司預估」：進度率、全年預估修正，再看隔日反應） ---- */
 #beat h2{display:flex;align-items:center;gap:8px;white-space:nowrap;min-width:0}#beat h2 small{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;font-size:11px;letter-spacing:-.2px}
@@ -438,8 +442,8 @@ html{scroll-behavior:smooth}
   <p class="tsum" id="rSum"></p>
   <div class="panel"><div class="tbl"><table class="rdm" id="rTab"></table></div></div>
   <p class="legend" id="rLeg"></p>
-  <section class="card" id="rChkBox"><h2>🔎 值得檢查 <small id="rChkN"></small></h2><ul class="rchk" id="rChk"></ul><p class="foot">這裡列的不是「判讀錯了」，而是規則容易失準的情況：基準退回 25%×季數、數字大到不像真的、判讀和隔日股價方向相反、中間缺季。先看這幾檔的個股判讀卡，再決定規則要不要改。</p></section>
-  <section class="card" id="rStBox"><h2>📈 判讀 vs 隔日股價 <small id="rStN"></small></h2><div class="tbl"><table class="rst" id="rSt"></table></div><p class="foot" id="rStF"></p></section>
+  <section class="card" id="rChkBox"><h2>🔎 值得檢查 <small id="rChkN"></small></h2><ul class="rchk" id="rChk"></ul><p class="foot">這裡列的不是「判讀錯了」，而是資料或規則容易失準的情況：數字大到不像真的、判讀指標換了、中間缺季、口徑變更。「判讀和隔日股價方向相反」另外收在最下面——正面判讀本來就有四成多隔日下跌，那是正常現象，不是規則錯。</p></section>
+  <section class="card" id="rStBox"><h2>📈 判讀回測 <small id="rStN"></small><span class="seg" id="rEx"><button type="button" data-v="1">扣掉清單平均</button><button type="button" data-v="0">原始漲跌</button></span></h2><div class="tbl"><table class="rst" id="rSt"></table></div><p class="foot" id="rStF"></p></section>
 </div>
 
 <!-- ===== 編輯主題：#edit 清單（排序／隱藏／新增）、#edit/{id} 單一主題（名稱、成份股、細分、選配）。只存在這台裝置 ===== -->
@@ -1348,25 +1352,29 @@ function rdWhy(z,V){   // 這一格是哪條規則判的，附上用到的數字
   const b=rdBase(z),g=+(z.pg-b).toFixed(1);
   T.push(`占全年預估 <b>${fmt(z.pg,0)}%</b>，基準 <b>${fmt(b,0)}%</b>（${rdBaseOk(z)?'去年同期進度':z.pgp!=null?`去年同期 ${fmt(z.pgp,0)}% 不可比，退回季數×25%`:'沒有去年同期，退回季數×25%'}），差 <b class="${Math.abs(g)<5?'':rSg(g)}">${g>0?'+':g<0?'−':''}${fmt(Math.abs(g),1)}pp</b> → 規則：進度率（±5pp）`);
   return T.join('，')+'。'}
-function rdFlags(s,cols){   // 規則容易失準的情況 → [[季, 說明]]
+// 這一格是不是用「季數×25%」當基準判的（沒有可用的去年同期進度）→ 圖示標淡，回測也不算
+const rdWeak=z=>!!(z&&z.m&&z.a!=null&&z.k<4&&!(z.rev!=null&&Math.abs(z.rev)>=3)&&z.f>0&&z.a>=0&&z.pg!=null&&!rdBaseOk(z));
+// 回測細分：p1 上修 p2 進度超前 p3 年報季正面｜n0 中性｜m1 下修 m2 進度落後 m3 其他負面（虧損、年報季）
+const rdKind=(z,V)=>V[2]==null?null:V[2]===0?'n0':z.k===4?(V[2]===1?'p3':'m3'):z.rev!=null&&Math.abs(z.rev)>=3?(z.rev>0?'p1':'m1'):V[2]===1?'p2':/進度落後/.test(V[1])?'m2':'m3';
+let REX=true,RPX=false;try{REX=localStorage.getItem('jpReadEx')!=='0'}catch(e){}
+function rdFlags(s,cols){   // 資料／規則容易失準的情況 → [[季, 說明, 類別 base｜px｜data]]
   const rs=rsOf(s),F=[];let pm=null;
   rs.forEach(z=>{const V=rdVerdict(z),q=z.cal;
-    if(z.m&&pm&&z.m!==pm)F.push([q,`判讀指標從${RDM[pm]}換成${RDM[z.m]}，前後季不是同一個指標`]);if(z.m)pm=z.m;
+    if(z.m&&pm&&z.m!==pm)F.push([q,`判讀指標從${RDM[pm]}換成${RDM[z.m]}，前後季不是同一個指標`,'data']);if(z.m)pm=z.m;
     if(!z.m||z.a==null)return;
     if(z.k<4){
       const byRev=z.rev!=null&&Math.abs(z.rev)>=3;
-      if(byRev&&Math.abs(z.rev)>=50)F.push([q,`全年預估修正 <b>${rPc(z.rev)}</b>，幅度大到要確認（舊預估接近 0、口徑變更或資料錯）`]);
-      if(!byRev&&z.f>0&&z.a>=0&&z.pg!=null){
-        if(!rdBaseOk(z))F.push([q,`${z.pgp!=null?`去年同期進度 <b>${fmt(z.pgp,0)}%</b> 不可比`:'沒有去年同期進度'}，基準退回 ${z.k*25}%，有淡旺季就不準`]);
-        if(z.pg>150)F.push([q,`進度率 <b>${fmt(z.pg,0)}%</b> 超過 150%，全年預估可能過時或抓錯`])}}
+      if(byRev&&Math.abs(z.rev)>=50)F.push([q,`全年預估修正 <b>${rPc(z.rev)}</b>，幅度大到要確認（舊預估接近 0、口徑變更或資料錯）`,'data']);
+      if(rdWeak(z))F.push([q,'','base']);
+      if(!byRev&&z.f>0&&z.a>=0&&z.pg!=null&&z.pg>150)F.push([q,`進度率 <b>${fmt(z.pg,0)}%</b> 超過 150%，全年預估可能過時或抓錯`,'data'])}
     else{
-      if(z.ach!=null&&Math.abs(z.ach)>=50)F.push([q,`全年實績對 3Q 預估 <b>${rPc(z.ach)}</b>，差距大到要確認`]);
-      if(z.gd!=null&&Math.abs(z.gd)>=100)F.push([q,`新年度預估對實績 <b>${rPc(z.gd)}</b>，基期接近 0 或資料錯`])}
-    if(z.rx!=null&&V[2]===1&&z.rx<=-5)F.push([q,`${rIcon(V)} 判讀正面，隔日卻跌 <b class="vd">${rPc(z.rx)}</b>`]);
-    if(z.rx!=null&&V[2]===-1&&z.rx>=5)F.push([q,`${rIcon(V)} 判讀負面，隔日卻漲 <b class="vu">${rPc(z.rx)}</b>`])});
+      if(z.ach!=null&&Math.abs(z.ach)>=50)F.push([q,`全年實績對 3Q 預估 <b>${rPc(z.ach)}</b>，差距大到要確認`,'data']);
+      if(z.gd!=null&&Math.abs(z.gd)>=100)F.push([q,`新年度預估對實績 <b>${rPc(z.gd)}</b>，基期接近 0 或資料錯`,'data'])}
+    if(z.rx!=null&&V[2]===1&&z.rx<=-5)F.push([q,`${rIcon(V)} 判讀正面，隔日卻跌 <b class="vd">${rPc(z.rx)}</b>`,'px']);
+    if(z.rx!=null&&V[2]===-1&&z.rx>=5)F.push([q,`${rIcon(V)} 判讀負面，隔日卻漲 <b class="vu">${rPc(z.rx)}</b>`,'px'])});
   if(rs.length){const have=new Set(rs.map(z=>z.cal)),lo=rs[0].cal,hi=rs[rs.length-1].cal,miss=cols.filter(c=>c>lo&&c<hi&&!have.has(c));
-    if(miss.length)F.push([miss.join('、'),'中間缺季（那一季的決算沒抓到）'])}
-  if(s.bb)F.push(['口徑','有口徑變更（事業分拆／改列停業單位），進度比較僅供參考']);
+    if(miss.length)F.push([miss.join('、'),'中間缺季（那一季的決算沒抓到）','data'])}
+  if(s.bb)F.push(['口徑','有口徑變更（事業分拆／改列停業單位），進度比較僅供參考','data']);
   return F}
 function readRender(){
   const S=IDX.filter(s=>rsOf(s).length),hasRs=IDX.some(s=>s.rs&&s.rs.length);
@@ -1379,7 +1387,7 @@ function readRender(){
   const TL=cols.map(tally),pct=(a,b)=>b?Math.round(a/b*100):null;
   const lastOf=s=>{const r=rsOf(s);return r[r.length-1]};
   const L=S.map(s=>cat(lastOf(s))),lp=L.filter(x=>x===1).length,lm=L.filter(x=>x===-1).length,l0=L.filter(x=>x===0).length,ln=L.filter(x=>x==null).length;
-  $('rSum').innerHTML=`追蹤 <b>${S.length}</b> 檔，各自最近一次決算：🟢 正面 <b>${lp}</b>　⚪ 中性 <b>${l0}</b>　🟠🔴 負面 <b>${lm}</b>${ln?`　無預估 <b>${ln}</b>`:''}。${hasRs?'':'<br>⚠️ 資料還是舊格式（只有最近一季），等下一次「更新日股資料」跑完才有 8 季。'}`;
+  $('rSum').innerHTML=`追蹤 <b>${S.length}</b> 檔，各自最近一次決算：<span>🟢 正面 <b>${lp}</b></span>　<span>⚪ 中性 <b>${l0}</b></span>　<span>🟠🔴 負面 <b>${lm}</b></span>${ln?`　<span>無預估 <b>${ln}</b></span>`:''}。${hasRs?'':'<br>⚠️ 資料還是舊格式（只有最近一季），等下一次「更新日股資料」跑完才有 8 季。'}`;
   // 分組
   let G;
   if(RSORT==='theme'){const seen=new Set();
@@ -1392,32 +1400,47 @@ function readRender(){
     `<tr class="sm"><td>正面 %</td>${TL.map(t=>`<td class="${t.n&&t.p/t.n>=.5?'vu':''}">${t.n?pct(t.p,t.n):'·'}</td>`).join('')}</tr>`+
     `<tr class="sm"><td>負面 %</td>${TL.map(t=>`<td class="${t.n&&t.m/t.n>=.5?'vd':''}">${t.n?pct(t.m,t.n):'·'}</td>`).join('')}</tr>`+
     `<tr class="sm"><td>已公布檔數</td>${TL.map(t=>`<td>${t.all}</td>`).join('')}</tr></thead>`;
-  const rowH=s=>{const tds=cols.map(c=>{const z=cell(s,c);if(!z)return '<td class="e">·</td>';const V=rdVerdict(z),on=ROPEN&&ROPEN[0]===s.id&&ROPEN[1]===c;
-      return `<td class="c${on?' on':''}" data-c="${c}" title="${esc(z.fis)}｜${esc(V[1])}"><i>${rIcon(V)}</i><small class="${rSg(z.rx)}">${z.rx==null?'':(z.rx>=0?'+':'−')+Math.abs(z.rx).toFixed(1)}</small></td>`}).join('');
-    let h=`<tr data-id="${s.id}"><td class="nm"><b>${esc((s.name||s.id).replace(/（.*/,''))}</b><small>${s.id}</small></td>${tds}</tr>`;
+  const rowH=s=>{const tds=cols.map(c=>{const z=cell(s,c);if(!z)return '<td class="e">·</td>';const V=rdVerdict(z),on=ROPEN&&ROPEN[0]===s.id&&ROPEN[1]===c,wk=rdWeak(z);
+      return `<td class="c${on?' on':''}" data-c="${c}" title="${esc(z.fis)}｜${esc(V[1])}${wk?'｜基準不可靠':''}"><i${wk?' class="wk"':''}>${rIcon(V)}</i><small class="${rSg(z.rx)}">${z.rx==null?'':(z.rx>=0?'+':'−')+Math.abs(z.rx).toFixed(1)}</small></td>`}).join('');
+    const lm=lastOf(s).m;
+    let h=`<tr data-id="${s.id}"><td class="nm"><b>${esc((s.name||s.id).replace(/（.*/,''))}</b><small>${s.id}${lm&&lm!=='op'?'・'+RDM[lm]:''}</small></td>${tds}</tr>`;
     if(ROPEN&&ROPEN[0]===s.id){const z=cell(s,ROPEN[1]);if(z){const V=rdVerdict(z);
-      h+=`<tr class="det"><td colspan="${nC+1}"><span class="pill ${V[0]||'o'}">${esc(V[1])}</span>　${esc(z.cal)}（${esc(z.fis)}）${md(z.d)} 公布${z.rx!=null?`，隔日 <b class="${rSg(z.rx)}">${rPc(z.rx)}</b>`:'，尚無隔日股價'}<br>${rdWhy(z,V)}　<a href="#${s.id}" data-beat>看個股判讀 ›</a></td></tr>`}}
+      h+=`<tr class="det"><td colspan="${nC+1}"><span class="pill ${V[0]||'o'}">${esc(V[1])}</span>　${esc(z.cal)}（${esc(z.fis)}）${md(z.d)} 公布${z.rx!=null?`，隔日 <b class="${rSg(z.rx)}">${rPc(z.rx)}</b>`:'，尚無隔日股價'}${z.r20!=null?`，之後 20 日 <b class="${rSg(z.r20)}">${rPc(z.r20)}</b>${z.x20!=null?`（扣清單平均 <b class="${rSg(z.x20)}">${rPc(z.x20)}</b>）`:''}`:''}<br>${rdWhy(z,V)}${rdWeak(z)?'<br>⚠️ 這一格的基準是「季數×25%」，有淡旺季的公司不準，圖示標淡、回測不算。':''}　<a href="#${s.id}" data-beat>看個股判讀 ›</a></td></tr>`}}
     return h};
   $('rTab').innerHTML=head+'<tbody>'+G.map(g=>{const v=g.ls.map(s=>cat(lastOf(s)));
     return `<tr class="gh"><td colspan="${nC+1}">${esc(g.name)}<small>${g.ls.length} 檔${RSORT==='theme'?`・最近一次 🟢${v.filter(x=>x===1).length} ⚪${v.filter(x=>x===0).length} 🟠🔴${v.filter(x=>x===-1).length}`:''}</small></td></tr>`+g.ls.map(rowH).join('')}).join('')+'</tbody>';
-  $('rLeg').innerHTML=`欄＝日曆季（各公司會計年度不同，對齊到同一個日曆季）；圖示＝對公司預估的判讀（🟢 正面 ⚪ 中性 🟠🔴 負面，規則同個股頁「判讀」），下方小字＝公布後下一個交易日的漲跌 %；「·」＝那一季沒有資料或還沒公布。點圖示看是哪條規則判的，點公司名進個股頁。${fxFoot()}`;
-  // 值得檢查
-  const CK=S.map(s=>({s,F:rdFlags(s,cols)})).filter(x=>x.F.length).sort((a,b)=>b.F.length-a.F.length),show=RALL?CK:CK.slice(0,6);
-  $('rChkBox').hidden=false;$('rChkN').textContent=CK.length?`${S.length} 檔裡 ${CK.length} 檔`:'沒有';
-  $('rChk').innerHTML=(show.map(({s,F})=>`<li><a href="#${s.id}" data-beat>${esc((s.name||s.id).replace(/（.*/,''))}<small>${s.id}</small></a>${F.map(([q,t])=>`<span><b>${esc(q)}</b>　${t}</span>`).join('')}</li>`).join('')||'<li><span>沒有符合條件的季。</span></li>')+
-    (CK.length>6?`<li><button type="button" class="more" data-all>${RALL?'收起 ▴':`顯示全部 ${CK.length} 檔 ▾`}</button></li>`:'');
-  // 判讀 vs 隔日
-  const R=S.flatMap(s=>rsOf(s).filter(z=>cols.includes(z.cal)).map(z=>({c:rdVerdict(z)[2],rx:z.rx}))).filter(r=>r.c!=null&&r.rx!=null);
-  $('rStBox').hidden=!R.length;
-  if(R.length){const row=(lb,k)=>{const a=R.filter(r=>r.c===k),av=a.length?sum(a.map(r=>r.rx))/a.length:null,w=a.filter(r=>r.rx>0).length;
-      return `<tr><td class="t">${lb}</td><td>${a.length}</td><td class="${rSg(av)}">${av==null?'—':rPc(av)}</td><td>${a.length?pct(w,a.length)+'%':'—'}</td></tr>`};
-    $('rStN').textContent=`${R.length} 次`;
-    $('rSt').innerHTML=`<thead><tr><th>判讀</th><th>次數</th><th>隔日平均</th><th>隔日上漲比例</th></tr></thead><tbody>${row('🟢 正面',1)}${row('⚪ 中性',0)}${row('🟠🔴 負面',-1)}</tbody>`;
-    $('rStF').textContent=`表上 ${nC} 季、有判讀也有隔日股價的 ${R.length} 次。樣本很小，而且同一季的股票會一起漲跌（大盤那天的方向）；只能看「正面有沒有比負面好」這個方向，不能拿來調門檻。`}
+  $('rLeg').innerHTML=`欄＝日曆季（各公司會計年度不同，對齊到同一個日曆季）；圖示＝對公司預估的判讀（🟢 正面 ⚪ 中性 🟠🔴 負面，規則同個股頁「判讀」），下方小字＝公布後下一個交易日的漲跌 %；「·」＝那一季沒有資料或還沒公布；圖示較淡＝沒有可用的去年同期進度、用「季數×25%」當基準，不可靠。代號後面有「・淨利／經常利益」＝這檔不是用營業利益判讀。點圖示看是哪條規則判的，點公司名進個股頁。${fxFoot()}`;
+  // 值得檢查：資料／規則疑點（逐檔）、基準不可靠（依季彙總）、判讀與股價反向（收起）
+  const FL=S.map(s=>({s,F:rdFlags(s,cols)})),nmOf=s=>esc((s.name||s.id).replace(/（.*/,''));
+  const CK=FL.map(x=>({s:x.s,F:x.F.filter(f=>f[2]==='data')})).filter(x=>x.F.length).sort((a,b)=>b.F.length-a.F.length),show=RALL?CK:CK.slice(0,6);
+  const PX=FL.map(x=>({s:x.s,F:x.F.filter(f=>f[2]==='px')})).filter(x=>x.F.length),nPx=sum(PX.map(x=>x.F.length));
+  const bq={};FL.forEach(x=>x.F.forEach(f=>{if(f[2]==='base'&&cols.includes(f[0]))bq[f[0]]=(bq[f[0]]||0)+1}));const bqs=Object.keys(bq).sort();
+  const li=({s,F})=>`<li><a href="#${s.id}" data-beat>${nmOf(s)}<small>${s.id}</small></a>${F.map(([q,t])=>`<span><b>${esc(q)}</b>　${t}</span>`).join('')}</li>`;
+  $('rChkBox').hidden=false;$('rChkN').textContent=CK.length?`資料／規則疑點 ${CK.length} 檔`:'沒有資料疑點';
+  $('rChk').innerHTML=(show.map(li).join('')||'<li><span>沒有數字異常、缺季或指標變更的股票。</span></li>')+
+    (CK.length>6?`<li><button type="button" class="more" data-all>${RALL?'收起 ▴':`顯示全部 ${CK.length} 檔 ▾`}</button></li>`:'')+
+    (bqs.length?`<li class="rgrp">基準不可靠（圖示較淡）：${bqs.map(q=>`<b>${q}</b> ${bq[q]} 檔`).join('、')}。沒有可用的去年同期進度，暫用「季數×25%」。多半是財報存檔還不夠長，越舊的季越多，之後會自己變少。</li>`:'')+
+    (nPx?`<li><button type="button" class="more" data-px>判讀與隔日股價方向相反（±5% 以上）${nPx} 次 ${RPX?'▴':'▾'}</button></li>${RPX?PX.map(li).join(''):''}`:'');
+  // 判讀回測：隔日、之後 5 日、之後 20 日（隔日收盤買進起算）；可扣掉追蹤清單平均
+  const R=S.flatMap(s=>rsOf(s).filter(z=>cols.includes(z.cal)).map(z=>{const V=rdVerdict(z);return {c:V[2],kd:rdKind(z,V),wk:rdWeak(z),z}})).filter(r=>r.c!=null),nWk=R.filter(r=>r.wk).length,RR=R.filter(r=>!r.wk&&r.z.rx!=null);
+  const hasX=RR.some(r=>r.z.x1!=null),hasD=RR.some(r=>r.z.r5!=null),ex=REX&&hasX,KS=ex?['x1','x5','x20']:['rx','r5','r20'];
+  $('rStBox').hidden=!RR.length;$('rEx').hidden=!hasX;$('rEx').querySelectorAll('button').forEach(b=>b.classList.toggle('on',(b.dataset.v==='1')===ex));
+  if(RR.length){
+    const td=(a,k)=>{const v=a.map(r=>r.z[k]).filter(x=>x!=null);if(!v.length)return '<td>—</td>';const av=+(sum(v)/v.length).toFixed(1)||0;
+      return `<td class="${v.length<15?'few':''}"><b class="${rSg(av)}">${rPc(av)}</b><small>${pct(v.filter(x=>x>0).length,v.length)}%・${v.length} 次</small></td>`};
+    const row=(lb,f,subr)=>{const a=RR.filter(f);return a.length||!subr?`<tr${subr?' class="sub"':''}><td class="t">${lb}</td>${KS.map(k=>td(a,k)).join('')}</tr>`:''};
+    $('rStN').textContent=`${RR.length} 次`;
+    $('rSt').innerHTML=`<thead><tr><th>判讀</th><th>隔日</th><th>之後 5 日</th><th>之後 20 日</th></tr></thead><tbody>`+
+      row('🟢 正面',r=>r.c===1)+row('上修全年預估',r=>r.kd==='p1',1)+row('進度超前',r=>r.kd==='p2',1)+row('年報季',r=>r.kd==='p3',1)+
+      row('⚪ 中性',r=>r.c===0)+
+      row('🟠🔴 負面',r=>r.c===-1)+row('下修全年預估',r=>r.kd==='m1',1)+row('進度落後',r=>r.kd==='m2',1)+row('虧損、年報季',r=>r.kd==='m3',1)+'</tbody>';
+    $('rStF').innerHTML=`每格：平均漲跌，下面是${ex?'贏過清單平均':'上漲'}的比例與次數（不到 15 次的標淡）。<b>隔日</b>＝公布後下一個交易日，多半是開盤跳空，買不到；<b>之後 5／20 日</b>＝隔日收盤買進、持有 5／20 個交易日，這才是看得到判讀之後還賺不賺得到的部分。${ex?'「扣掉清單平均」＝減去同一段期間追蹤清單其他股票的平均漲跌，去掉大盤和族群一起漲跌的部分。':hasX?'':'（資料還沒有「扣掉清單平均」的欄位，等下一次「更新日股資料」。）'}${hasD?'':'（資料還沒有 5／20 日的欄位，等下一次「更新日股資料」。）'}<br>表上 ${nC} 季、有判讀也有隔日股價的 ${RR.length} 次${nWk?`；基準不可靠的 ${nWk} 次不算`:''}。樣本很小、期間只有兩年（幾乎都是多頭）、20 日的期間彼此重疊、清單本身偏半導體，沒有算手續費。只能看方向，不能拿來調門檻，也不是買賣訊號。`}
 }
 $('rSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;RSORT=b.dataset.v;ROPEN=null;try{localStorage.setItem('jpReadSort',RSORT)}catch(x){}readRender()});
 $('readPage').addEventListener('click',e=>{
   if(e.target.closest('[data-all]')){RALL=!RALL;readRender();return}
+  if(e.target.closest('[data-px]')){RPX=!RPX;readRender();return}
+  {const b=e.target.closest('#rEx button');if(b){REX=b.dataset.v==='1';try{localStorage.setItem('jpReadEx',REX?'1':'0')}catch(x){}readRender();return}}
   if(e.target.closest('a[data-beat]')){KEEP='beat';return}   // 進個股頁直接停在判讀卡
   const tr=e.target.closest('#rTab tr[data-id]');if(!tr)return;
   const c=e.target.closest('td.c');
