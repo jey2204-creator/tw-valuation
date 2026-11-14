@@ -1,5 +1,5 @@
 """日股估值看板：Yahoo 股價 ＋ J-Quants 免費版（歷史財報）＋ TDnet 決算短信 XBRL（最新財報、会社予想）
-→ 加密寫到 jp/data/{代號}.bin、jp/data/index.bin；歷史存檔加密在 jp/raw/*.bin。
+→ 加密寫到 jp/data/{代號}.bin、jp/data/index.bin、jp/data/k/{代號}.bin（日 K 歷史）；歷史存檔加密在 jp/raw/*.bin。
 
 公開（不加密）的只有：jp/data/meta.json（金鑰衍生用的 salt、驗證碼）、jp/data/diag.json（筆數、日期、檢查結果，不含數值）。
 ⚠️ J-Quants 條款：資料只能本人看 → 沒有 JP_DATA_KEY 就整個停止，絕不寫出明文。
@@ -172,6 +172,8 @@ def jq(path, params, plan=True):
 
 # ======================= Yahoo 股價 =======================
 YNAME = {}
+YK = {}            # 代號 → 日 K [[日期, 開, 高, 低, 收, 量], ...]（個股頁「K線」用）
+K_MONTHS = 37      # 日 K 保留本月＋往前 37 個月（約 3 年；2 年區間的 MA200 要往前多 200 根才算得出）
 
 
 def yahoo(code):
@@ -187,9 +189,37 @@ def yahoo(code):
     for t, c, v in zip(r["timestamp"], q.get("close") or [], q.get("volume") or []):
         if c:
             px[day(t)] = c          # Yahoo close：已做分割調整、未做除息調整
+    YK[code] = ohlc_rows(r["timestamp"], q, day)
     splits = sorted((day(int(k)), (s.get("numerator") or 1) / (s.get("denominator") or 1))
                     for k, s in (r.get("events", {}).get("splits") or {}).items())
     return sorted(px.items()), [(d, f) for d, f in splits if f and abs(f - 1) > 1e-9]
+
+
+def ohlc_rows(ts, q, day):
+    """Yahoo chart 的開高低收量（都已做分割調整、未做除息調整，和 close 同一基準）→ [[日期, 開, 高, 低, 收, 量], ...]
+    開高低任一缺就只留收盤（o=h=l=c），避免畫出假影線；同一天重複（盤中＋收盤各一筆）取後面那筆。"""
+    n = len(ts)
+    col = lambda k: (q.get(k) or []) + [None] * n
+    rd = lambda x: round(x, 1) if x >= 100 else round(x, 2)
+    by = {}
+    for t, o, h, l, c, v in zip(ts, col("open"), col("high"), col("low"), col("close"), col("volume")):
+        if not c:
+            continue
+        if o and h and l:
+            h, l = max(h, o, c), min(l, o, c)   # 防資料源偶發高低顛倒
+        else:
+            o = h = l = c
+        by[day(t)] = [day(t), rd(o), rd(h), rd(l), rd(c), int(v) if v else None]
+    return [by[d] for d in sorted(by)]
+
+
+def k_split(rows):
+    """日 K 拆成（歷史, 本月）。加密檔每次重寫整份都會變（git 無法做差異壓縮），所以：
+    歷史＝上個月底以前，放 data/k/{代號}.bin，內容有變（換月、分割調整）才重寫；本月的幾根放進每天都會重寫的 {代號}.bin 的 k。
+    起點固定在月初（不是「最近 N 根」），歷史檔才不會每天掉一根而天天重寫。"""
+    m = TODAY.year * 12 + TODAY.month - 1 - K_MONTHS
+    lo, cut = f"{m // 12}-{m % 12 + 1:02d}-01", TODAY.strftime("%Y-%m") + "-01"
+    return [r for r in rows if lo <= r[0] < cut], [r for r in rows if r[0] >= cut]
 
 
 def split_factor(disc, splits):
@@ -736,14 +766,15 @@ def build(code, jq_recs, td_recs, master):
     # 檢查（只輸出到 diag）：EPS × 平均股數 ≈ 淨利
     chk = [abs(x["eps"] * x["sh"] / x["np"] - 1) < 0.03 for x in Q if x["eps"] and x["sh"] and x["np"]]
     DIAG["stocks"][code] = dict(yname=YNAME.get(code), jname=m.get("CoName"), px_n=len(px), px_last=ld, q_n=len(Q), q_first=Q[0]["cal"] if Q else None,
-                                q_last=Q[-1]["cal"] if Q else None, q_src="".join(x["src"] for x in Q),
+                                q_last=Q[-1]["cal"] if Q else None, k_n=sum(map(len, k_split(YK.get(code) or []))), q_src="".join(x["src"] for x in Q),
                                 fc_n=len(fc["hist"]) if fc else 0, fc_fy=fc["fy"] if fc else None,
                                 eps_np_ok=f"{sum(chk)}/{len(chk)}", splits=[[d, round(n, 4)] for d, n in splits], std=std,
                                 riv_pe=sum(1 for r in riv if r[4]), riv_pb=sum(1 for r in riv if r[5]),
                                 **({"val_vs_jq": val_chk} if val_chk else {}))
     return dict(id=code, name=cfg["zh"], jname=m.get("CoName", ""), sector=m.get("S33Nm", ""), mkt=m.get("MktNm", ""),
                 theme=cfg["theme"], cyclical="C" in cfg["flags"], tw=cfg["tw"], std=std,
-                updated=NOW_JST.strftime("%Y-%m-%d %H:%M"), last=last, q=q, riv=riv, fc=fc, note=note)
+                updated=NOW_JST.strftime("%Y-%m-%d %H:%M"), last=last, q=q, riv=riv, fc=fc, note=note,
+                k=k_split(YK.get(code) or [])[1])
 
 
 # ======================= 首頁／主題頁用的統計（預先算好放進 index.bin，前端只解密一次） =======================
@@ -871,6 +902,14 @@ def main():
                           cap=L["cap"], rev4=L["rev4"], fx=fx or (idx.get(c) or {}).get("fx"), **stat_of(d))
             d["last"]["fx"] = idx[c]["fx"]
             (OUT / f"{c}.bin").write_bytes(enc(aes, d))
+            kh, kp = k_split(YK.get(c) or [])[0], OUT / "k" / f"{c}.bin"     # 日 K 歷史：內容沒變就不重寫
+            try:
+                same = kp.exists() and dec(aes, kp.read_bytes()) == kh
+            except Exception:  # noqa
+                same = False
+            if kh and not same:
+                kp.parent.mkdir(parents=True, exist_ok=True)
+                kp.write_bytes(enc(aes, kh))
             ok.append(c)
             print(f"{c} ok  q={len(d['q'])} last={lq[0] if lq else '-'} fc={'Y' if d['fc'] else '-'}")
         except Exception as e:  # noqa
