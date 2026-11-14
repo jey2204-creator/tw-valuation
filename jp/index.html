@@ -91,6 +91,18 @@ section.card{background:var(--card);border:1px solid var(--line);border-radius:1
 .take strong{color:var(--fg);font-weight:700}
 .chart{width:100%;height:200px;margin-top:2px}
 .chart.tall{height:240px}
+/* ---- 📅 決算日曆（首頁小卡＋個股頁「下次決算」；版面同美股站。日本沒有免費的完整行事曆 → 多數是用去年同季公布日推估，虛線框表示） ---- */
+.ecard{margin-top:10px}.ecard h2{display:flex;align-items:center;gap:6px;flex-wrap:nowrap;white-space:nowrap}.ecard h2 small{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.ecard .etab{display:inline-flex;flex:none;border:1px solid var(--line);border-radius:999px;overflow:hidden}.ecard .etab button{font:inherit;font-size:11px;font-weight:600;color:var(--muted);background:var(--bg);border:0;padding:2px 8px;cursor:pointer;white-space:nowrap}.ecard .etab button.on{color:#fff;background:var(--accent)}
+.ecal .mr{display:grid;grid-template-columns:74px 1fr;gap:8px;align-items:start;padding:7px 0;border-top:1px solid var(--line)}.ecal .mr:first-child{border-top:0;padding-top:6px}
+.ecal .md{display:flex;flex-direction:column;line-height:1.25;padding-top:3px}.ecal .md b{font-family:var(--f-num);font-size:13px;font-weight:700;white-space:nowrap}.ecal .md b span{font-size:11px;font-weight:500;color:var(--muted);margin-left:1px}
+.ecal .md small{font-size:10.5px;color:var(--muted);white-space:nowrap}.ecal .md i{font-style:normal;color:var(--accent);font-weight:600}
+.ecal .row{display:flex;flex-wrap:wrap;gap:5px}
+.ec{display:inline-flex;align-items:baseline;gap:4px;font-size:12px;text-decoration:none;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:3px 9px;white-space:nowrap}
+.ec small{font-size:10.5px;color:var(--muted);font-family:var(--f-num)}.ec.cf{border-color:var(--warm);background:var(--b4)}.ec.est{border-style:dashed}
+.ec small.vu,.ec small.vd{font-weight:600}
+.ecal .more{font:inherit;font-size:11.5px;color:var(--accent);background:none;border:0;padding:6px 0 0;cursor:pointer}
+.enx{margin:6px 0 0;font-size:12px;line-height:1.5;color:var(--muted)}.enx b{color:var(--fg);font-family:var(--f-num)}.enx .pill{font-size:10.5px;padding:0 6px;margin-left:2px}
 #cK{height:300px}
 /* ---- 📊 財報判讀 #beat（版面同美股站；日股沒有市場預估 EPS，改對「公司預估」：進度率、全年預估修正，再看隔日反應） ---- */
 #beat h2{display:flex;align-items:center;gap:8px;white-space:nowrap;min-width:0}#beat h2 small{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;font-size:11px;letter-spacing:-.2px}
@@ -320,6 +332,11 @@ html{scroll-behavior:smooth}
     <div class="sug" id="sug" role="listbox" hidden></div>
   </header>
   <div id="tsec">
+    <section class="card ecard" id="earnCal" hidden>
+      <h2>📅 決算 <span class="etab" role="tablist"><button type="button" data-v="next" role="tab">即將公布</button><button type="button" data-v="done" role="tab">已公布</button></span><small id="uEarn"></small></h2>
+      <div class="ecal" id="ecalMini"></div>
+      <p class="foot" id="fEarn"></p>
+    </section>
     <h2 class="sec"><span>產業主題 <small id="tAsof"></small></span><span><button type="button" class="nfo" id="tLegI" aria-expanded="false" aria-controls="tLeg" aria-label="欄位說明">ⓘ</button><button type="button" class="dns" id="hDense"></button></span></h2>
     <div class="tgrid" id="tgrid"></div>
     <p class="legend" id="tLeg" hidden>各主題中位數（<b class="opt">選配</b>題材股不算）。<span id="tLegC"></span>營收年增＝最新一季對比去年同季；EPS 年增＝近四季合計對比前四季；PEG＝本益比 ÷ EPS 年增，<span class="cheap">&lt;1</span>、<span class="pricey">&gt;2</span>；本月至今＝收盤對比上月底。</p>
@@ -366,6 +383,7 @@ html{scroll-behavior:smooth}
   </div></div>
   <div class="tw" id="tw"></div>
   <div class="notes" id="notes"></div>
+  <p class="enx" id="enx" hidden></p>
 </header>
 <nav class="chips" aria-label="圖表" id="chips">
   <a href="#fc">公司預估</a><a href="#beat" hidden>判讀</a><a href="#rev">營收</a><a href="#kline" hidden>K線</a><a href="#margin">利益率</a><a href="#ni">淨利</a><a href="#eps">EPS</a><a href="#fwd">預估EPS</a><a href="#pe">本益比河流</a><a href="#pb">淨值比河流</a>
@@ -462,6 +480,8 @@ let IDX=[],THM=null,BY={},THEMES=[],ROLES={},D=null,L,R,Q,PEM,PBM,KEY=null,META=
 // index.bin themes[]：{t 主題, tw 對應台股, m [[代號, 角色, 選配]]}
 // q 欄位：0日曆季 1會計季 2營收(百萬日圓) 3營益率 4經常利益率 5淨利率 6EPS 7淨利(百萬) 8平均股數(百萬股) 9季末 10公布日 11來源(J/T) 12會計年度底 13第幾季
 //   14口徑變更（fetch_jp.py BASIS_BREAK；多數股票沒有這欄）：1＝變更當季，單季營收與利益率是新舊口徑相減、不可用；2＝之後四季，營收年增不可比
+// 決算日曆（fetch_jp.py next_block／cal_of）：個股檔 nx{d 日期,fis 會計季,k,src,pd 去年同季公布日}；index.bin 每檔 nx[日期,會計季,來源]、lr（最近一次決算的判讀列）、rx（那次隔日漲跌%）
+//   src：jq＝J-Quants 發表預定日（公司已公告）、py＝去年同季公布日＋364 天、lag＝季末＋上次公布間隔（後兩者是推估）
 // rd（財報判讀，fetch_jp.py read_block）：rows[{cal,fis,d 公布日,k,m 指標(op/odp/np),a 累計實績,f 全年預估(年報季＝新年度預估),f0 上一季時的預估,
 //   pg 進度%,pgp 去年同期進度%,rev 預估修正%｜年報季：ach 實績 vs 預估%,gd 新年度預估年增%}]（近 8 季）、tr[[年度,指標,實績 vs 期初預估%]]
 // 日 K：[0日期 1開 2高 3低 4收 5量(股)]，Yahoo，已分割調整、未除息調整。{代號}.bin 的 k＝本月；data/k/{代號}.bin＝上月底以前（換月或分割才重寫）
@@ -752,9 +772,58 @@ function renderK(){
 }
 $('kRange').addEventListener('click',e=>{const b=e.target.closest('button[data-n]');if(b){KN=+b.dataset.n;renderK();return}
   const m=e.target.closest('.kma span[data-w]');if(m){const h=kHidden(),w=+m.dataset.w;h.has(w)?h.delete(w):h.add(w);if(h.size>=KMAS.length)h.delete(w);kHideSave(h);renderK()}});
+// ---------- 📅 決算日曆：首頁小卡（即將公布／已公布）＋個股頁「下次決算」。日期都是日本時間 ----------
+const WD='日一二三四五六';
+const jstToday=()=>new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Tokyo'}).format(new Date());
+const dDiff=(a,b)=>Math.round((Date.parse(b+'T00:00:00Z')-Date.parse(a+'T00:00:00Z'))/864e5);
+const mdw=d=>`${+d.slice(5,7)}/${+d.slice(8,10)}<span>（${WD[new Date(d+'T12:00:00Z').getUTCDay()]}）</span>`;
+const inDays=n=>n===0?'今天':n===1?'明天':n>0?`${n} 天後`:`${-n} 天前`;
+const nxQ=f=>(f||'').split(' ').pop();   // 「27/3期 3Q」→「3Q」
+let EVIEW='',EALL=false;try{EVIEW=localStorage.getItem('jpEarnView')||''}catch(e){}   // 沒選過：最近一場在 3 週內看「即將公布」，否則看「已公布」
+const DONE_DAYS=45,EROWS=4;
+function earnMini(){
+  const el=$('earnCal'),t=jstToday();
+  const up=IDX.filter(s=>s.nx&&s.nx[0]),dn=IDX.filter(s=>s.lr&&s.lr.d&&dDiff(s.lr.d,t)>=0&&dDiff(s.lr.d,t)<=DONE_DAYS);
+  if(!up.length&&!dn.length){el.hidden=true;return}el.hidden=false;
+  if(!EVIEW){const near=up.map(s=>s.nx[0]).filter(d=>d>=t).sort()[0];EVIEW=dn.length&&!(near&&dDiff(t,near)<=21)?'done':'next'}
+  if(EVIEW==='done'&&!dn.length)EVIEW='next';
+  el.querySelectorAll('.etab button').forEach(b=>{const on=b.dataset.v===EVIEW;b.classList.toggle('on',on);b.setAttribute('aria-selected',on);
+    b.textContent=b.dataset.v==='next'?(on?`即將公布 ${up.length}`:'即將公布'):(on?`已公布 ${dn.length}`:'已公布')});
+  const grp=(ls,key)=>{const by={};ls.forEach(s=>(by[key(s)]=by[key(s)]||[]).push(s));return by},nm=s=>esc((s.name||s.id).replace(/（.*/,''));
+  let ds,rowsH;
+  if(EVIEW==='done'){
+    const by=grp(dn,s=>s.lr.d);ds=Object.keys(by).sort().reverse();
+    rowsH=d=>`<div class="mr"><div class="md"><b>${mdw(d)}</b><small>${inDays(-dDiff(d,t))}</small></div><div class="row">${by[d].map(s=>{const V=rdVerdict(s.lr),rx=s.rx;
+      return `<a class="ec" href="#${s.id}" title="${esc(s.name||s.id)} ${s.id}｜${esc(s.lr.fis)}｜${esc(V[1])}">${V[1].split(' ')[0]} ${nm(s)}${rx==null?'':`<small class="${rx>0?'vu':rx<0?'vd':''}">${rx>=0?'+':'−'}${Math.abs(rx).toFixed(1)}%</small>`}</a>`}).join('')}</div></div>`;
+    $('uEarn').textContent=`近 ${DONE_DAYS} 天`;
+    $('fEarn').textContent='圖示＝對公司預估的判讀（🟢 正面 ⚪ 中性 🟠🔴 負面，規則見個股頁「判讀」）；數字＝公布後下一個交易日的漲跌。';
+  }else{
+    // 推估日已過但還沒公布的，集中放在最上面一列（日期鍵 '0'）
+    const by=grp(up,s=>s.nx[0]<t?'0':s.nx[0]);ds=Object.keys(by).sort();
+    rowsH=d=>{const late=d==='0',cf=!late&&by[d].some(s=>s.nx[2]==='jq'),allCf=!late&&by[d].every(s=>s.nx[2]==='jq');
+      return `<div class="mr"><div class="md">${late?'<b>推估已過</b><small>尚未公布</small>':`<b>${mdw(d)}</b><small>${d===t?'<i>今天</i>':inDays(dDiff(t,d))}${allCf?'':'・推估'}</small>`}</div><div class="row">${by[d].map(s=>
+      `<a class="ec ${s.nx[2]==='jq'?'cf':'est'}" href="#${s.id}" title="${esc(s.name||s.id)} ${s.id}｜${esc(s.nx[1])}｜${s.nx[2]==='jq'?'公司已公告的日期':'推估日（去年同季公布日換算）'}${late?'｜推估 '+md(s.nx[0]):''}">${nm(s)}<small>${nxQ(s.nx[1])}</small></a>`).join('')}</div></div>`};
+    const first=ds.find(d=>d!=='0');
+    $('uEarn').textContent=first?`最近 ${md(first)}（${inDays(dDiff(t,first))}）`:'';
+    $('fEarn').textContent='虛線框＝推估：去年同一季的公布日換算成今年同一個星期幾，日本公司每年公布日很固定，但仍可能差幾天。橘色實線框＝公司已公告的日期（J-Quants，通常前一個營業日才有）。日期為日本時間，多數在 15:00～16:00（台灣 14:00～15:00）公布，請以公司 IR 為準。';
+  }
+  const show=EALL?ds:ds.slice(0,EROWS);
+  $('ecalMini').innerHTML=(show.map(rowsH).join('')||`<p class="meta" style="margin-top:8px">${EVIEW==='done'?`近 ${DONE_DAYS} 天沒有追蹤股公布決算`:'沒有下次決算的資料'}</p>`)+
+    (ds.length>EROWS?`<button type="button" class="more" data-all>${EALL?'收起 ▴':`顯示全部 ${ds.length} 天 ▾`}</button>`:'');
+}
+$('earnCal').addEventListener('click',e=>{const b=e.target.closest('.etab button');if(b){EVIEW=b.dataset.v;EALL=false;try{localStorage.setItem('jpEarnView',EVIEW)}catch(x){}earnMini();return}
+  if(e.target.closest('[data-all]')){EALL=!EALL;earnMini()}});
+function enxRender(){
+  const el=$('enx'),x=D&&D.nx;if(!x||!x.d){el.hidden=true;el.innerHTML='';return}
+  const t=jstToday(),n=dDiff(t,x.d),cf=x.src==='jq';
+  el.innerHTML=n<0&&!cf?`📅 下次決算（${esc(x.fis)}）推估 <b>${mdw(x.d)}</b> 已過 ${-n} 天，尚未公布 <span class="pill o">推估</span>`
+    :`📅 下次決算 <b>${mdw(x.d)}</b>${cf?'':'前後'}・${esc(x.fis)}・${inDays(n)} <span class="pill ${cf?'':'o'}">${cf?'公司已公告':'推估'}</span>${x.src==='py'&&x.pd?`<br>去年同季 ${md(x.pd)} 公布，換算成今年同一個星期幾`:x.src==='lag'?'<br>沒有去年同季可參考，用上一季「季末到公布」的間隔推算':''}`;
+  el.hidden=false}
 // ---------- 📊 財報判讀 #beat：最新一季 vs 公司預估（進度率對去年同期、全年預估修正；年報季看達成率與新年度預估），再看隔日股價反應 ----------
 const RDM={op:'營業利益',odp:'經常利益',np:'淨利'};
 function rdReact(d){if(!KD||!KD.length||!d)return null;const i=KD.findIndex(x=>x[0]>d);return i<1?null:+((KD[i][4]/KD[i-1][4]-1)*100).toFixed(1)}
+// 去年同期進度當基準；去年全年接近損益兩平時進度會算出幾百 % 或負值，這種不能當基準 → 退回「季數 × 25%」
+const rdBaseOk=z=>z.pgp!=null&&z.pgp>=0&&z.pgp<=200,rdBase=z=>rdBaseOk(z)?z.pgp:z.k*25;
 function rdVerdict(z){   // → [pill class, 標題, 類別：1 正面／0 中性／−1 負面／null 無法判讀]
   if(!z.m||z.a==null)return ['','⚪ 無公司預估',null];
   if(z.k===4){
@@ -763,26 +832,35 @@ function rdVerdict(z){   // → [pill class, 標題, 類別：1 正面／0 中�
     return ['','⚪ 無公司預估',null]}
   if(z.rev!=null&&Math.abs(z.rev)>=3)return z.rev>=10?['ok','🟢 大幅上修全年預估',1]:z.rev>0?['ok','🟢 上修全年預估',1]:z.rev>-10?['mid','🟠 下修全年預估',-1]:['bad','🔴 大幅下修全年預估',-1];
   if(z.f==null)return ['','⚪ 無公司預估',null];
-  if(z.f<=0)return ['','⚪ 公司預估為虧損',null];
+  if(z.f<=0)return z.a>=0?['mid','🟠 預估全年虧損，後續要轉虧',-1]:z.a<z.f?['mid','🟠 累計虧損已超過全年預估',-1]:['','⚪ 虧損在全年預估內',0];   // 全年預估是虧損：進度率沒有意義，改比累計和全年預估。累計還在獲利、全年卻預估虧損＝公司預告剩下的季要大虧，是負面不是正面
   if(z.a<0)return ['bad','🔴 累計仍虧損',-1];
-  const g=z.pg-(z.pgp??z.k*25);
+  const g=z.pg-rdBase(z);
   return g>=5?['ok','🟢 進度超前',1]:g>-5?['','⚪ 符合進度',0]:['mid','🟠 進度落後',-1]}
 function renderBeat(){
-  const el=$('beat'),chip=document.querySelector('#chips a[href="#beat"]'),RD=D.rd,rows=RD&&RD.rows?RD.rows.filter(z=>z.m):[],has=rows.length>0;
+  const el=$('beat'),chip=document.querySelector('#chips a[href="#beat"]'),RD=D.rd,rows=RD&&RD.rows?RD.rows:[],has=rows.some(z=>z.m);   // 沒有全年預估的季也留在圖上（只畫隔日漲跌），時間軸才不會跳號
   el.hidden=!has;if(chip)chip.hidden=!has;if(!has)return;
   const mu=css('--muted'),up=css('--up'),dn=css('--down');
   const sg=v=>v==null?'':v>0?'vu':v<0?'vd':'',pp=v=>v==null?'—':(v>0?'+':v<0?'−':'')+fmt(Math.abs(v),1)+'pp',pc=v=>v==null?'—':`${v>=0?'+':'−'}${Math.abs(v).toFixed(1)}%`,sg5=v=>v==null||Math.abs(v)<5?'':sg(v);   // 進度差不到 5pp 不上色
-  const R=rows.map(z=>({...z,rx:rdReact(z.d),V:rdVerdict(z),base:z.k===4?null:(z.pgp??z.k*25)})),z=R[R.length-1],V=z.V,mn=RDM[z.m],fy=z.k===4;
+  const R=rows.map(z=>({...z,rx:rdReact(z.d),V:rdVerdict(z),base:z.k===4||!z.m?null:rdBase(z)})),z=R[R.length-1],V=z.V,mn=RDM[z.m]||'營業利益',fy=z.k===4,loss=!fy&&z.m&&z.f!=null&&z.f<=0;
   const gap=!fy&&z.pg!=null?+(z.pg-z.base).toFixed(1):null,pend=z.rx==null&&KD&&KD.length&&z.d>=KD[KD.length-1][0];
   const bb=bbOf(Q[Q.length-1]);
   let line,why=[];
-  if(fy){
+  if(!z.m){
+    line=`${z.cal}（${z.fis}）公司這一季沒有公布全年預估（有些公司只給下一季，或完全不給），沒有基準可以判讀`;
+    why.push('這張卡對的是「公司自己的全年預估」。這一季沒有全年預估時不做判讀，請改看營收、利益率與隔日股價反應；圖上仍保留過去有預估的季。')}
+  else if(loss){
+    const gapL=z.a-z.f;
+    line=`${z.cal}（${z.fis}）${z.k}Q 累計${mn} ${okuT(z.a)} ${okuU()}，全年預估 ${okuT(z.f)}`+(z.a<z.f?`——累計虧損已比全年預估多 <b class="vd">${okuT(-gapL)}</b>，剩下 ${4-z.k} 季要賺回來才達標`:z.a>=0?`——累計還是獲利，等於公司預告剩下 ${4-z.k} 季合計要虧 <b class="vd">${okuT(gapL)}</b>`:`——離全年預估的虧損還差 ${okuT(gapL)}`)+(z.rev!=null&&Math.abs(z.rev)>=0.05?`；全年預估 ${okuT(z.f0)} → ${okuT(z.f)}`:'；全年預估未修正');
+    why.push('公司的全年預估是虧損時，「進度率」沒有意義，這裡改成直接比：年初累計的虧損，有沒有超過公司預估的全年虧損。');
+    if(z.a>=0)why.push(`⚠️ 累計還在獲利，全年預估卻是虧損：公司等於預告剩下 ${4-z.k} 季合計要虧約 ${okuT(gapL)} ${okuU()}（可能含減損等一次性損失）。這是壞消息，不要因為「累計有賺」就當成優於預期。`);
+    if(z.a<z.f)why.push(`⚠️ 累計虧損已超過全年預估，代表公司預期剩下 ${4-z.k} 季合計要獲利約 ${okuT(-gapL)} ${okuU()}。做不到就會下修；判斷時看的是下一季能不能轉盈，不是這一季虧多少。`)}
+  else if(fy){
     line=`${z.cal}（${z.fis}）全年${mn} ${okuT(z.a)} ${okuU()}${z.ach!=null?`，對 3Q 時公司預估 <b class="${sg(z.ach)}">${pc(z.ach)}</b>`:''}${z.gd!=null?`；新年度公司預估 ${okuT(z.f)}（對剛公布的實績 <b class="${sg(z.gd)}">${pc(z.gd)}</b>）`:'；公司未公布新年度預估'}`;
     why.push('年報季看兩件事：①全年實績有沒有達到公司自己的預估（±3% 內算符合）；②新年度預估對剛出爐的實績是成長還是衰退（±5% 內算持平）——日股財報後的股價多半跟著②走，不是①。')}
   else{
-    line=`${z.cal}（${z.fis}）${z.k}Q 累計${mn} ${okuT(z.a)} ${okuU()}`+(z.pg!=null?`，占全年預估 <strong>${fmt(z.pg,0)}%</strong>（${z.pgp!=null?`去年同期 ${fmt(z.pgp,0)}%`:`無去年同期，對照 ${z.k*25}%`}，<b class="${sg5(gap)}">${pp(gap)}</b>）`:'')+(z.rev!=null&&Math.abs(z.rev)>=0.05?`；全年預估 ${okuT(z.f0)} → ${okuT(z.f)}（<b class="${sg(z.rev)}">${pc(z.rev)}</b>）`:z.f!=null?'；全年預估未修正':'');
+    line=`${z.cal}（${z.fis}）${z.k}Q 累計${mn} ${okuT(z.a)} ${okuU()}`+(z.pg!=null?`，占全年預估 <strong>${fmt(z.pg,0)}%</strong>（${rdBaseOk(z)?`去年同期 ${fmt(z.pgp,0)}%`:`${z.pgp!=null?'去年同期不可比':'無去年同期'}，對照 ${z.k*25}%`}，<b class="${sg5(gap)}">${pp(gap)}</b>）`:'')+(z.rev!=null&&Math.abs(z.rev)>=0.05?`；全年預估 ${okuT(z.f0)} → ${okuT(z.f)}（<b class="${sg(z.rev)}">${pc(z.rev)}</b>）`:z.f!=null?'；全年預估未修正':'');
     why.push(`日股沒有每季的市場預估 EPS，這裡對的是「公司自己的全年預估」：先看有沒有修正（±3% 以上才算），沒修正再看進度率——${z.k}Q 累計${mn} ÷ 全年預估，和去年同期的進度比（差 5pp 以上才算超前／落後），這樣才不會被淡旺季騙。`);
-    if(z.pgp==null&&z.pg!=null)why.push(`⚠️ 沒有去年同期的進度可比，暫用 ${z.k*25}% 當基準；有淡旺季的公司這個基準不準。`);
+    if(!rdBaseOk(z)&&z.pg!=null)why.push(`⚠️ ${z.pgp!=null?`去年全年接近損益兩平，去年同期進度算出來是 ${fmt(z.pgp,0)}%，不能當基準`:'沒有去年同期的進度可比'}，暫用 ${z.k*25}% 當基準；有淡旺季的公司這個基準不準。`);
     if(V[2]===1&&gap!=null&&gap>=5&&(z.rev==null||Math.abs(z.rev)<3))why.push('ℹ️ 進度超前但公司沒上修：可能是預估保守（之後補上修），也可能是公司認為下半年會轉弱。看下方「預估習慣」再判斷，不要直接當成利多。')}
   if(z.rx!=null&&V[2]===1&&z.rx<=-3)why.push('⚠️ 判讀正面但隔日下跌＝預期已經跑在財報前面，市場要的比這更多；別把「上修／超前」當成買進理由。');
   if(z.rx!=null&&V[2]===-1&&z.rx>=3)why.push('ℹ️ 判讀負面但隔日上漲＝利空出盡，或下修幅度比擔憂的小；壞消息已反映在價格裡。');
@@ -794,15 +872,20 @@ function renderBeat(){
   const hs=R.filter(r=>r.V[2]!=null&&r.rx!=null),po=hs.filter(r=>r.V[2]===1),ne=hs.filter(r=>r.V[2]===-1),avR=a=>a.length?(sum(a.map(r=>r.rx))/a.length).toFixed(1):null,aP=avR(po),aN=avR(ne);
   if(hs.length>=3)why.push(`近 ${hs.length} 季：判讀正面 ${po.length} 次${aP!=null?`（隔日平均 ${aP>=0?'+':''}${aP}%）`:''}、負面 ${ne.length} 次${aN!=null?`（隔日平均 ${aN>=0?'+':''}${aN}%）`:''}${aP!=null&&aP<0?'——正面平均還是跌，這檔市場對好消息不買單':''}。`);
   $('tBeat').innerHTML=`<span class="pill ${V[0]}">${V[1]}</span> ${line}${z.rx!=null?`；隔日 <b class="${sg(z.rx)}">${pc(z.rx)}</b>`:pend?'；尚無隔日股價':''} <span class="y10tip" data-beatt>${el.classList.contains('open')?'收起 ▴':'怎麼看 ▾'}</span><div class="why">${why.map(esc).map(t=>t.replace(/^(⚠️|ℹ️|📌)/,'<b>$1</b>')).join('<br>')}</div>`;
-  $('beatK').innerHTML=(fy?[
+  $('beatK').innerHTML=(!z.m?[
+    ['進度 vs 去年同期','<b>—</b>','公司未給全年預估'],
+    ['全年預估修正','<b>—</b>','公司未給全年預估']]:loss?[
+    ['累計 vs 全年預估',`<b class="${z.a<z.f?'vd':''}">${okuT(z.a)}</b>`,`全年預估 ${okuT(z.f)}`],
+    ['全年預估修正',`<b class="${sg(z.rev)}">${z.rev==null?'—':Math.abs(z.rev)<0.05?'未修正':z.rev>0?'虧損縮小':'虧損擴大'}</b>`,z.rev!=null&&Math.abs(z.rev)>=0.05?`${okuT(z.f0)}→${okuT(z.f)}`:`預估 ${okuT(z.f)}`]]:fy?[
     ['全年實績 vs 預估',`<b class="${sg(z.ach)}">${pc(z.ach)}</b>`,z.f0!=null?`預估 ${okuT(z.f0)}→實績 ${okuT(z.a)}`:'無 3Q 時預估'],
     ['新年度預估',`<b class="${sg(z.gd)}">${z.gd==null?'—':pc(z.gd)}</b>`,z.gd!=null?`${mn} ${okuT(z.f)} ${okuU()}`:'公司未公布']]:[
-    ['進度 vs 去年同期',`<b class="${sg5(gap)}">${z.pg==null?'—':fmt(z.pg,0)+'%'}</b>`,z.pg==null?'無法計算':`${z.pgp!=null?'去年 '+fmt(z.pgp,0)+'%':'基準 '+z.k*25+'%'}（${pp(gap)}）`],
+    ['進度 vs 去年同期',`<b class="${sg5(gap)}">${z.pg==null?'—':fmt(z.pg,0)+'%'}</b>`,z.pg==null?'無法計算':`${rdBaseOk(z)?'去年 '+fmt(z.pgp,0)+'%':'基準 '+z.k*25+'%'}（${pp(gap)}）`],
     ['全年預估修正',`<b class="${sg(z.rev)}">${z.rev==null?'—':Math.abs(z.rev)<0.05?'未修正':pc(z.rev)}</b>`,z.rev!=null&&Math.abs(z.rev)>=0.05?`${okuT(z.f0)}→${okuT(z.f)}`:`${mn} ${okuT(z.f)} ${okuU()}`]]).concat([
     ['隔日反應',`<b class="${sg(z.rx)}">${z.rx==null?(pend?'未開盤':'—'):pc(z.rx)}</b>`,hs.length?`近${hs.length}季 正面${po.length}・負面${ne.length}`:'無歷史']
   ]).map(([a,b,d])=>`<div><span>${a}</span>${b}<i>${d||'&nbsp;'}</i></div>`).join('');
   // 圖：上層＝進度率（實心柱：紅＝判讀正面／綠＝負面／灰＝中性）＋去年同期進度（虛線空心柱）；年報季的柱＝全年實績 ÷ 3Q 時預估，虛線框＝100%。下層＝隔日漲跌
-  const val=r=>r.k===4?(r.ach!=null?+(100+r.ach).toFixed(1):null):r.pg,ref=r=>r.k===4?(r.ach!=null?100:null):r.base;
+  const val=r=>r.k===4?(r.ach!=null?+(100+r.ach).toFixed(1):null):r.f>0&&r.a>=0?r.pg:null,ref=r=>r.k===4?(r.ach!=null?100:null):r.pg!=null&&r.f>0&&r.a>=0?r.base:null;   // 這一季自己算不出進度（虧損、沒預估）就不畫基準框，免得只剩一個空框
+  const bx=css('--fg');   // 去年同期框用文字色：中性的灰柱和框同色時，框比柱矮就完全看不到
   const ch=mk('cBeat'),o=base(),LG={...o.legend,left:0,itemGap:8,itemWidth:10,itemHeight:7,textStyle:{...o.legend.textStyle,fontSize:10.5}};
   o.legend=[{...LG,top:0,data:['進度率','去年同期']},{...LG,top:150,data:['隔日漲跌']}];
   o.grid=[{left:38,right:14,top:24,height:118,containLabel:false},{left:38,right:14,top:172,bottom:22,containLabel:false}];
@@ -811,19 +894,22 @@ function renderBeat(){
   o.axisPointer={link:[{xAxisIndex:'all'}]};
   o.series=[{name:'進度率',type:'bar',barGap:'-100%',barCategoryGap:'28%',z:2,itemStyle:{color:mu},data:R.map(r=>({value:val(r),itemStyle:{color:r.V[2]===1?up:r.V[2]===-1?dn:mu,borderRadius:[2,2,0,0]}}))},
     {name:'_lbl',type:'bar',barGap:'-100%',barCategoryGap:'28%',z:4,silent:true,itemStyle:{color:'transparent'},data:R.map(r=>{const a=val(r),b=ref(r);return a==null&&b==null?null:Math.max(a??-1e9,b??-1e9)}),   // 透明柱：只用來把標籤放在「實心柱與虛線框較高者」上方
-      label:{show:true,position:'top',fontSize:9,color:mu,fontFamily:'IBM Plex Mono',formatter:q=>{const r=R[q.dataIndex];return r.k===4?(r.gd!=null?'新'+pc(r.gd).replace('.0',''):''):r.rev!=null&&Math.abs(r.rev)>=3?(r.rev>0?'↑':'↓')+Math.abs(r.rev).toFixed(0)+'%':''}}},
-    {name:'去年同期',type:'bar',barGap:'-100%',barCategoryGap:'28%',z:3,silent:true,itemStyle:{color:'transparent',borderColor:mu,borderWidth:1.5,borderType:'dashed'},data:R.map(r=>({value:ref(r),itemStyle:{color:'transparent',borderColor:mu,borderWidth:1.5,borderType:'dashed',borderRadius:[2,2,0,0]}}))},
+      label:{show:true,position:'top',fontSize:9,color:mu,fontFamily:'IBM Plex Mono',formatter:q=>{const r=R[q.dataIndex];return !r.m?'':r.k===4?(r.gd!=null?'新'+pc(r.gd).replace('.0',''):''):r.f!=null&&r.f<=0?'虧損預估':r.rev!=null&&Math.abs(r.rev)>=3?(r.rev>0?'↑':'↓')+Math.abs(r.rev).toFixed(0)+'%':''}}},
+    {name:'_ico',type:'scatter',symbolSize:.01,silent:true,z:5,itemStyle:{color:'transparent'},data:R.map(r=>val(r)==null?0:null),   // 沒有柱的季：在底線上標那一季的判讀圖示；公司沒給全年預估就標「無預估」
+      label:{show:true,position:'top',distance:2,formatter:q=>{const r=R[q.dataIndex];return r.m?`{e|${r.V[1].split(' ')[0]}}`:'{n|無預估}'},rich:{e:{fontSize:12,lineHeight:14},n:{fontSize:9,color:mu,lineHeight:12}}}},
+    {name:'去年同期',type:'bar',barGap:'-100%',barCategoryGap:'28%',z:3,silent:true,itemStyle:{color:'transparent',borderColor:bx,borderWidth:1.5,borderType:'dashed'},data:R.map(r=>({value:ref(r),itemStyle:{color:'transparent',borderColor:bx,borderWidth:1.5,borderType:'dashed',borderRadius:[2,2,0,0]}}))},
     {name:'隔日漲跌',type:'bar',xAxisIndex:1,yAxisIndex:1,barCategoryGap:'28%',itemStyle:{color:mu},data:R.map(r=>r.rx==null?null:{value:r.rx,itemStyle:{color:r.rx>=0?up:dn,borderRadius:r.rx>=0?[2,2,0,0]:[0,0,2,2]}}),
       label:{show:true,position:'top',fontSize:9,color:mu,fontFamily:'IBM Plex Mono',formatter:q=>q.value==null?'':(q.value>=0?'+':'')+q.value.toFixed(1)},markLine:{silent:true,symbol:'none',lineStyle:{color:mu,type:'dashed',width:1,opacity:.6},label:{show:false},data:[{yAxis:0}]}}];
   {const vs=R.flatMap(r=>[val(r),ref(r)]).filter(v=>v!=null);if(vs.length){o.yAxis[0].max=Math.ceil(Math.max(100,...vs)*1.18/20)*20;if(Math.min(...vs)<0)o.yAxis[0].min=Math.floor(Math.min(...vs)*1.2/20)*20}}
   {const rv=R.map(r=>r.rx).filter(v=>v!=null),m=rv.length?Math.max(5,...rv.map(Math.abs))*1.35:10;o.yAxis[1].min=-Math.ceil(m);o.yAxis[1].max=Math.ceil(m)}
   o.tooltip.formatter=qs=>{const r=R[qs[0].dataIndex],n=RDM[r.m],T=[`<b>${r.cal}（${r.fis}）</b>　${md(r.d)} 公布`,`<span class="pill ${r.V[0]}">${r.V[1]}</span>`];
-    if(r.k===4){T.push(`全年${n} ${okuT(r.a)} ${okuU()}${r.ach!=null?`（對 3Q 時預估 ${pc(r.ach)}）`:''}`);if(r.gd!=null)T.push(`新年度預估 ${okuT(r.f)}（對實績 ${pc(r.gd)}）`)}
-    else{T.push(`${r.k}Q 累計${n} ${okuT(r.a)}／全年預估 ${okuT(r.f)} ${okuU()}`);if(r.pg!=null)T.push(`進度 ${fmt(r.pg,1)}%（${r.pgp!=null?'去年同期 '+fmt(r.pgp,1)+'%':'基準 '+r.k*25+'%'}）`);if(r.rev!=null&&Math.abs(r.rev)>=0.05)T.push(`預估修正 ${okuT(r.f0)} → ${okuT(r.f)}（${pc(r.rev)}）`)}
+    if(!r.m)T.push('公司沒有公布全年預估');
+    else if(r.k===4){T.push(`全年${n} ${okuT(r.a)} ${okuU()}${r.ach!=null?`（對 3Q 時預估 ${pc(r.ach)}）`:''}`);if(r.gd!=null)T.push(`新年度預估 ${okuT(r.f)}（對實績 ${pc(r.gd)}）`)}
+    else{T.push(`${r.k}Q 累計${n} ${okuT(r.a)}／全年預估 ${okuT(r.f)} ${okuU()}`);if(r.pg!=null&&r.f>0)T.push(`進度 ${fmt(r.pg,1)}%（${rdBaseOk(r)?'去年同期 '+fmt(r.pgp,1)+'%':'基準 '+r.k*25+'%'}）`);if(r.rev!=null&&Math.abs(r.rev)>=0.05)T.push(`預估修正 ${okuT(r.f0)} → ${okuT(r.f)}（${pc(r.rev)}）`)}
     if(r.rx!=null)T.push(`隔日漲跌 ${pc(r.rx)}`);return T.join('<br>')};
   ch.setOption(o,true);ch.resize();
-  $('uBeat').textContent=`${z.cal}（${z.fis}）vs 公司預估`;
-  $('fBeat').textContent=`上：實心柱＝年初累計${mn}占全年預估的進度（紅＝判讀正面／綠＝負面／灰＝中性），虛線框＝去年同期的進度；柱上 ↑↓＝全年預估修正幅度。年報季（4Q）的柱＝全年實績 ÷ 3Q 時的公司預估、虛線框＝100%，「新」＝新年度預估對全年實績的增減（±5% 內算持平）。下：隔日漲跌＝決算公布後下一個交易日收盤 vs 前一收盤；盤中公布的公司，反應有一部分落在公布當天。`;
+  $('uBeat').textContent=`${z.cal} vs 公司預估`;$('uBeat').title=z.fis;   // 手機寬度放不下會計季，完整季別在下方結論列
+  $('fBeat').textContent=`上：實心柱＝年初累計${mn}占全年預估的進度（紅＝判讀正面／綠＝負面／灰＝中性），虛線框＝去年同期的進度；柱上 ↑↓＝全年預估修正幅度。沒有柱的季：圓形圖示＝那一季的判讀（預估是虧損等，進度率不適用，點一下看內容），「無預估」＝公司沒給全年預估。年報季（4Q）的柱＝全年實績 ÷ 3Q 時的公司預估、虛線框＝100%，「新」＝新年度預估對全年實績的增減（±5% 內算持平）。下：隔日漲跌＝決算公布後下一個交易日收盤 vs 前一收盤；盤中公布的公司，反應有一部分落在公布當天。`;
 }
 $('beat').addEventListener('click',e=>{if(!e.target.closest('#beatK,[data-beatt],#tBeat .pill'))return;const o=$('beat').classList.toggle('open');const t=$('beat').querySelector('[data-beatt]');if(t)t.textContent=o?'收起 ▴':'怎麼看 ▾'});
 // ---------- 預估模型（會計年度） ----------
@@ -907,7 +993,7 @@ async function load(id){
     const y4=sum(Q.slice(-4).map(x=>x[2])),y0=sum(Q.slice(-8,-4).map(x=>x[2]));const yg=Q.length>=8&&y0>0?clamp((y4/y0-1)*50,-20,30):5;
     $('iQ1').value=Math.round(qg);$('iQg').value=Math.round(qg/2);$('iYg').value=Math.round(yg);
     document.title=`${D.id} ${D.name} 日股估值看板`;
-    header();render();
+    header();render();enxRender();
   }catch(e){if(LOADING===id){$('err').textContent='資料載入失敗：'+e.message;$('err').hidden=false;$('asof').textContent='';D=null}}
   document.body.classList.remove('dim');
 }
@@ -947,6 +1033,7 @@ const denseFlip=()=>{DENSE=!DENSE;try{localStorage.setItem('jpDense',DENSE)}catc
 $('tDense').addEventListener('click',()=>{denseFlip();const t=THEMES.find(x=>x.id===CUR_T);if(t)tTable(t)});
 $('hDense').addEventListener('click',()=>{denseFlip();$('tgrid').onclick=null;cardsRender()});
 function cardsRender(){
+  earnMini();
   const kv=(lb,a,f,c)=>`<span class="k"><span>${lb}</span><span class="num ${a.v==null?'':c||''}">${a.v==null?'—':f(a.v)}${cvT(a)}</span></span>`;
   const d=dv();$('tAsof').textContent=d?`收盤 ${md(d)}・中位數`:'';
   $('hMeta').textContent=`${THEMES.length} 主題｜${IDX.length} 檔日股`;$('hMeta').title=`${IDX.length} 檔日股依台股供應鏈分 ${THEMES.length} 個主題，點卡片看個股；點個股頁的台股代號開台股看板`;
