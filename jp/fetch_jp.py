@@ -1,5 +1,5 @@
 """日股估值看板：Yahoo 股價 ＋ J-Quants 免費版（歷史財報）＋ TDnet 決算短信 XBRL（最新財報、会社予想）
-→ 加密寫到 jp/data/{代號}.bin、jp/data/index.bin、jp/data/k/{代號}.bin（日 K 歷史）；歷史存檔加密在 jp/raw/*.bin。
+→ 加密寫到 jp/data/{代號}.bin、jp/data/index.bin（含 K 線掃描 sc／scan）、jp/data/k/{代號}.bin（日 K 歷史）；歷史存檔加密在 jp/raw/*.bin。
 
 公開（不加密）的只有：jp/data/meta.json（金鑰衍生用的 salt、驗證碼）、jp/data/diag.json（筆數、日期、檢查結果，不含數值）。
 ⚠️ J-Quants 條款：資料只能本人看 → 沒有 JP_DATA_KEY 就整個停止，絕不寫出明文。
@@ -1003,6 +1003,184 @@ def drift_rows(code, rs):
     return n20
 
 
+# ======================= 📡 K 線掃描（#scan）：每檔目前的技術面狀態＋訊號回測，預先算好放進 index.bin =======================
+# 全部用收盤價（Yahoo：已做分割調整、未做除息調整）。訊號定義（網頁的說明文字要跟這裡一致）：
+#   nh   帶量創 52 週新高：收盤 > 前 251 個交易日的最高收盤，且量 ≥ 前 20 日均量 × 1.5
+#   b20  帶量創 20 日新高：收盤 > 前 20 個交易日的最高收盤、量 ≥ 1.5 倍，且不是 52 週新高
+#   up60／dn60  站上／跌破 60 日線（前一天在另一邊）
+#   bull／bear  轉成多頭排列（收盤 > 20 日線 > 60 日線 > 120 日線）／空頭排列（反過來），前一天還不是
+#   ob／os  RSI14 升到 70 以上／跌到 30 以下（前一天還沒到）
+# 同一檔同一種訊號 SC_GAP 個交易日內只算第一次（避免在均線上下來回穿越時重複計算）。
+SC_SIG = ("nh", "b20", "up60", "dn60", "bull", "bear", "ob", "os")
+SC_GAP = 10
+SC_VOL = 1.5
+SC_RECENT = 5      # 「近期訊號」＝最近 5 個交易日內出現的
+SCS = {}           # 代號 → scan_series() 的結果
+
+
+def _sma(v, n):
+    out, s = [None] * len(v), 0.0
+    for i, x in enumerate(v):
+        s += x
+        if i >= n:
+            s -= v[i - n]
+        if i >= n - 1:
+            out[i] = s / n
+    return out
+
+
+def _rsi(c, n=14):
+    """Wilder RSI；前 n 根算不出來是 None"""
+    out = [None] * len(c)
+    if len(c) <= n:
+        return out
+    g = sum(max(c[i] - c[i - 1], 0) for i in range(1, n + 1)) / n
+    l = sum(max(c[i - 1] - c[i], 0) for i in range(1, n + 1)) / n
+    out[n] = 100.0 if l == 0 else 100 - 100 / (1 + g / l)
+    for i in range(n + 1, len(c)):
+        d = c[i] - c[i - 1]
+        g, l = (g * (n - 1) + max(d, 0)) / n, (l * (n - 1) + max(-d, 0)) / n
+        out[i] = 100.0 if l == 0 else 100 - 100 / (1 + g / l)
+    return out
+
+
+def _prior_max(v, n):
+    """每一天「之前 n 天」的最大值（不含當天）；不滿 n 天是 None"""
+    out, dq = [None] * len(v), []          # dq：遞減佇列（存索引）
+    for i, x in enumerate(v):
+        while dq and dq[0] < i - n:
+            dq.pop(0)
+        if i >= n and dq:
+            out[i] = v[dq[0]]
+        while dq and v[dq[-1]] <= x:
+            dq.pop()
+        dq.append(i)
+    return out
+
+
+def scan_series(code):
+    """一檔的日線序列＋每天的訊號（已套用 SC_GAP 去重）。回傳 None＝沒有股價"""
+    if code in SCS:
+        return SCS[code]
+    rows = [r for r in (YK.get(code) or []) if r[4]]
+    if len(rows) < 30:
+        SCS[code] = None
+        return None
+    ds, c, v = [r[0] for r in rows], [r[4] for r in rows], [r[5] or 0 for r in rows]
+    m20, m60, m120, rsi = _sma(c, 20), _sma(c, 60), _sma(c, 120), _rsi(c)
+    p20, p251, va = _prior_max(c, 20), _prior_max(c, 251), _sma(v, 20)
+    vr = [None] * len(c)
+    for i in range(20, len(c)):
+        if va[i - 1] and v[i]:
+            vr[i] = v[i] / va[i - 1]
+    bull = [bool(m120[i]) and c[i] > m20[i] > m60[i] > m120[i] for i in range(len(c))]
+    bear = [bool(m120[i]) and c[i] < m20[i] < m60[i] < m120[i] for i in range(len(c))]
+    ev, last = {k: [] for k in SC_SIG}, {}
+
+    def fire(k, i):
+        if i - last.get(k, -10 ** 9) > SC_GAP:
+            ev[k].append(i)
+        last[k] = i                         # 連續出現時一直往後推，要安靜滿 SC_GAP 天才算下一次
+
+    for i in range(1, len(c)):
+        big = vr[i] is not None and vr[i] >= SC_VOL
+        if big and p251[i] is not None and c[i] > p251[i]:
+            fire("nh", i)
+        elif big and p20[i] is not None and c[i] > p20[i]:
+            fire("b20", i)
+        if m60[i - 1] is not None:
+            if c[i - 1] <= m60[i - 1] and c[i] > m60[i]:
+                fire("up60", i)
+            elif c[i - 1] >= m60[i - 1] and c[i] < m60[i]:
+                fire("dn60", i)
+        if bull[i] and not bull[i - 1] and m120[i - 1]:
+            fire("bull", i)
+        if bear[i] and not bear[i - 1] and m120[i - 1]:
+            fire("bear", i)
+        if rsi[i - 1] is not None:
+            if rsi[i] >= 70 > rsi[i - 1]:
+                fire("ob", i)
+            elif rsi[i] <= 30 < rsi[i - 1]:
+                fire("os", i)
+    SCS[code] = dict(ds=ds, c=c, m20=m20, m60=m60, m120=m120, rsi=rsi, vr=vr, bull=bull, bear=bear, ev=ev)
+    return SCS[code]
+
+
+def scan_of(code, lr_d=None):
+    """index.bin 每檔的 sc：
+    d 最後一根日期｜m [收盤對 20、60、120 日線的距離 %]（算不出來是 None）｜ar 1 多頭排列／-1 空頭排列／0 其他
+    hi 距 52 週最高收盤 %（0＝今天就是新高）｜hd 那個高點是幾個交易日前｜vr 量 ÷ 前 20 日均量｜rsi RSI14
+    r5／r20／r60 近 5／20／60 個交易日漲跌 %｜x20／x60 扣掉同期間追蹤清單其他股票平均
+    c60 站上（正）／跌破（負）60 日線已經幾個交易日｜ev 近 SC_RECENT 個交易日出現的訊號 [[代碼, 日期], …]
+    e 最近一次決算「隔日收盤」到現在的漲跌 %（lr_d＝那次決算的公布日；還沒有隔日股價就沒有）"""
+    S = scan_series(code)
+    if not S:
+        return None
+    ds, c, n = S["ds"], S["c"], len(S["c"])
+    i = n - 1
+    pc = lambda a, b: round((a / b - 1) * 100, 1) if b else None
+    o = dict(d=ds[i], m=[pc(c[i], S[k][i]) if S[k][i] else None for k in ("m20", "m60", "m120")],
+             ar=1 if S["bull"][i] else -1 if S["bear"][i] else 0)
+    w = c[max(0, i - 251):]
+    hi = max(w)
+    o["hi"], o["hd"] = pc(c[i], hi), len(w) - 1 - max(k for k, x in enumerate(w) if x == hi)
+    if S["vr"][i] is not None:
+        o["vr"] = round(S["vr"][i], 2)
+    if S["rsi"][i] is not None:
+        o["rsi"] = round(S["rsi"][i])
+    for k, kr, kx in ((5, "r5", None), (20, "r20", "x20"), (60, "r60", "x60")):
+        if i - k >= 0:
+            o[kr] = pc(c[i], c[i - k])
+            b = bench_ret(code, ds[i - k], ds[i]) if kx else None
+            if b is not None:
+                o[kx] = round((c[i] / c[i - k] - 1) * 100 - b, 1)
+    if S["m60"][i]:
+        up, k = c[i] > S["m60"][i], 0
+        while i - k >= 0 and S["m60"][i - k] and (c[i - k] > S["m60"][i - k]) == up and c[i - k] != S["m60"][i - k]:
+            k += 1
+        o["c60"] = k if up else -k
+    o["ev"] = sorted(([k, ds[j]] for k in SC_SIG for j in S["ev"][k] if j > i - SC_RECENT), key=lambda x: x[1], reverse=True)
+    if lr_d:
+        j = bisect.bisect_right(ds, lr_d)       # 公布日之後第一個交易日
+        if j < i:
+            o["e"] = pc(c[i], c[j])
+    return o
+
+
+def scan_backtest(codes):
+    """訊號回測：訊號當天收盤買進、持有 5／20 個交易日。回傳 {from 起始日, from3 近三年的起始日, all:{…}, y3:{…}}，
+    每個期間 {訊號: [5 日, 20 日]}，每格 [次數, 原始平均 %, 上漲比例 %, 扣清單平均 %, 贏過清單平均的比例 %]（沒有清單平均時後兩個是 None）。
+    base＝不看訊號、每 5 個交易日取一天的結果（對照用）。"""
+    y3 = (TODAY - dt.timedelta(days=365 * 3)).isoformat()
+    acc = {p: {k: ([], []) for k in SC_SIG + ("base",)} for p in ("all", "y3")}
+    first = None
+    for code in codes:
+        S = scan_series(code)
+        if not S:
+            continue
+        ds, c = S["ds"], S["c"]
+        first = min(first or ds[0], ds[0])
+        for k in SC_SIG + ("base",):
+            for i in (range(251, len(c), 5) if k == "base" else S["ev"][k]):
+                for h, n in enumerate((5, 20)):
+                    if i + n >= len(c):
+                        continue
+                    r = (c[i + n] / c[i] - 1) * 100
+                    b = bench_ret(code, ds[i], ds[i + n])
+                    rec = (r, None if b is None else r - b)
+                    acc["all"][k][h].append(rec)
+                    if ds[i] >= y3:
+                        acc["y3"][k][h].append(rec)
+
+    def cell(a):
+        if not a:
+            return None
+        x = [e for _, e in a if e is not None]
+        return [len(a), round(sum(r for r, _ in a) / len(a), 1), round(sum(r > 0 for r, _ in a) / len(a) * 100),
+                round(sum(x) / len(x), 1) if x else None, round(sum(e > 0 for e in x) / len(x) * 100) if x else None]
+    return {"from": first, "from3": max(y3, first or y3), **{p: {k: [cell(a) for a in acc[p][k]] for k in acc[p]} for p in acc}}
+
+
 def main():
     if not PASS or len(PASS) < 8:
         print("❌ 沒有設定 JP_DATA_KEY（至少 8 字）→ 為遵守 J-Quants 條款，不寫出任何資料", file=sys.stderr)
@@ -1065,9 +1243,11 @@ def main():
         validate_td(rows, 12 if VALIDATE else 4)
     # 組合、加密輸出
     idx_p = OUT / "index.bin"
+    prev_scan = None
     try:
         old = dec(aes, idx_p.read_bytes()) if idx_p.exists() else []
         idx = {s["id"]: s for s in (old["stocks"] if isinstance(old, dict) else old)}
+        prev_scan = old.get("scan") if isinstance(old, dict) else None
     except Exception:  # noqa
         idx = {}
     fx = None
@@ -1113,8 +1293,24 @@ def main():
             DIAG["rs_x20"][c] = drift_rows(c, idx[c].get("rs") or [])
         except Exception as e:  # noqa
             err(f"回測 {c}: {e}")
+    scan = prev_scan
+    try:               # K 線掃描：一樣要等全部日 K 都在。這次沒更新到的股票保留舊的 sc（網頁會標出日期較舊）；
+        # 只跑少數幾檔時清單平均算不出來（不到 10 檔），回測沿用上一次的
+        for c in ok:
+            sc = scan_of(c, (idx[c].get("lr") or {}).get("d"))
+            if sc:
+                idx[c]["sc"] = sc
+        if len(ok) >= 11 or not prev_scan:
+            scan = dict(asof=max((idx[c]["sc"]["d"] for c in ok if "sc" in idx[c]), default=None), gap=SC_GAP, vol=SC_VOL,
+                        recent=SC_RECENT, n=len(ok), bt=scan_backtest(ok))
+        DIAG["scan"] = dict(n=sum("sc" in idx[c] for c in ok), asof=(scan or {}).get("asof"),
+                            bt_from=((scan or {}).get("bt") or {}).get("from"), bt_fresh=len(ok) >= 11 or not prev_scan,
+                            ev_recent=sum(len(idx[c]["sc"]["ev"]) for c in ok if "sc" in idx[c]),
+                            bt_n={k: (v[1] or [0])[0] for k, v in (((scan or {}).get("bt") or {}).get("all") or {}).items()})
+    except Exception as e:  # noqa
+        err(f"K 線掃描: {e}")
     order = [c for c in STOCKS if c in idx]
-    idx_p.write_bytes(enc(aes, {"stocks": [idx[c] for c in order], "themes": THEME_META}))
+    idx_p.write_bytes(enc(aes, {"stocks": [idx[c] for c in order], "themes": THEME_META, "scan": scan}))
     (RAW / "tdnet.bin").write_bytes(enc(aes, td))
     (RAW / "jq.bin").write_bytes(enc(aes, jqa))
     (OUT / "meta.json").write_text(json.dumps(meta, ensure_ascii=False, indent=1), "utf-8")

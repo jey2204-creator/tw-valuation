@@ -137,6 +137,17 @@ section.card{background:var(--card);border:1px solid var(--line);border-radius:1
 .rdm td.c i.wk{opacity:.38}#rSum span{white-space:nowrap}
 .rchk li.rgrp{color:var(--muted)}.rchk li.rgrp b{font-family:var(--f-num);color:var(--fg)}
 #readPage .pill{font-size:11.5px}#readPage .pill.ok{background:var(--b2)}#readPage .pill.mid{background:var(--b4)}#readPage .pill.bad{background:var(--b5)}
+/* ---- 📡 K 線掃描 #scan：追蹤清單 × 技術面訊號（資料在 index.bin 每檔的 sc 與最上層的 scan，不必逐檔解密） ---- */
+#scanPage .top{padding-top:12px}#scanPage h1{font-size:22px;font-weight:900;margin:6px 0 0;line-height:1.3}
+#scanPage .seg{margin-left:auto;display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden}
+#scanPage .seg button{font:inherit;font-size:12px;font-weight:700;color:var(--muted);background:var(--card);border:0;padding:3px 10px;cursor:pointer;white-space:nowrap}#scanPage .seg button.on{color:#fff;background:var(--accent)}
+#scanPage .pill{font-size:11.5px}#sSum span{white-space:nowrap}
+.scm thead th{font-family:var(--f-body);font-size:11px;letter-spacing:0;cursor:pointer;-webkit-tap-highlight-color:transparent;line-height:1.25}
+.scm thead th b{font-size:9.5px;color:var(--muted)}.scm thead th.on{color:var(--accent)}.scm thead th:first-child{cursor:default}
+.scm td.c i{font-family:var(--f-num);font-size:12.5px;font-weight:600;white-space:nowrap}.scm td.c i.t{font-family:var(--f-body);font-weight:700}.scm td.c i.dim{color:var(--muted);font-weight:500}
+.scm tr.on td.c{background:var(--b1)}.scm td.nm small.old{color:var(--warm)}
+#sEv li span a{display:inline;font-weight:700;white-space:nowrap}#sEv li span a small{margin-left:3px}
+#sBtBox h2{display:flex;align-items:center;gap:8px;flex-wrap:wrap}#sBtBox .seg{margin-left:auto}#sPer{margin:8px 0 0!important}
 /* ---- 📊 財報判讀 #beat（版面同美股站；日股沒有市場預估 EPS，改對「公司預估」：進度率、全年預估修正，再看隔日反應） ---- */
 #beat h2{display:flex;align-items:center;gap:8px;white-space:nowrap;min-width:0}#beat h2 small{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;font-size:11px;letter-spacing:-.2px}
 .y10k{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:8px 0 4px;cursor:pointer;-webkit-tap-highlight-color:transparent}
@@ -415,6 +426,7 @@ html{scroll-behavior:smooth}
       <p class="foot" id="fEarn"></p>
     </section>
     <a class="rlink" id="readLink" href="#read" hidden><span>📊 判讀總覽<small id="readLinkN"></small></span><i>看全部 ›</i></a>
+    <a class="rlink" id="scanLink" href="#scan" hidden><span>📡 K 線掃描<small id="scanLinkN"></small></span><i>看全部 ›</i></a>
     <h2 class="sec"><span>產業主題 <small id="tAsof"></small></span><span><button type="button" class="nfo" id="tLegI" aria-expanded="false" aria-controls="tLeg" aria-label="欄位說明">ⓘ</button><button type="button" class="dns" id="hDense"></button><a class="act" id="hEdit" href="#edit">✏️ 編輯</a></span></h2>
     <div class="tgrid" id="tgrid"></div>
     <p class="legend" id="tLeg" hidden>各主題中位數（<b class="opt">選配</b>題材股不算）。<span id="tLegC"></span>營收年增＝最新一季對比去年同季；EPS 年增＝近四季合計對比前四季；PEG＝本益比 ÷ EPS 年增，<span class="cheap">&lt;1</span>、<span class="pricey">&gt;2</span>；本月至今＝收盤對比上月底。</p>
@@ -444,6 +456,17 @@ html{scroll-behavior:smooth}
   <p class="legend" id="rLeg"></p>
   <section class="card" id="rChkBox"><h2>🔎 值得檢查 <small id="rChkN"></small></h2><ul class="rchk" id="rChk"></ul><p class="foot">這裡列的不是「判讀錯了」，而是資料或規則容易失準的情況：數字大到不像真的、判讀指標換了、中間缺季、口徑變更。「判讀和隔日股價方向相反」另外收在最下面——正面判讀本來就有四成多隔日下跌，那是正常現象，不是規則錯。</p></section>
   <section class="card" id="rStBox"><h2>📈 判讀回測 <small id="rStN"></small><span class="seg" id="rEx"><button type="button" data-v="1">扣掉清單平均</button><button type="button" data-v="0">原始漲跌</button></span></h2><div class="tbl"><table class="rst" id="rSt"></table></div><p class="foot" id="rStF"></p></section>
+</div>
+
+<!-- ===== K 線掃描：#scan（追蹤清單 × 均線、位階、強弱、RSI、財報；資料來自 index.bin 的 sc／scan） ===== -->
+<div id="scanPage" hidden>
+  <div class="top"><a href="#">← 全部主題</a><span class="seg" id="sSeg"><button type="button" data-v="theme">依主題</button><button type="button" data-v="x20">依強弱</button></span></div>
+  <h1>📡 K 線掃描</h1>
+  <p class="tsum" id="sSum"></p>
+  <section class="card" id="sEvBox"><h2>⚡ 近期訊號 <small id="sEvN"></small></h2><ul class="rchk" id="sEv"></ul></section>
+  <div class="panel"><div class="tbl"><table class="rdm scm" id="sTab"></table></div></div>
+  <p class="legend" id="sLeg"></p>
+  <section class="card" id="sBtBox"><h2>📈 訊號回測 <small id="sBtN"></small><span class="seg" id="sEx"><button type="button" data-v="1">扣掉清單平均</button><button type="button" data-v="0">原始漲跌</button></span></h2><span class="seg" id="sPer"><button type="button" data-v="y3">近 3 年</button><button type="button" data-v="all">全部</button></span><div class="tbl"><table class="rst" id="sBt"></table></div><p class="foot" id="sBtF"></p></section>
 </div>
 
 <!-- ===== 編輯主題：#edit 清單（排序／隱藏／新增）、#edit/{id} 單一主題（名稱、成份股、細分、選配）。只存在這台裝置 ===== -->
@@ -680,7 +703,7 @@ async function unlock(pw){
   try{await decBytes(b64(META.kcv))}catch(e){KEY=null;throw new Error(`密語不正確（你輸入了 ${[...pw.normalize('NFKC').trim()].length} 個字）。可勾「顯示密語」檢查大小寫、空白與符號`)}
   try{localStorage.setItem('jpKey',JSON.stringify({s:META.salt,k:ub64(bits)}))}catch(e){}
 }
-function showLock(msg){['home','stock','themePage','pnav','editList','editTheme'].forEach(id=>$(id).hidden=true);document.body.classList.remove('pn');$('lock').hidden=false;if(msg){$('lockErr').textContent=msg;$('lockErr').hidden=false}}
+function showLock(msg){['home','stock','themePage','readPage','scanPage','pnav','editList','editTheme'].forEach(id=>$(id).hidden=true);document.body.classList.remove('pn');$('lock').hidden=false;if(msg){$('lockErr').textContent=msg;$('lockErr').hidden=false}}
 $('lockForm').addEventListener('submit',async e=>{e.preventDefault();const pw=$('pw').value.trim();if(!pw)return;
   $('pwBtn').disabled=true;$('pwBtn').textContent='驗證中…';$('lockErr').hidden=true;
   try{await unlock(pw);$('pw').value='';$('lock').hidden=true;await start()}catch(err){$('lockErr').textContent=err.message;$('lockErr').hidden=false}
@@ -1316,6 +1339,7 @@ function homeRender(){
   // 沒打字：產業主題卡；有打字：符合的個股清單（依主題分組）
   $('tsec').hidden=!!v;$('gLegend').hidden=!v;
   {const n=IDX.filter(s=>rsOf(s).length).length;$('readLink').hidden=!n;$('readLinkN').textContent=n?`${n} 檔 × 近 8 季`:''}
+  {const S=IDX.filter(s=>s.sc&&s.sc.m),ev=sum(S.map(s=>(s.sc.ev||[]).length));$('scanLink').hidden=!S.length;$('scanLinkN').textContent=S.length?`多頭 ${S.filter(s=>s.sc.ar===1).length}・空頭 ${S.filter(s=>s.sc.ar===-1).length}・近期訊號 ${ev}`:''}
   if(!v){$('groups').innerHTML='';cardsRender();return}
   const inT=new Set(THEMES.flatMap(t=>t.stocks.map(x=>x[0]))),lone=ms.filter(s=>!inT.has(s.id));
   const GT=lone.length?[...THEMES,{id:'',name:'未分類（不在顯示中的主題）',tw:[],stocks:lone.map(s=>[s.id,'',false])}]:THEMES;
@@ -1447,7 +1471,91 @@ $('readPage').addEventListener('click',e=>{
   if(c){const k=[tr.dataset.id,c.dataset.c];ROPEN=ROPEN&&ROPEN[0]===k[0]&&ROPEN[1]===k[1]?null:k;readRender();return}
   if(e.target.closest('td.nm')){KEEP='beat';location.hash=tr.dataset.id}});
 
-// ---------- 路由：#（首頁）、#read（判讀總覽）、#t/{主題}、#{代號} ----------
+// ---------- 📡 K 線掃描 #scan：追蹤清單 × 技術面訊號。資料＝index.bin 每檔的 sc（fetch_jp.py 的 scan_of）與最上層 scan（訊號回測），定義寫在 fetch_jp.py 的 SC_SIG 上面 ----------
+let SCB=null,SSORT='theme',SDIR=-1,SOPEN=null,SEX=true,SPER='y3';
+try{const v=localStorage.getItem('jpScanSort');if(['ma','hi','x20','rsi','e'].includes(v))SSORT=v;SEX=localStorage.getItem('jpScanEx')!=='0';SPER=localStorage.getItem('jpScanPer')==='all'?'all':'y3'}catch(e){}
+// 訊號：[圖示, 名稱, 方向 1 偏多／-1 偏空／0 不分]
+const SCN={nh:['🚀','帶量創 52 週新高',1],b20:['↗️','帶量創 20 日新高',1],up60:['🔼','站上 60 日線',1],bull:['📈','轉成多頭排列',1],dn60:['🔽','跌破 60 日線',-1],bear:['📉','轉成空頭排列',-1],ob:['🔥','RSI 升到 70 以上',0],os:['🧊','RSI 跌到 30 以下',0]};
+const scUp=s=>s.sc.m.filter(x=>x!=null&&x>0).length;   // 收盤站上幾條均線（20／60／120 日）
+const scMa=s=>s.sc.ar===1?['多頭','vu']:s.sc.ar===-1?['空頭','vd']:s.sc.m[1]==null?['—','dim']:scUp(s)>=2?['偏多','']:['偏空',''];
+const scLast=s=>{const r=rsOf(s);return r.length?r[r.length-1]:null};
+// 財報 × K 線：最近一次判讀正面但收盤在 60 日線下 → 🎯；判讀負面但收盤在 60 日線上 → ⚠️
+const scDiv=s=>{const z=scLast(s),c=z?rdVerdict(z)[2]:null,m=s.sc.m[1];return c===1&&m!=null&&m<0?'🎯':c===-1&&m!=null&&m>0?'⚠️':''};
+const SCV={ma:s=>s.sc.m[1]==null?null:s.sc.ar*10+scUp(s)+s.sc.m[1]/1000,hi:s=>s.sc.hi,x20:s=>s.sc.x20,rsi:s=>s.sc.rsi,e:s=>s.sc.e};
+const sNum=v=>v==null?'—':`${v>0?'+':v<0?'−':''}${Math.abs(v).toFixed(1)}`;
+function scanWhy(s){   // 展開列：把用到的數字寫出來
+  const c=s.sc,m=c.m,T=[],p=v=>`<b class="${rSg(v)}">${rPc(v)}</b>`;
+  T.push(`收盤 <b>${pxT(s.close)}</b>（${md(c.d)}${s.chg!=null?`，當日 ${p(s.chg)}`:''}）。`);
+  T.push(`<b>均線</b>：收盤對 20 日線 ${p(m[0])}、60 日線 ${p(m[1])}、120 日線 ${p(m[2])}`+(c.ar===1?' → 多頭排列（收盤 &gt; 20 日 &gt; 60 日 &gt; 120 日）':c.ar===-1?' → 空頭排列（收盤 &lt; 20 日 &lt; 60 日 &lt; 120 日）':m[1]==null?'（上市不夠久，均線還算不出來）':` → 站上 ${scUp(s)} 條、均線沒有依序排開`)+(c.c60?`；${c.c60>0?'站上':'跌破'} 60 日線已 <b>${Math.abs(c.c60)}</b> 個交易日`:'')+'。');
+  T.push(`<b>位階</b>：${c.hi===0?'今天收盤就是 52 週最高收盤':`距 52 週最高收盤 ${p(c.hi)}（高點在 <b>${c.hd}</b> 個交易日前）`}${c.vr!=null?`；成交量是前 20 日均量的 <b>${c.vr.toFixed(1)}</b> 倍`:''}。`);
+  if(c.r20!=null)T.push(`<b>強弱</b>：近 20 日 ${p(c.r20)}${c.x20!=null?`，清單其他股票平均 ${p(+(c.r20-c.x20).toFixed(1))} → ${c.x20>=0?'強':'弱'} ${p(c.x20)}`:''}${c.r60!=null?`；近 60 日 ${p(c.r60)}${c.x60!=null?`（相對清單 ${p(c.x60)}）`:''}`:''}。`);
+  T.push(`<b>RSI14</b>：${c.rsi==null?'—':`<b>${c.rsi}</b>${c.rsi>=70?'（70 以上，短線過熱）':c.rsi<=30?'（30 以下，短線超賣）':''}`}${c.r5!=null?`；近 5 日 ${p(c.r5)}`:''}。`);
+  const z=scLast(s);
+  if(z){const V=rdVerdict(z),dv=scDiv(s);
+    T.push(`<b>財報</b>：${esc(z.cal)}（${md(z.d)} 公布）<span class="pill ${V[0]||'o'}">${esc(V[1])}</span>${c.e!=null?`，隔日收盤到現在 ${p(c.e)}`:'，還沒有隔日之後的股價'}。${dv==='🎯'?'🎯 判讀正面、但收盤還在 60 日線下：股價沒跟上財報，值得翻 K 線看原因。':dv==='⚠️'?'⚠️ 判讀負面、但收盤在 60 日線上：股價沒反映，或市場看的是別的事。':''}`)}
+  if(c.ev&&c.ev.length)T.push(`<b>近期訊號</b>：${c.ev.map(([k,d])=>`${md(d)} ${SCN[k]?SCN[k][0]+' '+SCN[k][1]:esc(k)}`).join('、')}。`);
+  return T.join('<br>')+`<br><a href="#${s.id}" data-k>看 K 線 ›</a>${z?`　<a href="#${s.id}" data-beat>看財報判讀 ›</a>`:''}`;
+}
+function scanRender(){
+  const S=IDX.filter(s=>s.sc&&s.sc.m),B=SCB||{},asof=B.asof||S.map(s=>s.sc.d).sort().pop(),rc=B.recent||5;
+  $('sSeg').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v===SSORT));
+  if(!S.length){$('sSum').innerHTML='還沒有掃描資料，等下一次「更新日股資料」跑完才有。';$('sTab').innerHTML='';$('sLeg').textContent='';$('sEvBox').hidden=$('sBtBox').hidden=true;return}
+  const cnt=f=>S.filter(f).length,a60=cnt(s=>s.sc.m[1]!=null&&s.sc.m[1]>0),n60=cnt(s=>s.sc.m[1]!=null);
+  $('sSum').innerHTML=`追蹤 <b>${S.length}</b> 檔，${md(asof)} 收盤：<span>多頭排列 <b class="vu">${cnt(s=>s.sc.ar===1)}</b></span>　<span>空頭排列 <b class="vd">${cnt(s=>s.sc.ar===-1)}</b></span>　<span>站上 60 日線 <b>${a60}</b>／${n60}（${n60?Math.round(a60/n60*100):0}%）</span>　<span>52 週新高 <b>${cnt(s=>s.sc.hi===0)}</b></span>　<span>RSI ≥70 <b>${cnt(s=>s.sc.rsi>=70)}</b>、≤30 <b>${cnt(s=>s.sc.rsi<=30)}</b></span>${SCB?'':'<br>⚠️ 資料沒有回測統計，等下一次「更新日股資料」。'}`;
+  // 近期訊號
+  const nmOf=s=>esc((s.name||s.id).replace(/（.*/,'')),EV={};
+  S.forEach(s=>(s.sc.ev||[]).forEach(([k,d])=>(EV[k]=EV[k]||[]).push([s,d])));
+  const evK=Object.keys(SCN).filter(k=>EV[k]),nEv=sum(evK.map(k=>EV[k].length));
+  $('sEvBox').hidden=false;$('sEvN').textContent=`近 ${rc} 個交易日・${nEv} 次`;
+  $('sEv').innerHTML=evK.map(k=>`<li><span><b>${SCN[k][0]} ${SCN[k][1]}</b>　${EV[k].sort((a,b)=>b[1].localeCompare(a[1])).map(([s,d])=>`<a href="#${s.id}" data-k>${nmOf(s)}<small>${md(d)}</small></a>`).join('、')}</span></li>`).join('')||`<li><span>近 ${rc} 個交易日沒有新訊號。</span></li>`;
+  // 分組／排序
+  let G;
+  if(SSORT==='theme'){const seen=new Set();
+    G=THEMES.map(t=>({name:t.name,ls:t.stocks.map(x=>BY[x[0]]).filter(s=>s&&s.sc&&s.sc.m&&!seen.has(s.id)&&seen.add(s.id))})).filter(g=>g.ls.length);
+    const rest=S.filter(s=>!seen.has(s.id));if(rest.length)G.push({name:'未分類（不在顯示中的主題）',ls:rest})}
+  else{const f=SCV[SSORT],ls=[...S].sort((a,b)=>{const x=f(a),y=f(b);return x==null?(y==null?0:1):y==null?-1:SDIR*(x-y)});G=[{name:'',ls}]}
+  const H=[['ma','均線','對季線%'],['hi','位階','距高%'],['x20','強弱','20日'],['rsi','RSI','5日%'],['e','財報','公布後%']];
+  const head=`<thead><tr><th></th>${H.map(([k,t,u])=>`<th data-k="${k}" class="${SSORT===k?'on':''}">${t}${SSORT===k?(SDIR<0?'▾':'▴'):''}<b>${u}</b></th>`).join('')}</tr></thead>`;
+  const sm=(v,cls)=>`<small class="${cls==null?rSg(v):cls}">${v==null?'':sNum(v)}</small>`;
+  const rowH=s=>{const c=s.sc,[mt,mc]=scMa(s),z=scLast(s),V=z?rdVerdict(z):null,on=SOPEN===s.id,old=asof&&c.d<asof;
+    const near=c.c60&&Math.abs(c.c60)<=rc?(c.c60>0?'站季':'破季')+Math.abs(c.c60)+'日':c.vr!=null&&c.vr>=(B.vol||1.5)?'量'+c.vr.toFixed(1)+'x':'';
+    let h=`<tr data-id="${s.id}" class="${on?'on':''}"><td class="nm"><b>${nmOf(s)}</b><small class="${old?'old':''}">${s.id}${old?'・'+md(c.d):''}</small></td>`+
+      `<td class="c"><i class="t ${mc}">${mt}</i>${sm(c.m[1])}</td>`+
+      `<td class="c"><i class="${c.hi===0?'t vu':''}">${c.hi===0?'新高':sNum(c.hi)}</i><small>${near}</small></td>`+
+      `<td class="c"><i class="${rSg(c.x20)}">${sNum(c.x20)}</i>${sm(c.x60,'')}</td>`+
+      `<td class="c"><i class="${c.rsi>=70?'vu':c.rsi<=30?'vd':''}">${c.rsi==null?'—':c.rsi}</i>${sm(c.r5)}</td>`+
+      `<td class="c"><i class="t">${V?rIcon(V)+scDiv(s):'·'}</i>${sm(c.e)}</td></tr>`;
+    if(on)h+=`<tr class="det"><td colspan="6">${scanWhy(s)}</td></tr>`;
+    return h};
+  $('sTab').innerHTML=head+'<tbody>'+G.map(g=>(g.name?`<tr class="gh"><td colspan="6">${esc(g.name)}<small>${g.ls.length} 檔・多頭 ${g.ls.filter(s=>s.sc.ar===1).length}　空頭 ${g.ls.filter(s=>s.sc.ar===-1).length}</small></td></tr>`:'')+g.ls.map(rowH).join('')).join('')+'</tbody>';
+  $('sLeg').innerHTML=`全部用收盤價算（已做分割調整、沒有還原股息）。<b>均線</b>：多頭＝收盤 &gt; 20 日線 &gt; 60 日線 &gt; 120 日線，空頭＝反過來，其餘看站上幾條（偏多 2～3 條、偏空 0～1 條）；小字＝收盤對 60 日線的距離。<b>位階</b>：距 52 週最高收盤的 %；小字＝剛站上／跌破 60 日線幾天（${rc} 日內），或成交量是前 20 日均量的幾倍（${B.vol||1.5} 倍以上才顯示）。<b>強弱</b>：近 20 日漲跌扣掉同期間清單其他股票平均；小字＝近 60 日。<b>RSI</b>：14 日，≥70 紅、≤30 綠；小字＝近 5 日漲跌。<b>財報</b>：最近一次決算的判讀圖示（規則同判讀總覽）；小字＝公布隔日收盤到現在的漲跌；🎯＝判讀正面但收盤在 60 日線下，⚠️＝判讀負面但收盤在 60 日線上。點欄位名稱排序（再點一次反向），點數字看算法，點公司名進個股頁的 K 線。${S.some(s=>asof&&s.sc.d<asof)?'代號後面有橘色日期＝這檔的股價比別檔舊。':''}`;
+  // 訊號回測
+  const BT=B.bt&&B.bt[SPER];$('sBtBox').hidden=!BT;
+  if(BT){
+    const hasX=Object.values(BT).some(v=>v&&v[0]&&v[0][3]!=null),ex=SEX&&hasX;
+    $('sEx').hidden=!hasX;$('sEx').querySelectorAll('button').forEach(b=>b.classList.toggle('on',(b.dataset.v==='1')===ex));
+    $('sPer').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v===SPER));
+    const td=a=>{if(!a)return '<td>—</td>';const av=ex?a[3]:a[1],w=ex?a[4]:a[2];if(av==null)return '<td>—</td>';
+      return `<td class="${a[0]<30?'few':''}"><b class="${rSg(av)}">${rPc(av)}</b><small>${w}%・${a[0]} 次</small></td>`};
+    const row=(k,lb,cls)=>BT[k]?`<tr${cls?` class="${cls}"`:''}><td class="t">${lb}</td>${td(BT[k][0])}${td(BT[k][1])}</tr>`:'';
+    {const st=B.bt[SPER==='y3'?'from3':'from']||'';$('sBtN').textContent=st?st.slice(0,7).replace('-','/')+' 起':''}
+    $('sBt').innerHTML=`<thead><tr><th>訊號</th><th>之後 5 日</th><th>之後 20 日</th></tr></thead><tbody>`+
+      Object.keys(SCN).map(k=>row(k,`${SCN[k][0]} ${SCN[k][1]}`)).join('')+row('base','對照：不看訊號')+'</tbody>';
+    $('sBtF').innerHTML=`每格：訊號當天收盤買進、持有 5／20 個交易日的平均漲跌，下面是${ex?'贏過清單平均':'上漲'}的比例與次數（不到 30 次的標淡）。同一檔同一種訊號 ${B.gap||10} 個交易日內只算第一次。「對照」＝不看訊號、每 5 個交易日取一天，訊號要明顯比這一列好才有意義。${ex?'「扣掉清單平均」＝減去同一段期間清單其他股票的平均漲跌。':''}<br>⚠️ 這張表偏樂觀：① 清單是現在挑的，留下來的都是事後看來表現好的公司，原始漲跌一定偏高，請看「扣掉清單平均」；② 訊號要收盤後才知道，實際最快隔天開盤才買得到；③ 沒算手續費、股息；④ 20 日的期間彼此重疊，次數看起來多、其實獨立樣本沒那麼多。只能看方向，不是買賣訊號。`}
+}
+$('sSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;SSORT=b.dataset.v;SDIR=-1;try{localStorage.setItem('jpScanSort',SSORT)}catch(x){}scanRender()});
+$('scanPage').addEventListener('click',e=>{
+  {const b=e.target.closest('#sEx button');if(b){SEX=b.dataset.v==='1';try{localStorage.setItem('jpScanEx',SEX?'1':'0')}catch(x){}scanRender();return}}
+  {const b=e.target.closest('#sPer button');if(b){SPER=b.dataset.v;try{localStorage.setItem('jpScanPer',SPER)}catch(x){}scanRender();return}}
+  if(e.target.closest('a[data-k]')){KEEP='kline';return}
+  if(e.target.closest('a[data-beat]')){KEEP='beat';return}
+  const th=e.target.closest('#sTab th[data-k]');
+  if(th){const k=th.dataset.k;if(SSORT===k)SDIR=-SDIR;else{SSORT=k;SDIR=-1}try{localStorage.setItem('jpScanSort',SSORT)}catch(x){}scanRender();return}
+  const tr=e.target.closest('#sTab tr[data-id]');if(!tr)return;
+  if(e.target.closest('td.nm')){KEEP='kline';location.hash=tr.dataset.id;return}
+  SOPEN=SOPEN===tr.dataset.id?null:tr.dataset.id;scanRender()});
+
+// ---------- 路由：#（首頁）、#read（判讀總覽）、#scan（K 線掃描）、#t/{主題}、#{代號} ----------
 const isStk=h=>/^[0-9][0-9A-Z]{3}$/.test(h);
 const themeOfStock=id=>THEMES.find(t=>t.id===LAST_T&&t.stocks.some(x=>x[0]===id))||THEMES.find(t=>t.stocks.some(x=>x[0]===id))||null;
 function backPaint(id){const t=themeOfStock(id);$('back').href=t?'#t/'+t.id:'#';$('back').textContent=t?'← '+t.name:'← 全部主題'}
@@ -1456,14 +1564,15 @@ function route(){
   if(!KEY)return;
   const raw=decodeURIComponent(location.hash.slice(1)),id=raw.toUpperCase();
   const em=/^edit(?:\/([a-z0-9_-]+))?$/.exec(raw);   // 編輯頁 #edit、#edit/{主題}
-  const rd=raw==='read';
-  const tm=/^t\/([a-z0-9_-]+)$/i.exec(raw),tid=tm?tm[1].toLowerCase():null,stk=!tid&&!em&&isStk(id),h=em?raw:rd?'read':tid?'t/'+tid:stk?id:'';
+  const rd=raw==='read',sn=raw==='scan';
+  const tm=/^t\/([a-z0-9_-]+)$/i.exec(raw),tid=tm?tm[1].toLowerCase():null,stk=!tid&&!em&&isStk(id),h=em?raw:rd?'read':sn?'scan':tid?'t/'+tid:stk?id:'';
   bkTrack(h);
-  $('themePage').hidden=!tid;$('readPage').hidden=!rd;$('editList').hidden=!em||!!em[1];$('editTheme').hidden=!em||!em[1];
+  $('themePage').hidden=!tid;$('readPage').hidden=!rd;$('scanPage').hidden=!sn;$('editList').hidden=!em||!!em[1];$('editTheme').hidden=!em||!em[1];
   if(!stk){$('pnav').hidden=true;document.body.classList.remove('pn');pnShut();qToggle(false)}
   if(tid&&VPREV==='home')HOMEY=scrollY;   // 從首頁點卡片進主題：記住首頁捲到哪
   if(em){$('stock').hidden=true;$('home').hidden=true;document.title='編輯主題';if(em[1])openEditor(em[1],HPREV);else renderOrder();scrollTo(0,0)}
   else if(rd){$('stock').hidden=true;$('home').hidden=true;document.title='判讀總覽｜日股估值看板';readRender();if(VPREV!=='stock')scrollTo(0,0)}
+  else if(sn){$('stock').hidden=true;$('home').hidden=true;document.title='K 線掃描｜日股估值看板';scanRender();if(VPREV!=='stock')scrollTo(0,0)}
   else if(tid){$('stock').hidden=true;$('home').hidden=true;themeRender(tid);scrollTo(0,0)}
   else if(stk){const k=KEEP;KEEP=null;
     if(!D||D.id!==id){if(!k)scrollTo(0,0);load(id).then(()=>{if(k)requestAnimationFrame(()=>goSec(k))})}
@@ -1471,7 +1580,7 @@ function route(){
   else{$('stock').hidden=true;$('home').hidden=false;document.title='日股估值看板';homeRender();
     if(VPREV==='edit')requestAnimationFrame(()=>scrollTo(0,$('tsec').getBoundingClientRect().top+scrollY-8));   // 編輯完回首頁：停在主題卡
     if(VPREV==='theme'){const y=HOMEY,pt=HPREV;requestAnimationFrame(()=>{scrollTo(0,y);const c=document.querySelector(`a.tcard[href="#${pt}"]`)||document.querySelector(`.tlt tr[data-t="${(pt||'').replace(/^t\//,'')}"]`);if(c){c.classList.remove('bkflash');void c.offsetWidth;c.classList.add('bkflash')}})}}
-  bkRestore(h);VPREV=stk?'stock':em?'edit':rd?'read':tid?'theme':'home';HPREV=h;
+  bkRestore(h);VPREV=stk?'stock':em?'edit':rd?'read':sn?'scan':tid?'theme':'home';HPREV=h;
 }
 // ---------- 底部導覽列：依目前主題（剛看的主題頁，或首頁順序第一個有它的主題）的成份股順序上下檔切換，並停在同一張圖 ----------
 const nameOf=id=>(BY[id]&&BY[id].name)||id;
@@ -1515,7 +1624,7 @@ $('pnPrev').addEventListener('click',()=>pnGo(-1));$('pnNext').addEventListener(
 let ORIGIN=null,VPREV=null,HPREV=null;const BK_SVG='<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>';
 try{ORIGIN=JSON.parse(sessionStorage.getItem('jpOrigin')||'null')}catch(e){}
 try{history.scrollRestoration='manual'}catch(e){}
-const bkLabel=h=>h==='read'?'判讀總覽':h&&h.startsWith('t/')?(themeName(h.slice(2))||'主題'):'全部主題';
+const bkLabel=h=>h==='read'?'判讀總覽':h==='scan'?'K 線掃描':h&&h.startsWith('t/')?(themeName(h.slice(2))||'主題'):'全部主題';
 function bkPaint(){const lb=bkLabel(ORIGIN?ORIGIN.h:'');$('pnBk').setAttribute('aria-label','回到 '+lb);$('pnBk').title='回到 '+lb;
   $('pnBk').innerHTML=$('pnav').classList.contains('solo')?`${BK_SVG} <span>${esc(lb)}</span>`:BK_SVG}
 function bkGo(){pnShut();if(ORIGIN&&ORIGIN.push){history.back();return}if(ORIGIN)ORIGIN.y=0;location.hash=ORIGIN&&ORIGIN.h||''}
@@ -1669,6 +1778,7 @@ const remotePut=c=>gh('/gists/'+SY.gist,{method:'PATCH',body:JSON.stringify({fil
 function cfgRepaint(){if(!KEY)return;applyCfg();
   if(!$('editList').hidden)renderOrder();
   else if(!$('readPage').hidden)readRender();
+  else if(!$('scanPage').hidden)scanRender();
   else if(!$('themePage').hidden&&CUR_T)themeRender(CUR_T);   // 主題被另一台刪掉或隱藏 → themeRender 會導回首頁
   else if(!$('home').hidden)homeRender();
   else if(D&&!$('stock').hidden){backPaint(D.id);pnPaint(D.id)}}
@@ -1725,7 +1835,7 @@ if(window.Sortable){
 async function start(){
   await twOrder();
   let bad='';
-  try{const x=await getBin('data/index.bin');IDX=Array.isArray(x)?x:x.stocks;THM=Array.isArray(x)?null:x.themes}catch(e){IDX=[];THM=null;bad=e.message}
+  try{const x=await getBin('data/index.bin');IDX=Array.isArray(x)?x:x.stocks;THM=Array.isArray(x)?null:x.themes;SCB=Array.isArray(x)?null:x.scan||null}catch(e){IDX=[];THM=null;SCB=null;bad=e.message}
   buildThemes();syStat();syncRun();
   const f0=IDX.find(s=>s.fx)?.fx;if(f0)fxSeed(f0);fxRender();paintDense();
   route();
