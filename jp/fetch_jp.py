@@ -7,7 +7,7 @@
 環境變數：JQUANTS_API_KEY（J-Quants 金鑰）、JP_DATA_KEY（加密密語）、JP_VALIDATE=1（加跑股價交叉比對，較慢）
 用法：python jp/fetch_jp.py [代號 ...]
 """
-import base64, hashlib, io, json, os, re, sys, time, unicodedata, zipfile, datetime as dt
+import base64, bisect, hashlib, io, json, os, re, sys, time, unicodedata, zipfile, datetime as dt
 from pathlib import Path
 import urllib.request, urllib.parse, urllib.error
 
@@ -938,7 +938,8 @@ def stat_of(d):
 
 def cal_of(code, d):
     """首頁決算日曆用（放進 index.bin）：nx 下次決算 [日期, 會計季, 來源]；lr 最近一次決算的判讀列（同 rd.rows 的最後一列）；rx 那次的隔日漲跌 %
-    rs＝判讀總覽頁（#read）用：近 8 季判讀列（同 rd.rows），每列多一個 rx 隔日漲跌 %（還沒有隔日股價就沒有這個鍵）"""
+    rs＝判讀總覽頁（#read）用：近 8 季判讀列（同 rd.rows），每列多一個 rx 隔日漲跌 %（還沒有隔日股價就沒有這個鍵）；
+    回測用的 r5／r20／x1／x5／x20 要等全部股票的日 K 都抓完才能算，由 drift_rows() 在 main() 最後補上"""
     o = {}
     if d.get("nx"):
         o["nx"] = [d["nx"]["d"], d["nx"]["fis"], d["nx"]["src"]]
@@ -953,6 +954,53 @@ def cal_of(code, d):
         if rx is not None:
             o["rx"] = rx
     return o
+
+
+YIDX = {}          # 代號 → ([日期…], [收盤…])，只留有收盤價的交易日
+
+
+def _kidx(code):
+    if code not in YIDX:
+        rows = [r for r in (YK.get(code) or []) if r[4]]
+        YIDX[code] = ([r[0] for r in rows], [r[4] for r in rows])
+    return YIDX[code]
+
+
+def _ret(code, d0, d1):
+    """d0 收盤 → d1 收盤的漲跌 %（各取當天或之前最近一個交易日）"""
+    ds, cs = _kidx(code)
+    i, j = bisect.bisect_right(ds, d0) - 1, bisect.bisect_right(ds, d1) - 1
+    return (cs[j] / cs[i] - 1) * 100 if 0 <= i < j else None
+
+
+def bench_ret(code, d0, d1):
+    """同一段期間「追蹤清單其他股票」的平均漲跌 %（等權重，不含自己）；不到 10 檔有股價就不算"""
+    v = [x for x in (_ret(c, d0, d1) for c in YK if c != code) if x is not None]
+    return sum(v) / len(v) if len(v) >= 10 else None
+
+
+def drift_rows(code, rs):
+    """判讀回測：在 rs 每一列補上
+    r5／r20＝隔日收盤買進、持有 5／20 個交易日的漲跌 %（隔日那一根不算在內，是買得到的報酬）
+    x1／x5／x20＝隔日漲跌、r5、r20 各自扣掉同期間追蹤清單平均（去掉大盤與族群當天的方向）
+    還沒走完 5／20 個交易日就沒有那個鍵。回傳補了 x20 的列數。"""
+    rows, n20 = YK.get(code) or [], 0
+    for r in rs:
+        i = next((i for i, x in enumerate(rows) if x[0] > r["d"]), None)
+        if not i or not rows[i - 1][4] or not rows[i][4]:
+            continue
+        b = bench_ret(code, rows[i - 1][0], rows[i][0])
+        if r.get("rx") is not None and b is not None:
+            r["x1"] = round((rows[i][4] / rows[i - 1][4] - 1) * 100 - b, 1)
+        for n, kr, kx in ((5, "r5", "x5"), (20, "r20", "x20")):
+            if i + n < len(rows) and rows[i + n][4]:
+                v = (rows[i + n][4] / rows[i][4] - 1) * 100
+                r[kr] = round(v, 1)
+                b = bench_ret(code, rows[i][0], rows[i + n][0])
+                if b is not None:
+                    r[kx] = round(v - b, 1)
+                    n20 += n == 20
+    return n20
 
 
 def main():
@@ -1059,6 +1107,12 @@ def main():
         except Exception as e:  # noqa
             err(f"{c}: {e}")
         time.sleep(0.5)
+    DIAG["rs_x20"] = {}
+    for c in ok:       # 判讀回測：要等全部股票的日 K 都在 YK 裡才能算清單平均
+        try:
+            DIAG["rs_x20"][c] = drift_rows(c, idx[c].get("rs") or [])
+        except Exception as e:  # noqa
+            err(f"回測 {c}: {e}")
     order = [c for c in STOCKS if c in idx]
     idx_p.write_bytes(enc(aes, {"stocks": [idx[c] for c in order], "themes": THEME_META}))
     (RAW / "tdnet.bin").write_bytes(enc(aes, td))
