@@ -937,13 +937,18 @@ def stat_of(d):
 
 
 def cal_of(code, d):
-    """首頁決算日曆用（放進 index.bin）：nx 下次決算 [日期, 會計季, 來源]；lr 最近一次決算的判讀列（同 rd.rows 的最後一列）；rx 那次的隔日漲跌 %"""
+    """首頁決算日曆用（放進 index.bin）：nx 下次決算 [日期, 會計季, 來源]；lr 最近一次決算的判讀列（同 rd.rows 的最後一列）；rx 那次的隔日漲跌 %
+    rs＝判讀總覽頁（#read）用：近 8 季判讀列（同 rd.rows），每列多一個 rx 隔日漲跌 %（還沒有隔日股價就沒有這個鍵）"""
     o = {}
     if d.get("nx"):
         o["nx"] = [d["nx"]["d"], d["nx"]["fis"], d["nx"]["src"]]
     rows = (d.get("rd") or {}).get("rows") or []
     if rows:
         o["lr"] = rows[-1]
+        o["rs"] = []
+        for r in rows:
+            v = k_react(code, r["d"])
+            o["rs"].append(dict(r, rx=v) if v is not None else dict(r))
         rx = k_react(code, rows[-1]["d"])
         if rx is not None:
             o["rx"] = rx
