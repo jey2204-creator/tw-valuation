@@ -727,6 +727,47 @@ def build(code, jq_recs, td_recs, master):
                 updated=NOW_JST.strftime("%Y-%m-%d %H:%M"), last=last, q=q, riv=riv, fc=fc, note=note)
 
 
+# ======================= 首頁／主題頁用的統計（預先算好放進 index.bin，前端只解密一次） =======================
+def stat_of(d):
+    """回傳 {ry 營收年增%, ey 近四季EPS年增%, ek 虧損／轉盈, peg, mtd 本月至今%, ny 單季淨利年增%,
+    pg 營業利益進度%, pgp 去年同期進度%, pk 第幾季累計}；算不出來的鍵不放。規則同台股／美股站的 statOf。
+    q 欄位：2 營收 6 EPS 7 淨利 12 會計年度底 13 第幾季"""
+    o, q, L = {}, d.get("q") or [], d.get("last") or {}
+    if q:
+        lq = q[-1]
+        fy, k = lq[12][:7], lq[13]
+        p = next((x for x in q if x[12][:7] == ym_add(fy, -1) and x[13] == k), None)
+        if p and p[2] and p[2] > 0 and lq[2] is not None:
+            o["ry"] = round((lq[2] / p[2] - 1) * 100, 1)
+        if p and p[7] and p[7] > 0 and lq[7] is not None:
+            o["ny"] = round((lq[7] / p[7] - 1) * 100, 1)
+    if len(q) >= 8:
+        w = q[-8:]
+        nxt = lambda x: (x[12][:7], x[13] + 1) if x[13] < 4 else (ym_add(x[12][:7], 1), 1)
+        if all(nxt(w[i - 1]) == (w[i][12][:7], w[i][13]) for i in range(1, 8)) and all(x[6] is not None for x in w):
+            a, b = sum(x[6] for x in w[4:]), sum(x[6] for x in w[:4])
+            if a <= 0:
+                o["ek"] = "虧損"
+            elif b <= 0:
+                o["ek"] = "轉盈"
+            else:
+                o["ey"] = round((a / b - 1) * 100, 1)
+    if L.get("pe") and o.get("ey") and 0 < o["ey"] <= 300:        # 年增 >300% 是低基期，不算 PEG
+        o["peg"] = round(L["pe"] / o["ey"], 2)
+    r = d.get("riv") or []
+    if len(r) >= 2 and r[-2][1] and r[-1][0] == (L.get("date") or "")[:7]:
+        o["mtd"] = round((r[-1][1] / r[-2][1] - 1) * 100, 1)
+    fc = d.get("fc") or {}
+    if fc.get("hist") and fc.get("ytd"):
+        f_op, a_op = fc["hist"][-1][2], fc["ytd"].get("op")
+        if f_op and f_op > 0 and a_op is not None:
+            o["pg"], o["pk"] = round(a_op / f_op * 100, 1), fc["ytd"]["k"]
+            pp = (fc.get("prior") or {}).get("op")
+            if pp is not None:
+                o["pgp"] = pp
+    return o
+
+
 def main():
     if not PASS or len(PASS) < 8:
         print("❌ 沒有設定 JP_DATA_KEY（至少 8 字）→ 為遵守 J-Quants 條款，不寫出任何資料", file=sys.stderr)
@@ -806,7 +847,7 @@ def main():
             idx[c] = dict(id=c, name=d["name"], jname=d["jname"], theme=d["theme"], tw=d["tw"], cyc=d["cyclical"],
                           close=L["close"], chg=round((L["close"] / L["prev"] - 1) * 100, 2) if L["prev"] else None,
                           pe=L["pe"], pb=L["pb"], fpe=L["fpe"], lq=lq[0] if lq else None, date=L["date"],
-                          cap=L["cap"], rev4=L["rev4"], fx=fx or (idx.get(c) or {}).get("fx"))
+                          cap=L["cap"], rev4=L["rev4"], fx=fx or (idx.get(c) or {}).get("fx"), **stat_of(d))
             d["last"]["fx"] = idx[c]["fx"]
             (OUT / f"{c}.bin").write_bytes(enc(aes, d))
             ok.append(c)
