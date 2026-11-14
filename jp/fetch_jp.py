@@ -731,6 +731,45 @@ def read_block(recs, best, Q):
     return dict(rows=rows[-8:], tr=tr[-5:]) if rows else None
 
 
+JQCAL = {}          # 代號 → J-Quants 決算發表預定日（免費版只給下一個營業日、且以 3／9 月決算公司為主，所以多數時候是空的）
+
+
+def k_react(code, disc):
+    """決算公布後下一個交易日的漲跌 %（收盤 vs 前一收盤）；還沒有隔日股價回 None"""
+    rows = YK.get(code) or []
+    i = next((i for i, r in enumerate(rows) if r[0] > disc), None)
+    return round((rows[i][4] / rows[i - 1][4] - 1) * 100, 1) if i and rows[i - 1][4] else None
+
+
+def next_block(code, best):
+    """下一次決算公布日。日本沒有免費的完整決算行事曆，所以依序：
+    jq＝J-Quants 發表預定日（有就是公司已公告的日期）
+    py＝去年同一季的公布日 ＋ 364 天（同一個星期幾；日本公司每年公布日很固定，通常差不到一週）
+    lag＝沒有去年同季（新上市等）→ 下一季季末 ＋ 上一次「季末到公布」的天數
+    回傳 dict(d 日期, fis 會計季, k, src, pd 去年同季公布日)"""
+    if not best:
+        return None
+    fy, k = max(best)
+    last = best[(fy, k)]
+    nfy, nk = (fy, k + 1) if k < 4 else (ym_add(fy, 1), 1)
+    fis = f"{nfy[2:4]}/{int(nfy[5:7])}期 {nk}Q"
+    c = JQCAL.get(code)
+    if c and c > last["first"]:
+        return dict(d=c, fis=fis, k=nk, src="jq")
+    py = best.get((ym_add(nfy, -1), nk))
+    if py:
+        return dict(d=(D(py["first"]) + dt.timedelta(days=364)).isoformat(), fis=fis, k=nk, src="py", pd=py["first"])
+    end = last.get("per_end") if k < 4 else last.get("fy_end")
+    if end:
+        lag = (D(last["first"]) - D(end)).days
+        e = D(end)
+        m = e.year * 12 + e.month - 1 + 3
+        nxt_end = dt.date(m // 12 + (m % 12 == 11), (m % 12 + 1) % 12 + 1, 1) - dt.timedelta(days=1)   # 三個月後的月底
+        if 0 < lag < 120:
+            return dict(d=(nxt_end + dt.timedelta(days=lag)).isoformat(), fis=fis, k=nk, src="lag")
+    return None
+
+
 def build(code, jq_recs, td_recs, master):
     cfg = CFG[code]
     px, splits = yahoo(code)
@@ -742,6 +781,11 @@ def build(code, jq_recs, td_recs, master):
     except Exception as e:  # noqa   判讀只是附加資訊，算不出來不能拖垮整檔
         rd = None
         err(f"判讀 {code}: {e}")
+    try:
+        nx = next_block(code, best)
+    except Exception as e:  # noqa
+        nx = None
+        err(f"下次決算 {code}: {e}")
     std = Q[-1]["std"] if Q else ""
 
     # 財報多在 15:00 收盤前後公布 → 從公布日的「下一個交易日」起才採用（同 J-Quants 估值，不偷看未來）
@@ -839,14 +883,14 @@ def build(code, jq_recs, td_recs, master):
     chk = [abs(x["eps"] * x["sh"] / x["np"] - 1) < 0.03 for x in Q if x["eps"] and x["sh"] and x["np"]]
     DIAG["stocks"][code] = dict(yname=YNAME.get(code), jname=m.get("CoName"), px_n=len(px), px_last=ld, q_n=len(Q), q_first=Q[0]["cal"] if Q else None,
                                 q_last=Q[-1]["cal"] if Q else None, k_n=sum(map(len, k_split(YK.get(code) or []))), q_src="".join(x["src"] for x in Q),
-                                fc_n=len(fc["hist"]) if fc else 0, fc_fy=fc["fy"] if fc else None, rd_n=len(rd["rows"]) if rd else 0,
+                                fc_n=len(fc["hist"]) if fc else 0, fc_fy=fc["fy"] if fc else None, rd_n=len(rd["rows"]) if rd else 0, nx=[nx["d"], nx["src"]] if nx else None,
                                 eps_np_ok=f"{sum(chk)}/{len(chk)}", splits=[[d, round(n, 4)] for d, n in splits], std=std,
                                 riv_pe=sum(1 for r in riv if r[4]), riv_pb=sum(1 for r in riv if r[5]),
                                 **({"val_vs_jq": val_chk} if val_chk else {}))
     return dict(id=code, name=cfg["zh"], jname=m.get("CoName", ""), sector=m.get("S33Nm", ""), mkt=m.get("MktNm", ""),
                 theme=cfg["theme"], cyclical="C" in cfg["flags"], tw=cfg["tw"], std=std,
                 updated=NOW_JST.strftime("%Y-%m-%d %H:%M"), last=last, q=q, riv=riv, fc=fc, note=note,
-                k=k_split(YK.get(code) or [])[1], rd=rd)
+                k=k_split(YK.get(code) or [])[1], rd=rd, nx=nx)
 
 
 # ======================= 首頁／主題頁用的統計（預先算好放進 index.bin，前端只解密一次） =======================
@@ -892,6 +936,20 @@ def stat_of(d):
     return o
 
 
+def cal_of(code, d):
+    """首頁決算日曆用（放進 index.bin）：nx 下次決算 [日期, 會計季, 來源]；lr 最近一次決算的判讀列（同 rd.rows 的最後一列）；rx 那次的隔日漲跌 %"""
+    o = {}
+    if d.get("nx"):
+        o["nx"] = [d["nx"]["d"], d["nx"]["fis"], d["nx"]["src"]]
+    rows = (d.get("rd") or {}).get("rows") or []
+    if rows:
+        o["lr"] = rows[-1]
+        rx = k_react(code, rows[-1]["d"])
+        if rx is not None:
+            o["rx"] = rx
+    return o
+
+
 def main():
     if not PASS or len(PASS) < 8:
         print("❌ 沒有設定 JP_DATA_KEY（至少 8 字）→ 為遵守 J-Quants 條款，不寫出任何資料", file=sys.stderr)
@@ -933,6 +991,15 @@ def main():
                 err(f"J-Quants fins {c}: {e}")
     else:
         err("沒有 JQUANTS_API_KEY：只用存檔的 J-Quants 資料")
+    if JQ_KEY:
+        try:   # 決算發表預定日：只留追蹤清單、今天以後
+            for r in jq("/equities/earnings-calendar", {}):
+                c, day = str(r.get("Code", ""))[:4], str(r.get("Date", ""))[:10]
+                if c in CFG and day >= TODAY.isoformat():
+                    JQCAL[c] = day
+        except Exception as e:  # noqa
+            err(f"J-Quants 決算預定日: {e}")
+    DIAG["jq_cal"] = len(JQCAL)
     DIAG["jq"] = dict(master=len(master), fins={c: len(jqa.get(c, [])) for c in codes},
                       last_disc={c: max((r["disc"] for r in jqa.get(c, [])), default=None) for c in codes})
     # TDnet
@@ -971,7 +1038,7 @@ def main():
             idx[c] = dict(id=c, name=d["name"], jname=d["jname"], theme=d["theme"], tw=d["tw"], cyc=d["cyclical"],
                           close=L["close"], chg=round((L["close"] / L["prev"] - 1) * 100, 2) if L["prev"] else None,
                           pe=L["pe"], pb=L["pb"], fpe=L["fpe"], lq=lq[0] if lq else None, date=L["date"],
-                          cap=L["cap"], rev4=L["rev4"], fx=fx or (idx.get(c) or {}).get("fx"), **stat_of(d))
+                          cap=L["cap"], rev4=L["rev4"], fx=fx or (idx.get(c) or {}).get("fx"), **stat_of(d), **cal_of(c, d))
             d["last"]["fx"] = idx[c]["fx"]
             (OUT / f"{c}.bin").write_bytes(enc(aes, d))
             kh, kp = k_split(YK.get(c) or [])[0], OUT / "k" / f"{c}.bin"     # 日 K 歷史：內容沒變就不重寫
