@@ -286,6 +286,50 @@ h2.sec small{font-weight:500;letter-spacing:0}
 .lst th[data-k]{cursor:pointer;user-select:none}.lst th.on{color:var(--fg);font-weight:700}
 .dns{flex:none;font:inherit;font-size:12px;font-weight:700;border:1px solid var(--line);border-radius:999px;background:var(--card);color:var(--muted);padding:3px 9px;cursor:pointer;white-space:nowrap}
 #themePage .top .dns{margin-left:auto}
+/* ---- ✏️ 編輯主題：#edit 主題清單、#edit/{id} 單一主題。存在這台裝置的 localStorage jpThemeCfg，跟台股、美股站的設定分開 ---- */
+h2.sec .act{font-size:12.5px;font-weight:700;letter-spacing:0;color:var(--accent);text-decoration:none;white-space:nowrap}#hEdit{margin-left:8px}
+#themePage .top .sp{font-size:13px}#themePage .top .dns+.sp{margin-left:0}
+.ehead{display:flex;justify-content:space-between;align-items:center;gap:8px;padding-top:12px;font-size:13px}
+.ehead a{color:var(--accent);text-decoration:none}
+.ed h1{font-size:22px;font-weight:900;margin:6px 0 0;line-height:1.3}
+.erow{display:flex;align-items:center;gap:6px;padding:8px 0;border-bottom:1px solid var(--line);min-width:0}
+.erow:last-child{border-bottom:0}
+.erow .grow{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;color:var(--fg);text-decoration:none}
+.erow .grow b{font-size:14.5px;overflow-wrap:anywhere}
+.erow .grow small{font-size:11.5px;color:var(--muted)}
+.erow.off .grow{opacity:.45}
+.erow .cd{font-family:var(--f-num);font-size:11.5px;color:var(--muted);font-weight:400;margin-left:2px}
+.tag{font-size:10.5px;font-weight:500;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:0 6px;margin-left:5px;vertical-align:2px;white-space:nowrap}
+.ib{flex:none;font:inherit;font-size:13px;min-width:34px;height:34px;padding:0 10px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--fg);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;text-decoration:none;-webkit-tap-highlight-color:transparent}
+.ib:disabled{opacity:.3;cursor:default}
+.ib.pri{background:var(--accent);border-color:var(--accent);color:var(--card);font-weight:700}
+.ib.warn{color:var(--up);border-color:var(--up)}
+.ib.tg{font-size:12px;padding:0 7px;color:var(--muted)}
+.ib.tg[aria-pressed=true]{color:var(--accent);border-color:var(--accent);font-weight:700}
+.efield{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted);margin-top:14px}
+/* 輸入框一律 16px：iPhone 小於 16px 點下去會自動放大畫面 */
+.efield input,.efield textarea,.erow input{font:inherit;font-size:16px;padding:6px 9px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg);width:100%;min-width:0}
+.efield textarea{font-family:var(--f-num);min-height:96px;resize:vertical}
+.ebar{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.ebar .ib{height:40px;padding:0 16px}
+.drag{flex:none;width:40px;height:40px;display:inline-flex;align-items:center;justify-content:center;color:var(--muted);font-size:20px;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;border-radius:8px}
+.drag:active{cursor:grabbing}
+.erow.ghost{opacity:.35}
+.erow.chosen{background:var(--bg);border-radius:10px}
+.erow.dragging{background:var(--card);box-shadow:0 8px 24px rgba(0,0,0,.25);border-radius:10px}
+.eres{margin-top:6px;background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.eres button{display:grid;grid-template-columns:4.6em 1fr auto;gap:0 10px;align-items:center;width:100%;padding:10px 12px;border:0;border-top:1px solid var(--line);background:none;color:var(--fg);font:inherit;text-align:left;cursor:pointer}
+.eres button:first-child{border-top:0}
+.eres button:disabled{cursor:default;opacity:.5}
+.eres .rid{font-family:var(--f-num);font-weight:600}
+.eres .rn{font-size:12.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.eres .rm{font-size:11.5px;color:var(--muted);white-space:nowrap}
+.eres .rh{font-size:12.5px;color:var(--muted);padding:10px 12px}
+details.ind{background:var(--card);border:1px solid var(--line);border-radius:10px;margin-top:22px}
+details.ind summary{padding:10px 12px;cursor:pointer;display:flex;justify-content:space-between;align-items:baseline;gap:8px;list-style:none;font-size:14px}
+details.ind summary::-webkit-details-marker{display:none}
+details.ind summary span{color:var(--muted);font-size:12px}
+details.ind .in{padding:0 12px 12px}
 body.dense .lst td{padding-block:4px;line-height:1.3}body.dense .lst th{padding-block:4px}
 body.dense .lst .nm{font-size:13.5px}
 body.dense .lst td.sk{max-width:7.6em}
@@ -337,7 +381,7 @@ html{scroll-behavior:smooth}
       <div class="ecal" id="ecalMini"></div>
       <p class="foot" id="fEarn"></p>
     </section>
-    <h2 class="sec"><span>產業主題 <small id="tAsof"></small></span><span><button type="button" class="nfo" id="tLegI" aria-expanded="false" aria-controls="tLeg" aria-label="欄位說明">ⓘ</button><button type="button" class="dns" id="hDense"></button></span></h2>
+    <h2 class="sec"><span>產業主題 <small id="tAsof"></small></span><span><button type="button" class="nfo" id="tLegI" aria-expanded="false" aria-controls="tLeg" aria-label="欄位說明">ⓘ</button><button type="button" class="dns" id="hDense"></button><a class="act" id="hEdit" href="#edit">✏️ 編輯</a></span></h2>
     <div class="tgrid" id="tgrid"></div>
     <p class="legend" id="tLeg" hidden>各主題中位數（<b class="opt">選配</b>題材股不算）。<span id="tLegC"></span>營收年增＝最新一季對比去年同季；EPS 年增＝近四季合計對比前四季；PEG＝本益比 ÷ EPS 年增，<span class="cheap">&lt;1</span>、<span class="pricey">&gt;2</span>；本月至今＝收盤對比上月底。</p>
     <p class="legend" id="tOld" hidden></p>
@@ -349,12 +393,44 @@ html{scroll-behavior:smooth}
 
 <!-- ===== 主題頁：#t/主題代號（與台股／美股站相同） ===== -->
 <div id="themePage" hidden>
-  <div class="top"><a href="#">← 全部主題</a><button type="button" class="dns" id="tDense"></button></div>
+  <div class="top"><a href="#">← 全部主題</a><button type="button" class="dns" id="tDense"></button><a class="sp" id="tEdit" href="#edit">✏️ 編輯這個主題</a></div>
   <h1 id="tName"></h1>
   <p class="tsum" id="tSum"></p>
   <div class="ttw" id="tTw"></div>
   <div class="panel"><div class="tbl"><table class="lst" id="tList"></table></div></div>
   <p class="legend" id="tFoot"></p>
+</div>
+
+<!-- ===== 編輯主題：#edit 清單（排序／隱藏／新增）、#edit/{id} 單一主題（名稱、成份股、細分、選配）。只存在這台裝置 ===== -->
+<div id="editList" class="ed" hidden>
+  <div class="ehead"><a href="#">← 完成</a><span class="meta">存在這台裝置上・跟台股／美股站分開</span></div>
+  <h1>編輯主題</h1>
+  <p class="take">按住右邊 ⠿ 拖曳調整首頁順序；點名稱編輯成份股。</p>
+  <div class="panel" id="olist"></div>
+  <div class="ebar"><a class="ib pri" href="#edit/new">＋ 新增主題</a></div>
+  <details class="ind" id="bkBox"><summary><b>💾 備份／換手機</b><span>複製設定碼</span></summary>
+    <div class="in">
+      <p class="foot">設定只存在這台裝置的這個瀏覽器（加到主畫面的 App 也算另一個）。換手機、清除 Safari 資料前，先複製設定碼存起來（例如貼到備忘錄），之後貼回來按「匯入」。設定碼裡只有主題名稱與股票代號，沒有股價或財報數字。台股、美股站的設定碼不能用在這裡。</p>
+      <label class="efield" for="bk">設定碼<textarea id="bk" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea></label>
+      <div class="ebar"><button type="button" class="ib" id="bkCopy">複製</button><button type="button" class="ib" id="bkLoad">匯入</button><button type="button" class="ib warn" id="bkReset">全部還原預設</button></div>
+      <p class="foot" id="bkMsg" role="status"></p>
+    </div>
+  </details>
+</div>
+<div id="editTheme" class="ed" hidden>
+  <div class="ehead"><a href="#edit" id="eBack">← 取消</a><span class="meta" id="eKind"></span></div>
+  <h1 id="eTitle">編輯主題</h1>
+  <label class="efield" for="eName">主題名稱（開頭可放一個 emoji）<input id="eName" type="text" maxlength="40" placeholder="例：🤖 機器人" autocomplete="off"></label>
+  <div class="efield"><span>成份股（<span id="eCnt">0</span> 檔）・按住 ⠿ 拖曳排序・細分寫這檔在主題裡做什麼</span></div>
+  <div class="panel" id="eStocks"></div>
+  <div class="search" role="search" style="margin-top:10px">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <input id="eQ" type="search" inputmode="search" autocomplete="off" placeholder="加入股票：代號、公司名或台股代號（多檔用空白隔開）" aria-label="加入股票" aria-controls="eRes">
+  </div>
+  <div class="eres" id="eRes" role="listbox" hidden></div>
+  <p class="foot" style="margin-top:8px" id="eNote"></p>
+  <div class="ebar"><button type="button" class="ib pri" id="eSave">儲存</button><button type="button" class="ib warn" id="eDel"></button><button type="button" class="ib" id="eReset" hidden>還原預設成份股</button></div>
+  <p class="foot" id="eMsg" role="status"></p>
 </div>
 
 <!-- ===== 個股頁 ===== -->
@@ -466,6 +542,7 @@ html{scroll-behavior:smooth}
 <div id="pnSheet" hidden role="dialog" aria-modal="true" aria-label="同主題股票"><div class="sh"><div class="grab"></div><div class="hd"><a id="pnBack" href="#"></a><button type="button" id="pnClose">關閉</button></div><ol id="pnList"></ol></div></div>
 <nav id="pnav" aria-label="同主題切換" hidden><div class="in"><button type="button" class="bk" id="pnBk" aria-label="回上一頁"></button><button type="button" class="pv" id="pnPrev"></button><button type="button" class="mid" id="pnMid" aria-haspopup="dialog"></button><button type="button" class="nx" id="pnNext"></button></div></nav>
 
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js" integrity="sha384-BSxuMLxX+FCbTdYec3TbXlnMGEEM2QXTFdtDaveen71o+jswm2J36+xFqp8k4VHM" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js" integrity="sha384-Mx5lkUEQPM1pOJCwFtUICyX45KNojXbkWdYhkKUKsbv391mavbfoAmONbzkgYPzR" crossorigin="anonymous"></script>
 <script>
 const $=id=>document.getElementById(id);
@@ -537,13 +614,13 @@ async function unlock(pw){
   try{await decBytes(b64(META.kcv))}catch(e){KEY=null;throw new Error(`密語不正確（你輸入了 ${[...pw.normalize('NFKC').trim()].length} 個字）。可勾「顯示密語」檢查大小寫、空白與符號`)}
   try{localStorage.setItem('jpKey',JSON.stringify({s:META.salt,k:ub64(bits)}))}catch(e){}
 }
-function showLock(msg){['home','stock','themePage','pnav'].forEach(id=>$(id).hidden=true);document.body.classList.remove('pn');$('lock').hidden=false;if(msg){$('lockErr').textContent=msg;$('lockErr').hidden=false}}
+function showLock(msg){['home','stock','themePage','pnav','editList','editTheme'].forEach(id=>$(id).hidden=true);document.body.classList.remove('pn');$('lock').hidden=false;if(msg){$('lockErr').textContent=msg;$('lockErr').hidden=false}}
 $('lockForm').addEventListener('submit',async e=>{e.preventDefault();const pw=$('pw').value.trim();if(!pw)return;
   $('pwBtn').disabled=true;$('pwBtn').textContent='驗證中…';$('lockErr').hidden=true;
   try{await unlock(pw);$('pw').value='';$('lock').hidden=true;await start()}catch(err){$('lockErr').textContent=err.message;$('lockErr').hidden=false}
   $('pwBtn').disabled=false;$('pwBtn').textContent='解鎖'});
 $('pwShow').addEventListener('change',e=>{$('pw').type=e.target.checked?'text':'password'});
-$('lockBtn').addEventListener('click',()=>{try{localStorage.removeItem('jpKey')}catch(e){}KEY=null;IDX=[];BY={};THEMES=[];D=null;history.replaceState(null,'',location.pathname+location.search);showLock()});
+$('lockBtn').addEventListener('click',()=>{try{localStorage.removeItem('jpKey')}catch(e){}KEY=null;IDX=[];BY={};THEMES=[];BASE=[];D=null;history.replaceState(null,'',location.pathname+location.search);showLock()});
 
 // ---------- 共用 ----------
 function bands(vals){
@@ -1015,7 +1092,25 @@ function buildThemes(){
   else{g=[];IDX.forEach(s=>{let t=g.find(x=>x.name===s.theme);if(!t)g.push(t={name:s.theme,tw:s.tw||[],stocks:[]});t.stocks.push([s.id,'',false])})}   // 舊資料沒有 themes：用每檔的主要主題分組
   g=g.filter(t=>t.stocks.length);
   g.forEach((t,i)=>{t.id=TID[t.name]||ORD.byName[t.name]||'x'+i});
-  THEMES=g.map((t,i)=>[rankOf(t.name),i,t]).sort((a,b)=>a[0]-b[0]||a[1]-b[1]).map(x=>x[2]);
+  BASE=g.map((t,i)=>[rankOf(t.name),i,t]).sort((a,b)=>a[0]-b[0]||a[1]-b[1]).map(x=>x[2]);   // 內建主題（fetch_jp.py 的 THEMES），預設順序跟台股首頁一樣
+  applyCfg();
+}
+// ---------- ✏️ 自訂主題設定：localStorage jpThemeCfg = {site:'jp', order:[id…], hidden:[id…], themes:{id:{id,name,stocks:[[代號,細分,選配]]}}, at} ----------
+// themes 只存「改過的內建主題」與「自己新增的主題」；沒改過的內建主題一律用 index.bin 最新的成份股。裡面只有主題名稱與代號，沒有 J-Quants 數值
+const JKEY='jpThemeCfg';let BASE=[];
+function cfgGet(){let c=null;try{c=JSON.parse(localStorage.getItem(JKEY))}catch(e){}if(!c||typeof c!=='object')c={};
+  const th={};if(c.themes&&typeof c.themes==='object')for(const [k,v] of Object.entries(c.themes)){if(!/^[a-z0-9_-]+$/.test(k)||!v||typeof v.name!=='string'||!Array.isArray(v.stocks))continue;
+    th[k]={id:k,name:v.name.slice(0,40),stocks:v.stocks.filter(x=>Array.isArray(x)&&typeof x[0]==='string'&&x[0]).map(x=>[x[0].toUpperCase(),String(x[1]??'').slice(0,30),!!x[2]])}}
+  const ls=a=>Array.isArray(a)?a.filter(x=>typeof x==='string'):[];
+  return {order:ls(c.order),hidden:ls(c.hidden),themes:th}}
+function cfgSave(c){try{localStorage.setItem(JKEY,JSON.stringify({site:'jp',order:c.order,hidden:c.hidden,themes:c.themes,at:Date.now()}))}catch(e){}applyCfg()}   // at＝這次修改時間（之後雲端同步用來判斷哪份比較新）
+// 全部主題（含隱藏的）：順序＝自己拖過的 order，其餘接在後面；清單裡已經沒有的代號自動略過
+function allThemes(){
+  const c=cfgGet(),bm=Object.fromEntries(BASE.map(t=>[t.id,t]));
+  const ids=[...c.order,...BASE.map(t=>t.id),...Object.keys(c.themes)].filter((v,i,a)=>a.indexOf(v)===i&&(bm[v]||c.themes[v]));
+  return ids.map(i=>{const b=bm[i],o=c.themes[i];
+    return {tw:[],...(b||{}),...(o?{name:o.name,stocks:o.stocks.filter(x=>BY[x[0]])}:{}),id:i,hidden:c.hidden.includes(i),edited:!!(o&&b),custom:!b}})}
+function applyCfg(){THEMES=allThemes().filter(t=>!t.hidden&&t.stocks.length);
   ROLES={};THEMES.forEach(t=>t.stocks.forEach(([c,role])=>{if(role)ROLES[c]=(ROLES[c]?ROLES[c]+' ':'')+role.toLowerCase()}));
 }
 const HAS_ST=()=>IDX.some(s=>s.ry!=null||s.ey!=null||s.ek||s.mtd!=null);   // index.bin 是不是新版 fetch_jp.py 產的（有預算欄位）
@@ -1074,7 +1169,7 @@ const topOf=t=>{const all=coreOf(t);if(all.length<2)return null;const rc=rkOf(al
 function themeRender(tid){
   const t=THEMES.find(x=>x.id===tid);if(!t){location.replace('#');return}
   CUR_T=tid;LAST_T=tid;try{sessionStorage.setItem('jpLastTheme',tid)}catch(e){}
-  document.title=`${bare(t.name)} 日股估值看板`;$('tName').textContent=t.name;
+  document.title=`${bare(t.name)} 日股估值看板`;$('tName').textContent=t.name;$('tEdit').href='#edit/'+tid;
   const it=coreOf(t),A={};['ry','ey','pe','peg','pb','mtd','pg'].forEach(k=>A[k]=agg(it,k));
   const b=(a,f,c)=>a.v==null?'—':`<b class="${c||''}">${f(a.v)}</b>${cvT(a)}`;
   const hasOpt=it.length<t.stocks.length,tot=it.reduce((a,s)=>a+(s.cap||0),0),fx=it.find(s=>s.fx)?.fx,top=topOf(t);
@@ -1155,10 +1250,12 @@ function homeRender(){
   // 沒打字：產業主題卡；有打字：符合的個股清單（依主題分組）
   $('tsec').hidden=!!v;$('gLegend').hidden=!v;
   if(!v){$('groups').innerHTML='';cardsRender();return}
-  $('groups').innerHTML=THEMES.map(t=>{
+  const inT=new Set(THEMES.flatMap(t=>t.stocks.map(x=>x[0]))),lone=ms.filter(s=>!inT.has(s.id));
+  const GT=lone.length?[...THEMES,{id:'',name:'未分類（不在顯示中的主題）',tw:[],stocks:lone.map(s=>[s.id,'',false])}]:THEMES;
+  $('groups').innerHTML=GT.map(t=>{
     const items=t.stocks.filter(([c])=>hit.has(c));if(!items.length)return '';
     const all=coreOf(t),rc=rkOf(all,'cap'),top=topOf(t);
-    return `<div class="grp"><h3><a href="#t/${t.id}" style="color:inherit;text-decoration:none">${esc(t.name)} ›</a></h3>`+
+    return `<div class="grp"><h3>${t.id?`<a href="#t/${t.id}" style="color:inherit;text-decoration:none">${esc(t.name)} ›</a>`:esc(t.name)}</h3>`+
     (t.tw.length?`<div class="gtw">台股：${t.tw.map(([c,n])=>`<a href="../#${c}">${c} ${esc(n)}</a>`).join('、')}</div>`:'')+
     items.map(([c,role,opt])=>{const s=BY[c],col=s.chg>0?'var(--up)':s.chg<0?'var(--down)':'var(--muted)',r=opt?null:rc(s);
       return `<a class="it" href="#${s.id}"><span class="t">${s.id}</span><span class="n">${s===top?'👑 ':''}${esc(s.name||'')}${s.cyc?' <span class="pill">循環</span>':''}${role||opt?`<small>${opt?'<span class="opt">選配</span>':''}${esc(role||'')}</small>`:s.jname&&s.jname!==s.name?`<small>${esc(s.jname)}</small>`:''}<small class="cap">${capY(s.cap)}${r&&r<=3&&all.length>1?` <b>#${r}</b>`:''}</small></span>`+
@@ -1174,18 +1271,21 @@ let HOMEY=0;
 function route(){
   if(!KEY)return;
   const raw=decodeURIComponent(location.hash.slice(1)),id=raw.toUpperCase();
-  const tm=/^t\/([a-z0-9_-]+)$/i.exec(raw),tid=tm?tm[1].toLowerCase():null,stk=!tid&&isStk(id),h=tid?'t/'+tid:stk?id:'';
+  const em=/^edit(?:\/([a-z0-9_-]+))?$/.exec(raw);   // 編輯頁 #edit、#edit/{主題}
+  const tm=/^t\/([a-z0-9_-]+)$/i.exec(raw),tid=tm?tm[1].toLowerCase():null,stk=!tid&&!em&&isStk(id),h=em?raw:tid?'t/'+tid:stk?id:'';
   bkTrack(h);
-  $('themePage').hidden=!tid;
+  $('themePage').hidden=!tid;$('editList').hidden=!em||!!em[1];$('editTheme').hidden=!em||!em[1];
   if(!stk){$('pnav').hidden=true;document.body.classList.remove('pn');pnShut();qToggle(false)}
   if(tid&&VPREV==='home')HOMEY=scrollY;   // 從首頁點卡片進主題：記住首頁捲到哪
-  if(tid){$('stock').hidden=true;$('home').hidden=true;themeRender(tid);scrollTo(0,0)}
+  if(em){$('stock').hidden=true;$('home').hidden=true;document.title='編輯主題';if(em[1])openEditor(em[1],HPREV);else renderOrder();scrollTo(0,0)}
+  else if(tid){$('stock').hidden=true;$('home').hidden=true;themeRender(tid);scrollTo(0,0)}
   else if(stk){const k=KEEP;KEEP=null;
     if(!D||D.id!==id){if(!k)scrollTo(0,0);load(id).then(()=>{if(k)requestAnimationFrame(()=>goSec(k))})}
     else{$('home').hidden=true;$('stock').hidden=false;pnPaint(id);backPaint(id);setTimeout(()=>{Object.values(charts).forEach(c=>c.resize());alignX()},0);k?goSec(k):scrollTo(0,0)}}
   else{$('stock').hidden=true;$('home').hidden=false;document.title='日股估值看板';homeRender();
+    if(VPREV==='edit')requestAnimationFrame(()=>scrollTo(0,$('tsec').getBoundingClientRect().top+scrollY-8));   // 編輯完回首頁：停在主題卡
     if(VPREV==='theme'){const y=HOMEY,pt=HPREV;requestAnimationFrame(()=>{scrollTo(0,y);const c=document.querySelector(`a.tcard[href="#${pt}"]`)||document.querySelector(`.tlt tr[data-t="${(pt||'').replace(/^t\//,'')}"]`);if(c){c.classList.remove('bkflash');void c.offsetWidth;c.classList.add('bkflash')}})}}
-  bkRestore(h);VPREV=stk?'stock':tid?'theme':'home';HPREV=h;
+  bkRestore(h);VPREV=stk?'stock':em?'edit':tid?'theme':'home';HPREV=h;
 }
 // ---------- 底部導覽列：依目前主題（剛看的主題頁，或首頁順序第一個有它的主題）的成份股順序上下檔切換，並停在同一張圖 ----------
 const nameOf=id=>(BY[id]&&BY[id].name)||id;
@@ -1262,6 +1362,99 @@ $('q').addEventListener('focus',()=>{if($('sug').innerHTML)$('sug').hidden=false
 document.addEventListener('click',e=>{if(!e.target.closest('.search,.sug'))$('sug').hidden=true});
 $('sug').addEventListener('click',()=>{$('sug').hidden=true;$('q').blur()});
 $('chips').addEventListener('click',e=>{const a=e.target.closest('a');if(a){e.preventDefault();goSec(a.getAttribute('href').slice(1))}});
+
+// ---------- ✏️ 編輯主題（#edit 清單、#edit/{id} 單一主題）：存在這台裝置，跟台股／美股站分開 ----------
+let ED=null,delArm=0,resetArm=0;
+function renderOrder(){
+  const A=allThemes();
+  $('olist').innerHTML=A.map(t=>{const o=t.stocks.filter(x=>x[2]).length;return `<div class="erow${t.hidden?' off':''}" data-id="${t.id}">
+    <a class="grow" href="#edit/${t.id}"><b>${esc(t.name)}${t.custom?'<span class="tag">自訂</span>':t.edited?'<span class="tag">已修改</span>':''}</b><small>${t.stocks.length} 檔${o?`（選配 ${o} 檔）`:''}${t.hidden?'・已隱藏':''}</small></a>
+    <button type="button" class="ib" data-hide aria-label="${t.hidden?'在首頁顯示':'從首頁隱藏'} ${esc(t.name)}">${t.hidden?'顯示':'隱藏'}</button><span class="drag" aria-hidden="true">⠿</span></div>`}).join('');
+  $('bk').value=JSON.stringify({site:'jp',...cfgGet()});$('bkMsg').textContent='';resetArm=0;
+}
+$('olist').addEventListener('click',e=>{const b=e.target.closest('button[data-hide]');if(!b)return;
+  const id=b.closest('.erow').dataset.id,c=cfgGet();c.order=allThemes().map(t=>t.id);
+  c.hidden=c.hidden.includes(id)?c.hidden.filter(x=>x!==id):[...c.hidden,id];cfgSave(c);renderOrder()});
+function openEditor(id,from){
+  const isNew=id==='new',t=isNew?null:allThemes().find(x=>x.id===id);
+  if(!isNew&&!t){location.replace('#edit');return}
+  ED={id:isNew?'my'+Date.now().toString(36):id,isNew,custom:isNew||t.custom,edited:!!(t&&t.edited),hidden:!!(t&&t.hidden),stocks:isNew?[]:t.stocks.map(x=>[x[0],x[1]||'',!!x[2]])};
+  $('eTitle').textContent=isNew?'新增主題':'編輯主題';$('eKind').textContent=isNew||t.custom?'自訂主題':'內建主題';
+  $('eName').value=isNew?'':t.name;delArm=0;
+  $('eDel').hidden=isNew;$('eDel').textContent=ED.custom?'刪除主題':ED.hidden?'在首頁顯示':'從首頁隱藏';
+  $('eReset').hidden=!ED.edited;$('eMsg').textContent='';$('eQ').value='';eSearch();
+  $('eNote').innerHTML=`只能加入追蹤清單內的 ${IDX.length} 檔（要加新股票請改 fetch_jp.py 的 THEMES）；同一檔可以放進多個主題。<b class="opt">選配</b>＝題材股，點亮後不列入這個主題的排名、👑 與中位數。`;
+  $('eBack').href=!isNew&&from&&/^t\//.test(from)?'#'+from:'#edit';   // 從主題頁進來就回主題頁
+  drawStocks();if(isNew)setTimeout(()=>$('eName').focus(),50);
+}
+function drawStocks(){
+  const n=ED.stocks.length;$('eCnt').textContent=n;
+  $('eStocks').innerHTML=n?ED.stocks.map(([c,r,o],i)=>`<div class="erow">
+    <div class="grow"><b>${esc(nameOf(c))}<span class="cd">${c}</span></b><input data-i="${i}" value="${esc(r)}" maxlength="30" placeholder="細分（選填），例：塗佈顯影" aria-label="${esc(nameOf(c))} 細分"></div>
+    <button type="button" class="ib tg" data-opt="${i}" aria-pressed="${!!o}" aria-label="${esc(nameOf(c))} 設為選配">選配</button><button type="button" class="ib warn" data-rm="${i}" aria-label="移除 ${esc(nameOf(c))}">✕</button><span class="drag" aria-hidden="true">⠿</span></div>`).join('')
+    :'<p class="foot" style="padding:10px 0">還沒有成份股，用下面的搜尋框加入。</p>';
+}
+function syncRoles(){$('eStocks').querySelectorAll('input[data-i]').forEach(inp=>{const r=ED.stocks[+inp.dataset.i];if(r)r[1]=inp.value})}
+$('eStocks').addEventListener('click',e=>{const o=e.target.closest('button[data-opt]');
+  if(o){syncRoles();const r=ED.stocks[+o.dataset.opt];r[2]=!r[2];drawStocks();$('eMsg').textContent=`${nameOf(r[0])} ${r[2]?'設為選配（不列入排名與中位數）':'改回核心成份股'}，記得按「儲存」`;return}
+  const b=e.target.closest('button[data-rm]');if(!b)return;syncRoles();
+  const [c]=ED.stocks.splice(+b.dataset.rm,1);drawStocks();$('eMsg').textContent=`已移除 ${nameOf(c[0])}，記得按「儲存」`});
+// 加入股票：跟首頁搜尋同一套比對（代號、中日文名、台股代號）
+function eSearch(){
+  const v=$('eQ').value.trim(),box=$('eRes');if(!v||!ED){box.hidden=true;box.innerHTML='';return}
+  const has=new Set(ED.stocks.map(x=>x[0])),ms=matches(v).slice(0,10);
+  // 一次貼多檔：用空白、逗號或頓號隔開的代號（例：8035 6857 6146）→ 顯示「一次加入 N 檔」
+  const tk=[...new Set(v.toUpperCase().split(/[\s,，、;；]+/).filter(Boolean))];
+  if(tk.length>1){const ok=tk.filter(t=>BY[t]&&!has.has(t)),bad=tk.filter(t=>!BY[t]),dup=tk.filter(t=>has.has(t));
+    box.innerHTML=(ok.length?`<button type="button" role="option" data-bulk="${ok.join(' ')}"><span class="rid">＋${ok.length} 檔</span><span class="rn">一次加入：${ok.map(t=>esc(nameOf(t))).join('、')}</span></button>`:'')+
+      (dup.length?`<div class="rh">已在清單：${dup.join('、')}</div>`:'')+(bad.length?`<div class="rh">不在追蹤清單：${esc(bad.join('、'))}（不會加入）</div>`:'');
+    box.hidden=false;return}
+  box.innerHTML=ms.length?ms.map(s=>{const inl=has.has(s.id);
+    return `<button type="button" role="option" data-id="${s.id}"${inl?' disabled':''}><span class="rid">${s.id}</span><span class="rn">${esc(s.name||'')}</span><span class="rm">${inl?'已在清單':esc(bare(s.theme||''))}</span></button>`}).join('')
+    :`<div class="rh">找不到「${esc(v)}」：日股站只有追蹤清單內的 ${IDX.length} 檔</div>`;
+  box.hidden=false}
+$('eQ').addEventListener('input',eSearch);
+$('eQ').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();const b=$('eRes').querySelector('button:not([disabled])');if(b)b.click()}if(e.key==='Escape'){$('eQ').value='';eSearch()}});
+$('eRes').addEventListener('mousedown',e=>e.preventDefault());   // 點結果時輸入框不先失焦，手機鍵盤不會收起又彈出
+$('eRes').addEventListener('click',e=>{const k=e.target.closest('button[data-bulk]');if(k){syncRoles();const ids=k.dataset.bulk.split(' ');
+    ids.forEach(id=>{if(!ED.stocks.some(x=>x[0]===id))ED.stocks.push([id,'',false])});$('eQ').value='';eSearch();drawStocks();
+    $('eMsg').textContent=`已加入 ${ids.length} 檔，可拖曳 ⠿ 調整順序，記得按「儲存」`;return}
+  const b=e.target.closest('button[data-id]');if(!b||b.disabled)return;syncRoles();
+  const id=b.dataset.id;ED.stocks.push([id,'',false]);$('eQ').value='';eSearch();drawStocks();
+  $('eMsg').textContent=`已加入 ${nameOf(id)}，記得按「儲存」`;
+  const r=$('eStocks').lastElementChild;if(r)r.scrollIntoView({block:'nearest'})});
+$('eSave').addEventListener('click',()=>{
+  syncRoles();const name=$('eName').value.trim();
+  if(!name){$('eMsg').textContent='請填主題名稱';$('eName').focus();return}
+  if(!ED.stocks.length){$('eMsg').textContent='請至少加入一檔股票';$('eQ').focus();return}
+  const c=cfgGet(),b=BASE.find(t=>t.id===ED.id),st=ED.stocks.map(([a,r,o])=>[a,r.trim(),!!o]);
+  if(b&&b.name===name&&JSON.stringify(b.stocks)===JSON.stringify(st))delete c.themes[ED.id];   // 改回跟預設一樣：不算改過
+  else c.themes[ED.id]={id:ED.id,name,stocks:st};
+  if(ED.isNew){if(!c.order.length)c.order=allThemes().map(t=>t.id);c.order=[...c.order.filter(i=>i!==ED.id),ED.id]}
+  cfgSave(c);
+  location.hash=ED.hidden?'edit':'t/'+ED.id});
+$('eDel').addEventListener('click',()=>{
+  const c=cfgGet();
+  if(ED.custom){if(Date.now()-delArm>4000){delArm=Date.now();$('eMsg').textContent='4 秒內再按一次「刪除主題」確認';return}
+    delete c.themes[ED.id];c.order=c.order.filter(i=>i!==ED.id);c.hidden=c.hidden.filter(i=>i!==ED.id);cfgSave(c);location.hash='edit';return}
+  if(!c.order.length)c.order=allThemes().map(t=>t.id);
+  c.hidden=c.hidden.includes(ED.id)?c.hidden.filter(i=>i!==ED.id):[...c.hidden,ED.id];cfgSave(c);location.hash='edit'});
+$('eReset').addEventListener('click',()=>{const c=cfgGet();delete c.themes[ED.id];cfgSave(c);openEditor(ED.id,$('eBack').getAttribute('href').slice(1));$('eMsg').textContent='已還原成預設成份股'});
+// 設定碼：複製／匯入／全部還原（部分 App 不准 confirm()，確認一律「再按一次」）
+$('bkCopy').addEventListener('click',async()=>{try{await navigator.clipboard.writeText($('bk').value);$('bkMsg').textContent='已複製設定碼'}catch(e){$('bk').focus();$('bk').select();$('bkMsg').textContent='請長按選取後複製'}});
+$('bkLoad').addEventListener('click',()=>{let c=null;try{c=JSON.parse($('bk').value)}catch(e){}
+  if(!c||typeof c!=='object'||!('themes' in c)){$('bkMsg').textContent='設定碼格式不對：請貼上完整的設定碼（{ 開頭、} 結尾）';return}
+  if(c.site!=='jp'){$('bkMsg').textContent=`這是${c.site==='us'?'美股':'台股'}站的設定碼，日股站不能用`;return}
+  try{localStorage.setItem(JKEY,JSON.stringify(c))}catch(e){}cfgSave(cfgGet());renderOrder();
+  $('bkMsg').textContent=`已匯入（${allThemes().length} 個主題，首頁顯示 ${THEMES.length} 個）`});
+$('bkReset').addEventListener('click',()=>{if(Date.now()-resetArm>4000){resetArm=Date.now();$('bkMsg').textContent='會刪除所有自訂主題、排序與隱藏。4 秒內再按一次確認';return}
+  cfgSave({order:[],hidden:[],themes:{}});renderOrder();$('bkMsg').textContent='已還原預設'});   // 存一份空設定（而不是刪掉），之後雲端同步才會把「還原」帶到另一台
+// 拖曳排序（按住右邊 ⠿）
+const SORT={handle:'.drag',draggable:'.erow',animation:160,ghostClass:'ghost',chosenClass:'chosen',dragClass:'dragging',forceFallback:true,fallbackOnBody:true,fallbackTolerance:3,scroll:true,scrollSensitivity:80,scrollSpeed:12,bubbleScroll:true};
+if(window.Sortable){
+  Sortable.create($('olist'),{...SORT,onEnd(){const c=cfgGet();c.order=[...$('olist').querySelectorAll('.erow')].map(r=>r.dataset.id);cfgSave(c);renderOrder()}});
+  Sortable.create($('eStocks'),{...SORT,onEnd(){syncRoles();ED.stocks=[...$('eStocks').querySelectorAll('input[data-i]')].map(inp=>{const r=ED.stocks[+inp.dataset.i];return [r[0],inp.value,r[2]]});drawStocks()}});
+}
 
 // ---------- 啟動：解鎖 → index.bin（只解密這一個檔，首頁與主題頁的數字都在裡面）→ 路由 ----------
 async function start(){
