@@ -827,8 +827,9 @@ const rdBaseOk=z=>z.pgp!=null&&z.pgp>=0&&z.pgp<=200,rdBase=z=>rdBaseOk(z)?z.pgp:
 function rdVerdict(z){   // → [pill class, 標題, 類別：1 正面／0 中性／−1 負面／null 無法判讀]
   if(!z.m||z.a==null)return ['','⚪ 無公司預估',null];
   if(z.k===4){
+    if(z.a<0&&z.f0>0)return ['bad','🔴 全年轉虧，遠低於公司預估',-1];   // 預估獲利、實績虧損：達成率的百分比沒有意義（會算出 −300% 這種數字），直接判最差
     if(z.gd!=null)return z.gd>=5?['ok','🟢 新年度預估成長',1]:z.gd>-5?['','⚪ 新年度預估持平',0]:z.gd>-15?['mid','🟠 新年度預估衰退',-1]:['bad','🔴 新年度預估大幅衰退',-1];
-    if(z.ach!=null)return z.ach>=3?['ok','🟢 全年優於公司預估',1]:z.ach>-3?['','⚪ 全年符合公司預估',0]:['mid','🟠 全年低於公司預估',-1];
+    if(z.ach!=null)return z.ach>=3?['ok','🟢 全年優於公司預估',1]:z.ach>-3?['','⚪ 全年符合公司預估',0]:z.ach>-20?['mid','🟠 全年低於公司預估',-1]:['bad','🔴 全年大幅低於公司預估',-1];
     return ['','⚪ 無公司預估',null]}
   if(z.rev!=null&&Math.abs(z.rev)>=3)return z.rev>=10?['ok','🟢 大幅上修全年預估',1]:z.rev>0?['ok','🟢 上修全年預估',1]:z.rev>-10?['mid','🟠 下修全年預估',-1]:['bad','🔴 大幅下修全年預估',-1];
   if(z.f==null)return ['','⚪ 無公司預估',null];
@@ -841,7 +842,7 @@ function renderBeat(){
   el.hidden=!has;if(chip)chip.hidden=!has;if(!has)return;
   const mu=css('--muted'),up=css('--up'),dn=css('--down');
   const sg=v=>v==null?'':v>0?'vu':v<0?'vd':'',pp=v=>v==null?'—':(v>0?'+':v<0?'−':'')+fmt(Math.abs(v),1)+'pp',pc=v=>v==null?'—':`${v>=0?'+':'−'}${Math.abs(v).toFixed(1)}%`,sg5=v=>v==null||Math.abs(v)<5?'':sg(v);   // 進度差不到 5pp 不上色
-  const R=rows.map(z=>({...z,rx:rdReact(z.d),V:rdVerdict(z),base:z.k===4||!z.m?null:rdBase(z)})),z=R[R.length-1],V=z.V,mn=RDM[z.m]||'營業利益',fy=z.k===4,loss=!fy&&z.m&&z.f!=null&&z.f<=0;
+  const R=rows.map(z=>({...z,rx:rdReact(z.d),V:rdVerdict(z),base:z.k===4||!z.m?null:rdBase(z)})),z=R[R.length-1],V=z.V,mn=RDM[z.m]||'營業利益',fy=z.k===4,flip=fy&&z.a<0&&z.f0>0,loss=!fy&&z.m&&z.f!=null&&z.f<=0;
   const gap=!fy&&z.pg!=null?+(z.pg-z.base).toFixed(1):null,pend=z.rx==null&&KD&&KD.length&&z.d>=KD[KD.length-1][0];
   const bb=bbOf(Q[Q.length-1]);
   let line,why=[];
@@ -855,7 +856,8 @@ function renderBeat(){
     if(z.a>=0)why.push(`⚠️ 累計還在獲利，全年預估卻是虧損：公司等於預告剩下 ${4-z.k} 季合計要虧約 ${okuT(gapL)} ${okuU()}（可能含減損等一次性損失）。這是壞消息，不要因為「累計有賺」就當成優於預期。`);
     if(z.a<z.f)why.push(`⚠️ 累計虧損已超過全年預估，代表公司預期剩下 ${4-z.k} 季合計要獲利約 ${okuT(-gapL)} ${okuU()}。做不到就會下修；判斷時看的是下一季能不能轉盈，不是這一季虧多少。`)}
   else if(fy){
-    line=`${z.cal}（${z.fis}）全年${mn} ${okuT(z.a)} ${okuU()}${z.ach!=null?`，對 3Q 時公司預估 <b class="${sg(z.ach)}">${pc(z.ach)}</b>`:''}${z.gd!=null?`；新年度公司預估 ${okuT(z.f)}（對剛公布的實績 <b class="${sg(z.gd)}">${pc(z.gd)}</b>）`:'；公司未公布新年度預估'}`;
+    line=`${z.cal}（${z.fis}）全年${mn} ${okuT(z.a)} ${okuU()}${flip?`，3Q 時公司預估還是獲利 ${okuT(z.f0)}，<b class="vd">由盈轉虧</b>`:z.ach!=null?`，對 3Q 時公司預估 <b class="${sg(z.ach)}">${pc(z.ach)}</b>`:''}${z.gd!=null?`；新年度公司預估 ${okuT(z.f)}（對剛公布的實績 <b class="${sg(z.gd)}">${pc(z.gd)}</b>）`:'；公司未公布新年度預估'}`;
+    if(flip)why.push('⚠️ 公司在 3Q 時還預估全年獲利，結果全年虧損。這種落差通常來自 4Q 一次認列的損失（減損、重整、會計更正），要先弄清楚是一次性還是本業惡化，再看新年度預估。');
     why.push('年報季看兩件事：①全年實績有沒有達到公司自己的預估（±3% 內算符合）；②新年度預估對剛出爐的實績是成長還是衰退（±5% 內算持平）——日股財報後的股價多半跟著②走，不是①。')}
   else{
     line=`${z.cal}（${z.fis}）${z.k}Q 累計${mn} ${okuT(z.a)} ${okuU()}`+(z.pg!=null?`，占全年預估 <strong>${fmt(z.pg,0)}%</strong>（${rdBaseOk(z)?`去年同期 ${fmt(z.pgp,0)}%`:`${z.pgp!=null?'去年同期不可比':'無去年同期'}，對照 ${z.k*25}%`}，<b class="${sg5(gap)}">${pp(gap)}</b>）`:'')+(z.rev!=null&&Math.abs(z.rev)>=0.05?`；全年預估 ${okuT(z.f0)} → ${okuT(z.f)}（<b class="${sg(z.rev)}">${pc(z.rev)}</b>）`:z.f!=null?'；全年預估未修正':'');
@@ -877,14 +879,14 @@ function renderBeat(){
     ['全年預估修正','<b>—</b>','公司未給全年預估']]:loss?[
     ['累計 vs 全年預估',`<b class="${z.a<z.f?'vd':''}">${okuT(z.a)}</b>`,`全年預估 ${okuT(z.f)}`],
     ['全年預估修正',`<b class="${sg(z.rev)}">${z.rev==null?'—':Math.abs(z.rev)<0.05?'未修正':z.rev>0?'虧損縮小':'虧損擴大'}</b>`,z.rev!=null&&Math.abs(z.rev)>=0.05?`${okuT(z.f0)}→${okuT(z.f)}`:`預估 ${okuT(z.f)}`]]:fy?[
-    ['全年實績 vs 預估',`<b class="${sg(z.ach)}">${pc(z.ach)}</b>`,z.f0!=null?`預估 ${okuT(z.f0)}→實績 ${okuT(z.a)}`:'無 3Q 時預估'],
+    ['全年實績 vs 預估',`<b class="${sg(z.ach)}">${flip?'轉虧':pc(z.ach)}</b>`,z.f0!=null?`預估 ${okuT(z.f0)}→實績 ${okuT(z.a)}`:'無 3Q 時預估'],
     ['新年度預估',`<b class="${sg(z.gd)}">${z.gd==null?'—':pc(z.gd)}</b>`,z.gd!=null?`${mn} ${okuT(z.f)} ${okuU()}`:'公司未公布']]:[
     ['進度 vs 去年同期',`<b class="${sg5(gap)}">${z.pg==null?'—':fmt(z.pg,0)+'%'}</b>`,z.pg==null?'無法計算':`${rdBaseOk(z)?'去年 '+fmt(z.pgp,0)+'%':'基準 '+z.k*25+'%'}（${pp(gap)}）`],
     ['全年預估修正',`<b class="${sg(z.rev)}">${z.rev==null?'—':Math.abs(z.rev)<0.05?'未修正':pc(z.rev)}</b>`,z.rev!=null&&Math.abs(z.rev)>=0.05?`${okuT(z.f0)}→${okuT(z.f)}`:`${mn} ${okuT(z.f)} ${okuU()}`]]).concat([
     ['隔日反應',`<b class="${sg(z.rx)}">${z.rx==null?(pend?'未開盤':'—'):pc(z.rx)}</b>`,hs.length?`近${hs.length}季 正面${po.length}・負面${ne.length}`:'無歷史']
   ]).map(([a,b,d])=>`<div><span>${a}</span>${b}<i>${d||'&nbsp;'}</i></div>`).join('');
   // 圖：上層＝進度率（實心柱：紅＝判讀正面／綠＝負面／灰＝中性）＋去年同期進度（虛線空心柱）；年報季的柱＝全年實績 ÷ 3Q 時預估，虛線框＝100%。下層＝隔日漲跌
-  const val=r=>r.k===4?(r.ach!=null?+(100+r.ach).toFixed(1):null):r.f>0&&r.a>=0?r.pg:null,ref=r=>r.k===4?(r.ach!=null?100:null):r.pg!=null&&r.f>0&&r.a>=0?r.base:null;   // 這一季自己算不出進度（虧損、沒預估）就不畫基準框，免得只剩一個空框
+  const val=r=>r.k===4?(r.ach!=null&&r.a>=0?+(100+r.ach).toFixed(1):null):r.f>0&&r.a>=0?r.pg:null,ref=r=>r.k===4?(r.ach!=null&&r.a>=0?100:null):r.pg!=null&&r.f>0&&r.a>=0?r.base:null;   // 這一季自己算不出進度（虧損、沒預估）就不畫基準框，免得只剩一個空框
   const bx=css('--fg');   // 去年同期框用文字色：中性的灰柱和框同色時，框比柱矮就完全看不到
   const ch=mk('cBeat'),o=base(),LG={...o.legend,left:0,itemGap:8,itemWidth:10,itemHeight:7,textStyle:{...o.legend.textStyle,fontSize:10.5}};
   o.legend=[{...LG,top:0,data:['進度率','去年同期']},{...LG,top:150,data:['隔日漲跌']}];
@@ -904,7 +906,7 @@ function renderBeat(){
   {const rv=R.map(r=>r.rx).filter(v=>v!=null),m=rv.length?Math.max(5,...rv.map(Math.abs))*1.35:10;o.yAxis[1].min=-Math.ceil(m);o.yAxis[1].max=Math.ceil(m)}
   o.tooltip.formatter=qs=>{const r=R[qs[0].dataIndex],n=RDM[r.m],T=[`<b>${r.cal}（${r.fis}）</b>　${md(r.d)} 公布`,`<span class="pill ${r.V[0]}">${r.V[1]}</span>`];
     if(!r.m)T.push('公司沒有公布全年預估');
-    else if(r.k===4){T.push(`全年${n} ${okuT(r.a)} ${okuU()}${r.ach!=null?`（對 3Q 時預估 ${pc(r.ach)}）`:''}`);if(r.gd!=null)T.push(`新年度預估 ${okuT(r.f)}（對實績 ${pc(r.gd)}）`)}
+    else if(r.k===4){T.push(`全年${n} ${okuT(r.a)} ${okuU()}${r.a<0&&r.f0>0?`（3Q 時預估 ${okuT(r.f0)}，由盈轉虧）`:r.ach!=null?`（對 3Q 時預估 ${pc(r.ach)}）`:''}`);if(r.gd!=null)T.push(`新年度預估 ${okuT(r.f)}（對實績 ${pc(r.gd)}）`)}
     else{T.push(`${r.k}Q 累計${n} ${okuT(r.a)}／全年預估 ${okuT(r.f)} ${okuU()}`);if(r.pg!=null&&r.f>0)T.push(`進度 ${fmt(r.pg,1)}%（${rdBaseOk(r)?'去年同期 '+fmt(r.pgp,1)+'%':'基準 '+r.k*25+'%'}）`);if(r.rev!=null&&Math.abs(r.rev)>=0.05)T.push(`預估修正 ${okuT(r.f0)} → ${okuT(r.f)}（${pc(r.rev)}）`)}
     if(r.rx!=null)T.push(`隔日漲跌 ${pc(r.rx)}`);return T.join('<br>')};
   ch.setOption(o,true);ch.resize();
