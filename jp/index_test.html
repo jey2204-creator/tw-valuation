@@ -893,6 +893,8 @@ function renderBeat(){
   o.series=[{name:'進度率',type:'bar',barGap:'-100%',barCategoryGap:'28%',z:2,itemStyle:{color:mu},data:R.map(r=>({value:val(r),itemStyle:{color:r.V[2]===1?up:r.V[2]===-1?dn:mu,borderRadius:[2,2,0,0]}}))},
     {name:'_lbl',type:'bar',barGap:'-100%',barCategoryGap:'28%',z:4,silent:true,itemStyle:{color:'transparent'},data:R.map(r=>{const a=val(r),b=ref(r);return a==null&&b==null?null:Math.max(a??-1e9,b??-1e9)}),   // 透明柱：只用來把標籤放在「實心柱與虛線框較高者」上方
       label:{show:true,position:'top',fontSize:9,color:mu,fontFamily:'IBM Plex Mono',formatter:q=>{const r=R[q.dataIndex];return !r.m?'':r.k===4?(r.gd!=null?'新'+pc(r.gd).replace('.0',''):''):r.f!=null&&r.f<=0?'虧損預估':r.rev!=null&&Math.abs(r.rev)>=3?(r.rev>0?'↑':'↓')+Math.abs(r.rev).toFixed(0)+'%':''}}},
+    {name:'_ico',type:'scatter',symbolSize:.01,silent:true,z:5,itemStyle:{color:'transparent'},data:R.map(r=>val(r)==null?0:null),   // 沒有柱的季：在底線上標那一季的判讀圖示；公司沒給全年預估就標「無預估」
+      label:{show:true,position:'top',distance:2,formatter:q=>{const r=R[q.dataIndex];return r.m?`{e|${r.V[1].split(' ')[0]}}`:'{n|無預估}'},rich:{e:{fontSize:12,lineHeight:14},n:{fontSize:9,color:mu,lineHeight:12}}}},
     {name:'去年同期',type:'bar',barGap:'-100%',barCategoryGap:'28%',z:3,silent:true,itemStyle:{color:'transparent',borderColor:mu,borderWidth:1.5,borderType:'dashed'},data:R.map(r=>({value:ref(r),itemStyle:{color:'transparent',borderColor:mu,borderWidth:1.5,borderType:'dashed',borderRadius:[2,2,0,0]}}))},
     {name:'隔日漲跌',type:'bar',xAxisIndex:1,yAxisIndex:1,barCategoryGap:'28%',itemStyle:{color:mu},data:R.map(r=>r.rx==null?null:{value:r.rx,itemStyle:{color:r.rx>=0?up:dn,borderRadius:r.rx>=0?[2,2,0,0]:[0,0,2,2]}}),
       label:{show:true,position:'top',fontSize:9,color:mu,fontFamily:'IBM Plex Mono',formatter:q=>q.value==null?'':(q.value>=0?'+':'')+q.value.toFixed(1)},markLine:{silent:true,symbol:'none',lineStyle:{color:mu,type:'dashed',width:1,opacity:.6},label:{show:false},data:[{yAxis:0}]}}];
@@ -905,7 +907,7 @@ function renderBeat(){
     if(r.rx!=null)T.push(`隔日漲跌 ${pc(r.rx)}`);return T.join('<br>')};
   ch.setOption(o,true);ch.resize();
   $('uBeat').textContent=`${z.cal}（${z.fis}）vs 公司預估`;
-  $('fBeat').textContent=`上：實心柱＝年初累計${mn}占全年預估的進度（紅＝判讀正面／綠＝負面／灰＝中性），虛線框＝去年同期的進度；柱上 ↑↓＝全年預估修正幅度。沒有柱的季＝公司沒給全年預估，或預估是虧損（進度率不適用）。年報季（4Q）的柱＝全年實績 ÷ 3Q 時的公司預估、虛線框＝100%，「新」＝新年度預估對全年實績的增減（±5% 內算持平）。下：隔日漲跌＝決算公布後下一個交易日收盤 vs 前一收盤；盤中公布的公司，反應有一部分落在公布當天。`;
+  $('fBeat').textContent=`上：實心柱＝年初累計${mn}占全年預估的進度（紅＝判讀正面／綠＝負面／灰＝中性），虛線框＝去年同期的進度；柱上 ↑↓＝全年預估修正幅度。沒有柱的季：圓形圖示＝那一季的判讀（預估是虧損等，進度率不適用，點一下看內容），「無預估」＝公司沒給全年預估。年報季（4Q）的柱＝全年實績 ÷ 3Q 時的公司預估、虛線框＝100%，「新」＝新年度預估對全年實績的增減（±5% 內算持平）。下：隔日漲跌＝決算公布後下一個交易日收盤 vs 前一收盤；盤中公布的公司，反應有一部分落在公布當天。`;
 }
 $('beat').addEventListener('click',e=>{if(!e.target.closest('#beatK,[data-beatt],#tBeat .pill'))return;const o=$('beat').classList.toggle('open');const t=$('beat').querySelector('[data-beatt]');if(t)t.textContent=o?'收起 ▴':'怎麼看 ▾'});
 // ---------- 預估模型（會計年度） ----------
