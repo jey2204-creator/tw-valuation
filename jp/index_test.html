@@ -832,7 +832,7 @@ function rdVerdict(z){   // → [pill class, 標題, 類別：1 正面／0 中�
     return ['','⚪ 無公司預估',null]}
   if(z.rev!=null&&Math.abs(z.rev)>=3)return z.rev>=10?['ok','🟢 大幅上修全年預估',1]:z.rev>0?['ok','🟢 上修全年預估',1]:z.rev>-10?['mid','🟠 下修全年預估',-1]:['bad','🔴 大幅下修全年預估',-1];
   if(z.f==null)return ['','⚪ 無公司預估',null];
-  if(z.f<=0)return z.a>=0?['ok','🟢 累計獲利，優於虧損預估',1]:z.a<z.f?['mid','🟠 累計虧損已超過全年預估',-1]:['','⚪ 虧損在全年預估內',0];   // 全年預估是虧損：進度率沒有意義，改比累計虧損和全年預估虧損
+  if(z.f<=0)return z.a>=0?['mid','🟠 預估全年虧損，後續要轉虧',-1]:z.a<z.f?['mid','🟠 累計虧損已超過全年預估',-1]:['','⚪ 虧損在全年預估內',0];   // 全年預估是虧損：進度率沒有意義，改比累計和全年預估。累計還在獲利、全年卻預估虧損＝公司預告剩下的季要大虧，是負面不是正面
   if(z.a<0)return ['bad','🔴 累計仍虧損',-1];
   const g=z.pg-rdBase(z);
   return g>=5?['ok','🟢 進度超前',1]:g>-5?['','⚪ 符合進度',0]:['mid','🟠 進度落後',-1]}
@@ -850,8 +850,9 @@ function renderBeat(){
     why.push('這張卡對的是「公司自己的全年預估」。這一季沒有全年預估時不做判讀，請改看營收、利益率與隔日股價反應；圖上仍保留過去有預估的季。')}
   else if(loss){
     const gapL=z.a-z.f;
-    line=`${z.cal}（${z.fis}）${z.k}Q 累計${mn} ${okuT(z.a)} ${okuU()}，全年預估 ${okuT(z.f)}`+(z.a<z.f?`——累計虧損已比全年預估多 <b class="vd">${okuT(-gapL)}</b>，剩下 ${4-z.k} 季要賺回來才達標`:z.a>=0?'——累計已經獲利':`——離全年預估的虧損還差 ${okuT(gapL)}`)+(z.rev!=null&&Math.abs(z.rev)>=0.05?`；全年預估 ${okuT(z.f0)} → ${okuT(z.f)}`:'；全年預估未修正');
+    line=`${z.cal}（${z.fis}）${z.k}Q 累計${mn} ${okuT(z.a)} ${okuU()}，全年預估 ${okuT(z.f)}`+(z.a<z.f?`——累計虧損已比全年預估多 <b class="vd">${okuT(-gapL)}</b>，剩下 ${4-z.k} 季要賺回來才達標`:z.a>=0?`——累計還是獲利，等於公司預告剩下 ${4-z.k} 季合計要虧 <b class="vd">${okuT(gapL)}</b>`:`——離全年預估的虧損還差 ${okuT(gapL)}`)+(z.rev!=null&&Math.abs(z.rev)>=0.05?`；全年預估 ${okuT(z.f0)} → ${okuT(z.f)}`:'；全年預估未修正');
     why.push('公司的全年預估是虧損時，「進度率」沒有意義，這裡改成直接比：年初累計的虧損，有沒有超過公司預估的全年虧損。');
+    if(z.a>=0)why.push(`⚠️ 累計還在獲利，全年預估卻是虧損：公司等於預告剩下 ${4-z.k} 季合計要虧約 ${okuT(gapL)} ${okuU()}（可能含減損等一次性損失）。這是壞消息，不要因為「累計有賺」就當成優於預期。`);
     if(z.a<z.f)why.push(`⚠️ 累計虧損已超過全年預估，代表公司預期剩下 ${4-z.k} 季合計要獲利約 ${okuT(-gapL)} ${okuU()}。做不到就會下修；判斷時看的是下一季能不能轉盈，不是這一季虧多少。`)}
   else if(fy){
     line=`${z.cal}（${z.fis}）全年${mn} ${okuT(z.a)} ${okuU()}${z.ach!=null?`，對 3Q 時公司預估 <b class="${sg(z.ach)}">${pc(z.ach)}</b>`:''}${z.gd!=null?`；新年度公司預估 ${okuT(z.f)}（對剛公布的實績 <b class="${sg(z.gd)}">${pc(z.gd)}</b>）`:'；公司未公布新年度預估'}`;
@@ -874,8 +875,8 @@ function renderBeat(){
   $('beatK').innerHTML=(!z.m?[
     ['進度 vs 去年同期','<b>—</b>','公司未給全年預估'],
     ['全年預估修正','<b>—</b>','公司未給全年預估']]:loss?[
-    ['累計 vs 全年預估',`<b class="${z.a<z.f?'vd':z.a>=0?'vu':''}">${okuT(z.a)}</b>`,`全年預估 ${okuT(z.f)} ${okuU()}`],
-    ['全年預估修正',`<b class="${sg(z.rev)}">${z.rev==null?'—':Math.abs(z.rev)<0.05?'未修正':z.rev>0?'虧損縮小':'虧損擴大'}</b>`,z.rev!=null&&Math.abs(z.rev)>=0.05?`${okuT(z.f0)}→${okuT(z.f)}`:`${mn} ${okuT(z.f)} ${okuU()}`]]:fy?[
+    ['累計 vs 全年預估',`<b class="${z.a<z.f?'vd':''}">${okuT(z.a)}</b>`,`全年預估 ${okuT(z.f)}`],
+    ['全年預估修正',`<b class="${sg(z.rev)}">${z.rev==null?'—':Math.abs(z.rev)<0.05?'未修正':z.rev>0?'虧損縮小':'虧損擴大'}</b>`,z.rev!=null&&Math.abs(z.rev)>=0.05?`${okuT(z.f0)}→${okuT(z.f)}`:`預估 ${okuT(z.f)}`]]:fy?[
     ['全年實績 vs 預估',`<b class="${sg(z.ach)}">${pc(z.ach)}</b>`,z.f0!=null?`預估 ${okuT(z.f0)}→實績 ${okuT(z.a)}`:'無 3Q 時預估'],
     ['新年度預估',`<b class="${sg(z.gd)}">${z.gd==null?'—':pc(z.gd)}</b>`,z.gd!=null?`${mn} ${okuT(z.f)} ${okuU()}`:'公司未公布']]:[
     ['進度 vs 去年同期',`<b class="${sg5(gap)}">${z.pg==null?'—':fmt(z.pg,0)+'%'}</b>`,z.pg==null?'無法計算':`${rdBaseOk(z)?'去年 '+fmt(z.pgp,0)+'%':'基準 '+z.k*25+'%'}（${pp(gap)}）`],
@@ -906,7 +907,7 @@ function renderBeat(){
     else{T.push(`${r.k}Q 累計${n} ${okuT(r.a)}／全年預估 ${okuT(r.f)} ${okuU()}`);if(r.pg!=null&&r.f>0)T.push(`進度 ${fmt(r.pg,1)}%（${rdBaseOk(r)?'去年同期 '+fmt(r.pgp,1)+'%':'基準 '+r.k*25+'%'}）`);if(r.rev!=null&&Math.abs(r.rev)>=0.05)T.push(`預估修正 ${okuT(r.f0)} → ${okuT(r.f)}（${pc(r.rev)}）`)}
     if(r.rx!=null)T.push(`隔日漲跌 ${pc(r.rx)}`);return T.join('<br>')};
   ch.setOption(o,true);ch.resize();
-  $('uBeat').textContent=`${z.cal}（${z.fis}）vs 公司預估`;
+  $('uBeat').textContent=`${z.cal} vs 公司預估`;$('uBeat').title=z.fis;   // 手機寬度放不下會計季，完整季別在下方結論列
   $('fBeat').textContent=`上：實心柱＝年初累計${mn}占全年預估的進度（紅＝判讀正面／綠＝負面／灰＝中性），虛線框＝去年同期的進度；柱上 ↑↓＝全年預估修正幅度。沒有柱的季：圓形圖示＝那一季的判讀（預估是虧損等，進度率不適用，點一下看內容），「無預估」＝公司沒給全年預估。年報季（4Q）的柱＝全年實績 ÷ 3Q 時的公司預估、虛線框＝100%，「新」＝新年度預估對全年實績的增減（±5% 內算持平）。下：隔日漲跌＝決算公布後下一個交易日收盤 vs 前一收盤；盤中公布的公司，反應有一部分落在公布當天。`;
 }
 $('beat').addEventListener('click',e=>{if(!e.target.closest('#beatK,[data-beatt],#tBeat .pill'))return;const o=$('beat').classList.toggle('open');const t=$('beat').querySelector('[data-beatt]');if(t)t.textContent=o?'收起 ▴':'怎麼看 ▾'});
