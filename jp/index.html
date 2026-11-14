@@ -104,6 +104,35 @@ section.card{background:var(--card);border:1px solid var(--line);border-radius:1
 .ecal .more{font:inherit;font-size:11.5px;color:var(--accent);background:none;border:0;padding:6px 0 0;cursor:pointer}
 .enx{margin:6px 0 0;font-size:12px;line-height:1.5;color:var(--muted)}.enx b{color:var(--fg);font-family:var(--f-num)}.enx .pill{font-size:10.5px;padding:0 6px;margin-left:2px}
 #cK{height:300px}
+/* ---- 📊 判讀總覽 #read：追蹤清單 × 近 8 季的判讀燈號（資料在 index.bin 每檔的 rs，不必逐檔解密） ---- */
+.rlink{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-top:8px;padding:9px 12px;background:var(--card);border:1px solid var(--line);border-radius:12px;font-size:13px;font-weight:700;color:var(--fg);text-decoration:none}
+.rlink small{font-weight:500;color:var(--muted);font-size:11.5px;margin-left:6px}.rlink i{font-style:normal;color:var(--accent);white-space:nowrap}
+#readPage .top{padding-top:12px}#readPage h1{font-size:22px;font-weight:900;margin:6px 0 0;line-height:1.3}
+#readPage .seg{margin-left:auto;display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden}
+#readPage .seg button{font:inherit;font-size:12px;font-weight:700;color:var(--muted);background:var(--card);border:0;padding:3px 10px;cursor:pointer;white-space:nowrap}#readPage .seg button.on{color:#fff;background:var(--accent)}
+.rdm{table-layout:fixed;font-size:12px;min-width:330px}
+.rdm th,.rdm td{padding:4px 0;text-align:center;overflow:hidden}
+.rdm th:first-child,.rdm td:first-child{width:92px;text-align:left;position:sticky;left:0;background:var(--card);z-index:1}
+.rdm thead th{font-family:var(--f-num);font-size:10.5px;letter-spacing:-.3px;vertical-align:bottom}
+.rdm thead th b{display:block;font-size:10px;font-weight:500}
+.rdm tr.sm td{font-size:10.5px;color:var(--muted);padding:2px 0}.rdm tr.sm td:first-child{font-family:var(--f-body)}
+.rdm tr.gh td{font-family:var(--f-body);font-size:11.5px;font-weight:700;color:var(--muted);text-align:left;padding:9px 0 3px;position:static;background:none;white-space:normal}
+.rdm tr.gh small{font-weight:500;margin-left:6px}
+.rdm td.nm{font-family:var(--f-body);cursor:pointer;line-height:1.25;padding-right:4px}.rdm td.nm b{display:block;font-size:12.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rdm td.nm small{display:block;font-family:var(--f-num);font-size:10px;color:var(--muted)}
+.rdm td.c{cursor:pointer;line-height:1.15;-webkit-tap-highlight-color:transparent}.rdm td.c i{display:block;font-style:normal;font-size:13px}
+.rdm td.c small{display:block;font-size:9.5px;letter-spacing:-.4px;color:var(--muted);min-height:11px}
+.rdm td.c.on{background:var(--b1);border-radius:6px}.rdm td.e{color:var(--line)}
+.rdm tr.det td{white-space:normal;text-align:left;font-family:var(--f-body);font-size:12px;line-height:1.55;background:var(--bg);padding:7px 8px;position:static;border-radius:8px}
+.rdm tr.det b{font-family:var(--f-num);font-weight:600}.rdm tr.det a{color:var(--accent);text-decoration:none;font-weight:700;white-space:nowrap}
+.rdm tr.bkflash td{animation:bkFlash 1.8s ease-out}
+.rchk{list-style:none;margin:6px 0 0;padding:0;font-size:12px;line-height:1.5}
+.rchk li{padding:6px 0;border-top:1px solid var(--line)}.rchk li:first-child{border-top:0}
+.rchk a{color:var(--fg);font-weight:700;text-decoration:none}.rchk a small{font-family:var(--f-num);font-weight:500;color:var(--muted);margin-left:4px}
+.rchk span{display:block;color:var(--muted)}.rchk span b{font-family:var(--f-num);font-weight:600;color:var(--fg)}
+#readPage .more{font:inherit;font-size:11.5px;color:var(--accent);background:none;border:0;padding:6px 0;cursor:pointer}
+.rst td,.rst th{padding:5px 4px}
+#readPage .pill{font-size:11.5px}#readPage .pill.ok{background:var(--b2)}#readPage .pill.mid{background:var(--b4)}#readPage .pill.bad{background:var(--b5)}
 /* ---- 📊 財報判讀 #beat（版面同美股站；日股沒有市場預估 EPS，改對「公司預估」：進度率、全年預估修正，再看隔日反應） ---- */
 #beat h2{display:flex;align-items:center;gap:8px;white-space:nowrap;min-width:0}#beat h2 small{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;font-size:11px;letter-spacing:-.2px}
 .y10k{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:8px 0 4px;cursor:pointer;-webkit-tap-highlight-color:transparent}
@@ -381,6 +410,7 @@ html{scroll-behavior:smooth}
       <div class="ecal" id="ecalMini"></div>
       <p class="foot" id="fEarn"></p>
     </section>
+    <a class="rlink" id="readLink" href="#read" hidden><span>📊 判讀總覽<small id="readLinkN"></small></span><i>看全部 ›</i></a>
     <h2 class="sec"><span>產業主題 <small id="tAsof"></small></span><span><button type="button" class="nfo" id="tLegI" aria-expanded="false" aria-controls="tLeg" aria-label="欄位說明">ⓘ</button><button type="button" class="dns" id="hDense"></button><a class="act" id="hEdit" href="#edit">✏️ 編輯</a></span></h2>
     <div class="tgrid" id="tgrid"></div>
     <p class="legend" id="tLeg" hidden>各主題中位數（<b class="opt">選配</b>題材股不算）。<span id="tLegC"></span>營收年增＝最新一季對比去年同季；EPS 年增＝近四季合計對比前四季；PEG＝本益比 ÷ EPS 年增，<span class="cheap">&lt;1</span>、<span class="pricey">&gt;2</span>；本月至今＝收盤對比上月底。</p>
@@ -399,6 +429,17 @@ html{scroll-behavior:smooth}
   <div class="ttw" id="tTw"></div>
   <div class="panel"><div class="tbl"><table class="lst" id="tList"></table></div></div>
   <p class="legend" id="tFoot"></p>
+</div>
+
+<!-- ===== 判讀總覽：#read（追蹤清單 × 近 8 季的判讀燈號；資料來自 index.bin 的 rs） ===== -->
+<div id="readPage" hidden>
+  <div class="top"><a href="#">← 全部主題</a><span class="seg" id="rSeg"><button type="button" data-v="theme">依主題</button><button type="button" data-v="last">依最新判讀</button></span></div>
+  <h1>📊 判讀總覽</h1>
+  <p class="tsum" id="rSum"></p>
+  <div class="panel"><div class="tbl"><table class="rdm" id="rTab"></table></div></div>
+  <p class="legend" id="rLeg"></p>
+  <section class="card" id="rChkBox"><h2>🔎 值得檢查 <small id="rChkN"></small></h2><ul class="rchk" id="rChk"></ul><p class="foot">這裡列的不是「判讀錯了」，而是規則容易失準的情況：基準退回 25%×季數、數字大到不像真的、判讀和隔日股價方向相反、中間缺季。先看這幾檔的個股判讀卡，再決定規則要不要改。</p></section>
+  <section class="card" id="rStBox"><h2>📈 判讀 vs 隔日股價 <small id="rStN"></small></h2><div class="tbl"><table class="rst" id="rSt"></table></div><p class="foot" id="rStF"></p></section>
 </div>
 
 <!-- ===== 編輯主題：#edit 清單（排序／隱藏／新增）、#edit/{id} 單一主題（名稱、成份股、細分、選配）。只存在這台裝置 ===== -->
@@ -1270,6 +1311,7 @@ function homeRender(){
   sugRender(raw,ms);qsRender(raw,ms);
   // 沒打字：產業主題卡；有打字：符合的個股清單（依主題分組）
   $('tsec').hidden=!!v;$('gLegend').hidden=!v;
+  {const n=IDX.filter(s=>rsOf(s).length).length;$('readLink').hidden=!n;$('readLinkN').textContent=n?`${n} 檔 × 近 8 季`:''}
   if(!v){$('groups').innerHTML='';cardsRender();return}
   const inT=new Set(THEMES.flatMap(t=>t.stocks.map(x=>x[0]))),lone=ms.filter(s=>!inT.has(s.id));
   const GT=lone.length?[...THEMES,{id:'',name:'未分類（不在顯示中的主題）',tw:[],stocks:lone.map(s=>[s.id,'',false])}]:THEMES;
@@ -1284,7 +1326,105 @@ function homeRender(){
       `<span class="v">PE ${s.pe??'—'}｜預 ${s.fpe??'—'}<br>PB ${s.pb??'—'}</span></a>`}).join('')+'</div>'}).join('')||'<p class="meta" style="margin-top:14px">找不到符合的股票</p>';
 }
 
-// ---------- 路由：#（首頁）、#t/{主題}、#{代號} ----------
+// ---------- 📊 判讀總覽 #read：追蹤清單 × 近 8 季的判讀燈號。資料＝index.bin 每檔的 rs（rd.rows＋rx 隔日漲跌），規則同個股頁 rdVerdict ----------
+let RSORT='theme',ROPEN=null,RALL=false;try{RSORT=localStorage.getItem('jpReadSort')==='last'?'last':'theme'}catch(e){}
+const rsOf=s=>s.rs&&s.rs.length?s.rs:s.lr?[{...s.lr,rx:s.rx}]:[];
+const rPc=v=>v==null?'—':`${v>=0?'+':'−'}${Math.abs(v).toFixed(1)}%`,rSg=v=>v==null?'':v>0?'vu':v<0?'vd':'';
+const rIcon=V=>V[1].split(' ')[0];
+function rdWhy(z,V){   // 這一格是哪條規則判的，附上用到的數字
+  const mn=RDM[z.m]||'營業利益',T=[];
+  if(!z.m||z.a==null)return '這一季公司沒有全年預估，沒有基準可以判讀。';
+  if(z.k===4){
+    T.push(`全年${mn} <b>${okuT(z.a)}</b> ${okuU()}`);
+    if(z.a<0&&z.f0>0)T.push(`3Q 時公司預估還是獲利 <b>${okuT(z.f0)}</b> → 規則：預估獲利、實績虧損`);
+    else if(z.gd!=null)T.push(`新年度預估 <b>${okuT(z.f)}</b>，對實績 <b class="${rSg(z.gd)}">${rPc(z.gd)}</b> → 規則：新年度預估（≥+5% 🟢、±5% ⚪、≤−5% 🟠、≤−15% 🔴）${z.ach!=null?`；全年對 3Q 預估 ${rPc(z.ach)}`:''}`);
+    else if(z.ach!=null)T.push(`沒有新年度預估；全年對 3Q 預估 <b class="${rSg(z.ach)}">${rPc(z.ach)}</b> → 規則：達成率（±3% ⚪、≤−20% 🔴）`);
+    return T.join('，')+'。'}
+  T.push(`${z.k}Q 累計${mn} <b>${okuT(z.a)}</b> ${okuU()}`);
+  if(z.rev!=null&&Math.abs(z.rev)>=3){T.push(`全年預估 <b>${okuT(z.f0)}</b> → <b>${okuT(z.f)}</b>（<b class="${rSg(z.rev)}">${rPc(z.rev)}</b>）→ 規則：預估修正（±3% 以上，±10% 大幅）`);return T.join('，')+'。'}
+  if(z.f==null)return T.join('，')+'，這一季沒有全年預估。';
+  if(z.f<=0){T.push(`全年預估是虧損 <b>${okuT(z.f)}</b> → 規則：預估虧損時不看進度，改比累計和全年預估`);return T.join('，')+'。'}
+  if(z.a<0){T.push(`全年預估獲利 <b>${okuT(z.f)}</b> → 規則：預估獲利但累計虧損`);return T.join('，')+'。'}
+  const b=rdBase(z),g=+(z.pg-b).toFixed(1);
+  T.push(`占全年預估 <b>${fmt(z.pg,0)}%</b>，基準 <b>${fmt(b,0)}%</b>（${rdBaseOk(z)?'去年同期進度':z.pgp!=null?`去年同期 ${fmt(z.pgp,0)}% 不可比，退回季數×25%`:'沒有去年同期，退回季數×25%'}），差 <b class="${Math.abs(g)<5?'':rSg(g)}">${g>0?'+':g<0?'−':''}${fmt(Math.abs(g),1)}pp</b> → 規則：進度率（±5pp）`);
+  return T.join('，')+'。'}
+function rdFlags(s,cols){   // 規則容易失準的情況 → [[季, 說明]]
+  const rs=rsOf(s),F=[];let pm=null;
+  rs.forEach(z=>{const V=rdVerdict(z),q=z.cal;
+    if(z.m&&pm&&z.m!==pm)F.push([q,`判讀指標從${RDM[pm]}換成${RDM[z.m]}，前後季不是同一個指標`]);if(z.m)pm=z.m;
+    if(!z.m||z.a==null)return;
+    if(z.k<4){
+      const byRev=z.rev!=null&&Math.abs(z.rev)>=3;
+      if(byRev&&Math.abs(z.rev)>=50)F.push([q,`全年預估修正 <b>${rPc(z.rev)}</b>，幅度大到要確認（舊預估接近 0、口徑變更或資料錯）`]);
+      if(!byRev&&z.f>0&&z.a>=0&&z.pg!=null){
+        if(!rdBaseOk(z))F.push([q,`${z.pgp!=null?`去年同期進度 <b>${fmt(z.pgp,0)}%</b> 不可比`:'沒有去年同期進度'}，基準退回 ${z.k*25}%，有淡旺季就不準`]);
+        if(z.pg>150)F.push([q,`進度率 <b>${fmt(z.pg,0)}%</b> 超過 150%，全年預估可能過時或抓錯`])}}
+    else{
+      if(z.ach!=null&&Math.abs(z.ach)>=50)F.push([q,`全年實績對 3Q 預估 <b>${rPc(z.ach)}</b>，差距大到要確認`]);
+      if(z.gd!=null&&Math.abs(z.gd)>=100)F.push([q,`新年度預估對實績 <b>${rPc(z.gd)}</b>，基期接近 0 或資料錯`])}
+    if(z.rx!=null&&V[2]===1&&z.rx<=-5)F.push([q,`${rIcon(V)} 判讀正面，隔日卻跌 <b class="vd">${rPc(z.rx)}</b>`]);
+    if(z.rx!=null&&V[2]===-1&&z.rx>=5)F.push([q,`${rIcon(V)} 判讀負面，隔日卻漲 <b class="vu">${rPc(z.rx)}</b>`])});
+  if(rs.length){const have=new Set(rs.map(z=>z.cal)),lo=rs[0].cal,hi=rs[rs.length-1].cal,miss=cols.filter(c=>c>lo&&c<hi&&!have.has(c));
+    if(miss.length)F.push([miss.join('、'),'中間缺季（那一季的決算沒抓到）'])}
+  if(s.bb)F.push(['口徑','有口徑變更（事業分拆／改列停業單位），進度比較僅供參考']);
+  return F}
+function readRender(){
+  const S=IDX.filter(s=>rsOf(s).length),hasRs=IDX.some(s=>s.rs&&s.rs.length);
+  const cols=[...new Set(S.flatMap(s=>rsOf(s).map(z=>z.cal)))].sort().slice(-8),nC=cols.length;
+  $('rSeg').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v===RSORT));
+  if(!S.length){$('rSum').textContent='還沒有判讀資料。';$('rTab').innerHTML='';$('rLeg').textContent='';$('rChkBox').hidden=$('rStBox').hidden=true;return}
+  const cell=(s,c)=>rsOf(s).find(z=>z.cal===c),cat=z=>z?rdVerdict(z)[2]:null;
+  // 每一季：正面／負面占「有判讀」的比例
+  const tally=c=>{const v=S.map(s=>cat(cell(s,c))).filter(x=>x!=null);return {n:v.length,p:v.filter(x=>x===1).length,m:v.filter(x=>x===-1).length,all:S.filter(s=>cell(s,c)).length}};
+  const TL=cols.map(tally),pct=(a,b)=>b?Math.round(a/b*100):null;
+  const lastOf=s=>{const r=rsOf(s);return r[r.length-1]};
+  const L=S.map(s=>cat(lastOf(s))),lp=L.filter(x=>x===1).length,lm=L.filter(x=>x===-1).length,l0=L.filter(x=>x===0).length,ln=L.filter(x=>x==null).length;
+  $('rSum').innerHTML=`追蹤 <b>${S.length}</b> 檔，各自最近一次決算：🟢 正面 <b>${lp}</b>　⚪ 中性 <b>${l0}</b>　🟠🔴 負面 <b>${lm}</b>${ln?`　無預估 <b>${ln}</b>`:''}。${hasRs?'':'<br>⚠️ 資料還是舊格式（只有最近一季），等下一次「更新日股資料」跑完才有 8 季。'}`;
+  // 分組
+  let G;
+  if(RSORT==='theme'){const seen=new Set();
+    G=THEMES.map(t=>({name:t.name,ls:t.stocks.map(x=>BY[x[0]]).filter(s=>s&&rsOf(s).length&&!seen.has(s.id)&&seen.add(s.id))})).filter(g=>g.ls.length);
+    const rest=S.filter(s=>!seen.has(s.id));if(rest.length)G.push({name:'未分類（不在顯示中的主題）',ls:rest})}
+  else{const rank=s=>{const z=lastOf(s),V=rdVerdict(z);return V[2]==null?3:V[2]===1?0:V[2]===0?1:2};
+    const by=[['🟢 最近一次正面',0],['⚪ 最近一次中性',1],['🟠🔴 最近一次負面',2],['無公司預估',3]];
+    G=by.map(([name,k])=>({name,ls:S.filter(s=>rank(s)===k).sort((a,b)=>(lastOf(b).d||'').localeCompare(lastOf(a).d||''))})).filter(g=>g.ls.length)}
+  const head=`<thead><tr><th></th>${cols.map(c=>`<th>${c.slice(0,2)}<b>${c.slice(2)}</b></th>`).join('')}</tr>`+
+    `<tr class="sm"><td>正面 %</td>${TL.map(t=>`<td class="${t.n&&t.p/t.n>=.5?'vu':''}">${t.n?pct(t.p,t.n):'·'}</td>`).join('')}</tr>`+
+    `<tr class="sm"><td>負面 %</td>${TL.map(t=>`<td class="${t.n&&t.m/t.n>=.5?'vd':''}">${t.n?pct(t.m,t.n):'·'}</td>`).join('')}</tr>`+
+    `<tr class="sm"><td>已公布檔數</td>${TL.map(t=>`<td>${t.all}</td>`).join('')}</tr></thead>`;
+  const rowH=s=>{const tds=cols.map(c=>{const z=cell(s,c);if(!z)return '<td class="e">·</td>';const V=rdVerdict(z),on=ROPEN&&ROPEN[0]===s.id&&ROPEN[1]===c;
+      return `<td class="c${on?' on':''}" data-c="${c}" title="${esc(z.fis)}｜${esc(V[1])}"><i>${rIcon(V)}</i><small class="${rSg(z.rx)}">${z.rx==null?'':(z.rx>=0?'+':'−')+Math.abs(z.rx).toFixed(1)}</small></td>`}).join('');
+    let h=`<tr data-id="${s.id}"><td class="nm"><b>${esc((s.name||s.id).replace(/（.*/,''))}</b><small>${s.id}</small></td>${tds}</tr>`;
+    if(ROPEN&&ROPEN[0]===s.id){const z=cell(s,ROPEN[1]);if(z){const V=rdVerdict(z);
+      h+=`<tr class="det"><td colspan="${nC+1}"><span class="pill ${V[0]||'o'}">${esc(V[1])}</span>　${esc(z.cal)}（${esc(z.fis)}）${md(z.d)} 公布${z.rx!=null?`，隔日 <b class="${rSg(z.rx)}">${rPc(z.rx)}</b>`:'，尚無隔日股價'}<br>${rdWhy(z,V)}　<a href="#${s.id}" data-beat>看個股判讀 ›</a></td></tr>`}}
+    return h};
+  $('rTab').innerHTML=head+'<tbody>'+G.map(g=>{const v=g.ls.map(s=>cat(lastOf(s)));
+    return `<tr class="gh"><td colspan="${nC+1}">${esc(g.name)}<small>${g.ls.length} 檔${RSORT==='theme'?`・最近一次 🟢${v.filter(x=>x===1).length} ⚪${v.filter(x=>x===0).length} 🟠🔴${v.filter(x=>x===-1).length}`:''}</small></td></tr>`+g.ls.map(rowH).join('')}).join('')+'</tbody>';
+  $('rLeg').innerHTML=`欄＝日曆季（各公司會計年度不同，對齊到同一個日曆季）；圖示＝對公司預估的判讀（🟢 正面 ⚪ 中性 🟠🔴 負面，規則同個股頁「判讀」），下方小字＝公布後下一個交易日的漲跌 %；「·」＝那一季沒有資料或還沒公布。點圖示看是哪條規則判的，點公司名進個股頁。${fxFoot()}`;
+  // 值得檢查
+  const CK=S.map(s=>({s,F:rdFlags(s,cols)})).filter(x=>x.F.length).sort((a,b)=>b.F.length-a.F.length),show=RALL?CK:CK.slice(0,6);
+  $('rChkBox').hidden=false;$('rChkN').textContent=CK.length?`${S.length} 檔裡 ${CK.length} 檔`:'沒有';
+  $('rChk').innerHTML=(show.map(({s,F})=>`<li><a href="#${s.id}" data-beat>${esc((s.name||s.id).replace(/（.*/,''))}<small>${s.id}</small></a>${F.map(([q,t])=>`<span><b>${esc(q)}</b>　${t}</span>`).join('')}</li>`).join('')||'<li><span>沒有符合條件的季。</span></li>')+
+    (CK.length>6?`<li><button type="button" class="more" data-all>${RALL?'收起 ▴':`顯示全部 ${CK.length} 檔 ▾`}</button></li>`:'');
+  // 判讀 vs 隔日
+  const R=S.flatMap(s=>rsOf(s).filter(z=>cols.includes(z.cal)).map(z=>({c:rdVerdict(z)[2],rx:z.rx}))).filter(r=>r.c!=null&&r.rx!=null);
+  $('rStBox').hidden=!R.length;
+  if(R.length){const row=(lb,k)=>{const a=R.filter(r=>r.c===k),av=a.length?sum(a.map(r=>r.rx))/a.length:null,w=a.filter(r=>r.rx>0).length;
+      return `<tr><td class="t">${lb}</td><td>${a.length}</td><td class="${rSg(av)}">${av==null?'—':rPc(av)}</td><td>${a.length?pct(w,a.length)+'%':'—'}</td></tr>`};
+    $('rStN').textContent=`${R.length} 次`;
+    $('rSt').innerHTML=`<thead><tr><th>判讀</th><th>次數</th><th>隔日平均</th><th>隔日上漲比例</th></tr></thead><tbody>${row('🟢 正面',1)}${row('⚪ 中性',0)}${row('🟠🔴 負面',-1)}</tbody>`;
+    $('rStF').textContent=`表上 ${nC} 季、有判讀也有隔日股價的 ${R.length} 次。樣本很小，而且同一季的股票會一起漲跌（大盤那天的方向）；只能看「正面有沒有比負面好」這個方向，不能拿來調門檻。`}
+}
+$('rSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;RSORT=b.dataset.v;ROPEN=null;try{localStorage.setItem('jpReadSort',RSORT)}catch(x){}readRender()});
+$('readPage').addEventListener('click',e=>{
+  if(e.target.closest('[data-all]')){RALL=!RALL;readRender();return}
+  if(e.target.closest('a[data-beat]')){KEEP='beat';return}   // 進個股頁直接停在判讀卡
+  const tr=e.target.closest('#rTab tr[data-id]');if(!tr)return;
+  const c=e.target.closest('td.c');
+  if(c){const k=[tr.dataset.id,c.dataset.c];ROPEN=ROPEN&&ROPEN[0]===k[0]&&ROPEN[1]===k[1]?null:k;readRender();return}
+  if(e.target.closest('td.nm')){KEEP='beat';location.hash=tr.dataset.id}});
+
+// ---------- 路由：#（首頁）、#read（判讀總覽）、#t/{主題}、#{代號} ----------
 const isStk=h=>/^[0-9][0-9A-Z]{3}$/.test(h);
 const themeOfStock=id=>THEMES.find(t=>t.id===LAST_T&&t.stocks.some(x=>x[0]===id))||THEMES.find(t=>t.stocks.some(x=>x[0]===id))||null;
 function backPaint(id){const t=themeOfStock(id);$('back').href=t?'#t/'+t.id:'#';$('back').textContent=t?'← '+t.name:'← 全部主題'}
@@ -1293,12 +1433,14 @@ function route(){
   if(!KEY)return;
   const raw=decodeURIComponent(location.hash.slice(1)),id=raw.toUpperCase();
   const em=/^edit(?:\/([a-z0-9_-]+))?$/.exec(raw);   // 編輯頁 #edit、#edit/{主題}
-  const tm=/^t\/([a-z0-9_-]+)$/i.exec(raw),tid=tm?tm[1].toLowerCase():null,stk=!tid&&!em&&isStk(id),h=em?raw:tid?'t/'+tid:stk?id:'';
+  const rd=raw==='read';
+  const tm=/^t\/([a-z0-9_-]+)$/i.exec(raw),tid=tm?tm[1].toLowerCase():null,stk=!tid&&!em&&isStk(id),h=em?raw:rd?'read':tid?'t/'+tid:stk?id:'';
   bkTrack(h);
-  $('themePage').hidden=!tid;$('editList').hidden=!em||!!em[1];$('editTheme').hidden=!em||!em[1];
+  $('themePage').hidden=!tid;$('readPage').hidden=!rd;$('editList').hidden=!em||!!em[1];$('editTheme').hidden=!em||!em[1];
   if(!stk){$('pnav').hidden=true;document.body.classList.remove('pn');pnShut();qToggle(false)}
   if(tid&&VPREV==='home')HOMEY=scrollY;   // 從首頁點卡片進主題：記住首頁捲到哪
   if(em){$('stock').hidden=true;$('home').hidden=true;document.title='編輯主題';if(em[1])openEditor(em[1],HPREV);else renderOrder();scrollTo(0,0)}
+  else if(rd){$('stock').hidden=true;$('home').hidden=true;document.title='判讀總覽｜日股估值看板';readRender();if(VPREV!=='stock')scrollTo(0,0)}
   else if(tid){$('stock').hidden=true;$('home').hidden=true;themeRender(tid);scrollTo(0,0)}
   else if(stk){const k=KEEP;KEEP=null;
     if(!D||D.id!==id){if(!k)scrollTo(0,0);load(id).then(()=>{if(k)requestAnimationFrame(()=>goSec(k))})}
@@ -1306,7 +1448,7 @@ function route(){
   else{$('stock').hidden=true;$('home').hidden=false;document.title='日股估值看板';homeRender();
     if(VPREV==='edit')requestAnimationFrame(()=>scrollTo(0,$('tsec').getBoundingClientRect().top+scrollY-8));   // 編輯完回首頁：停在主題卡
     if(VPREV==='theme'){const y=HOMEY,pt=HPREV;requestAnimationFrame(()=>{scrollTo(0,y);const c=document.querySelector(`a.tcard[href="#${pt}"]`)||document.querySelector(`.tlt tr[data-t="${(pt||'').replace(/^t\//,'')}"]`);if(c){c.classList.remove('bkflash');void c.offsetWidth;c.classList.add('bkflash')}})}}
-  bkRestore(h);VPREV=stk?'stock':em?'edit':tid?'theme':'home';HPREV=h;
+  bkRestore(h);VPREV=stk?'stock':em?'edit':rd?'read':tid?'theme':'home';HPREV=h;
 }
 // ---------- 底部導覽列：依目前主題（剛看的主題頁，或首頁順序第一個有它的主題）的成份股順序上下檔切換，並停在同一張圖 ----------
 const nameOf=id=>(BY[id]&&BY[id].name)||id;
@@ -1350,7 +1492,7 @@ $('pnPrev').addEventListener('click',()=>pnGo(-1));$('pnNext').addEventListener(
 let ORIGIN=null,VPREV=null,HPREV=null;const BK_SVG='<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>';
 try{ORIGIN=JSON.parse(sessionStorage.getItem('jpOrigin')||'null')}catch(e){}
 try{history.scrollRestoration='manual'}catch(e){}
-const bkLabel=h=>h&&h.startsWith('t/')?(themeName(h.slice(2))||'主題'):'全部主題';
+const bkLabel=h=>h==='read'?'判讀總覽':h&&h.startsWith('t/')?(themeName(h.slice(2))||'主題'):'全部主題';
 function bkPaint(){const lb=bkLabel(ORIGIN?ORIGIN.h:'');$('pnBk').setAttribute('aria-label','回到 '+lb);$('pnBk').title='回到 '+lb;
   $('pnBk').innerHTML=$('pnav').classList.contains('solo')?`${BK_SVG} <span>${esc(lb)}</span>`:BK_SVG}
 function bkGo(){pnShut();if(ORIGIN&&ORIGIN.push){history.back();return}if(ORIGIN)ORIGIN.y=0;location.hash=ORIGIN&&ORIGIN.h||''}
@@ -1359,7 +1501,7 @@ function bkTrack(h){
   if(isStk(h)&&VPREV&&VPREV!=='stock'){ORIGIN={h:HPREV||'',y:scrollY,push:1,id:h};try{sessionStorage.setItem('jpOrigin',JSON.stringify(ORIGIN))}catch(e){}}
   else if(isStk(h)&&ORIGIN)ORIGIN.id=h}
 function bkRestore(h){if(VPREV!=='stock'||!ORIGIN||h!==(ORIGIN.h||''))return;const y=ORIGIN.y||0,id=ORIGIN.id;
-  const go=()=>{scrollTo(0,y);if(id)document.querySelectorAll(`a.it[href="#${id}"],.lst tr[data-id="${id}"]`).forEach(r=>{if(!r.offsetParent)return;r.classList.remove('bkflash');void r.offsetWidth;r.classList.add('bkflash')})};
+  const go=()=>{scrollTo(0,y);if(id)document.querySelectorAll(`a.it[href="#${id}"],.lst tr[data-id="${id}"],.rdm tr[data-id="${id}"]`).forEach(r=>{if(!r.offsetParent)return;r.classList.remove('bkflash');void r.offsetWidth;r.classList.add('bkflash')})};
   requestAnimationFrame(go);setTimeout(()=>{if(Math.abs(scrollY-y)>40&&scrollY<40)scrollTo(0,y)},300)}
 // 個股頁上其他個股連結（搜尋建議等）也用 replace，不新增紀錄
 document.addEventListener('click',e=>{if($('stock').hidden)return;const a=e.target.closest('a[href^="#"]');if(!a)return;
@@ -1503,6 +1645,7 @@ const remotePut=c=>gh('/gists/'+SY.gist,{method:'PATCH',body:JSON.stringify({fil
 // 設定換了之後重畫目前這一頁（首頁、主題頁、編輯清單）
 function cfgRepaint(){if(!KEY)return;applyCfg();
   if(!$('editList').hidden)renderOrder();
+  else if(!$('readPage').hidden)readRender();
   else if(!$('themePage').hidden&&CUR_T)themeRender(CUR_T);   // 主題被另一台刪掉或隱藏 → themeRender 會導回首頁
   else if(!$('home').hidden)homeRender();
   else if(D&&!$('stock').hidden){backPaint(D.id);pnPaint(D.id)}}
