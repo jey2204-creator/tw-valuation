@@ -664,12 +664,84 @@ def forecast_block(recs, best, splits):
 
 
 # ======================= 組合個股 =======================
+def read_block(recs, best, Q):
+    """財報判讀（對公司預估，日股沒有市場預估 EPS）：每一季公布當下的
+    ・進度率 pg＝年初累計 ÷ 當時的全年預估，pgp＝去年同期累計 ÷ 去年全年實績（比季節性，不是比 25%×季數）
+    ・rev＝全年預估自上一季公布以來的修正幅度 %（含季中另外發的業績予想修正）
+    ・年報那一季改看：ach＝全年實績 vs 3Q 時的預估 %，gd＝新年度預估 vs 剛出爐的全年實績 %
+    指標 m 依序取有預估的第一個：營業利益 op → 經常利益 odp → 淨利 np。金額單位百萬日圓。
+    tr＝過去各年度「全年實績 vs 期初預估」%（看這家公司預估習慣保守還是樂觀）。"""
+    snaps = {}                                           # 會計年度 → [(公布日, 全年預估)]，依時間排序
+    for r in sorted(recs, key=lambda r: (r["disc"], r.get("time", ""))):
+        fy = (r.get("fy_end") or "")[:7]
+        if not fy:
+            continue
+        if r.get("type") in ("1Q", "2Q", "3Q", "REV") and r.get("f"):
+            snaps.setdefault(fy, []).append((r["disc"], r["f"]))
+        elif r.get("type") == "FY" and r.get("nf"):
+            snaps.setdefault(ym_add(fy, 1), []).append((r["disc"], r["nf"]))
+
+    def asof(fy, day, m):
+        v = None
+        for d, f in snaps.get(fy, []):
+            if day is not None and d <= day and f.get(m) is not None:
+                v = f[m]
+        return v
+
+    lab = {(x["fy_end"][:7], x["k"]): x for x in Q}
+    r1 = lambda v: None if v is None else round(v, 1)
+    rows = []
+    for (fy, k) in sorted(best):
+        x = lab.get((fy, k))
+        if not x:
+            continue
+        r, disc, a = best[(fy, k)], best[(fy, k)]["first"], best[(fy, k)]["a"]
+        pk = (fy, k - 1) if k > 1 else (ym_add(fy, -1), 4)
+        pdisc = best[pk]["first"] if pk in best else None
+        nfy = ym_add(fy, 1)
+        m = next((m for m in ("op", "odp", "np") if a.get(m) is not None and
+                  (asof(fy, disc, m) is not None or (k == 4 and asof(nfy, disc, m) is not None))), None)
+        row = dict(cal=x["cal"], fis=x["fis"], d=disc, k=k, m=m)
+        if m:
+            f0 = asof(fy, pdisc, m)
+            if k < 4:
+                f1 = asof(fy, disc, m)
+                pa, pf = best.get((ym_add(fy, -1), k)), best.get((ym_add(fy, -1), 4))
+                row.update(a=r1(a[m]), f=r1(f1), f0=r1(f0),
+                           pg=r1(a[m] / f1 * 100) if f1 and f1 > 0 else None,
+                           pgp=r1(pa["a"][m] / pf["a"][m] * 100) if pa and pf and pa["a"].get(m) is not None
+                           and pf["a"].get(m) and pf["a"][m] > 0 else None,
+                           rev=r1((f1 / f0 - 1) * 100) if f0 and f0 > 0 and f1 is not None else None)
+            else:
+                nf = asof(nfy, disc, m)
+                row.update(a=r1(a[m]), f=r1(nf), f0=r1(f0),
+                           ach=r1((a[m] / f0 - 1) * 100) if f0 and f0 > 0 else None,
+                           gd=r1((nf / a[m] - 1) * 100) if nf is not None and a[m] > 0 else None)
+        rows.append(row)
+    tr = []
+    for (fy, k) in sorted(best):
+        if k != 4:
+            continue
+        a = best[(fy, k)]["a"]
+        for m in ("op", "odp", "np"):
+            init = next((f[m] for d, f in snaps.get(fy, []) if f.get(m) is not None), None)
+            if init and init > 0 and a.get(m) is not None:
+                tr.append([fy_label(best[(fy, k)]["fy_end"]), m, r1((a[m] / init - 1) * 100)])
+                break
+    return dict(rows=rows[-8:], tr=tr[-5:]) if rows else None
+
+
 def build(code, jq_recs, td_recs, master):
     cfg = CFG[code]
     px, splits = yahoo(code)
     recs = [r for r in jq_recs + td_recs if r]
     Q, best = build_quarters(recs, splits)
     fc = forecast_block(recs, best, splits)
+    try:
+        rd = read_block(recs, best, Q)
+    except Exception as e:  # noqa   判讀只是附加資訊，算不出來不能拖垮整檔
+        rd = None
+        err(f"判讀 {code}: {e}")
     std = Q[-1]["std"] if Q else ""
 
     # 財報多在 15:00 收盤前後公布 → 從公布日的「下一個交易日」起才採用（同 J-Quants 估值，不偷看未來）
@@ -767,14 +839,14 @@ def build(code, jq_recs, td_recs, master):
     chk = [abs(x["eps"] * x["sh"] / x["np"] - 1) < 0.03 for x in Q if x["eps"] and x["sh"] and x["np"]]
     DIAG["stocks"][code] = dict(yname=YNAME.get(code), jname=m.get("CoName"), px_n=len(px), px_last=ld, q_n=len(Q), q_first=Q[0]["cal"] if Q else None,
                                 q_last=Q[-1]["cal"] if Q else None, k_n=sum(map(len, k_split(YK.get(code) or []))), q_src="".join(x["src"] for x in Q),
-                                fc_n=len(fc["hist"]) if fc else 0, fc_fy=fc["fy"] if fc else None,
+                                fc_n=len(fc["hist"]) if fc else 0, fc_fy=fc["fy"] if fc else None, rd_n=len(rd["rows"]) if rd else 0,
                                 eps_np_ok=f"{sum(chk)}/{len(chk)}", splits=[[d, round(n, 4)] for d, n in splits], std=std,
                                 riv_pe=sum(1 for r in riv if r[4]), riv_pb=sum(1 for r in riv if r[5]),
                                 **({"val_vs_jq": val_chk} if val_chk else {}))
     return dict(id=code, name=cfg["zh"], jname=m.get("CoName", ""), sector=m.get("S33Nm", ""), mkt=m.get("MktNm", ""),
                 theme=cfg["theme"], cyclical="C" in cfg["flags"], tw=cfg["tw"], std=std,
                 updated=NOW_JST.strftime("%Y-%m-%d %H:%M"), last=last, q=q, riv=riv, fc=fc, note=note,
-                k=k_split(YK.get(code) or [])[1])
+                k=k_split(YK.get(code) or [])[1], rd=rd)
 
 
 # ======================= 首頁／主題頁用的統計（預先算好放進 index.bin，前端只解密一次） =======================
