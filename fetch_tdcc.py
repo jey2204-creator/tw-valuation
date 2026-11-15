@@ -40,6 +40,11 @@ def num(v):
         return None
 
 
+def good(v):
+    """集保在停牌換發（減資、面額變更）那週會給「1 位股東持有 100%」的佔位資料 → 不能拿來算變化（2026-11-15：信昌電 6173 股東 4 週 +4,495,900%）"""
+    return bool(v) and len(v) > 2 and (v[2] or 0) > 1
+
+
 def rec_from_levels(lv):
     """lv: {分級: (人數, 股數, 比例%)} → [≥400張%, ≥1000張%, 股東人數]"""
     if not lv:
@@ -223,7 +228,7 @@ def shards(weeks):
         for c, v in w.items():
             if c.startswith("_") or not v or not c[:2].isdigit():
                 continue
-            by.setdefault(c[:2], {}).setdefault(c, {})[d] = v
+            by.setdefault(c[:2], {}).setdefault(c, {})[d] = v if good(v) else None
     ws = [d for d, _ in W]
     for g, m in by.items():
         out = {c: [h.get(d) for d in ws] for c, h in m.items()}
@@ -249,9 +254,9 @@ def compute():
     out = {}
     cur_date, cur = weeks[-1]
     for c, v in cur.items():
-        if c.startswith("_") or not v:
+        if c.startswith("_") or not good(v):
             continue
-        hist = [(d, w[c]) for d, w in weeks if c in w and w[c]]
+        hist = [(d, w[c]) for d, w in weeks if c in w and good(w[c])]
         if not hist or hist[-1][0] != cur_date:
             continue
         def ago(n):
