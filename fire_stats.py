@@ -80,6 +80,41 @@ def main():
     #   8 個值的順序＝e0 的 1/3/5/10 日、e1 的 1/3/5/10 日；還沒滿天數的是 null，之後每次排程補上
     #   連續天數是負數＝回推到歷史起點、只知道「至少幾天」（統計不採用，但留著讓之後的連續天數接得上）
     #   fire_hist.json 只留 60 個交易日會滾動；這裡的舊日子不再更動也不刪，統計改從這裡算 → 樣本會一直累積
+    #   2026-11-15 再加 4 欄（先存著、之後切分用；算不出來的是 null）：
+    #     chip＝籌碼標籤 c 集中／r 散戶追／d 分散／"" 都不是（集保 4 週變化，只用「事件日之前」已公布的那一週，規則同首頁）
+    #     nt＝1 當天列注意股、2 處置中、3 兩者（data/notice；上櫃處置 2026/10/29 前沒有資料）
+    #     fr／tr＝外資／投信 5 日買超占 5 日成交量 %
+    WK = []
+    for f in sorted((DATA / "tdcc").glob("20*.json")):
+        j = load(f, None)
+        if j:
+            WK.append((f.stem, j))
+    D8 = lambda s: dt.datetime.strptime(s, "%Y%m%d")
+    okv = lambda v: isinstance(v, list) and len(v) >= 3 and v[2] and v[2] > 1
+
+    def chip(c, day):
+        ws = [(d, w) for d, w in WK if d < day]
+        if not ws or (D8(day) - D8(ws[-1][0])).days > 10:
+            return None
+        cd, cw = ws[-1]
+        v = cw.get(c)
+        if not okv(v):
+            return None
+        t = D8(cd) - dt.timedelta(weeks=4)
+        p4 = next((w[c] for d, w in ws if abs((D8(d) - t).days) <= 3 and okv(w.get(c))), None)
+        if not p4:
+            return None
+        b, pm = v[0] - p4[0], (v[2] / p4[2] - 1) * 100
+        return "c" if b > .3 and pm < -1 else "r" if b > .3 and pm > 3 else "d" if b < -.3 and pm > 1 else ""
+
+    NH = {k: v for k, v in load(DATA / "notice" / "hist.json", {}).items() if k.isdigit()}
+    DH = [v for v in load(DATA / "notice" / "dis_hist.json", {}).values() if isinstance(v, dict) and v.get("c") and v.get("end")]
+
+    def nt(c, day):
+        if day not in NH:
+            return None
+        return (1 if c in NH[day].get("att", []) else 0) | (2 if c in NH[day].get("dis", []) or any(v["c"] == c and v.get("start", "") <= day < v["end"] for v in DH) else 0)
+
     ARC = {}
     for f in sorted(EVD.glob("20*.json")):
         j = load(f, {})
@@ -109,12 +144,13 @@ def main():
                     for h in HS:
                         r = ret(c, i + e, i + e + h) if i + e + h <= last else None
                         rs.append(None if r is None else round(r, 5))
-                ent["e"][c] = [-(n + 1) if capped else n + 1] + rs      # 已存檔但這次沒算到的代號保留不動
+                row = cur[c]
+                ent["e"][c] = [-(n + 1) if capped else n + 1] + rs + [chip(c, day), nt(c, day), row[8] if len(row) > 8 else None, row[9] if len(row) > 9 else None]      # 已存檔但這次沒算到的代號保留不動
         run = nxt
     EVD.mkdir(exist_ok=True)
     for ym in sorted(touched):
         ds = sorted(d for d in ARC if d[:6] == ym)
-        (EVD / f"{ym}.json").write_text(json.dumps({"fields": ["streak"] + [f"e{e}h{h}" for e in (0, 1) for h in HS],
+        (EVD / f"{ym}.json").write_text(json.dumps({"fields": ["streak"] + [f"e{e}h{h}" for e in (0, 1) for h in HS] + ["chip", "nt", "fr", "tr"],
             "b": {d: ARC[d]["b"] for d in ds}, "e": {d: ARC[d]["e"] for d in ds}}, ensure_ascii=False, separators=(",", ":")), "utf-8")
 
     def cell(rows):

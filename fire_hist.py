@@ -3,7 +3,8 @@
 網頁的自選存在手機裡 → 這裡存「全市場」每天的 🔥 名單，網頁再篩出主題＋自選。
 
 輸出 {"asof": 最新交易日, "days": [有名單的交易日，舊→新], "fields": [...],
-      "d": {YYYYMMDD: {代號: [週%, 月%, 季%, 量比, 外資5日(張), 投信5日(張), 收盤, 當日漲跌%]}},   ← 當天 🔥 的股票與當天收盤當下的數字
+      "d": {YYYYMMDD: {代號: [週%, 月%, 季%, 量比, 外資5日(張), 投信5日(張), 收盤, 當日漲跌%, 外資5日占量%, 投信5日占量%]}},   ← 當天 🔥 的股票與當天收盤當下的數字
+                                                                              （最後兩欄 2026-11-15 加：5 日買超 ÷ 5 日成交量，給 fire_stats.py 存檔切分用，網頁沒用到）
       "x": {YYYYMMDD: {代號: [原因, 當日漲跌%]}}}                                                  ← 前一個交易日有 🔥、這天沒有（掉出）
   原因是位元加總：1＝月漲幅 ≤ 0、2＝量比 < 1.5、4＝投信／外資 5 日買超不到 5 日成交量 1%、8＝當天沒資料
   🔥 條件與每個數字的算法跟 fetch_momentum.py 的 compute() 一致（月／季＝日曆日、還原除權息／減資／面額變更）：
@@ -19,7 +20,7 @@ DATA = ROOT / "data"
 HIST = DATA / "hist"
 OUT = DATA / "fire_hist.json"
 KEEP_DAYS = 60
-FIELDS = ["w", "m", "q", "vr", "f5", "t5", "close", "chg"]
+FIELDS = ["w", "m", "q", "vr", "f5", "t5", "close", "chg", "fr", "tr"]
 
 
 def load(p, default):
@@ -120,7 +121,8 @@ def build():
         pv = next((x for x in reversed(cla[-6:-1]) if x), None)
         chg = round((cur / pv - 1) * 100, 2) if pv and cl[-1] else None
         k = lambda x: round(x / 1000)
-        return [w, mc_show, qc_show, vr, k(f5) if iv else None, k(t5) if iv else None, cur, chg], fire, why
+        sh = lambda x: round(x / vol5 * 100, 1) if iv and vol5 > 0 else None     # 5 日買超占 5 日成交量 %（統計切分用）
+        return [w, mc_show, qc_show, vr, k(f5) if iv else None, k(t5) if iv else None, cur, chg, sh(f5), sh(t5)], fire, why
 
     NM = {pos[s]: cal_n(stems[:pos[s] + 1], 1) for s in want}
     NQ = {pos[s]: cal_n(stems[:pos[s] + 1], 3) for s in want}
