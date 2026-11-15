@@ -185,6 +185,10 @@ span.asof{white-space:nowrap}
 .lst .cap{display:block;font-size:11px;color:var(--muted);font-family:var(--f-num)}.lst .cap b{color:var(--warm);font-weight:600}
 .crown{margin-left:3px;font-size:12px}
 .lst th[data-k]{cursor:pointer;user-select:none}
+/* 動能表：週／月／季收窄，把寬度留給最右「量比」欄（2026-11-15，iPhone 右欄被切） */
+.lst.mo th:nth-child(n+2):nth-child(-n+4),.lst.mo td:nth-child(n+2):nth-child(-n+4){padding-inline:2px}
+.lst.mo td:nth-child(n+2):nth-child(-n+4){font-size:12px;letter-spacing:-.2px}
+.lst.mo td:last-child,.lst.mo th:last-child{padding-right:2px}
 .dns{flex:none;font:inherit;font-size:12px;font-weight:700;letter-spacing:0;border:1px solid var(--line);border-radius:999px;background:var(--card);color:var(--muted);padding:3px 8px;margin-left:6px;cursor:pointer;white-space:nowrap}
 .segw{display:inline-flex;align-items:center;flex:none}
 h2.sec .dns{padding:3px 7px;margin-left:4px}h2.sec .dns .t{display:none}h2.sec .act{white-space:nowrap}
@@ -2720,10 +2724,10 @@ function mCells(id,role){
   const mh=MDAY()?mhRow(id,MDAY()):null,c=MDAY()?(mh?mh[6]:null):sv(id,'close'),ch=MDAY()?(mh?((MOH.a&&MOH.a[MDAY()]&&MOH.a[MDAY()][id])||[])[3]??mh[7]:null):sv(id,'chg'),fire=mv(id,'fire'),
     aft=(()=>{if(!NCUR)return '';const r=mhRow(id,NCUR),c0=r&&r[6],c1=sv(id,'close');if(!c0||!c1||!MO||!(MO.asof>NCUR))return '';const v=(c1/(c0*adjF(id,NCUR,MO.asof))-1)*100;return `<span class="sub"><span class="sm">列入後</span> <span class="${sign(v)}">${pct(v)}</span></span>`})(),t5=mv(id,'t5'),f5=mv(id,'f5'),tS=mv(id,'tS'),vr=mv(id,'vr');
   const p=k=>{const v=mv(id,k);return `<td class="${sign(v)}">${pct(v)}</td>`};
-  const b4=tv(id,'b4'),b4w=tv(id,'b4w'),b4m=tv(id,'b4m'),pm=tv(id,'pplm'),ck=chip(id),up=fire&&ck==='c';
+  const b4=tv(id,'b4'),b4w=tv(id,'b4w'),b4m=tv(id,'b4m'),pm=(v=>v!=null&&Math.abs(v)>=1000?null:v)(tv(id,'pplm')),ck=chip(id),up=fire&&ck==='c';   /* ≥1000%＝集保佔位資料造成的假數字，不顯示 */
   const L=LAY(), tip=(t,body)=>`<span class="dtip" data-tip="${body}">${t}</span>`;
   const fl=ck?`<span class="flag" style="color:${CHIP[ck][1]};border-color:${CHIP[ck][1]}" data-tip="${CHIP[ck][0]}：${CHIP[ck][2]}（看最近 4 週）">${CHIP[ck][0]} ⓘ</span>`:'';
-  const ppl=pm==null?'':`<span class="sub">${tip('股東','集保股東人數（每週）。人數減少＝散戶在賣')} 4週 <span class="${sign(pm)}">${pp(pm,1)}%</span></span>`;
+  const ppl=pm==null?'':`<span class="sub">${tip('股東','集保股東人數（每週）。人數減少＝散戶在賣')} 4週 <span class="${sign(pm)}">${pp(pm,Math.abs(pm)>=100?0:1)}%</span></span>`;
   let bd='';
   if(b4!=null){
     const head=`<span class="sub">${tip('大戶','持股 400 張以上的大戶，合計占全部股數的比例（集保，每週六更新）')} ${fmt(b4,0)}%`;
@@ -2743,6 +2747,7 @@ function table(el,items,sortKey,mode){
   const [k,dir]=(el.dataset.sort||sortKey||'').split(':');let rows=items.slice();
   if(k){const f=SORTV[k]||(id=>sv(id,k));rows.sort((a,b)=>{const x=f(a[0]),y=f(b[0]);if(x==null)return 1;if(y==null)return -1;return (x-y)*(+dir||-1)})}
   const th=(key,lb)=>{const on=key==='pe'?['pe','eps','peg'].includes(k):key==='m_vr'?k in VR_LABEL:key==='cap'?k in CAP_LABEL:k===key;return `<th data-k="${key}" class="${on?'on':''}">${key==='pe'&&on?PE_LABEL[k]:key==='m_vr'&&on?VR_LABEL[k]:key==='cap'&&on?CAP_LABEL[k]:lb}${on?(+dir>0?' ▲':' ▼'):''}</th>`};
+  el.classList.toggle('mo',md==='m');
   if(md==='m')el.innerHTML=`<thead><tr>${th('cap','股票')}${th('m_w','週')}${th('m_m','月')}${th('m_q','季')}${th('m_vr','量比')}</tr></thead><tbody>`+rows.map(([id,role])=>`<tr data-id="${id}">${mCells(id,role)}</tr>`).join('')+'</tbody>';
   else el.innerHTML=`<thead><tr>${th('cap','股票')}${th('px','收盤')}${COLS.map(c=>th(...c)).join('')}</tr></thead><tbody>`+rows.map(([id,role])=>{
     const c=sv(id,'close'),ch=sv(id,'chg'),y=sv(id,'yoy'),ym=sv(id,'ym');
