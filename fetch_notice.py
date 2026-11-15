@@ -333,24 +333,25 @@ def closed_days():
     old = load(hp, {})
     closed = set(old.get("closed", []))
     ok = []
-    for y in (NOW.year - 1911, NOW.year - 1910):
-        try:
-            req = urllib.request.Request(f"https://www.twse.com.tw/rwd/zh/holidaySchedule/holidaySchedule?response=json&queryYear={y}",
-                                         headers={"User-Agent": "Mozilla/5.0 (tw-valuation; GitHub Actions)"})
-            with urllib.request.urlopen(req, timeout=30) as r:
-                js = json.loads(r.read().decode("utf-8-sig"))
-            rows = js.get("data") or []
-            got = set()
-            for row in rows:
-                d = re.sub(r"\D", "", str(row[0]))
-                if len(d) == 8 and "交易日" not in str(row[1]):      # 「開始交易日／最後交易日」是有開市的
-                    got.add(d)
-            if got and all(x[:4] == str(y + 1911) for x in got):
-                closed = {x for x in closed if x[:4] != str(y + 1911)} | got
-                ok.append(y)
-            time.sleep(2)
-        except Exception as e:
-            DIAG.setdefault("fail", []).append(f"holiday {y}: {str(e)[:60]}") if isinstance(DIAG.get("fail"), list) else None
+    for Y in (NOW.year, NOW.year + 1):
+        for q in (Y - 1911, Y):                        # queryYear 民國年／西元年都試，回來的日期要全是那一年才收
+            try:
+                req = urllib.request.Request(f"https://www.twse.com.tw/rwd/zh/holidaySchedule/holidaySchedule?response=json&queryYear={q}",
+                                             headers={"User-Agent": "Mozilla/5.0 (tw-valuation; GitHub Actions)"})
+                with urllib.request.urlopen(req, timeout=30) as r:
+                    js = json.loads(r.read().decode("utf-8-sig"))
+                got = set()
+                for row in js.get("data") or []:
+                    d = re.sub(r"\D", "", str(row[0]))
+                    if len(d) == 8 and "交易日" not in str(row[1]):      # 「開始交易日／最後交易日」是有開市的
+                        got.add(d)
+                time.sleep(2)
+                if got and all(x[:4] == str(Y) for x in got):
+                    closed = {x for x in closed if x[:4] != str(Y)} | got
+                    ok.append(Y)
+                    break
+            except Exception as e:
+                DIAG["fail"].append(f"holiday {q}: {str(e)[:60]}")
     if ok:
         hp.write_text(json.dumps({"updated": NOW.strftime("%Y-%m-%dT%H:%MZ"), "years": ok, "closed": sorted(closed)}, ensure_ascii=False, separators=(",", ":")))
     return closed
