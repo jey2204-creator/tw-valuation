@@ -186,7 +186,8 @@ async function init(){
   valInit();
   const [AJ0,L,T,TOP,NT0,PV]=await Promise.all([fetch('data/adj.json?t='+Math.floor(Date.now()/36e5)).then(r=>r.ok?r.json():null).catch(()=>null).then(j=>{window.ADJ=j&&j.ev||{};return j}),fetch('data/list.json?t='+Date.now()).then(r=>r.json()).catch(()=>[]),fetch('data/themes.json?t='+Date.now()).then(r=>r.json()).catch(()=>({themes:[]})),fetch('data/itrust_top.json?t='+Date.now()).then(r=>r.json()).catch(()=>null),fetch('data/notice.json?t='+Math.floor(Date.now()/3e5)).then(r=>r.ok?r.json():null).catch(()=>null),fetch('data/notice/prev.json?t='+Math.floor(Date.now()/3e5)).then(r=>r.ok?r.json():null).catch(()=>null)]);
   // 2026-11-13：跟 XQ 同步——最新名單日 >= 今天且有前一份快照 → NT＝前一份（今日適用），NXT＝最新那份（🆕 明日）
-  let NT=NT0;NXT=null;{const TD=(()=>{const q=(location.search.match(/[?&]today=(\d{8})/)||[])[1];if(q)return q;return new Date(Date.now()+8*3600e3).toISOString().slice(0,10).replace(/-/g,'')})();if(NT0&&PV&&PV.asof&&PV.asof<NT0.asof&&NT0.asof>=TD){NXT=NT0;NT=PV}}
+  const apF=N=>{if(N.applyFrom)return N.applyFrom;const d=new Date(Date.UTC(+N.asof.slice(0,4),+N.asof.slice(4,6)-1,+N.asof.slice(6)));do{d.setUTCDate(d.getUTCDate()+1)}while(d.getUTCDay()%6===0);return d.toISOString().slice(0,10).replace(/-/g,'')};const nxLab=(af,td)=>{const D=s=>new Date(Date.UTC(+s.slice(0,4),+s.slice(4,6)-1,+s.slice(6)));return (D(af)-D(td))/864e5===1?'明日':'週'+'日一二三四五六'[D(af).getUTCDay()]};
+  let NT=NT0;NXT=null;{const TD=(()=>{const q=(location.search.match(/[?&]today=(\d{8})/)||[])[1];if(q)return q;return new Date(Date.now()+8*3600e3).toISOString().slice(0,10).replace(/-/g,'')})();if(NT0&&PV&&PV.asof&&PV.asof<NT0.asof&&TD<apF(NT0)){NXT=NT0;NT=PV;window.NXL=nxLab(apF(NT0),TD)}}
   NOTICE=NT;NMAP={};
   // 歷史名單（2026-10-29）：data/notice/hist.json {YYYYMMDD:{att:[…],dis:[…]}}，選「注意股」時可切到前幾天的名單；K 線底下畫 🟡 被列注意、🔴 處置的日子
   // 2026-10-29：五名單（注意／快達／處置／快結束／剛結束）都能看前幾天；處置期間來自 data/notice/dis_hist.json {代號|起日:{c,n,m,start,end,r,measure}}
@@ -236,7 +237,7 @@ async function pick(sel){cur=sel;
   const NN={att:'🟡 注意股',dis:'🔴 處置股',pre:'🟠 快達處置'};
   const isT=sel.kind==='t'&&(sel.id in TKEY)&&!!THIST,DAYS=isT?TDAYS:NDAYS,D0=(!isT&&NXT?NOTICE.asof:DAYS[0])||'',isN=sel.kind==='t'&&(NSET.has(sel.id)||isT);$('ndSel').hidden=!(isN&&DAYS.length);
   if(isN){if(!NDATE||!(isT?THIST:HIST)[NDATE])NDATE=D0;
-    $('ndSel').innerHTML=DAYS.map(d=>`<option value="${d}">${!isT&&NXT&&d===NXT.asof?'🆕 明日':!isT&&NXT&&d===D0?'✅ 適用':'📅'} ${md(d)} 名單・${d===D0?(isT?(TOPL[TKEY[sel.id]]||[]):((NOTICE&&NOTICE[NKEY[sel.id]])||[])).length:histList(sel.id,d).length} 檔</option>`).join('');$('ndSel').value=NDATE}
+    $('ndSel').innerHTML=DAYS.map(d=>`<option value="${d}">${!isT&&NXT&&d===NXT.asof?'🆕 '+(window.NXL||'明日'):!isT&&NXT&&d===D0?'✅ 適用':'📅'} ${md(d)} 名單・${d===D0?(isT?(TOPL[TKEY[sel.id]]||[]):((NOTICE&&NOTICE[NKEY[sel.id]])||[])).length:histList(sel.id,d).length} 檔</option>`).join('');$('ndSel').value=NDATE}
   const past=isN&&NDATE&&D0&&NDATE!==D0;TOPK=isT?TKEY[sel.id]:'';
   $('sortLi').hidden=!isN;if(isN&&!RANKED)sortK='li';else if(!isN&&sortK==='li')sortK=MODE==='v'?'peh':'chg';RANKED=isN;paintBar();
   const PL=past?histList(sel.id,NDATE):null;PMAP=past?Object.fromEntries(PL.map(x=>[x.c,x])):null;

@@ -134,6 +134,8 @@ const cls=x=>x>0?'up':x<0?'dn':'';
 const md=d=>d?+d.slice(4,6)+'/'+ +d.slice(6,8):'';
 let D=null,TAB='att',MK='',SORT='def',SHARD={},K={},LR=[];
 let DAY='',HIST=null,DH=null,NAMES={},HR=null,CHGP='d';   // DAY=''＝最新；HR＝選定日回推的五名單；CHGP＝漲幅鈕 d／w／m
+let NXL='明日';   /* 下個交易日的叫法：明日／週一…（2026-11-15） */
+const apF=N=>{if(N.applyFrom)return N.applyFrom;const d=new Date(Date.UTC(+N.asof.slice(0,4),+N.asof.slice(4,6)-1,+N.asof.slice(6)));do{d.setUTCDate(d.getUTCDate()+1)}while(d.getUTCDay()%6===0);return d.toISOString().slice(0,10).replace(/-/g,'')};const nxLab=(af,td)=>{const D=s=>new Date(Date.UTC(+s.slice(0,4),+s.slice(4,6)-1,+s.slice(6)));return (D(af)-D(td))/864e5===1?'明日':'週'+'日一二三四五六'[D(af).getUTCDay()]};
 let PREV=null,CURD='',NEXTD='';   // CURD＝目前適用的名單日（同 XQ）；NEXTD＝今晚新公布、下個交易日才適用的名單日（沒有就是 ''）
 const TODAY=(()=>{const q=(location.search.match(/[?&]today=(\d{8})/)||[])[1];if(q)return q;return new Date(Date.now()+8*3600e3).toISOString().slice(0,10).replace(/-/g,'')})();
 const SRC=()=>(DAY===D.asof?D:PREV&&DAY===PREV.asof?PREV:HR)||D;
@@ -165,7 +167,7 @@ async function setDay(d){DAY=d||CURD;const sel=$('daySel');sel.value=DAY;sel.cla
   if(DAY!==D.asof&&!(PREV&&DAY===PREV.asof)){if(!HIST){const [h,dh,ls]=await Promise.all(['data/notice/hist.json','data/notice/dis_hist.json','data/list.json'].map(u=>fetch(u+'?t='+Math.floor(Date.now()/3e5)).then(r=>r.ok?r.json():null).catch(()=>null)));HIST=h||{};DH=dh||{};(ls||[]).forEach(r=>NAMES[r[0]]=[r[1],r[2]])}
     HR=histAll(DAY);$('list').innerHTML='<div class="empty">讀取中…</div>'}else HR=null;
   await ensureK();tabCnt();paint()}
-async function fillDays(){const sel=$('daySel');const head=()=>(NEXTD?`<option value="${NEXTD}">🆕明日 ${md(NEXTD)}</option>`:'')+`<option value="${CURD}">適用 ${md(CURD)}</option>`;
+async function fillDays(){const sel=$('daySel');const head=()=>(NEXTD?`<option value="${NEXTD}">🆕${NXL} ${md(NEXTD)}</option>`:'')+`<option value="${CURD}">適用 ${md(CURD)}</option>`;
   sel.innerHTML=head();sel.value=DAY;sel.onchange=e=>setDay(e.target.value);
   try{const r=await fetch('data/notice/hist.json?t='+Math.floor(Date.now()/3e5));if(!r.ok)return;HIST0=await r.json()}catch(e){return}
   const ds=Object.keys(HIST0).filter(d=>d<CURD&&(HIST0[d].att||[]).length).sort().reverse().slice(0,40);
@@ -182,7 +184,7 @@ async function init(){
   D=r&&r.ok?await r.json():null;try{PREV=rp&&rp.ok?await rp.json():null}catch(e){PREV=null}
   if(!D){$('list').innerHTML='<div class="empty">還沒有名單資料（排程第一次跑完後才有）</div>';return}
   ntDemo(D);if(PREV&&!(PREV.asof&&PREV.asof<D.asof))PREV=null;
-  if(PREV&&D.asof>=TODAY){CURD=PREV.asof;NEXTD=D.asof}else{CURD=D.asof;NEXTD=''}
+  if(PREV&&TODAY<apF(D)){CURD=PREV.asof;NEXTD=D.asof;NXL=nxLab(apF(D),TODAY)}else{CURD=D.asof;NEXTD=''}
   DAY=CURD;tabCnt();fillDays();
   $('cnt').addEventListener('click',e=>{if(e.target.closest('#toNx')){e.preventDefault();setDay(NEXTD)}});
   const h=location.hash.slice(1);if(['att','dis','pre','dend','dpost'].includes(h))TAB=h;
@@ -234,14 +236,14 @@ function paint(){
   const up=R.filter(x=>(K[x.c]||{}).chg>0).length;
   const ni=nxInfo(TAB),stale=(DAY===D.asof&&(TAB==='att'||TAB==='pre'))?ntStale(D):'';let stl='',stc='#b45309';
   if(stale)stl=stale;
-  else if(DAY===CURD){if(ni){stc='var(--accent)';stl=`🆕 明日新增 <b>${ni.add}</b>・續列 ${ni.keep}・移出 ${ni.out}${ni.wait?`・${ni.mm}待公布 ${ni.wait}`:''}　<a href="#" id="toNx" style="font-weight:800">看明日 ›</a>`}}
-  else if(DAY===NEXTD){stc='var(--accent)';stl=`🆕 ${md(NEXTD)} 公布・下個交易日適用（XQ 明天才顯示）`}
+  else if(DAY===CURD){if(ni){stc='var(--accent)';stl=`🆕 ${NXL}新增 <b>${ni.add}</b>・續列 ${ni.keep}・移出 ${ni.out}${ni.wait?`・${ni.mm}待公布 ${ni.wait}`:''}　<a href="#" id="toNx" style="font-weight:800">看${NXL} ›</a>`}}
+  else if(DAY===NEXTD){stc='var(--accent)';stl=`🆕 ${md(NEXTD)} 公布・${NXL==='明日'?'明日':NXL+'（下個交易日）'}適用（XQ 到時才顯示）`}
   else stl=`📅 ${md(DAY)} 名單・K 線與漲跌為最新（${md(D.asof)}）`;
-  $('cnt').innerHTML=(stl?`<div style="color:${stc};font-weight:600;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${stl}</div>`:'')+`<b>${R.length}</b>／${all} 檔・${md(DAY)} 公布${DAY===CURD&&NEXTD?'（今日適用）':''}・今日上漲 <b>${up}</b> 檔`;
+  $('cnt').innerHTML=(stl?`<div style="color:${stc};font-weight:600;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${stl}</div>`:'')+`<b>${R.length}</b>／${all} 檔・${md(DAY)} 公布${DAY===CURD&&NEXTD?'（目前適用）':''}・今日上漲 <b>${up}</b> 檔`;
   if(!R.length){$('list').innerHTML=`<div class="empty">${all?'這個市場沒有':'目前沒有'}${T[TAB].title}</div>`;return}
   $('list').innerHTML=R.map((x,i)=>{const k=K[x.c];const cs=TAB==='dpost'?'post':(TAB==='dis'||TAB==='dend')?'dis':(x.warn||TAB==='pre')?'warn':'';
     const tags=[];const ra=['dend','dpost'].includes(TAB)?retAfter(x.c,x.end):null;
-    if(ni&&DAY===CURD)tags.push(ni.B.has(x.c)?'<span class="tg g">明日續列</span>':ni.mm&&x.m===ni.mm?'<span class="tg g">明日待公布</span>':'<span class="tg a">明日移出</span>');
+    if(ni&&DAY===CURD)tags.push(ni.B.has(x.c)?`<span class="tg g">${NXL}續列</span>`:ni.mm&&x.m===ni.mm?`<span class="tg g">${NXL}待公布</span>`:`<span class="tg a">${NXL}移出</span>`);
     if(ni&&DAY===NEXTD&&!ni.A.has(x.c))tags.push('<span class="tg r">🆕 新增</span>');
     if(TAB==='att'){tags.push(`<span class="tg y">連 <b>${x.streak||1}</b> 天</span>`);tags.push(`<span class="tg${x.warn?' o':''}">10日 <b>${x.n10??'—'}</b>・30日 <b>${x.n30??'—'}</b> 次</span>`);if(x.warn)tags.push('<span class="tg o">⚠ 快達處置</span>');if(x.cnt)tags.push(`<span class="tg g">官方累計 <b>${fmt(x.cnt)}</b></span>`)}
     if(TAB==='dis'){tags.push(`<span class="tg r">處置 ${esc(x.startMd||'?')}～${esc(x.endMd||'?')}${x.left!=null?`・剩 <b>${x.left}</b> 日`:''}</span>`);if(x.measure)tags.push(`<span class="tg o">${esc(mzN(x.measure))}</span>`);if(x.n30)tags.push(`<span class="tg g">30日注意 <b>${x.n30}</b> 次</span>`)}
@@ -261,7 +263,7 @@ function paint(){
     </article>`}).join('');
   const io=new IntersectionObserver(es=>{es.forEach(e=>{if(!e.isIntersecting)return;const el=e.target,cv=el.querySelector('canvas.kv');if(cv&&!cv.dataset.done){const x=LR[+el.dataset.i]||{};drawMini(cv,K[el.dataset.c],x.start?{s:x.start,e:x.end}:null);cv.dataset.done=1}io.unobserve(el)})},{rootMargin:'300px 0px'});
   $('list').querySelectorAll('.nc').forEach(el=>io.observe(el));
-  $('foot').innerHTML=`小圖＝近 40 根日K（<span class="num" style="color:var(--ma20)">━</span> 20日線、<span class="num" style="color:var(--ma60)">━</span> 60日線、紅虛線＝前 20 日最高，<b>紅色底色＝處置期間</b>），底下一條＝投信每日買賣超（紅買綠賣）。6日＝近六個交易日漲幅；量比＝今日量 ÷ 前 5 日均量；「結束後」＝處置最後一天收盤到最新收盤的累計漲跌。名單每個交易日 17:25 後自動更新（資料 ${esc(D.updated||'')}，本站歷史 ${D.histDays} 天）。處置歷史自動累積中——<a href="stats.html">📊 處置後統計</a>看結束後 1／3／5／10 日報酬與勝率。漲幅鈕連點＝日→週→月（週＝5 個交易日前、月＝上個月同一天；漲幅數字已還原除權息、減資、面額變更，跟 XQ 一致，小 K 線為原始價）。預設顯示「目前適用」的名單（前一晚公布、今天盤中適用，跟 XQ 同步）；當晚新公布的在日期選單「🆕 明日」。本頁不構成投資建議。 v1113i`;
+  $('foot').innerHTML=`小圖＝近 40 根日K（<span class="num" style="color:var(--ma20)">━</span> 20日線、<span class="num" style="color:var(--ma60)">━</span> 60日線、紅虛線＝前 20 日最高，<b>紅色底色＝處置期間</b>），底下一條＝投信每日買賣超（紅買綠賣）。6日＝近六個交易日漲幅；量比＝今日量 ÷ 前 5 日均量；「結束後」＝處置最後一天收盤到最新收盤的累計漲跌。名單每個交易日 17:25 後自動更新（資料 ${esc(D.updated||'')}，本站歷史 ${D.histDays} 天）。處置歷史自動累積中——<a href="stats.html">📊 處置後統計</a>看結束後 1／3／5／10 日報酬與勝率。漲幅鈕連點＝日→週→月（週＝5 個交易日前、月＝上個月同一天；漲幅數字已還原除權息、減資、面額變更，跟 XQ 一致，小 K 線為原始價）。預設顯示「目前適用」的名單（前一個交易日晚上公布，跟 XQ 同步）；新公布的在日期選單「🆕 明日／週一」，到下個交易日才換成適用。本頁不構成投資建議。 v1115a`;
 }
 function drawMini(cv,r,band){if(!r)return;const dpr=window.devicePixelRatio||1,W=cv.clientWidth,Hh=cv.clientHeight;if(!W||!Hh)return;
   cv.width=Math.round(W*dpr);cv.height=Math.round(Hh*dpr);const g=cv.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,W,Hh);

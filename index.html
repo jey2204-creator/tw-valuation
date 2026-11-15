@@ -693,11 +693,11 @@ function ntHistSrc(day){const H=NHIST||{},days=Object.keys(H).filter(d=>d<=day&&
   const pre=[...set].filter(c=>!act[c]).map(c=>({c,n10:cnt(c,10),n30:cnt(c,30),est:true})).filter(x=>x.n10>=5||x.n30>=11).sort((x,y)=>y.n10-x.n10);
   return {asof:day,att:a,dis,pre,dend:dis.filter(x=>x.left<=3),dpost:Object.values(post).map(v=>({...dz(v),ago:ntWd(v.end,day)})).sort((x,y)=>x.ago-y.ago)}}
 function ntSrc(day){return day===NT.asof?NT:NTN&&day===NTN.asof?NTN:NHIST?ntHistSrc(day):null}
-function ntDayOpts(){const cur=NDAY||NT.asof,o=[];if(NTN)o.push([NTN.asof,'🆕明日 '+ntMd(NTN.asof)]);o.push([NT.asof,(NTN?'適用 ':'')+ntMd(NT.asof)+(NTN?'':'（'+ntWk(NT.asof)+'）')]);
+function ntDayOpts(){const cur=NDAY||NT.asof,o=[];if(NTN)o.push([NTN.asof,'🆕'+NXL+' '+ntMd(NTN.asof)]);o.push([NT.asof,(NTN?'適用 ':'')+ntMd(NT.asof)+(NTN?'':'（'+ntWk(NT.asof)+'）')]);
   Object.keys(NHIST||{}).filter(d=>d<NT.asof&&(NHIST[d].att||[]).length).sort().reverse().slice(0,40).forEach(d=>o.push([d,ntMd(d)+'（'+ntWk(d)+'）']));
   return o.map(([v,l])=>`<option value="${v}"${v===cur?' selected':''}>${l}</option>`).join('')}
 function ntHead(id){const d=NCUR,isNx=NTN&&d===NTN.asof;
-  const lab=d===NT.asof?(NTN?`今日適用（${ntMd(d)} 公布，同 XQ）`:`名單日 ${ntMd(d)}（${ntWk(d)}）`):isNx?`明日適用（${ntMd(d)} 公布）`:`歷史名單 ${ntMd(d)}（${ntWk(d)}）`;
+  const lab=d===NT.asof?(NTN?`目前適用（${ntMd(d)} 公布，同 XQ）`:`名單日 ${ntMd(d)}（${ntWk(d)}）`):isNx?`${NXL}適用（${ntMd(d)} 公布）`:`歷史名單 ${ntMd(d)}（${ntWk(d)}）`;
   const mb=MODE==='m'?`<button type="button" id="ntMode" class="ntm">數字 <i class="${NMODE==='now'?'on':''}">最新</i>·<i class="${NMODE==='day'?'on':''}">${ntMd(d)}當日</i></button>`:'';
   const w=isNx&&(id==='natt'||id==='npre')?ntStale(NTN):'';
   return `<span class="asof">🔄 ${lab}</span> ${mb}<br>${d===NT.asof?ntNxLine(id):w?`<b style="color:#b45309">${w}</b><br>`:''}`}
@@ -709,7 +709,7 @@ function ntNxLine(id){const k={natt:'att',npre:'pre',ndis:'dis'}[id];if(!k)retur
   if(!NTN){const w=(id==='natt'||id==='npre')?ntStale(NT):'';return w?`<b style="color:#b45309">${w}</b><br>`:''}
   const a=NT[k]||[],b=NTN[k]||[],A=new Set(a.map(x=>x.c)),B=new Set(b.map(x=>x.c)),m=NTN.mkAsof||{},L=['上市','上櫃'].filter(q=>!m[q]||m[q]<NTN.asof),mm=k!=='dis'&&NTN.mkAsof&&L.length===1?L[0]:'';
   const add=b.filter(x=>!A.has(x.c)).length,keep=a.filter(x=>B.has(x.c)).length,out=a.filter(x=>!B.has(x.c)&&x.m!==mm).length,wait=mm?a.filter(x=>!B.has(x.c)&&x.m===mm).length:0;
-  return `<b style="color:var(--accent)">🆕 明日新增 ${add}・續列 ${keep}・移出 ${out}${wait?`・${mm}待公布 ${wait}`:''}</b>　<a href="#" id="ntToNx">看明日 ›</a><br>`}
+  return `<b style="color:var(--accent)">🆕 ${NXL}新增 ${add}・續列 ${keep}・移出 ${out}${wait?`・${mm}待公布 ${wait}`:''}</b>　<a href="#" id="ntToNx">看${NXL} ›</a><br>`}
 
 function ntStale(N){const a=N&&N.asof,m=N&&N.mkAsof;if(!a||!m)return '';const f=d=>(+d.slice(4,6))+'/'+(+d.slice(6));const L=['上市','上櫃'].filter(k=>!m[k]||m[k]<a);if(L.length!==1)return '';const k=L[0];return `⚠️ ${k}名單還停在 ${m[k]?f(m[k]):'前一日'}（${k==='上櫃'?'櫃買':'證交所'}尚未公布 ${f(a)}），目前只有${k==='上櫃'?'上市':'上櫃'}，稍晚自動補上`}
 function ntDemo(N){if(N&&N.asof&&/[?&]stale=1/.test(location.search)){const d=new Date(+N.asof.slice(0,4),+N.asof.slice(4,6)-1,+N.asof.slice(6)-1);N.mkAsof={'上市':N.asof,'上櫃':''+d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0')}}return N}
@@ -1660,6 +1660,7 @@ let LIST=[],WATCH=[];
 // ---- 投本比自動主題（2026-10-28）：data/itrust_top.json 由 Actions（itrust_top.yml）在 itrust/data.js 推送後抽出
 //      最新名單日的投信前20／外資前20／土洋同買前20，口徑同分享版排行頁預設（買超 ≥0.5 億、市值不限）。
 //      這三個主題每天自動換名單、不可編輯、不佔 ⭐自選 30 檔額度；要長期盯的股票仍由個股頁 ☆ 自己加。
+let NXL='明日';const apF=N=>{if(N.applyFrom)return N.applyFrom;const d=new Date(Date.UTC(+N.asof.slice(0,4),+N.asof.slice(4,6)-1,+N.asof.slice(6)));do{d.setUTCDate(d.getUTCDate()+1)}while(d.getUTCDay()%6===0);return d.toISOString().slice(0,10).replace(/-/g,'')};const nxLab=(af,td)=>{const D=s=>new Date(Date.UTC(+s.slice(0,4),+s.slice(4,6)-1,+s.slice(6)));return (D(af)-D(td))/864e5===1?'明日':'週'+'日一二三四五六'[D(af).getUTCDay()]};
 let TOP=null,NT=null,NTN=null;   /* NT＝今日適用的名單（同 XQ）；NTN＝今晚新公布、明日才適用的（沒有就是 null） */const AUTO_IDS=['itop','ftop','btop','natt','npre','ndis','nend','npost'];const isAuto=id=>AUTO_IDS.includes(id);
 function autoThemes(){
   if(!TOP||!TOP.lists)return [];
@@ -3081,7 +3082,7 @@ addEventListener('hashchange',route);
   try{const r=await fetch('data/themes.json?t='+Date.now());if(r.ok)BASE=(await r.json()).themes||[]}catch(e){}
   try{const r=await fetch('data/itrust_top.json?t='+Date.now());if(r.ok)TOP=await r.json()}catch(e){}
   try{const r=await fetch('data/notice.json?t='+Math.floor(Date.now()/3e5));if(r.ok)NT=ntDemo(await r.json())}catch(e){}
-  try{if(NT){const TD=(()=>{const q=(location.search.match(/[?&]today=(\d{8})/)||[])[1];if(q)return q;return new Date(Date.now()+8*3600e3).toISOString().slice(0,10).replace(/-/g,'')})();if(NT.asof>=TD){const rp=await fetch('data/notice/prev.json?t='+Math.floor(Date.now()/3e5));const pv=rp.ok?await rp.json():null;if(pv&&pv.asof&&pv.asof<NT.asof){NTN=NT;NT=pv}}}}catch(e){}
+  try{if(NT){const TD=(()=>{const q=(location.search.match(/[?&]today=(\d{8})/)||[])[1];if(q)return q;return new Date(Date.now()+8*3600e3).toISOString().slice(0,10).replace(/-/g,'')})();if(TD<apF(NT)){const AF=apF(NT);const rp=await fetch('data/notice/prev.json?t='+Math.floor(Date.now()/3e5));const pv=rp.ok?await rp.json():null;if(pv&&pv.asof&&pv.asof<NT.asof){NTN=NT;NT=pv;NXL=nxLab(AF,TD)}}}}catch(e){}
   BASE=[...autoThemes(),...BASE];
   applyCfg();
   try{const r=await fetch('data/summary.json?t='+Date.now());if(r.ok)S=await r.json()}catch(e){}
