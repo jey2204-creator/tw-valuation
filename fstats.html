@@ -103,7 +103,7 @@ function draw(){
   <div class="card"><h2>抱 ${H} 日的${m[0]} <span>${entry}買進${M==='win'?'・中線＝50%':''}</span></h2><div class="bars">${bars}</div></div>
   <p class="foot"><b>怎麼算</b>：事件＝全市場任何一檔在某天符合 🔥（月漲幅 &gt; 0、量比 ≥ 1.5、投信或外資 5 日買超 ≥ 5 日成交量 1%）。「第 N 天」＝已連續符合幾個交易日；🆕 第 1 天＝首頁標「🆕新進」那天。報酬＝收盤對收盤、還原除權息。<b>超額</b>＝個股報酬 − 同一天進場、抱同樣天數的全市場中位數。<br>
   <b>限制</b>：① 只有 ${D.nDays} 個交易日、單一行情，結論會隨行情變，不是定律；② 同一檔連續上榜會重複計算，事件彼此不獨立，實際可信度比筆數看起來低；③ 沒算手續費、證交稅（來回約 0.6%）與漲停買不到；④ 是全市場統計，不是只算你的主題＋自選。<br>
-  價到 ${md(D.pxAsof)}・每次排程重算 <span style="opacity:.5">v1115t</span></p>`;
+  價到 ${md(D.pxAsof)}・樣本從 ${md(D.from)} 起永久累積，每次排程加入新的交易日 <span style="opacity:.5">v1115u</span></p>`;
 }
 document.addEventListener('click',e=>{const b=e.target.closest('[data-e],[data-m],[data-h]');if(!b)return;if(b.dataset.e)E=b.dataset.e;if(b.dataset.m)M=b.dataset.m;if(b.dataset.h)H=b.dataset.h;draw()});
 fetch('data/fire_stats.json?t='+Math.floor(Date.now()/3e5)).then(r=>r.ok?r.json():null).catch(()=>null).then(j=>{D=j&&j.s?j:null;draw()});
