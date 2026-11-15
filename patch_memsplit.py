@@ -7,10 +7,10 @@
 import sys,json
 prod=len(sys.argv)>1 and sys.argv[1]=='prod'
 S=json.load(open('data/summary.json',encoding='utf-8'));cap=lambda c:S['d'][c][0]*S['sh'][c]
-MEM=[['2408','製造｜DRAM'],['2344','製造｜利基型 DRAM／Flash'],['6770','製造｜記憶體代工'],['2337','製造｜NOR／NAND Flash'],
-     ['8299','IC 設計｜NAND 控制器'],['6531','IC 設計｜利基型記憶體／矽電容'],['3006','IC 設計｜利基型 DRAM／Flash'],['5351','IC 設計｜利基型 DRAM'],
+MEM=[['2408','製造｜DRAM'],['2344','製造｜利基 DRAM'],['6770','製造｜記憶體代工'],['2337','製造｜NOR Flash'],
+     ['8299','設計｜NAND 控制'],['6531','設計｜利基記憶體'],['3006','設計｜利基 DRAM'],['5351','設計｜利基 DRAM'],
      ['3260','模組｜記憶體模組'],['2451','模組｜工控比重高'],['5289','模組｜工控記憶體'],['4967','模組｜記憶體模組'],['8271','模組｜記憶體模組']]
-PKG=[['6239','封測｜記憶體封測龍頭'],['8150','封測｜記憶體／驅動 IC'],['8131','封測｜南亞科體系'],['8110','封測｜華邦電體系'],['8112','通路｜記憶體通路']]
+PKG=[['6239','封測｜封測龍頭'],['8150','封測｜記憶體／驅動'],['8131','封測｜南亞科體系'],['8110','封測｜華邦電體系'],['8112','通路｜記憶體通路']]
 for L in(MEM,PKG):
     assert all(cap(r[0])>=100e8 for r in L);L.sort(key=lambda r:-cap(r[0]))
 lines=open('data/themes.json',encoding='utf-8').read().split('\n')
@@ -31,6 +31,6 @@ rep("const cfgGet=()=>{const c=store.get('themeCfg')||{};return {order:c.order||
     "const cfgGet=()=>({order:[],hidden:[],themes:{}});   // beta 預覽：只看預設")
 rep("function cfgSave(c){store.set('themeCfg',c);applyCfg()}","function cfgSave(c){applyCfg()}   // beta 預覽：不存檔")
 s=s.replace("localStorage.removeItem('themeCfg')","0").replace("store.set('themeCfg',","(()=>{})('themeCfg',")
-rep('<span style="opacity:.5">v1115o</span>','<span style="opacity:.5">v1116a 記憶體拆分預覽</span>')
+rep('<span style="opacity:.5">v1115o</span>','<span style="opacity:.5">v1116b 記憶體拆分預覽</span>')
 s=s.replace('<title>','<title>[beta] ',1)
 open('beta.html','w',encoding='utf-8').write(s);print('ok')
