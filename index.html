@@ -278,6 +278,12 @@ body[data-view=stock].pn #tipBox{bottom:calc(80px + env(safe-area-inset-bottom))
 .erow input{font-size:14px;padding:4px 7px}
 .efield textarea{font-family:var(--f-num);font-size:12px;min-height:110px}
 .ebar{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.enav{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px}.enav h1{font-size:22px;margin:0;white-space:nowrap}
+.esw{display:flex;gap:6px;flex:none}.esw .ib{height:38px;min-width:42px;font-size:15px;white-space:nowrap}.esw .ib.arw{font-size:20px;line-height:1}.esw .ib.off{color:var(--muted)}
+#eNavList{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}#eNavList[hidden]{display:none}
+#eNavList .ib{height:auto;min-height:38px;padding:6px 8px;justify-content:flex-start;text-align:left;white-space:normal;line-height:1.25;font-size:14px}
+#eNavList .ib.cur{background:var(--accent);border-color:var(--accent);color:var(--card);font-weight:700}#eNavList .ib.off{opacity:.5}#eNavList .ib small{margin-left:4px;font-size:11px;opacity:.8}
+#eToast{display:flex;align-items:center;gap:8px;margin-top:8px;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:var(--card);font-size:13px}#eToast[hidden]{display:none}#eToast span{flex:1;min-width:0}
 .ebar .ib{height:38px;padding:0 14px}
 .ehead{display:flex;justify-content:space-between;align-items:center;padding-top:14px;font-size:13px}
 .ehead a{color:var(--accent);text-decoration:none}
@@ -446,7 +452,9 @@ details.ind.hot summary b{color:var(--up)}
 </section>
 <section id="tedit" hidden>
   <div class="ehead"><a href="#e" id="eBack">← 取消</a><span class="meta" id="eKind"></span></div>
-  <h1 style="font-size:22px;margin:6px 0 0" id="eTitle">編輯主題</h1>
+  <div class="enav"><h1 id="eTitle">編輯主題</h1><div class="esw" id="eNav" hidden><button type="button" class="ib arw" id="ePrev" aria-label="上一個主題">‹</button><button type="button" class="ib" id="ePos" aria-expanded="false" aria-controls="eNavList"></button><button type="button" class="ib arw" id="eNext" aria-label="下一個主題">›</button></div></div>
+  <div id="eNavList" hidden></div>
+  <div id="eToast" role="status" hidden><span id="eToastT"></span><button type="button" class="ib" id="eUndo">復原</button></div>
   <label class="efield" for="eName">主題名稱（開頭可放一個 emoji）<input id="eName" type="text" placeholder="例：🔋 電池材料" autocomplete="off"></label>
   <div class="efield"><span>成份股（<span id="eCnt">0</span> 檔）・按住 ⠿ 拖曳排序・備註寫這檔在主題裡的角色</span></div>
   <div class="panel" style="margin-top:4px" id="eStocks"></div>
@@ -2949,7 +2957,7 @@ function hotPaint(){
     return `<a href="#${id}">${nameOf(id)}</a> <span class="${sign(ch)}">${ch==null?'':pct(ch,1)}</span>${why?`<span class="sm">（${why}）</span>`:''}`}).join('、'):'';
   $('hotFoot').innerHTML=MO?`範圍：產業主題＋自選共 ${pool.length} 檔。🔥＝月漲幅 &gt; 0、量比（5 日均量 ÷ 20 日均量）≥ 1.5、且投信或外資 5 日買超 ≥ 5 日成交量的 1%。是「有資金在推」的訊號，不是買進訊號，要搭配估值位階看。<a href="fstats.html">📊 上榜後勝率統計 ›</a>`
     +(hasH?`<br><b>日期選單</b>可看之前哪些股票上榜（從 ${ymd(days[0])} 起）；選了舊日期，「數字」預設最新，點一下看當天收盤的數字，還亮著 🔥 的＝今天仍符合。<b>上榜後</b>＝那天收盤 → 最新收盤。<b>🆕新進</b>＝前一個交易日還沒有 🔥；<b>連 N 天</b>＝連續符合的交易日數。<b>橘底 ⚠</b>＝這個進場時機過去抱 10 日輸大盤 2 個百分點以上；<b>短線</b>＝同時是注意股，過去 5 日有超額、10 日倒輸（都依統計頁的數字即時判斷）。大戶／股東一律是最新一週。`:'')
-    +` 資料 ${ymd(MO.asof)} <span style="opacity:.5">v1115k</span>`:'第一次需要回補約 3 個月的歷史資料，Actions 跑完後就會出現。';
+    +` 資料 ${ymd(MO.asof)} <span style="opacity:.5">v1115l</span>`:'第一次需要回補約 3 個月的歷史資料，Actions 跑完後就會出現。';
 }
 document.addEventListener('toggle',e=>{if(e.target&&e.target.id==='hotBox'&&e.target.open&&!FH)fhLoad().then(()=>{try{hotPaint()}catch(err){}})},true);
 document.addEventListener('change',e=>{if(e.target&&e.target.id==='fhDay'){HDAY=e.target.value;hotPaint()}});
@@ -3098,7 +3106,42 @@ function openEditor(id){
   $('eReset').hidden=!ED.edited;$('eMsg').textContent='';$('eQ').value='';$('eRes').hidden=true;
   $('eBack').href=isNew?'#e':'#t/'+id;$('eBack').textContent=isNew?'← 取消':'← 取消';
   drawStocks();if(isNew)setTimeout(()=>$('eName').focus(),50);
+  if(!isNew&&t.hidden)$('eKind').textContent+='・已隱藏';
+  ED.snap=edSnap();eNavPaint();if(!eNavKeep)eToastHide();eNavKeep=false;
 }
+// ---- 上下主題切換（‹ N/M ▾ ›）：順序＝首頁順序，含已隱藏；自動主題不能編輯，跳過 ----
+let eNavKeep=false,eUndoCfg,eToastTm=0;
+const eNavIds=()=>allThemes().filter(t=>!t.auto);
+const edSnap=()=>JSON.stringify([$('eName').value.trim(),$('eUS').value.toUpperCase().split(/[\s,，、]+/).filter(Boolean),ED.stocks.map(([a,r])=>[a,(r||'').trim()])]);
+function eNavPaint(){
+  const A=eNavIds(),i=A.findIndex(t=>t.id===ED.id),ok=!ED.isNew&&i>=0&&A.length>1;
+  $('eNav').hidden=!ok;$('eNavList').hidden=true;$('ePos').setAttribute('aria-expanded','false');if(!ok)return;
+  $('ePos').textContent=`${i+1}/${A.length} ▾`;$('ePos').classList.toggle('off',!!A[i].hidden);
+  $('eNavList').innerHTML=A.map(t=>`<button type="button" class="ib${t.id===ED.id?' cur':''}${t.hidden?' off':''}" data-go="${t.id}">${esc(t.name)}${t.hidden?'<small>已隱藏</small>':''}</button>`).join('');
+}
+function eToastHide(){clearTimeout(eToastTm);$('eToast').hidden=true;eUndoCfg=undefined}
+function eGo(id){
+  if(!ED||ED.isNew||id===ED.id)return;syncRoles();
+  if(edSnap()!==ED.snap){   // 有改才存
+    const prev=JSON.parse(JSON.stringify(store.get('themeCfg')||null)),nm=$('eName').value.trim();
+    if(!edCommit()){$('eNavList').hidden=true;return}
+    clearTimeout(eToastTm);eUndoCfg=prev;$('eToastT').textContent=`已儲存「${nm}」`;$('eUndo').hidden=false;$('eToast').hidden=false;
+    eNavKeep=true;
+  }else if(eUndoCfg!==undefined)eNavKeep=true;   // 沒改只是翻頁：復原提示留著
+  location.replace('#e/'+id);
+}
+// 復原提示一直留著，直到再改東西或離開編輯頁
+function eToastChk(){if(eUndoCfg===undefined||!ED||$('tedit').hidden)return;syncRoles();if(edSnap()!==ED.snap)eToastHide()}
+['input','click','touchend','mouseup'].forEach(k=>$('tedit').addEventListener(k,()=>setTimeout(eToastChk,80)));
+addEventListener('hashchange',()=>{if(!location.hash.startsWith('#e/'))eToastHide()});
+function eStep(d){const A=eNavIds(),i=A.findIndex(t=>t.id===ED.id);if(i<0||A.length<2)return;eGo(A[(i+d+A.length)%A.length].id)}
+$('ePrev').addEventListener('click',()=>eStep(-1));$('eNext').addEventListener('click',()=>eStep(1));
+$('ePos').addEventListener('click',()=>{const o=$('eNavList').hidden;$('eNavList').hidden=!o;$('ePos').setAttribute('aria-expanded',o?'true':'false')});
+$('eNavList').addEventListener('click',e=>{const b=e.target.closest('button[data-go]');if(!b)return;if(b.dataset.go===ED.id){$('eNavList').hidden=true;return}eGo(b.dataset.go)});
+$('eUndo').addEventListener('click',()=>{if(eUndoCfg===undefined)return;const c=eUndoCfg,cur=ED&&!ED.isNew&&edSnap()===ED.snap?ED.id:null;
+  if(c)cfgSave(c);else{try{localStorage.removeItem('themeCfg')}catch(e){}store.set('themeCfg',null);applyCfg()}
+  clearTimeout(eToastTm);eUndoCfg=undefined;$('eToastT').textContent='已復原，剛才的改動沒有存';$('eUndo').hidden=true;eToastTm=setTimeout(eToastHide,3000);
+  if(cur&&allThemes().some(t=>t.id===cur)){eNavKeep=true;openEditor(cur)}else eNavPaint()});
 function syncRoles(){$('eStocks').querySelectorAll('input[data-i]').forEach(inp=>{ED.stocks[+inp.dataset.i][1]=inp.value})}
 function drawStocks(){
   const n=ED.stocks.length;$('eCnt').textContent=n;
@@ -3120,16 +3163,17 @@ $('eQ').addEventListener('keydown',e=>{if(e.key==='Enter'){const b=$('eRes').que
 $('eRes').addEventListener('mousedown',e=>e.preventDefault());
 $('eRes').addEventListener('click',e=>{const b=e.target.closest('button');if(!b||b.disabled)return;syncRoles();ED.stocks.push([b.dataset.id,'']);$('eQ').value='';$('eRes').hidden=true;drawStocks();
   const last=$('eStocks').querySelector(`#role-${b.dataset.id}`);if(last)last.scrollIntoView({block:'center'});$('eMsg').textContent=`已加入 ${nameOf(b.dataset.id)}，記得按「儲存」`});
-$('eSave').addEventListener('click',()=>{
+function edCommit(){
   syncRoles();const name=$('eName').value.trim();
-  if(!name){$('eMsg').textContent='請填主題名稱';$('eName').focus();return}
-  if(!ED.stocks.length){$('eMsg').textContent='請至少加入一檔股票';$('eQ').focus();return}
+  if(!name){$('eMsg').textContent='請填主題名稱';$('eName').focus();return false}
+  if(!ED.stocks.length){$('eMsg').textContent='請至少加入一檔股票';$('eQ').focus();return false}
   const c=cfgGet(),us=$('eUS').value.toUpperCase().split(/[\s,，、]+/).filter(Boolean);
   c.themes[ED.id]={id:ED.id,name,us,stocks:ED.stocks.map(([a,r])=>[a,r.trim()])};
   if(ED.isNew&&!c.order.length)c.order=allThemes().map(t=>t.id);
   if(ED.isNew)c.order=[...c.order.filter(i=>i!==ED.id),ED.id];
-  cfgSave(c);location.hash='t/'+ED.id;
-});
+  cfgSave(c);return true;
+}
+$('eSave').addEventListener('click',()=>{if(edCommit())location.hash='t/'+ED.id});
 let delArm=0;
 $('eDel').addEventListener('click',()=>{
   const c=cfgGet();
