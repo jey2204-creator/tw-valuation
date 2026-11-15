@@ -165,6 +165,11 @@ def main():
         a, b = {c for c, v in mo["d"].items() if v[10]}, set(d[keep[-1]])
         msg += "，與 momentum.json 一致" if a == b else f"，⚠ 與 momentum.json 不一致：多 {sorted(b - a)[:8]} 少 {sorted(a - b)[:8]}"
     print(msg)
+    try:                                 # 2026-11-15：上榜後 N 日報酬統計（fstats.html）
+        import fire_stats
+        fire_stats.main()
+    except Exception as e:
+        print("fire_stats 失敗：", e)
 
 
 if __name__ == "__main__":
