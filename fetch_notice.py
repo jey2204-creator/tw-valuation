@@ -331,7 +331,7 @@ out = {"updated": NOW.strftime("%Y-%m-%dT%H:%MZ"), "asof": ASOF, "mkAsof": MK_AS
 def closed_days():
     hp = DATA / "holidays.json"
     old = load(hp, {})
-    closed = set(old.get("closed", []))
+    closed = set(old.get("closed", [])) | {"20261225"}   # 證交所這支只回最新一年（目前是 2027），2026 剩下的平日休市只有 12/25 行憲紀念日，先寫死
     ok = []
     for Y in (NOW.year, NOW.year + 1):
         for q in (Y - 1911, Y):                        # queryYear 民國年／西元年都試，回來的日期要全是那一年才收
