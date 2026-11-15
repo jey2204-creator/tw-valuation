@@ -6,7 +6,8 @@
 範圍＝data/list.json 的上市櫃股票＋ETF（代號 00 開頭；世杰 2026/11/15 選「ETF 保留」）。權證、特別股、TDR、ETN 不收。
 
 每個交易日存一個不再改動的檔 data/rank/YYYYMMDD.json：
-  {"L":{"v":[[代號,成交值億]…前50],"q":[[代號,成交張]…前50]},"O":{…同上},"e":{ETF代號:[收,張,開,高,低]}}
+  {"L":{"v":[[代號,成交值億]…前50],"q":[[代號,成交張]…前50],"vs":[…],"qs":[…]},"O":{…同上},"e":{ETF代號:[收,張,開,高,低]}}
+  v／q＝含 ETF 的前 50；vs／qs＝不含 ETF 的前 50（掃描頁「ETF 含·不含」開關用）
   L＝上市、O＝上櫃；「合併」由網頁把兩邊前 50 合起來再取前 50（合併前 50 一定落在兩邊前 50 的聯集裡）。
   e＝當天所有 ETF 的日K（本站 data/chip_s 分片沒有 ETF，掃描頁小卡要畫 K 線就靠這個）。
 data/rank/names.json＝{代號:[名稱,市場]}（ETF 名稱；list.json 沒有）
@@ -133,9 +134,15 @@ def day_rec(raw, stocks, mkt, names):
             etf[c] = [cl, lots, o if o is not None else cl, h if h is not None else cl, l if l is not None else cl]
             if nm:
                 names[c] = [nm, mkt]
-    v = [[c, round(am / 1e8, 2)] for c, am, _ in sorted(rows, key=lambda x: -x[1])[:TOP] if am > 0]
-    q = [[c, lots] for c, _, lots in sorted(rows, key=lambda x: -x[2])[:TOP] if lots > 0]
-    return {"v": v, "q": q}, etf
+    def top(i, only_stock):
+        r = [x for x in rows if not (only_stock and ETF.match(x[0]))]
+        return sorted(r, key=lambda x: -x[i])[:TOP]
+    out = {}
+    for key, only in (("v", False), ("vs", True)):          # v＝含 ETF、vs＝不含 ETF（2026-11-15 加，掃描頁「ETF 含·不含」開關用）
+        out[key] = [[c, round(am / 1e8, 2)] for c, am, _ in top(1, only) if am > 0]
+    for key, only in (("q", False), ("qs", True)):
+        out[key] = [[c, lots] for c, _, lots in top(2, only) if lots > 0]
+    return out, etf
 
 
 def load(f, default):
@@ -155,7 +162,8 @@ def collect():
     names = load(RK / "names.json", {})
     state = load(RK / "state.json", {})
     tdays = trading_days()
-    have = {f.stem for f in RK.glob("2*.json")} if RK.exists() else set()
+    # 舊格式的日檔（沒有 vs／qs）視同還沒抓，重抓後覆蓋
+    have = {f.stem for f in RK.glob("2*.json") if '"vs"' in f.read_text("utf-8")} if RK.exists() else set()
     quota = FIRST_DAYS if len(have) < 5 else MORE_DAYS
     todo = [d for d in tdays if d not in have and state.get(d, 0) < 3][:quota]
     got, errs = 0, []
