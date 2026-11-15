@@ -36,7 +36,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/notice.json data/notice
+          git add data/notice.json data/notice data/holidays.json
           git diff --cached --quiet && exit 0
           git commit -m "notice: $(TZ=Asia/Taipei date '+%F %H:%M')"
           for i in 1 2 3; do
