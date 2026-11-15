@@ -118,6 +118,8 @@ select.ch.on{background-color:var(--sel);color:var(--selfg);font-weight:700}
 .sb button#rkM i{font-style:normal;font-weight:400;opacity:.45;padding:0 1px}
 .sb button#rkM i.on{font-weight:800;opacity:1;text-decoration:underline;text-underline-offset:2px}
 .sb button#rkM.sm i{padding:0 3px}
+.cnt button#rkE{display:inline-block;height:22px;line-height:20px;padding:0 8px;margin:0 4px 0 2px;border:1px solid var(--line);border-radius:11px;background:var(--card);color:var(--fg);font-weight:400;font-size:11.5px;vertical-align:middle;white-space:nowrap}
+.cnt button#rkE i{font-style:normal;opacity:.45}.cnt button#rkE i.on{font-weight:800;opacity:1;text-decoration:underline;text-underline-offset:2px}
 .cnt a{color:var(--accent);font-weight:700;text-decoration:none}
 .tg.ny{background:#b88600}.tg.no{background:#d9731a}.tg.nr{background:var(--up);outline:1.5px solid var(--up);outline-offset:1px}
 .ch.nt{border:1px solid var(--line);background:var(--card)}.ch.nt[aria-pressed=true]{background:var(--sel);color:var(--selfg)}
@@ -198,7 +200,7 @@ const cls=x=>x>0?'up':x<0?'dn':'';
 const md=d=>d?+d.slice(4,6)+'/'+ +d.slice(6,8):'';
 let FH=null,FS=null,FDAYS=[],FALL=false,FPOOL=new Set(),FIRE=false,PAST=false;
 // 2026-11-15：成交值／成交量排行（data/rank.json；RKM＝a 合併／L 上市／O 上櫃）
-let RK=null,RDAYS=[],RKM='a',RSETS={};const RKEY={vtop:'v',qtop:'q'},RMN={a:'合併',L:'上市',O:'上櫃'};
+let RK=null,RDAYS=[],RKM='a',RKE=true,RSETS={};const RKEY={vtop:'v',qtop:'q'},RMN={a:'合併',L:'上市',O:'上櫃'};
 let MISS=[],RANKED=false,CHGP='d',NAME={},MKT={},IND={},THEMES=[],NOTICE=null,NXT=null,NDAYS=[],NMAP={},PMAP=null,HIST=null,DH=null,HDAYS=[],THIST=null,TDAYS=[],TOPL=null,NDATE='',CUR_IDS=[],cur=null,sortK='chg',N=40,FL={ma20:false,ma60:false,ts3:false,vr12:false},SHARD={},ROWS=[],openI=-1,shN=80;
 // ---- 主題清單：data/themes.json ＋ 手機裡改過／自訂的主題（themeCfg，與估值看板同一份）＋ 自選（fav） ----
 const AUTO_IDS=['itop','ftop','btop','natt','npre','ndis','nend','npost'];   // 自動主題（與首頁同一份順序）
@@ -238,7 +240,7 @@ async function init(){
   {const [fj,fs]=await FHP;if(fj&&fj.d&&fj.days&&fj.days.length){FH=fj;FS=fs&&fs.s?fs:null;FDAYS=fj.days.slice().reverse();try{FALL=localStorage.getItem('scanFireAll')==='1'}catch(e){}
     FPOOL=new Set(THEMES.flatMap(t=>t.stocks.map(x=>x[0])));
     THEMES.splice(THEMES[0]&&THEMES[0].id==='_fav'?1:0,0,{id:'fire',name:`🔥 主力訊號（${md(FDAYS[0])}）`,stocks:fireList(FDAYS[0]).map(x=>[x.c,''])})}}
-  {const rj=await RKP;if(rj&&rj.hist&&rj.days&&rj.days.length){RK=rj;RDAYS=rj.days.slice();try{const m=localStorage.getItem('scanRkM');if(m==='L'||m==='O')RKM=m}catch(e){}
+  {const rj=await RKP;if(rj&&rj.hist&&rj.days&&rj.days.length){RK=rj;RDAYS=rj.days.slice();try{const m=localStorage.getItem('scanRkM');if(m==='L'||m==='O')RKM=m;RKE=localStorage.getItem('scanRkE')!=='0'}catch(e){}
     Object.entries(rj.nm||{}).forEach(([c,[n,m]])=>{if(!NAME[c]){NAME[c]=n;MKT[c]=m}});
     // ETF 日K：本站分片沒有 ETF → 用 rank.json 的 xk 組一個假分片（列＝[收,張,…,開,高,低]），build() 照常畫
     if(rj.xk&&rj.xk.days){const by={};Object.entries(rj.xk.d||{}).forEach(([c,a])=>{const g=c.slice(0,2);(by[g]=by[g]||{})[c]=a.map(r=>r?[r[0],r[1],null,null,null,null,null,null,r[2],r[3],r[4],null]:null)});
@@ -246,6 +248,7 @@ async function init(){
     let at=0;while(at<THEMES.length&&(THEMES[at].id==='_fav'||THEMES[at].id==='fire'))at++;
     THEMES.splice(at,0,{id:'vtop',name:`💰 成交值前50（${md(RDAYS[0])}）`,stocks:rkList('v',RDAYS[0]).map(x=>[x[0],''])},{id:'qtop',name:`📊 成交量前50（${md(RDAYS[0])}）`,stocks:rkList('q',RDAYS[0]).map(x=>[x[0],''])})}}
   rkPaint();
+  $('cnt').addEventListener('click',e=>{if(e.target.closest('#rkE')){RKE=!RKE;try{localStorage.setItem('scanRkE',RKE?'1':'0')}catch(x){}pick(cur)}});
   $('themes').innerHTML=THEMES.map(t=>{const dm=t.name.match(/^(.*?)\s*[（(](\d{1,2}\/\d{1,2})[）)]\s*$/);return `<button class="ch" data-t="${esc(t.id)}" aria-pressed="false" title="${esc(t.name)}">${esc(dm?dm[1]:t.name)}<span style="opacity:.6;font-size:11px"> ${t.stocks.length}${dm?'・'+dm[2]:''}</span></button>`}).join('');
   const inds=Object.keys(IND).filter(k=>k&&k!=='其他').sort((a,b)=>IND[b].length-IND[a].length);
   $('indSel').innerHTML='<option value="">證交所產業 ▾</option>'+inds.map(k=>`<option value="${esc(k)}">${esc(k)}（${IND[k].length}）</option>`).join('');
@@ -322,11 +325,11 @@ async function pick(sel){cur=sel;apClose();
 // ---- 2026-10-29：用 hist.json（每日注意名單）＋ dis_hist.json（處置起迄）回推「選定日」的五種名單；交易日用平日近似（與 fetch_notice.py 的 left 一致） ----
 const TKEY={itop:'it',ftop:'fi',btop:'both'},TLAB={it:'📈 投信買超前20',fi:'🌐 外資買超前20',both:'🤝 土洋同買前20',v:'💰 成交值前50',q:'📊 成交量前50'},TCOL={it:'var(--ma20)',fi:'var(--accent)',both:'var(--warm)',v:'var(--warm)',q:'var(--accent)'};let TOPK='';
 // ---- 2026-11-15：成交值／成交量排行。rank.json 每天存上市、上櫃各前 50；合併＝兩邊合起來重排取前 50
-function rkList(k,D){const h=RK&&RK.hist[D];if(!h)return [];const L=(h.L&&h.L[k])||[],O=(h.O&&h.O[k])||[];return (RKM==='L'?L:RKM==='O'?O:[...L,...O].sort((x,y)=>y[1]-x[1])).slice(0,RK.top||50)}
-function rkSet(k,D){const key=k+RKM+D;return RSETS[key]||(RSETS[key]=new Set(rkList(k,D).map(x=>x[0])))}
+function rkList(k,D){const h=RK&&RK.hist[D];if(!h)return [];const g=m=>{const o=h[m]||{};return RKE?(o[k]||[]):(o[k+'s']||(o[k]||[]).filter(x=>!/^00/.test(x[0])))},L=g('L'),O=g('O');return (RKM==='L'?L:RKM==='O'?O:[...L,...O].sort((x,y)=>y[1]-x[1])).slice(0,RK.top||50)}
+function rkSet(k,D){const key=k+RKM+(RKE?1:0)+D;return RSETS[key]||(RSETS[key]=new Set(rkList(k,D).map(x=>x[0])))}
 const rkFmt=(k,x)=>k==='v'?(x>=10?Math.round(x):x.toFixed(1))+'億':x>=1e5?Math.round(x/1e4)+'萬':x>=1e4?(x/1e4).toFixed(1)+'萬':fmt(x);
 function rkHist(id,D){const k=RKEY[id],ds=RDAYS.filter(d=>d<=D),stk=c=>{let n=0;for(const d of ds){if(rkSet(k,d).has(c))n++;else break}return n};
-  return rkList(k,D).map(([c,x],i)=>{const n=stk(c);return {c,k,n,rank:i+1,val:rkFmt(k,x),r:`${md(D)} ${RMN[RKM]}${k==='v'?'成交值':'成交量'}第 ${i+1} 名・${k==='v'?fmt(x,x>=100?0:1)+' 億元':fmt(x)+' 張'}・連續 ${n} 天上榜${/^00/.test(c)?'・ETF':''}`}})}
+  return rkList(k,D).map(([c,x],i)=>{const n=stk(c);return {c,k,n,rank:i+1,val:rkFmt(k,x),r:`${md(D)} ${RMN[RKM]}${k==='v'?'成交值':'成交量'}第 ${i+1} 名・${k==='v'?fmt(x,x>=100?0:1)+' 億元':fmt(x)+' 張'}・連續 ${n} 天上榜${/^00/.test(c)?'・ETF':''}${RKE?'':'（不含 ETF 的排名）'}`}})}
 // 估值模式第 3 行有 4 顆篩選鈕比較擠 → 市場鈕縮成「合·市·櫃」
 function rkPaint(){const V=MODE==='v',b=$('rkM'),isR=!!(RK&&cur&&cur.kind==='t'&&(cur.id in RKEY)),S=V&&isR;b.style.flex=V?'1 1 0':'';
   b.innerHTML=[['a',V?'合':'合併'],['L',V?'市':'上市'],['O',V?'櫃':'上櫃']].map(([k,n])=>`<i data-rm="${k}" class="${k===RKM?'on':''}">${n}</i>`).join(V?'':'·');b.classList.toggle('sm',V);
@@ -418,7 +421,7 @@ function render(){
   const mn=c=>NAME[c]||(/^\d{5}$/.test(c)&&NAME[c.slice(0,4)]?NAME[c.slice(0,4)]+'可轉債'+c.slice(4):c);   // 5 碼＝可轉債（注意股名單常見），本站不收日K
   const missTxt=MISS.length?`・<span class="miss">${MISS.length} 檔無日K</span>（${MISS.slice(0,6).map(c=>esc(mn(c))).join('、')}${MISS.length>6?'…':''}）`:'';
   const fz=FIRE&&PMAP?(v=>{const nw=v.filter(x=>x.n===1&&!x.plus).length,bd=v.filter(x=>x.bad).length,nt=v.filter(x=>x.nt).length;return `🔥 <b>🆕 ${nw}</b>・續 ${v.length-nw}${bd?`・<b style="color:#e8590c">⚠ ${bd}</b> 連太多天`:''}${nt?`・<b>${nt}</b> 注意股（短線）`:''}・<a href="fstats.html">統計 ›</a><br>`})(ROWS.map(r=>PMAP[r.c]).filter(Boolean)):'';
-  const rz=PMAP&&(TOPK==='v'||TOPK==='q')?(v=>{const e=v.filter(x=>/^00/.test(x.c)).length,o=v.filter(x=>MKT[x.c]==='上櫃').length,nw=v.filter(x=>x.n===1).length;return `${TOPK==='v'?'💰 成交值':'📊 成交量'}前 ${v.length}・<b>${RMN[RKM]}</b>（上市 ${v.length-o}・上櫃 ${o}${e?'・其中 ETF '+e:''}）・🆕 今天才上榜 <b>${nw}</b><br>`})(Object.values(PMAP)):'';
+  const rz=rkZ();
   $('cnt').innerHTML=all?fz+rz+`<b>${R.length}</b>／${all} 檔${missTxt}・最新 ${md(DK)}${nSt?`・<b>${nSt}</b> 檔仍為昨收（排最後）`:''}・<b>${ROWS.filter(r=>r.d20!=null&&r.d20>=0).length}</b> 檔站上月線・<b>${ROWS.filter(r=>r.d60!=null&&r.d60>=0).length}</b> 檔站上季線・投信連買≥3 <b>${ROWS.filter(r=>r.ts>=3).length}</b> 檔・點小卡放大`:'';
   if(!R.length){$('grid').innerHTML=`<div class="empty">${all?'沒有符合篩選條件的股票':'這個清單讀不到日K'+(MISS.length?'（'+MISS.map(c=>esc(mn(c))).join('、')+'）':'')}</div>`;return}
   $('grid').innerHTML=R.map((r,i)=>`<article class="km${r.brk&&r.chg>0?' hot':''}" data-i="${i}" role="button" tabindex="0">
@@ -428,7 +431,7 @@ function render(){
   const io=new IntersectionObserver(es=>{es.forEach(e=>{if(!e.isIntersecting)return;const el=e.target,cv=el.querySelector('canvas');if(!cv.dataset.done){drawK(cv,R[+el.dataset.i],N,{mini:true});cv.dataset.done=1}io.unobserve(el)})},{rootMargin:'300px 0px'});
   if(window.VIO)VIO.disconnect();window.VIO=new IntersectionObserver(es=>{es.forEach(e=>{const c=R[+e.target.dataset.i]&&R[+e.target.dataset.i].c;if(!c)return;e.isIntersecting?VISIBLE.add(c):VISIBLE.delete(c)})},{rootMargin:'120px 0px'});
   $('grid').querySelectorAll('.km').forEach(el=>{io.observe(el);VIO.observe(el);el.onclick=()=>openSheet(R,+el.dataset.i);el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openSheet(R,+el.dataset.i)}}});
-  $('foot').innerHTML=`小卡＝近 ${N} 根日K（<span class="num" style="color:var(--ma20)">━</span> 20日線、<span class="num" style="color:var(--ma60)">━</span> 60日線、紅虛線＝前 20 日最高），下面兩條＝投信／外資每日買賣超（紅買綠賣）。「榜序」＝照名單原本順序（買超前 20 的第 1～20 名、注意股連續天數、處置剩餘日），這些名單進入時預設；細產業／自選也有「榜序」＝照首頁主題表的成份股順序，進入時預設仍是日漲；「日漲」鈕連點循環日／週（5 日）／月（20 日）漲幅排序；量比＝今日量 ÷ 前 5 日均量；投／外＝連續買（▲）賣（▼）天數；紅框＝今天上漲且觸及前 20 日高；⚠＝近 130 日有分割（K 線價位概略還原）；日／週／月漲幅數字已還原除權息、減資、面額變更（跟 XQ 一致），小 K 線為原始價。<b>注N</b>＝連 N 天列注意、<b>快N</b>＝快達處置、<b>處N</b>＝處置中剩 N 個交易日（名單每日 17:25 更新）；K 棒底下 <span style="color:#e0a800">●</span>＝那天被列注意、<span style="color:var(--up)">●</span>＝處置期間（上市 9/14 起、上櫃 10/27 起有紀錄）。K 棒上<span style="background:var(--up);opacity:.25">　　</span>淡紅底＝處置期間（起迄來自官方公告，迄日當天算結束）。選注意／快達／處置／快結束／剛結束任一名單時，最左邊的日期選單可看前幾天的名單（K 棒照舊畫到最新交易日，虛線＝那天）；過去的快達處置名單為估算（近10日≥5次或近30日≥11次）；<b>畢N</b>＝處置結束後第 N 個交易日。投信／外資／土洋買超前 20 也可用日期選單看前幾天的名單（9/29 起累積），小卡 <b>榜N</b>＝連續 N 天上榜，K 棒底下的彩色點＝那天在這個榜上。<b>💰 成交值前50／📊 成交量前50</b>＝全市場當天成交金額／成交張數最大的 50 檔（含 ETF，不含權證、特別股），第 3 行可切 <b>合併·上市·上櫃</b>；小卡標籤是當天的成交值（億元）或成交量（張），日期選單可看前幾天的排行；ETF 沒有法人籌碼與估值。盤中最右邊虛線框那根＝<b>今天即時 K 棒</b>（每 60 秒更新畫面上看得到的小卡；漲幅前面有「昨」＝還是昨收、沒有＝今天即時；小卡右上小標只標例外：<b>延</b>＝Yahoo 延遲約 20 分、<b>未</b>＝今天還沒成交（漲停／跌停鎖死常見）、○＝這輪沒拿到報價；開盤初期「昨」的小卡漲幅顯示「昨▲x%」並排在最後，排序只比同一天的數字）。名單有股票讀不到日K（新掛牌、ETF、已下市）時統計列會標「N 檔無日K」並列出名稱，收盤後排程更新前也先顯示它。籌碼資料近 60 個交易日，K 線 130 日；分片資料與估值看板個股頁同一份。<br><b>🔥 主力訊號</b>名單＝月漲幅 &gt; 0、量比 ≥ 1.5、投信或外資 5 日買超 ≥ 5 日成交量 1%（跟首頁同一份；預設範圍＝產業主題＋自選，篩選列最後「全市場」可切換）。小卡 <b>🔥新</b>＝前一個交易日還沒有、<b>🔥N</b>＝連 N 天；<span style="color:#e8590c"><b>橘底 ⚠</b></span>＝這個進場時機過去抱 10 日輸大盤 2 點以上；<b>短</b>＝當天同時列注意股（過去 5 日有超額、10 日倒輸）。K 棒底下紅點＝那天有 🔥，大點＝每段連續上榜的第 1 天（${FH?md(FH.days[0]):'9/16'} 起才有紀錄，更早的 K 棒沒有點不代表沒訊號）；黃點＝列注意日。榜序＝🆕 新進在前、連續天數少→多。畫面上只有「上榜」的股票，漲不上去掉出名單的不在這裡——勝率請看 <a href="fstats.html">📊 統計頁</a>。 <span style="opacity:.5">v1115o</span>`;
+  $('foot').innerHTML=`小卡＝近 ${N} 根日K（<span class="num" style="color:var(--ma20)">━</span> 20日線、<span class="num" style="color:var(--ma60)">━</span> 60日線、紅虛線＝前 20 日最高），下面兩條＝投信／外資每日買賣超（紅買綠賣）。「榜序」＝照名單原本順序（買超前 20 的第 1～20 名、注意股連續天數、處置剩餘日），這些名單進入時預設；細產業／自選也有「榜序」＝照首頁主題表的成份股順序，進入時預設仍是日漲；「日漲」鈕連點循環日／週（5 日）／月（20 日）漲幅排序；量比＝今日量 ÷ 前 5 日均量；投／外＝連續買（▲）賣（▼）天數；紅框＝今天上漲且觸及前 20 日高；⚠＝近 130 日有分割（K 線價位概略還原）；日／週／月漲幅數字已還原除權息、減資、面額變更（跟 XQ 一致），小 K 線為原始價。<b>注N</b>＝連 N 天列注意、<b>快N</b>＝快達處置、<b>處N</b>＝處置中剩 N 個交易日（名單每日 17:25 更新）；K 棒底下 <span style="color:#e0a800">●</span>＝那天被列注意、<span style="color:var(--up)">●</span>＝處置期間（上市 9/14 起、上櫃 10/27 起有紀錄）。K 棒上<span style="background:var(--up);opacity:.25">　　</span>淡紅底＝處置期間（起迄來自官方公告，迄日當天算結束）。選注意／快達／處置／快結束／剛結束任一名單時，最左邊的日期選單可看前幾天的名單（K 棒照舊畫到最新交易日，虛線＝那天）；過去的快達處置名單為估算（近10日≥5次或近30日≥11次）；<b>畢N</b>＝處置結束後第 N 個交易日。投信／外資／土洋買超前 20 也可用日期選單看前幾天的名單（9/29 起累積），小卡 <b>榜N</b>＝連續 N 天上榜，K 棒底下的彩色點＝那天在這個榜上。<b>💰 成交值前50／📊 成交量前50</b>＝全市場當天成交金額／成交張數最大的 50 檔（含 ETF，不含權證、特別股），第 3 行可切 <b>合併·上市·上櫃</b>，統計列的 <b>ETF 含·不含</b> 可把 ETF 拿掉重排（不含時是純股票的前 50）；小卡標籤是當天的成交值（億元）或成交量（張），日期選單可看前幾天的排行；ETF 沒有法人籌碼與估值。盤中最右邊虛線框那根＝<b>今天即時 K 棒</b>（每 60 秒更新畫面上看得到的小卡；漲幅前面有「昨」＝還是昨收、沒有＝今天即時；小卡右上小標只標例外：<b>延</b>＝Yahoo 延遲約 20 分、<b>未</b>＝今天還沒成交（漲停／跌停鎖死常見）、○＝這輪沒拿到報價；開盤初期「昨」的小卡漲幅顯示「昨▲x%」並排在最後，排序只比同一天的數字）。名單有股票讀不到日K（新掛牌、ETF、已下市）時統計列會標「N 檔無日K」並列出名稱，收盤後排程更新前也先顯示它。籌碼資料近 60 個交易日，K 線 130 日；分片資料與估值看板個股頁同一份。<br><b>🔥 主力訊號</b>名單＝月漲幅 &gt; 0、量比 ≥ 1.5、投信或外資 5 日買超 ≥ 5 日成交量 1%（跟首頁同一份；預設範圍＝產業主題＋自選，篩選列最後「全市場」可切換）。小卡 <b>🔥新</b>＝前一個交易日還沒有、<b>🔥N</b>＝連 N 天；<span style="color:#e8590c"><b>橘底 ⚠</b></span>＝這個進場時機過去抱 10 日輸大盤 2 點以上；<b>短</b>＝當天同時列注意股（過去 5 日有超額、10 日倒輸）。K 棒底下紅點＝那天有 🔥，大點＝每段連續上榜的第 1 天（${FH?md(FH.days[0]):'9/16'} 起才有紀錄，更早的 K 棒沒有點不代表沒訊號）；黃點＝列注意日。榜序＝🆕 新進在前、連續天數少→多。畫面上只有「上榜」的股票，漲不上去掉出名單的不在這裡——勝率請看 <a href="fstats.html">📊 統計頁</a>。 <span style="opacity:.5">v1115p</span>`;
 }
 // ---- 畫 K：mini（小卡）與 full（放大卡） ----
 function drawK(cv,r,NN,opt){
@@ -540,11 +543,14 @@ function rowsV(){let R=ROWS.filter(r=>{const v=VAL[r.c];if(!VF.m80&&!VF.m20&&!VF
   const ck=CHGK(),g=(r,k)=>{const v=VAL[r.c];return v&&v[k]!=null?v[k]:null};
   const key={li:r=>-r.li,chg:r=>(r[ck]??-9),mh:r=>g(r,'mainPct')??-1,ml:r=>{const p=g(r,'mainPct');return p==null?-1:100-p},peh:r=>g(r,'pePct')??-1,pbh:r=>g(r,'pbPct')??-1}[sortK]||(r=>g(r,'mainPct')??-1);
   return R.sort((a,b)=>key(b)-key(a)||(b.chg??0)-(a.chg??0))}
+// 2026-11-15：排行名單統計列第一行（含「ETF 含·不含」開關）
+function rkZ(){if(!(PMAP&&(TOPK==='v'||TOPK==='q')))return '';const v=Object.values(PMAP),e=v.filter(x=>/^00/.test(x.c)).length,o=v.filter(x=>MKT[x.c]==='上櫃').length,nw=v.filter(x=>x.n===1).length;
+  return `${TOPK==='v'?'💰':'📊'} 前${v.length}・<b>${RMN[RKM]}</b>（市${v.length-o}・櫃${o}）<button id="rkE" title="排行要不要含 ETF（點一下切換）">ETF <i class="${RKE?'on':''}">含</i>·<i class="${RKE?'':'on'}">不含</i></button>${RKE?`<b>${e}</b> 檔・`:''}<span title="前一個交易日不在榜上">🆕 新上榜 <b>${nw}</b></span><br>`}
 function valCnt(){const all=ROWS.length,n=ROWS.filter(r=>VAL[r.c]).length,bad=ROWS.filter(r=>VAL[r.c]===null).length,wait=ROWS.filter(r=>!VAL[r.c]&&VAL[r.c]!==null).length;
   const cntP=(k,f)=>ROWS.filter(r=>VAL[r.c]&&VAL[r.c][k]!=null&&f(VAL[r.c][k])).length;
   const unl=ROWS.filter(r=>VAL[r.c]===undefined&&!VCUR[r.c]).length,more=unl>0&&!VBUSY?`・<button id="vMore">${VERR?'再試':'再讀'} ${Math.min(VLIM,unl)} 檔</button>`:'';
   const nc=ROWS.filter(r=>VAL[r.c]&&VAL[r.c].cyc).length;
-  $('cnt').innerHTML=all?`<b>${rows().length}</b>／${all} 檔${wait?`・已讀 <b>${n}</b>${bad?`・${bad} 檔讀不到`:''}・<span class="miss">${wait} 檔${VERR?'停止':'讀取中'}</span>${more}`:bad?`・${bad} 檔讀不到`:''}${VERR?`・<span class="miss">${esc(VERR)}</span>`:''}・貴≥80% <b class="up">${cntP('mainPct',p=>p>=80)}</b> 檔・便宜≤20% <b class="dn">${cntP('mainPct',p=>p<=20)}</b> 檔${nc?`・循環股 <b>${nc}</b> 檔（用淨值比）`:''}・點小卡放大`:'';
+  $('cnt').innerHTML=all?rkZ()+`<b>${rows().length}</b>／${all} 檔${wait?`・已讀 <b>${n}</b>${bad?`・${bad} 檔讀不到`:''}・<span class="miss">${wait} 檔${VERR?'停止':'讀取中'}</span>${more}`:bad?`・${bad} 檔讀不到`:''}${VERR?`・<span class="miss">${esc(VERR)}</span>`:''}・貴≥80% <b class="up">${cntP('mainPct',p=>p>=80)}</b> 檔・便宜≤20% <b class="dn">${cntP('mainPct',p=>p<=20)}</b> 檔${nc?`・循環股 <b>${nc}</b> 檔（用淨值比）`:''}・點小卡放大`:'';
   const mb=$('vMore');if(mb)mb.onclick=()=>{valKick()}}
 function renderV(){const R=rows();if(!R.length){$('grid').innerHTML=`<div class="empty">${ROWS.length?'沒有符合篩選條件的股票（估值資料還沒讀完的不算）':'這個清單讀不到資料'}</div>`;valCnt();return}
   $('grid').innerHTML=R.map((r,i)=>{const v=VAL[r.c];return `<article class="km${v?'':' vld'}${v&&v.mainPct>=80?' hot':''}" data-i="${i}" data-c="${esc(r.c)}" role="button" tabindex="0">
