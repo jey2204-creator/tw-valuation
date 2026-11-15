@@ -2935,7 +2935,7 @@ function hotPaint(){
   ht.dataset.sort=ht.dataset.sort||'m_m:-1';
   table(ht,hot.map(id=>[id,badge(id)+(THEMES.find(t=>t.stocks.some(x=>x[0]===id))||{name:'⭐ 自選'}).name]),undefined,'m');
   $('hotCtl').innerHTML=hasH&&days.length>1?`<select id="fhDay" class="ntday${isNow?'':' old'}" aria-label="主力訊號日期">${days.slice().reverse().map(d=>`<option value="${d}"${d===day?' selected':''}>${ymd(d)}（${ntWk(d)}）</option>`).join('')}</select>`
-    +'<a class="ntm" href="scan.html#fire" style="text-decoration:none" title="用 3 欄小卡 K 線看這份名單（K 棒標上榜日）">K線 ›</a>'
+    +'<a class="ntm" href="beta_scan_fd.html'+(isNow?'':'?d='+day)+'#fire" style="text-decoration:none" title="用 3 欄小卡 K 線看這份名單（K 棒標上榜日）">K線 ›</a>'
     +(isNow?'<a class="ntm" href="fstats.html" style="text-decoration:none">統計</a>':`<button type="button" id="fhMode" class="ntm" title="數字：最新／當日"><i class="${HMODE==='now'?'on':''}">最新</i>·<i class="${HMODE==='day'?'on':''}">當日</i></button>`)
     +(prev?`<span class="hsum"><b>🆕${nNew}</b>・續${hot.length-nNew}・⬇${drop.length}</span>`:''):'';
   {const c=fsC('streak','d6','10'),w=[];
@@ -2947,7 +2947,7 @@ function hotPaint(){
     return `<a href="#${id}">${nameOf(id)}</a> <span class="${sign(ch)}">${ch==null?'':pct(ch,1)}</span>${why?`<span class="sm">（${why}）</span>`:''}`}).join('、'):'';
   $('hotFoot').innerHTML=MO?`範圍：產業主題＋自選共 ${pool.length} 檔。🔥＝月漲幅 &gt; 0、量比（5 日均量 ÷ 20 日均量）≥ 1.5、且投信或外資 5 日買超 ≥ 5 日成交量的 1%。是「有資金在推」的訊號，不是買進訊號，要搭配估值位階看。<a href="fstats.html">📊 上榜後勝率統計 ›</a>`
     +(hasH?`<br><b>日期選單</b>可看之前哪些股票上榜（從 ${ymd(days[0])} 起）；選了舊日期，「數字」預設最新，點一下看當天收盤的數字，還亮著 🔥 的＝今天仍符合。<b>上榜後</b>＝那天收盤 → 最新收盤。<b>🆕新進</b>＝前一個交易日還沒有 🔥；<b>連 N 天</b>＝連續符合的交易日數。<b>橘底 ⚠</b>＝這個進場時機過去抱 10 日輸大盤 2 個百分點以上；<b>短線</b>＝同時是注意股，過去 5 日有超額、10 日倒輸（都依統計頁的數字即時判斷）。大戶／股東一律是最新一週。`:'')
-    +` 資料 ${ymd(MO.asof)} <span style="opacity:.5">v1115g</span>`:'第一次需要回補約 3 個月的歷史資料，Actions 跑完後就會出現。';
+    +` 資料 ${ymd(MO.asof)} <span style="opacity:.5">v1115h</span>`:'第一次需要回補約 3 個月的歷史資料，Actions 跑完後就會出現。';
 }
 document.addEventListener('toggle',e=>{if(e.target&&e.target.id==='hotBox'&&e.target.open&&!FH)fhLoad().then(()=>{try{hotPaint()}catch(err){}})},true);
 document.addEventListener('change',e=>{if(e.target&&e.target.id==='fhDay'){HDAY=e.target.value;hotPaint()}});
