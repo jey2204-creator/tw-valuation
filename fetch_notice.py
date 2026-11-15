@@ -325,6 +325,51 @@ out = {"updated": NOW.strftime("%Y-%m-%dT%H:%MZ"), "asof": ASOF, "mkAsof": MK_AS
        "dis": sorted(dis.values(), key=lambda x: (x["end"] or "9", x["c"])),
        "pre": sorted(pre.values(), key=lambda x: (-x["n10"], x["c"])),
        "diag": DIAG}
+# 2026-11-15：applyFrom＝這份名單開始適用的日子（名單日的下一個交易日）。網頁在那天之前都把它當「🆕 下個交易日」、
+#   前一份當「適用」，週末／休市日才會跟 XQ 一致（原本過午夜就換，週五晚上的名單週六就變適用，比 XQ 早）。
+#   休市日來自證交所「市場開休市日期」（今年＋明年），存 data/holidays.json；抓不到沿用舊檔，再不行只跳過週末。
+def closed_days():
+    hp = DATA / "holidays.json"
+    old = load(hp, {})
+    closed = set(old.get("closed", []))
+    ok = []
+    for y in (NOW.year - 1911, NOW.year - 1910):
+        try:
+            req = urllib.request.Request(f"https://www.twse.com.tw/rwd/zh/holidaySchedule/holidaySchedule?response=json&queryYear={y}",
+                                         headers={"User-Agent": "Mozilla/5.0 (tw-valuation; GitHub Actions)"})
+            with urllib.request.urlopen(req, timeout=30) as r:
+                js = json.loads(r.read().decode("utf-8-sig"))
+            rows = js.get("data") or []
+            got = set()
+            for row in rows:
+                d = re.sub(r"\D", "", str(row[0]))
+                if len(d) == 8 and "交易日" not in str(row[1]):      # 「開始交易日／最後交易日」是有開市的
+                    got.add(d)
+            if got and all(x[:4] == str(y + 1911) for x in got):
+                closed = {x for x in closed if x[:4] != str(y + 1911)} | got
+                ok.append(y)
+            time.sleep(2)
+        except Exception as e:
+            DIAG.setdefault("fail", []).append(f"holiday {y}: {str(e)[:60]}") if isinstance(DIAG.get("fail"), list) else None
+    if ok:
+        hp.write_text(json.dumps({"updated": NOW.strftime("%Y-%m-%dT%H:%MZ"), "years": ok, "closed": sorted(closed)}, ensure_ascii=False, separators=(",", ":")))
+    return closed
+
+
+def next_td(d8, closed):
+    d = dt.date(int(d8[:4]), int(d8[4:6]), int(d8[6:]))
+    for _ in range(30):
+        d += dt.timedelta(days=1)
+        if d.weekday() < 5 and f"{d:%Y%m%d}" not in closed:
+            break
+    return f"{d:%Y%m%d}"
+
+
+try:
+    out["applyFrom"] = next_td(ASOF, closed_days())
+except Exception as e:
+    print("applyFrom 失敗", e)
+
 # 2026-11-13：名單日換日時，把上一份完整名單留成 prev.json（注意頁預設顯示「目前適用」＝前一晚公布的，跟 XQ 同步）
 _old = load(OUT, {})
 if _old.get("asof") and _old["asof"] < ASOF:
