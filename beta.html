@@ -3126,10 +3126,14 @@ function eGo(id){
     const prev=JSON.parse(JSON.stringify(store.get('themeCfg')||null)),nm=$('eName').value.trim();
     if(!edCommit()){$('eNavList').hidden=true;return}
     clearTimeout(eToastTm);eUndoCfg=prev;$('eToastT').textContent=`已儲存「${nm}」`;$('eUndo').hidden=false;$('eToast').hidden=false;
-    eToastTm=setTimeout(eToastHide,6000);eNavKeep=true;
-  }
+    eNavKeep=true;
+  }else if(eUndoCfg!==undefined)eNavKeep=true;   // 沒改只是翻頁：復原提示留著
   location.replace('#e/'+id);
 }
+// 復原提示一直留著，直到再改東西或離開編輯頁
+function eToastChk(){if(eUndoCfg===undefined||!ED||$('tedit').hidden)return;syncRoles();if(edSnap()!==ED.snap)eToastHide()}
+['input','click','touchend','mouseup'].forEach(k=>$('tedit').addEventListener(k,()=>setTimeout(eToastChk,80)));
+addEventListener('hashchange',()=>{if(!location.hash.startsWith('#e/'))eToastHide()});
 function eStep(d){const A=eNavIds(),i=A.findIndex(t=>t.id===ED.id);if(i<0||A.length<2)return;eGo(A[(i+d+A.length)%A.length].id)}
 $('ePrev').addEventListener('click',()=>eStep(-1));$('eNext').addEventListener('click',()=>eStep(1));
 $('ePos').addEventListener('click',()=>{const o=$('eNavList').hidden;$('eNavList').hidden=!o;$('ePos').setAttribute('aria-expanded',o?'true':'false')});

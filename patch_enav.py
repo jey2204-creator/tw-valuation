@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """2026-11-15 編輯主題頁（#e/<id>）加「‹ 3/12 ▾ ›」上下主題切換。
 - 順序＝首頁產業主題順序（allThemes()，含已隱藏、灰色；自動主題不能編輯所以跳過），頭尾循環
-- 有改動才自動儲存再切換（沒改不存，內建主題不會被標成「已修改」）；切換後標題下方顯示「已儲存 X〔復原〕」6 秒
+- 有改動才自動儲存再切換（沒改不存，內建主題不會被標成「已修改」）；切換後標題下方顯示「已儲存 X〔復原〕」，一直留到再改東西或離開編輯頁
 - 點中間「3/12 ▾」展開主題清單直接跳；切換用 location.replace，不堆瀏覽紀錄
 用法：python3 patch_enav.py → beta.html；python3 patch_enav.py prod → index.html
 """
@@ -50,10 +50,14 @@ rep("  drawStocks();if(isNew)setTimeout(()=>$('eName').focus(),50);\n}",
  "    const prev=JSON.parse(JSON.stringify(store.get('themeCfg')||null)),nm=$('eName').value.trim();\n"
  "    if(!edCommit()){$('eNavList').hidden=true;return}\n"
  "    clearTimeout(eToastTm);eUndoCfg=prev;$('eToastT').textContent=`已儲存「${nm}」`;$('eUndo').hidden=false;$('eToast').hidden=false;\n"
- "    eToastTm=setTimeout(eToastHide,6000);eNavKeep=true;\n"
- "  }\n"
+ "    eNavKeep=true;\n"
+ "  }else if(eUndoCfg!==undefined)eNavKeep=true;   // 沒改只是翻頁：復原提示留著\n"
  "  location.replace('#e/'+id);\n"
  "}\n"
+ "// 復原提示一直留著，直到再改東西或離開編輯頁\n"
+ "function eToastChk(){if(eUndoCfg===undefined||!ED||$('tedit').hidden)return;syncRoles();if(edSnap()!==ED.snap)eToastHide()}\n"
+ "['input','click','touchend','mouseup'].forEach(k=>$('tedit').addEventListener(k,()=>setTimeout(eToastChk,80)));\n"
+ "addEventListener('hashchange',()=>{if(!location.hash.startsWith('#e/'))eToastHide()});\n"
  "function eStep(d){const A=eNavIds(),i=A.findIndex(t=>t.id===ED.id);if(i<0||A.length<2)return;eGo(A[(i+d+A.length)%A.length].id)}\n"
  "$('ePrev').addEventListener('click',()=>eStep(-1));$('eNext').addEventListener('click',()=>eStep(1));\n"
  "$('ePos').addEventListener('click',()=>{const o=$('eNavList').hidden;$('eNavList').hidden=!o;$('ePos').setAttribute('aria-expanded',o?'true':'false')});\n"
