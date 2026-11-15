@@ -306,6 +306,8 @@ body[data-view=stock].pn #tipBox{bottom:calc(80px + env(safe-area-inset-bottom))
 #hotCtl .hsum{font-size:12px;color:var(--muted);margin-left:auto;white-space:nowrap}#hotCtl .hsum b{color:var(--up);font-weight:600}
 #hotDrop{font-size:12px;line-height:1.7;white-space:normal}#hotDrop:empty{display:none}#hotDrop a{color:var(--fg);text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px}
 .flag.fnew{color:var(--up);border-color:var(--up);margin-left:0}.flag.fstk{margin-left:0}
+.flag.fwarn{background:#b45309;border-color:#b45309;color:#fff;font-weight:700}.flag.fshort{color:#b45309;border-color:#b45309;margin-left:0}
+#hotWarn{font-size:12px;line-height:1.6;white-space:normal;color:var(--fg)}#hotWarn:empty{display:none}#hotWarn b{color:#b45309}
 details.ind.hot summary b{color:var(--up)}
 .tip{font-size:13px;color:var(--muted);background:var(--card);border:1px dashed var(--line);border-radius:10px;padding:10px 12px;margin:0}
 /* ---- 公司財測（data/guide.json）---- */
@@ -373,7 +375,7 @@ details.ind.hot summary b{color:var(--up)}
   <p class="note hnote" id="homeNote" hidden>點「✏️ 編輯」可新增主題、增減成份股、調整順序（存在這支手機上）。數字為證交所／櫃買每日資料，本益比空白＝虧損或不適用。</p>
   <div class="tgrid" id="tgrid"></div>
   <div class="hub" id="hub"><a class="srlink" href="scan.html"><b>📈 K 線掃描</b><span>一面小卡掃 K、量、投信外資</span></a><a class="srlink" href="notice.html"><b>📢 注意／處置股</b><span id="ntSub">上市櫃注意、處置、快達處置名單</span></a><a class="srlink" href="flash.html#cal"><b>📅 財報日曆</b><span id="calSub">追蹤股近期公布日</span></a><a class="srlink" id="srLink" href="#s" hidden><b>💰 薪資排行</b><span id="srSub"></span></a>
-  <details class="ind hot" id="hotBox"><summary><b>🔥 主力訊號</b><span id="hotN"></span></summary><div style="padding:0 10px 8px"><div id="hotCtl"></div><div class="tbl"><table class="lst" id="hotTbl"></table></div><p class="foot" id="hotDrop"></p><p class="foot" id="hotFoot"></p></div></details>
+  <details class="ind hot" id="hotBox"><summary><b>🔥 主力訊號</b><span id="hotN"></span></summary><div style="padding:0 10px 8px"><div id="hotCtl"></div><p class="foot" id="hotWarn"></p><div class="tbl"><table class="lst" id="hotTbl"></table></div><p class="foot" id="hotDrop"></p><p class="foot" id="hotFoot"></p></div></details>
   <details class="ind" id="aiBox" hidden><summary><b>🤖 AI 成分還沒查的</b><span id="aiN"></span></summary><div style="padding:0 12px 10px;font-size:13px"><p class="foot" id="aiList" style="white-space:normal;line-height:1.7"></p><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button type="button" class="star" id="aiCopy">📋 複製清單</button><span class="foot" id="aiMsg"></span></div><p class="foot">把清單貼給 Claude，查完會更新 data/ai.json，重新整理就有標籤。只看自選與自訂主題（內建主題成份股都已查過）。</p></div></details>
   <details class="ind" id="indAll"><summary><b>🏭 官方產業別</b><span>全部上市櫃</span></summary><div id="indBox" style="padding:0 8px 8px"></div></details></div>
 </section>
@@ -683,7 +685,7 @@ details.ind.hot summary b{color:var(--up)}
 let NDAY='',NMODE='now',NCUR='',MOH=null,NHIST=null,NDH=null,NLOAD=null;
 const ntMd=d=>d?(+d.slice(4,6))+'/'+(+d.slice(6)):'';
 const ntWk=d=>'日一二三四五六'[new Date(+d.slice(0,4),+d.slice(4,6)-1,+d.slice(6)).getDay()];
-let FH=null,FHP=null,HX=null,HOTC=null,HDAY='',HMODE='now';   // 2026-11-15：主力訊號歷史（HX＝正在畫主力訊號表；HDAY=''＝最新）
+let FS=null,FH=null,FHP=null,HX=null,HOTC=null,HDAY='',HMODE='now';   // 2026-11-15：主力訊號歷史（HX＝正在畫主力訊號表；HDAY=''＝最新）
 const MDAY=()=>HX?(HX.mode==='day'?HX.day:''):NMODE==='day'&&NCUR&&MODE==='m'?NCUR:'';
 const mhRow=(id,d)=>HX?(FH&&FH.d[d]?FH.d[d][id]||null:null):MOH&&MOH.d&&MOH.d[d]?MOH.d[d][id]||null:null;
 let ADJX={};   /* 還原係數 {代號:[[事件日,係數,類別]]}（2026-11-13） */
@@ -2902,7 +2904,12 @@ function calHome(){
     el.textContent=`${lab} ${show.length} 家：`+show.slice(0,4).map(c=>`${nm(c)} ${md(c.d)}${tag(c)}`).join('、')+(show.length>4?` …（共 ${mine.length} 家待公布${late.length?`，⚠ ${late.length} 家晚於慣例`:''}）`:'')});
 }
 // ---- 2026-11-15：🔥 主力訊號看之前的個股（日期選單＋上榜後%＋🆕新進／連 N 天／掉出；data/fire_hist.json）----
-function fhLoad(){return FHP||(FHP=fetch('data/fire_hist.json?t='+Math.floor(Date.now()/3e5)).then(r=>r.ok?r.json():null).catch(()=>null).then(j=>{FH=j&&j.d?j:{days:[],d:{},x:{}}}))}
+function fhLoad(){const g=u=>fetch(u+'?t='+Math.floor(Date.now()/3e5)).then(r=>r.ok?r.json():null).catch(()=>null);return FHP||(FHP=Promise.all([g('data/fire_hist.json'),g('data/fire_stats.json')]).then(([j,st])=>{FH=j&&j.d?j:{days:[],d:{},x:{}};FS=st&&st.s?st:null}))}
+// 統計結論（隔天收盤買進）：fsC(分組, 鍵, 天數)；FMIN 筆以上才採用；FBAD＝抱 10 日輸大盤幾個百分點以上算警示
+const FMIN=50,FBAD=-0.02,fsP=(x,d=1)=>(x>0?'+':'')+(x*100).toFixed(d)+'%';
+function fsC(g,k,h){if(!FS)return null;const s=g==='streak'?FS.s:FS.cuts&&FS.cuts[g]&&FS.cuts[g].s,c=s&&s.e1&&s.e1[k]&&s.e1[k][h];return c&&c.n>=FMIN&&c.ex!=null?c:null}
+const fsTxt=(c,h)=>`抱 ${h} 日勝率 ${(c.win*100).toFixed(0)}%、平均 ${fsP(c.avg)}、${c.ex>=0?'贏':'輸'}大盤 ${Math.abs(c.ex*100).toFixed(1)} 個百分點`;
+const fsBk=n=>n>=6?'d6':n>=4?'d45':'d'+n;
 const FWHY=[[1,'月轉負'],[2,'量縮'],[4,'法人縮手'],[8,'無資料']];
 function hotPaint(){
   const fav=store.get('fav')||[],pool=[...new Set([...THEMES.flatMap(t=>t.stocks.map(x=>x[0])),...fav])],ht=$('hotTbl');
@@ -2914,19 +2921,32 @@ function hotPaint(){
   const st={};if(hasH&&prev)hot.forEach(id=>st[id]=streak(id));
   const nNew=hot.filter(id=>st[id]&&st[id][0]===1).length,drop=hasH&&prev?pool.filter(id=>has(prev,id)&&!has(day,id)):[];
   $('hotN').textContent=MO?`${isNow?'':ymd(day)+'・'}${hot.length} / ${pool.length} 檔`:'準備中';
-  const badge=id=>{const x=st[id];if(!x)return '';return x[0]===1?`<span class="flag fnew" data-tip="🆕 新進：${ymd(prev)} 還沒有 🔥，${ymd(day)} 才符合條件（剛啟動）">🆕新進</span> `:`<span class="flag fstk" data-tip="已連續 ${x[0]} 個交易日符合 🔥 條件${x[1]?'（歷史只回推到 '+ymd(days[0])+'，實際可能更久）':''}。連越多天通常越接近注意股，追進的位置越晚">連${x[0]}天${x[1]?'+':''}</span> `};
+  const per=FS?`${ymd(FS.from)}～${ymd(FS.to)}`:'',ntSet=new Set(((NTN&&NTN.asof===day?NTN:NT&&NT.asof===day?NT:null)||{att:[]}).att.map(x=>x.c));   // 跟統計同定義：事件當天公布的注意名單
+  const sInfo=n=>{const k=fsBk(n),c5=fsC('streak',k,'5'),c10=fsC('streak',k,'10');return {bad:!!(c10&&c10.ex<=FBAD),txt:c5&&c10?`。📊 這個時機過去 ${c10.n} 筆（${per}，隔天收盤買）：${fsTxt(c5,5)}；${fsTxt(c10,10)}。最差 10% 的情況抱 10 日 ${fsP(c10.p10)}`:''}};
+  const nInfo=(()=>{const c5=fsC('nt','att','5'),c10=fsC('nt','att','10');if(!c5||!c10)return null;const bad=c10.ex<=FBAD,short=!bad&&c5.ex>0.01&&c10.ex<0;return bad||short?{bad,txt:`當天列注意股：過去約 ${c5.n} 筆（${per}，隔天收盤買）${fsTxt(c5,5)}；但${fsTxt(c10,10)}，最差 10% 的情況 ${fsP(c10.p10)}。${bad?'過去追進去多半吃虧':'短線動能，不宜久抱'}`}:null})();
+  let nBad=0,nNt=0;
+  const badge=id=>{const x=st[id];let h='';
+    if(x){const si=sInfo(x[0]);if(si.bad)nBad++;
+      h=x[0]===1?`<span class="flag fnew${si.bad?' fwarn':''}" data-tip="🆕 新進：${ymd(prev)} 還沒有 🔥，${ymd(day)} 才符合條件（剛啟動）${si.txt}">🆕新進${si.bad?'⚠':''}</span> `
+        :`<span class="flag fstk${si.bad?' fwarn':''}" data-tip="已連續 ${x[0]} 個交易日符合 🔥 條件${x[1]?'（歷史只回推到 '+ymd(days[0])+'，實際可能更久）':''}${si.txt||'。連越多天通常越接近注意股，追進的位置越晚'}">連${x[0]}天${x[1]?'+':''}${si.bad?'⚠':''}</span> `}
+    if(nInfo&&ntSet.has(id)){nNt++;h+=`<span class="flag ${nInfo.bad?'fwarn':'fshort'}" data-tip="${nInfo.txt}">${nInfo.bad?'⚠注意股':'短線'}</span> `}
+    return h};
   HOTC={day,mode:isNow?'now':HMODE};
   ht.dataset.sort=ht.dataset.sort||'m_m:-1';
   table(ht,hot.map(id=>[id,badge(id)+(THEMES.find(t=>t.stocks.some(x=>x[0]===id))||{name:'⭐ 自選'}).name]),undefined,'m');
   $('hotCtl').innerHTML=hasH&&days.length>1?`<select id="fhDay" class="ntday${isNow?'':' old'}" aria-label="主力訊號日期">${days.slice().reverse().map(d=>`<option value="${d}"${d===day?' selected':''}>${ymd(d)}（${ntWk(d)}）</option>`).join('')}</select>`
     +(isNow?'<a class="ntm" href="fstats.html" style="text-decoration:none">📊 統計</a>':`<button type="button" id="fhMode" class="ntm">數字 <i class="${HMODE==='now'?'on':''}">最新</i>·<i class="${HMODE==='day'?'on':''}">當日</i></button>`)
     +(prev?`<span class="hsum"><b>🆕 ${nNew}</b>・續 ${hot.length-nNew}・⬇ ${drop.length}</span>`:''):'';
+  {const c=fsC('streak','d6','10'),w=[];
+   if(nBad&&c)w.push(`<b>⚠ ${nBad} 檔</b>已連太多天：過去這時才追，抱 10 日勝率 ${(c.win*100).toFixed(0)}%、輸大盤 ${Math.abs(c.ex*100).toFixed(1)} 點`);else if(nBad)w.push(`<b>⚠ ${nBad} 檔</b>的進場時機過去明顯輸大盤`);
+   if(nNt&&nInfo)w.push(`<b>${nInfo.bad?'⚠ ':''}${nNt} 檔</b>是注意股：${nInfo.bad?'過去追進去多半吃虧':'短線有超額、抱到 10 日倒輸'}`);
+   $('hotWarn').innerHTML=w.length?w.join('；')+`。點標籤看數字 <a href="fstats.html">統計 ›</a>`:''}
   const X=(FH&&FH.x&&FH.x[day])||{};
   $('hotDrop').innerHTML=drop.length?`<b>⬇ 掉出 ${drop.length} 檔</b>（${ymd(prev)} 有 🔥、${ymd(day)} 沒有）：`+drop.map(id=>{const x=X[id]||[],ch=isNow?sv(id,'chg'):x[1],why=FWHY.filter(([b])=>x[0]&b).map(y=>y[1]).join('＋');
     return `<a href="#${id}">${nameOf(id)}</a> <span class="${sign(ch)}">${ch==null?'':pct(ch,1)}</span>${why?`<span class="sm">（${why}）</span>`:''}`}).join('、'):'';
   $('hotFoot').innerHTML=MO?`範圍：產業主題＋自選共 ${pool.length} 檔。🔥＝月漲幅 &gt; 0、量比（5 日均量 ÷ 20 日均量）≥ 1.5、且投信或外資 5 日買超 ≥ 5 日成交量的 1%。是「有資金在推」的訊號，不是買進訊號，要搭配估值位階看。<a href="fstats.html">📊 上榜後勝率統計 ›</a>`
-    +(hasH?`<br><b>日期選單</b>可看之前哪些股票上榜（從 ${ymd(days[0])} 起）；選了舊日期，「數字」預設最新，點一下看當天收盤的數字，還亮著 🔥 的＝今天仍符合。<b>上榜後</b>＝那天收盤 → 最新收盤。<b>🆕新進</b>＝前一個交易日還沒有 🔥；<b>連 N 天</b>＝連續符合的交易日數。大戶／股東一律是最新一週。`:'')
-    +` 資料 ${ymd(MO.asof)} <span style="opacity:.5">v1115c</span>`:'第一次需要回補約 3 個月的歷史資料，Actions 跑完後就會出現。';
+    +(hasH?`<br><b>日期選單</b>可看之前哪些股票上榜（從 ${ymd(days[0])} 起）；選了舊日期，「數字」預設最新，點一下看當天收盤的數字，還亮著 🔥 的＝今天仍符合。<b>上榜後</b>＝那天收盤 → 最新收盤。<b>🆕新進</b>＝前一個交易日還沒有 🔥；<b>連 N 天</b>＝連續符合的交易日數。<b>橘底 ⚠</b>＝這個進場時機過去抱 10 日輸大盤 2 個百分點以上；<b>短線</b>＝同時是注意股，過去 5 日有超額、10 日倒輸（都依統計頁的數字即時判斷）。大戶／股東一律是最新一週。`:'')
+    +` 資料 ${ymd(MO.asof)} <span style="opacity:.5">v1115d</span>`:'第一次需要回補約 3 個月的歷史資料，Actions 跑完後就會出現。';
 }
 document.addEventListener('toggle',e=>{if(e.target&&e.target.id==='hotBox'&&e.target.open&&!FH)fhLoad().then(()=>{try{hotPaint()}catch(err){}})},true);
 document.addEventListener('change',e=>{if(e.target&&e.target.id==='fhDay'){HDAY=e.target.value;hotPaint()}});
