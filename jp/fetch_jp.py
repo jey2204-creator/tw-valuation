@@ -1,5 +1,5 @@
 """日股估值看板：Yahoo 股價 ＋ J-Quants 免費版（歷史財報）＋ TDnet 決算短信 XBRL（最新財報、会社予想）
-→ 加密寫到 jp/data/{代號}.bin、jp/data/index.bin（含 K 線掃描 sc／scan）、jp/data/k/{代號}.bin（日 K 歷史）；歷史存檔加密在 jp/raw/*.bin。
+→ 加密寫到 jp/data/{代號}.bin、jp/data/index.bin（含 K 線掃描 sc／scan）、jp/data/scan.bin（小卡牆日 K）、jp/data/k/{代號}.bin（日 K 歷史）；歷史存檔加密在 jp/raw/*.bin。
 
 公開（不加密）的只有：jp/data/meta.json（金鑰衍生用的 salt、驗證碼）、jp/data/diag.json（筆數、日期、檢查結果，不含數值）。
 ⚠️ J-Quants 條款：資料只能本人看 → 沒有 JP_DATA_KEY 就整個停止，絕不寫出明文。
@@ -1181,6 +1181,24 @@ def scan_backtest(codes):
     return {"from": first, "from3": max(y3, first or y3), **{p: {k: [cell(a) for a in acc[p][k]] for k in acc[p]} for p in acc}}
 
 
+SC_BARS = 60       # 小卡牆每檔給最近幾根日 K
+SC_PRE = 59        # 再往前多給幾個收盤價（只有收盤），第一根 K 棒才算得出 60 日線
+
+
+def scan_cards(codes):
+    """小卡牆（#scan 的「小卡」）用的日 K，寫到 data/scan.bin（開小卡牆才抓，不放 index.bin 以免首頁變慢）：
+    {asof, days:[日期…]（全部股票共用的日期軸）, k:{代號:[[日期索引, 開, 高, 低, 收, 量], …]}（最近 SC_BARS 根）,
+     pc:{代號:[收盤…]}（k 第一根之前的 SC_PRE 個收盤，由舊到新）}
+    放大卡要看更長的區間時，網頁再去抓 data/k/{代號}.bin（日 K 歷史）接在前面。"""
+    rows = {c: [r for r in (YK.get(c) or []) if r[4]] for c in codes}
+    rows = {c: r for c, r in rows.items() if len(r) >= 6}
+    days = sorted({r[0] for rs in rows.values() for r in rs[-SC_BARS:]})
+    di = {d: i for i, d in enumerate(days)}
+    return dict(asof=days[-1] if days else None, days=days,
+                k={c: [[di[r[0]]] + r[1:] for r in rs[-SC_BARS:]] for c, rs in rows.items()},
+                pc={c: [r[4] for r in rs[-SC_BARS - SC_PRE:-SC_BARS]] for c, rs in rows.items()})
+
+
 def main():
     if not PASS or len(PASS) < 8:
         print("❌ 沒有設定 JP_DATA_KEY（至少 8 字）→ 為遵守 J-Quants 條款，不寫出任何資料", file=sys.stderr)
@@ -1309,6 +1327,19 @@ def main():
                             bt_n={k: (v[1] or [0])[0] for k, v in (((scan or {}).get("bt") or {}).get("all") or {}).items()})
     except Exception as e:  # noqa
         err(f"K 線掃描: {e}")
+    try:               # 小卡牆的日 K：內容沒變（假日重跑）就不重寫；只跑少數幾檔時不動它
+        if len(ok) >= 11:
+            sk, sk_p = scan_cards(ok), OUT / "scan.bin"
+            try:
+                same = sk_p.exists() and dec(aes, sk_p.read_bytes()) == sk
+            except Exception:  # noqa
+                same = False
+            if not same:
+                sk_p.write_bytes(enc(aes, sk))
+            DIAG["scan_cards"] = dict(n=len(sk["k"]), days=len(sk["days"]), asof=sk["asof"], rewritten=not same,
+                                      bytes=sk_p.stat().st_size)
+    except Exception as e:  # noqa
+        err(f"小卡牆日 K: {e}")
     order = [c for c in STOCKS if c in idx]
     idx_p.write_bytes(enc(aes, {"stocks": [idx[c] for c in order], "themes": THEME_META, "scan": scan}))
     (RAW / "tdnet.bin").write_bytes(enc(aes, td))
