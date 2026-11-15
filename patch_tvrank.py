@@ -19,7 +19,8 @@ rep(".sb button#fAll[aria-pressed=true]{background:var(--up);border-color:var(--
     ".sb button#fAll[aria-pressed=true]{background:var(--up);border-color:var(--up);color:#fff}\n"
     ".sb button#rkM{flex:2.4 1 0;padding:0 2px}\n"
     ".sb button#rkM i{font-style:normal;font-weight:400;opacity:.45;padding:0 1px}\n"
-    ".sb button#rkM i.on{font-weight:800;opacity:1;text-decoration:underline;text-underline-offset:2px}")
+    ".sb button#rkM i.on{font-weight:800;opacity:1;text-decoration:underline;text-underline-offset:2px}\n"
+    ".sb button#rkM.sm i{padding:0 3px}")
 
 # ---- 第 3 行最後加市場切換鈕（只在排行名單顯示）
 rep('<button class="f vs" data-vf="pb80" hidden title="淨值比分位 ≥80%">PB≥80%</button></div>',
@@ -40,7 +41,10 @@ rep("const TKEY={itop:'it',ftop:'fi',btop:'both'},TLAB={it:'📈 投信買超前
     "function rkHist(id,D){const k=RKEY[id],ds=RDAYS.filter(d=>d<=D),stk=c=>{let n=0;for(const d of ds){if(rkSet(k,d).has(c))n++;else break}return n};\n"
     "  return rkList(k,D).map(([c,x],i)=>{const n=stk(c);return {c,k,n,rank:i+1,val:rkFmt(k,x),r:`${md(D)} ${RMN[RKM]}${k==='v'?'成交值':'成交量'}第 ${i+1} 名・${k==='v'?fmt(x,x>=100?0:1)+' 億元':fmt(x)+' 張'}・連續 ${n} 天上榜${/^00/.test(c)?'・ETF':''}`}})}\n"
     "// 估值模式第 3 行有 4 顆篩選鈕比較擠 → 市場鈕縮成「合·市·櫃」\n"
-    "function rkPaint(){const V=MODE==='v',b=$('rkM');b.style.flex=V?'0.95 1 0':'';b.innerHTML=[['a',V?'合':'合併'],['L',V?'市':'上市'],['O',V?'櫃':'上櫃']].map(([k,n])=>`<i data-rm=\"${k}\" class=\"${k===RKM?'on':''}\">${n}</i>`).join('·')}")
+    "function rkPaint(){const V=MODE==='v',b=$('rkM'),isR=!!(RK&&cur&&cur.kind==='t'&&(cur.id in RKEY)),S=V&&isR;b.style.flex=V?'1 1 0':'';\n"
+    "  b.innerHTML=[['a',V?'合':'合併'],['L',V?'市':'上市'],['O',V?'櫃':'上櫃']].map(([k,n])=>`<i data-rm=\"${k}\" class=\"${k===RKM?'on':''}\">${n}</i>`).join(V?'':'·');b.classList.toggle('sm',V);\n"
+    "  // 2026-11-15：排行名單的估值模式多一顆市場鈕 → 四顆篩選鈕拿掉「%」才排得下（其他名單照舊）\n"
+    "  [['m80','貴≥80'],['m20','便宜≤20'],['pe80','PE≥80'],['pb80','PB≥80']].forEach(([k,t])=>{const f=document.querySelector(`#sortBar button[data-vf=${k}]`);if(f)f.textContent=t+(S?'':'%')})}")
 rep("function paintBar(){const V=MODE==='v';", "function paintBar(){const V=MODE==='v';rkPaint();")
 
 # ---- init：平行載入 rank.json
@@ -120,7 +124,7 @@ rep("async function valGet(c){if(VAL[c])return VAL[c];",
 rep("小卡 <b>榜N</b>＝連續 N 天上榜，K 棒底下的彩色點＝那天在這個榜上。",
     "小卡 <b>榜N</b>＝連續 N 天上榜，K 棒底下的彩色點＝那天在這個榜上。"
     "<b>💰 成交值前50／📊 成交量前50</b>＝全市場當天成交金額／成交張數最大的 50 檔（含 ETF，不含權證、特別股），第 3 行可切 <b>合併·上市·上櫃</b>；小卡標籤是當天的成交值（億元）或成交量（張），日期選單可看前幾天的排行；ETF 沒有法人籌碼與估值。")
-rep("v1115m", "v1115n")
+rep("v1115m", "v1115o")
 
 if dst.startswith('beta') and s.count('<title>') == 1 and '[beta]' not in s:
     s = s.replace('<title>', '<title>[beta] ')
