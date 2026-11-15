@@ -520,6 +520,11 @@ def main():
                fields=FIELDS, req=nreq, secs=int(time.time() - T0), fails=fails, errors=errs[:30], diag={k: (v[:12] if isinstance(v, list) and k.endswith("_dates") else v) for k, v in diag.items()}, d=d, **getattr(compute, 'cal', {}))
     (OUT / "momentum.json").write_text(json.dumps(res, ensure_ascii=False, separators=(",", ":")), "utf-8")
     print(f"momentum.json: {len(d)} 檔，股價 {len(pdays)} 天、法人 {len(idays)} 天，請求 {nreq} 次，錯誤 {len(errs)}")
+    try:                                 # 2026-11-15：🔥 主力訊號每日歷史名單（首頁切日期、新進／連 N 天／掉出）
+        import fire_hist
+        fire_hist.main()
+    except Exception as e:
+        print("fire_hist 失敗：", e)
 
 
 if __name__ == "__main__":
