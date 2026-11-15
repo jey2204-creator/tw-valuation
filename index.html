@@ -302,6 +302,10 @@ body[data-view=stock].pn #tipBox{bottom:calc(80px + env(safe-area-inset-bottom))
 .beta{font-size:12px;color:var(--warm);border:1px dashed var(--warm);border-radius:8px;padding:6px 10px;margin-top:10px;display:flex;justify-content:space-between;gap:8px}
 .beta a{color:var(--accent)}
 .fire{font-size:13px;margin-left:3px}
+#hotCtl{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:8px 0 4px}#hotCtl:empty{display:none}#hotCtl .ntday{height:28px;font-weight:400}
+#hotCtl .hsum{font-size:12px;color:var(--muted);margin-left:auto;white-space:nowrap}#hotCtl .hsum b{color:var(--up);font-weight:600}
+#hotDrop{font-size:12px;line-height:1.7;white-space:normal}#hotDrop:empty{display:none}#hotDrop a{color:var(--fg);text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px}
+.flag.fnew{color:var(--up);border-color:var(--up);margin-left:0}.flag.fstk{margin-left:0}
 details.ind.hot summary b{color:var(--up)}
 .tip{font-size:13px;color:var(--muted);background:var(--card);border:1px dashed var(--line);border-radius:10px;padding:10px 12px;margin:0}
 /* ---- 公司財測（data/guide.json）---- */
@@ -369,7 +373,7 @@ details.ind.hot summary b{color:var(--up)}
   <p class="note hnote" id="homeNote" hidden>點「✏️ 編輯」可新增主題、增減成份股、調整順序（存在這支手機上）。數字為證交所／櫃買每日資料，本益比空白＝虧損或不適用。</p>
   <div class="tgrid" id="tgrid"></div>
   <div class="hub" id="hub"><a class="srlink" href="scan.html"><b>📈 K 線掃描</b><span>一面小卡掃 K、量、投信外資</span></a><a class="srlink" href="notice.html"><b>📢 注意／處置股</b><span id="ntSub">上市櫃注意、處置、快達處置名單</span></a><a class="srlink" href="flash.html#cal"><b>📅 財報日曆</b><span id="calSub">追蹤股近期公布日</span></a><a class="srlink" id="srLink" href="#s" hidden><b>💰 薪資排行</b><span id="srSub"></span></a>
-  <details class="ind hot" id="hotBox"><summary><b>🔥 主力訊號</b><span id="hotN"></span></summary><div style="padding:0 10px 8px"><div class="tbl"><table class="lst" id="hotTbl"></table></div><p class="foot" id="hotFoot"></p></div></details>
+  <details class="ind hot" id="hotBox"><summary><b>🔥 主力訊號</b><span id="hotN"></span></summary><div style="padding:0 10px 8px"><div id="hotCtl"></div><div class="tbl"><table class="lst" id="hotTbl"></table></div><p class="foot" id="hotDrop"></p><p class="foot" id="hotFoot"></p></div></details>
   <details class="ind" id="aiBox" hidden><summary><b>🤖 AI 成分還沒查的</b><span id="aiN"></span></summary><div style="padding:0 12px 10px;font-size:13px"><p class="foot" id="aiList" style="white-space:normal;line-height:1.7"></p><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button type="button" class="star" id="aiCopy">📋 複製清單</button><span class="foot" id="aiMsg"></span></div><p class="foot">把清單貼給 Claude，查完會更新 data/ai.json，重新整理就有標籤。只看自選與自訂主題（內建主題成份股都已查過）。</p></div></details>
   <details class="ind" id="indAll"><summary><b>🏭 官方產業別</b><span>全部上市櫃</span></summary><div id="indBox" style="padding:0 8px 8px"></div></details></div>
 </section>
@@ -679,8 +683,9 @@ details.ind.hot summary b{color:var(--up)}
 let NDAY='',NMODE='now',NCUR='',MOH=null,NHIST=null,NDH=null,NLOAD=null;
 const ntMd=d=>d?(+d.slice(4,6))+'/'+(+d.slice(6)):'';
 const ntWk=d=>'日一二三四五六'[new Date(+d.slice(0,4),+d.slice(4,6)-1,+d.slice(6)).getDay()];
-const MDAY=()=>NMODE==='day'&&NCUR&&MODE==='m'?NCUR:'';
-const mhRow=(id,d)=>MOH&&MOH.d&&MOH.d[d]?MOH.d[d][id]||null:null;
+let FH=null,FHP=null,HX=null,HOTC=null,HDAY='',HMODE='now';   // 2026-11-15：主力訊號歷史（HX＝正在畫主力訊號表；HDAY=''＝最新）
+const MDAY=()=>HX?(HX.mode==='day'?HX.day:''):NMODE==='day'&&NCUR&&MODE==='m'?NCUR:'';
+const mhRow=(id,d)=>HX?(FH&&FH.d[d]?FH.d[d][id]||null:null):MOH&&MOH.d&&MOH.d[d]?MOH.d[d][id]||null:null;
 let ADJX={};   /* 還原係數 {代號:[[事件日,係數,類別]]}（2026-11-13） */
 const adjF=(id,a,b)=>(ADJX[id]||[]).reduce((k,[d,f])=>a<d&&d<=b?k*f:k,1);
 function ntLoad(){return NLOAD||(NLOAD=Promise.all(['data/notice/hist.json','data/notice/dis_hist.json','data/notice/mo_hist.json','data/adj.json'].map(u=>fetch(u+'?t='+Math.floor(Date.now()/3e5)).then(r=>r.ok?r.json():null).catch(()=>null))).then(([h,dh,mo,aj])=>{NHIST=h||{};NDH=dh||{};MOH=mo;ADJX=aj&&aj.ev||{}}))}
@@ -2644,7 +2649,7 @@ function chip(id){const b=tv(id,'b4m'),p=tv(id,'pplm');if(b==null||p==null)retur
 const CHIP={c:['集中','var(--up)','大戶 4 週增加、股東人數減少：散戶賣、大戶接'],r:['散戶追','var(--warm)','大戶與股東人數 4 週都增加（人數 >3%）：熱度高，留意追高'],d:['分散','var(--down)','大戶 4 週減少、股東人數增加：大戶賣、散戶接']};
 const tv=(id,k)=>TD&&TD.d[id]?TD.d[id][TF[k]]:null;
 const pp=(v,d=2)=>v==null?'':(v>0?'+':'')+v.toFixed(d);
-const mv=(id,k)=>{const ai={w:0,m:1,q:2}[k];{const d=MDAY();if(d){const r=mhRow(id,d),i={w:0,m:1,q:2,vr:3,f5:4,t5:5}[k],a=MOH&&MOH.a&&MOH.a[d]&&MOH.a[d][id];if(a&&ai!=null&&r)return a[ai];return r&&i!=null?r[i]:null}}if(!MO)return null;if(ai!=null&&MO.da&&MO.da[id])return MO.da[id][ai];if((k==='m'||k==='q')&&MO.dc){const c=MO.dc[id];return c?c[k==='m'?0:1]:null}return MO.d[id]?MO.d[id][MF[k]]:null};const calMd=k=>{const s=MO&&MO.calBase&&MO.calBase[k];return s?(+s.slice(4,6))+'/'+(+s.slice(6,8)):''};
+const mv=(id,k)=>{const ai={w:0,m:1,q:2}[k];{const d=MDAY();if(d){const r=mhRow(id,d),i={w:0,m:1,q:2,vr:3,f5:4,t5:5}[k],a=!HX&&MOH&&MOH.a&&MOH.a[d]&&MOH.a[d][id];if(a&&ai!=null&&r)return a[ai];return r&&i!=null?r[i]:null}}if(!MO)return null;if(ai!=null&&MO.da&&MO.da[id])return MO.da[id][ai];if((k==='m'||k==='q')&&MO.dc){const c=MO.dc[id];return c?c[k==='m'?0:1]:null}return MO.d[id]?MO.d[id][MF[k]]:null};const calMd=k=>{const s=MO&&MO.calBase&&MO.calBase[k];return s?(+s.slice(4,6))+'/'+(+s.slice(6,8)):''};
 const lots=v=>v==null?'—':(v>0?'+':v<0?'−':'')+(Math.abs(v)>=10000?(Math.abs(v)/10000).toFixed(1)+'萬':Math.abs(v).toLocaleString('zh-TW'));
 const ymd=s=>s?(+s.slice(4,6))+'/'+(+s.slice(6)):'';
 function segHTML(){return `<button type="button" data-m="v" aria-pressed="${MODE==='v'}">📈 估值</button><button type="button" data-m="m" aria-pressed="${MODE==='m'}">🚀 動能</button>`}
@@ -2721,10 +2726,10 @@ const VR_CYCLE=['m_vr:-1','m_t5:-1','m_f5:-1','m_tS:-1','m_b4w:-1','m_b4m:-1','m
 const VR_LABEL={m_vr:'量比',m_t5:'投信5日',m_f5:'外資5日',m_tS:'投信連買',m_b4w:'大戶週增',m_b4m:'大戶4週',m_pplm:'人數4週減'};
 function LAY(){return 'B'}
 function mCells(id,role){
-  const mh=MDAY()?mhRow(id,MDAY()):null,c=MDAY()?(mh?mh[6]:null):sv(id,'close'),ch=MDAY()?(mh?((MOH.a&&MOH.a[MDAY()]&&MOH.a[MDAY()][id])||[])[3]??mh[7]:null):sv(id,'chg'),fire=mv(id,'fire'),
-    aft=(()=>{if(!NCUR)return '';const r=mhRow(id,NCUR),c0=r&&r[6],c1=sv(id,'close');if(!c0||!c1||!MO||!(MO.asof>NCUR))return '';const v=(c1/(c0*adjF(id,NCUR,MO.asof))-1)*100;return `<span class="sub"><span class="sm">列入後</span> <span class="${sign(v)}">${pct(v)}</span></span>`})(),t5=mv(id,'t5'),f5=mv(id,'f5'),tS=mv(id,'tS'),vr=mv(id,'vr');
+  const mh=MDAY()?mhRow(id,MDAY()):null,c=MDAY()?(mh?mh[6]:null):sv(id,'close'),ch=MDAY()?(mh?((!HX&&MOH&&MOH.a&&MOH.a[MDAY()]&&MOH.a[MDAY()][id])||[])[3]??mh[7]:null):sv(id,'chg'),fire=HX&&HX.mode==='day'?1:mv(id,'fire'),
+    aft=(()=>{const nd=HX?HX.day:NCUR;if(!nd)return '';const r=mhRow(id,nd),c0=r&&r[6],c1=sv(id,'close');if(!c0||!c1||!MO||!(MO.asof>nd))return '';const v=(c1/(c0*adjF(id,nd,MO.asof))-1)*100;return `<span class="sub"><span class="sm">${HX?'上榜後':'列入後'}</span> <span class="${sign(v)}">${pct(v)}</span></span>`})(),t5=mv(id,'t5'),f5=mv(id,'f5'),tS=mv(id,'tS'),vr=mv(id,'vr');
   const p=k=>{const v=mv(id,k);return `<td class="${sign(v)}">${pct(v)}</td>`};
-  const b4=tv(id,'b4'),b4w=tv(id,'b4w'),b4m=tv(id,'b4m'),pm=(v=>v!=null&&Math.abs(v)>=1000?null:v)(tv(id,'pplm')),ck=chip(id),up=fire&&ck==='c';   /* ≥1000%＝集保佔位資料造成的假數字，不顯示 */
+  const b4=tv(id,'b4'),b4w=tv(id,'b4w'),b4m=tv(id,'b4m'),pm=(v=>v!=null&&Math.abs(v)>=1000?null:v)(tv(id,'pplm')),ck=chip(id),up=fire&&ck==='c'&&!(HX&&HX.mode==='day');   /* ≥1000%＝集保佔位資料造成的假數字，不顯示 */
   const L=LAY(), tip=(t,body)=>`<span class="dtip" data-tip="${body}">${t}</span>`;
   const fl=ck?`<span class="flag" style="color:${CHIP[ck][1]};border-color:${CHIP[ck][1]}" data-tip="${CHIP[ck][0]}：${CHIP[ck][2]}（看最近 4 週）">${CHIP[ck][0]} ⓘ</span>`:'';
   const ppl=pm==null?'':`<span class="sub">${tip('股東','集保股東人數（每週）。人數減少＝散戶在賣')} 4週 <span class="${sign(pm)}">${pp(pm,Math.abs(pm)>=100?0:1)}%</span></span>`;
@@ -2741,7 +2746,8 @@ function mCells(id,role){
 }
 const PE_CYCLE=['pe:-1','pe:1','eps:-1','peg:1',''];
 const PE_LABEL={pe:'本益比',eps:'EPS年增',peg:'PEG'};
-function table(el,items,sortKey,mode){
+function table(el,items,sortKey,mode){const _h=HX;HX=el&&el.id==='hotTbl'?HOTC:null;try{return table0(el,items,sortKey,mode)}finally{HX=_h}}
+function table0(el,items,sortKey,mode){
   const md=mode||MODE;
   // items: [[代號, 角色]]；sortKey: el.dataset.sort（例 'yoy:-1'）
   const [k,dir]=(el.dataset.sort||sortKey||'').split(':');let rows=items.slice();
@@ -2895,6 +2901,37 @@ function calHome(){
     if(!mine.length){el.textContent=`${E[0].q.slice(2)} 追蹤股都已公布`;return}
     el.textContent=`${lab} ${show.length} 家：`+show.slice(0,4).map(c=>`${nm(c)} ${md(c.d)}${tag(c)}`).join('、')+(show.length>4?` …（共 ${mine.length} 家待公布${late.length?`，⚠ ${late.length} 家晚於慣例`:''}）`:'')});
 }
+// ---- 2026-11-15：🔥 主力訊號看之前的個股（日期選單＋上榜後%＋🆕新進／連 N 天／掉出；data/fire_hist.json）----
+function fhLoad(){return FHP||(FHP=fetch('data/fire_hist.json?t='+Math.floor(Date.now()/3e5)).then(r=>r.ok?r.json():null).catch(()=>null).then(j=>{FH=j&&j.d?j:{days:[],d:{},x:{}}}))}
+const FWHY=[[1,'月轉負'],[2,'量縮'],[4,'法人縮手'],[8,'無資料']];
+function hotPaint(){
+  const fav=store.get('fav')||[],pool=[...new Set([...THEMES.flatMap(t=>t.stocks.map(x=>x[0])),...fav])],ht=$('hotTbl');
+  const last=MO?MO.asof:'',hasH=!!(FH&&FH.days.length),days=[...new Set([...(hasH?FH.days:[]),last].filter(Boolean))].sort();
+  if(HDAY&&(!days.includes(HDAY)||HDAY===last))HDAY='';
+  const day=HDAY||last,isNow=day===last,i=days.indexOf(day),prev=i>0?days[i-1]:'';
+  const has=(d,id)=>d===last&&MO?!!(MO.d[id]&&MO.d[id][MF.fire]):!!(FH&&FH.d[d]&&FH.d[d][id]);
+  const hot=pool.filter(id=>has(day,id)),streak=id=>{let n=1,k=i-1;while(k>=0&&has(days[k],id)){n++;k--}return [n,k<0]};
+  const st={};if(hasH&&prev)hot.forEach(id=>st[id]=streak(id));
+  const nNew=hot.filter(id=>st[id]&&st[id][0]===1).length,drop=hasH&&prev?pool.filter(id=>has(prev,id)&&!has(day,id)):[];
+  $('hotN').textContent=MO?`${isNow?'':ymd(day)+'・'}${hot.length} / ${pool.length} 檔`:'準備中';
+  const badge=id=>{const x=st[id];if(!x)return '';return x[0]===1?`<span class="flag fnew" data-tip="🆕 新進：${ymd(prev)} 還沒有 🔥，${ymd(day)} 才符合條件（剛啟動）">🆕新進</span> `:`<span class="flag fstk" data-tip="已連續 ${x[0]} 個交易日符合 🔥 條件${x[1]?'（歷史只回推到 '+ymd(days[0])+'，實際可能更久）':''}。連越多天通常越接近注意股，追進的位置越晚">連${x[0]}天${x[1]?'+':''}</span> `};
+  HOTC={day,mode:isNow?'now':HMODE};
+  ht.dataset.sort=ht.dataset.sort||'m_m:-1';
+  table(ht,hot.map(id=>[id,badge(id)+(THEMES.find(t=>t.stocks.some(x=>x[0]===id))||{name:'⭐ 自選'}).name]),undefined,'m');
+  $('hotCtl').innerHTML=hasH&&days.length>1?`<select id="fhDay" class="ntday${isNow?'':' old'}" aria-label="主力訊號日期">${days.slice().reverse().map(d=>`<option value="${d}"${d===day?' selected':''}>${ymd(d)}（${ntWk(d)}）</option>`).join('')}</select>`
+    +(isNow?'':`<button type="button" id="fhMode" class="ntm">數字 <i class="${HMODE==='now'?'on':''}">最新</i>·<i class="${HMODE==='day'?'on':''}">當日</i></button>`)
+    +(prev?`<span class="hsum"><b>🆕 ${nNew}</b>・續 ${hot.length-nNew}・⬇ ${drop.length}</span>`:''):'';
+  const X=(FH&&FH.x&&FH.x[day])||{};
+  $('hotDrop').innerHTML=drop.length?`<b>⬇ 掉出 ${drop.length} 檔</b>（${ymd(prev)} 有 🔥、${ymd(day)} 沒有）：`+drop.map(id=>{const x=X[id]||[],ch=isNow?sv(id,'chg'):x[1],why=FWHY.filter(([b])=>x[0]&b).map(y=>y[1]).join('＋');
+    return `<a href="#${id}">${nameOf(id)}</a> <span class="${sign(ch)}">${ch==null?'':pct(ch,1)}</span>${why?`<span class="sm">（${why}）</span>`:''}`}).join('、'):'';
+  $('hotFoot').innerHTML=MO?`範圍：產業主題＋自選共 ${pool.length} 檔。🔥＝月漲幅 &gt; 0、量比（5 日均量 ÷ 20 日均量）≥ 1.5、且投信或外資 5 日買超 ≥ 5 日成交量的 1%。是「有資金在推」的訊號，不是買進訊號，要搭配估值位階看。`
+    +(hasH?`<br><b>日期選單</b>可看之前哪些股票上榜（從 ${ymd(days[0])} 起）；選了舊日期，「數字」預設最新，點一下看當天收盤的數字，還亮著 🔥 的＝今天仍符合。<b>上榜後</b>＝那天收盤 → 最新收盤。<b>🆕新進</b>＝前一個交易日還沒有 🔥；<b>連 N 天</b>＝連續符合的交易日數。大戶／股東一律是最新一週。`:'')
+    +` 資料 ${ymd(MO.asof)} <span style="opacity:.5">v1115b</span>`:'第一次需要回補約 3 個月的歷史資料，Actions 跑完後就會出現。';
+}
+document.addEventListener('toggle',e=>{if(e.target&&e.target.id==='hotBox'&&e.target.open&&!FH)fhLoad().then(()=>{try{hotPaint()}catch(err){}})},true);
+document.addEventListener('change',e=>{if(e.target&&e.target.id==='fhDay'){HDAY=e.target.value;hotPaint()}});
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('#fhMode');if(!b)return;e.preventDefault();HMODE=HMODE==='day'?'now':'day';hotPaint()});
+
 function renderHome(){
   RANK=null;srHome();try{calHome()}catch(e){}
   modeQ();$('sumAsof').innerHTML=S?`<span class="asof" id="sumPx">收盤 ${S.pxAsof?S.pxAsof.slice(4,6)+'/'+S.pxAsof.slice(6):S.updated.slice(5,10).replace('-','/')}</span>・營收 ${S.revYM?+S.revYM.slice(5)+'月':'—'}${QN?'・EPS '+QN:''}`:'數字待 Actions 產生';
@@ -2902,10 +2939,7 @@ function renderHome(){
   $('favBox').innerHTML=fav.length?'<div class="panel"><div class="tbl"><table class="lst" id="favTbl"></table></div></div>':'<p class="dtip">在個股頁點「☆ 加入自選」，就會出現在這裡。</p>';
   if(fav.length)table($('favTbl'),fav.map(id=>[id,'']));
   paintSeg();try{aiPending(fav)}catch(e){}
-  {const pool=[...new Set([...THEMES.flatMap(t=>t.stocks.map(x=>x[0])),...fav])],hot=pool.filter(id=>mv(id,'fire'));
-   $('hotN').textContent=MO?`${hot.length} / ${pool.length} 檔`:'準備中';
-   const ht=$('hotTbl');ht.dataset.sort=ht.dataset.sort||'m_m:-1';table(ht,hot.map(id=>[id,(THEMES.find(t=>t.stocks.some(x=>x[0]===id))||{name:'⭐ 自選'}).name]),undefined,'m');
-   $('hotFoot').innerHTML=MO?`範圍：產業主題＋自選共 ${pool.length} 檔。🔥＝月漲幅 &gt; 0、量比（5 日均量 ÷ 20 日均量）≥ 1.5、且投信或外資 5 日買超 ≥ 5 日成交量的 1%。是「有資金在推」的訊號，不是買進訊號，要搭配估值位階看。資料 ${ymd(MO.asof)}`:'第一次需要回補約 3 個月的歷史資料，Actions 跑完後就會出現。'}
+  hotPaint();
   const tg=$('tgrid');tg.classList.toggle('tl',DENSE);
   if(DENSE){themeList(tg)}else
   $('tgrid').innerHTML=THEMES.map(t=>{const ids=t.stocks.map(x=>x[0]),y=median(ids.map(i=>sv(i,'yoy'))),pe=median(ids.map(i=>sv(i,'pe'))),ey=median(ids.map(epsY)),pg=median(ids.map(peg)),mm=median(ids.map(i=>mv(i,'m'))),nf=ids.filter(i=>mv(i,'fire')).length;
