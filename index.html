@@ -302,6 +302,12 @@ body[data-view=stock].pn #tipBox{bottom:calc(80px + env(safe-area-inset-bottom))
 .erow.chosen{background:var(--bg);border-radius:10px}
 .erow.dragging{background:var(--card);box-shadow:0 8px 24px rgba(0,0,0,.25);border-radius:10px}
 .erow .cd{font-family:var(--f-num);font-size:11.5px;color:var(--muted);font-weight:400}
+/* 編輯主題成份股：單行式（2026-11-15） */
+#eStocks .erow{padding:4px 0}
+#eStocks .nm{flex:none;width:76px;min-width:0;display:flex;flex-direction:column;line-height:1.2}
+#eStocks .nm b{font-size:14.5px;overflow-wrap:anywhere}#eStocks .nm b.s{font-size:12.5px}#eStocks .nm b.xs{font-size:11.5px}
+#eStocks .erow input{flex:1;width:auto;font-size:16px;line-height:20px;height:32px;padding:5px 7px}
+#eStocks .drag{width:34px;height:34px;margin-left:2px}
 .tag{font-size:10.5px;font-weight:500;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:0 6px;margin-left:4px;vertical-align:2px}
 .segm{flex:none;display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:var(--card)}
 .segm button{white-space:nowrap;font:inherit;font-size:12.5px;font-weight:700;letter-spacing:0;border:0;background:none;color:var(--muted);padding:4px 11px;cursor:pointer}
@@ -2961,7 +2967,7 @@ function hotPaint(){
     return `<a href="#${id}">${nameOf(id)}</a> <span class="${sign(ch)}">${ch==null?'':pct(ch,1)}</span>${why?`<span class="sm">（${why}）</span>`:''}`}).join('、'):'';
   $('hotFoot').innerHTML=MO?`範圍：產業主題＋自選共 ${pool.length} 檔。🔥＝月漲幅 &gt; 0、量比（5 日均量 ÷ 20 日均量）≥ 1.5、且投信或外資 5 日買超 ≥ 5 日成交量的 1%。是「有資金在推」的訊號，不是買進訊號，要搭配估值位階看。<a href="fstats.html">📊 上榜後勝率統計 ›</a>`
     +(hasH?`<br><b>日期選單</b>可看之前哪些股票上榜（從 ${ymd(days[0])} 起）；選了舊日期，「數字」預設最新，點一下看當天收盤的數字，還亮著 🔥 的＝今天仍符合。<b>上榜後</b>＝那天收盤 → 最新收盤。<b>🆕新進</b>＝前一個交易日還沒有 🔥；<b>連 N 天</b>＝連續符合的交易日數。<b>橘底 ⚠</b>＝這個進場時機過去抱 10 日輸大盤 2 個百分點以上；<b>短線</b>＝同時是注意股，過去 5 日有超額、10 日倒輸（都依統計頁的數字即時判斷）。大戶／股東一律是最新一週。`:'')
-    +` 資料 ${ymd(MO.asof)} <span style="opacity:.5">v1115m</span>`:'第一次需要回補約 3 個月的歷史資料，Actions 跑完後就會出現。';
+    +` 資料 ${ymd(MO.asof)} <span style="opacity:.5">v1115n</span>`:'第一次需要回補約 3 個月的歷史資料，Actions 跑完後就會出現。';
 }
 document.addEventListener('toggle',e=>{if(e.target&&e.target.id==='hotBox'&&e.target.open&&!FH)fhLoad().then(()=>{try{hotPaint()}catch(err){}})},true);
 document.addEventListener('change',e=>{if(e.target&&e.target.id==='fhDay'){HDAY=e.target.value;hotPaint()}});
@@ -3158,10 +3164,11 @@ $('eUndo').addEventListener('click',()=>{if(eUndoCfg===undefined)return;const c=
   clearTimeout(eToastTm);eUndoCfg=undefined;$('eToastT').textContent='已復原，剛才的改動沒有存';$('eUndo').hidden=true;eToastTm=setTimeout(eToastHide,3000);
   if(cur&&allThemes().some(t=>t.id===cur)){eNavKeep=true;openEditor(cur)}else eNavPaint()});
 function syncRoles(){$('eStocks').querySelectorAll('input[data-i]').forEach(inp=>{ED.stocks[+inp.dataset.i][1]=inp.value})}
+function eNmCls(n){let w=0;for(const ch of String(n))w+=ch.charCodeAt(0)>255?1:.55;return w<=5?'':w<=6?'s':'xs'}
 function drawStocks(){
   const n=ED.stocks.length;$('eCnt').textContent=n;
   $('eStocks').innerHTML=n?ED.stocks.map(([c,r],i)=>`<div class="erow">
-    <div class="grow"><b>${esc(nameOf(c))} <span class="cd">${c}</span></b><input data-i="${i}" id="role-${c}" value="${esc(r)}" placeholder="角色備註（選填）" aria-label="${esc(nameOf(c))} 角色備註"></div>
+    <div class="nm"><b class="${eNmCls(nameOf(c))}">${esc(nameOf(c))}</b><span class="cd">${c}</span></div><input data-i="${i}" id="role-${c}" value="${esc(r)}" placeholder="角色備註" aria-label="${esc(nameOf(c))} 角色備註">
     <button type="button" class="ib warn" data-rm="${i}" aria-label="移除 ${esc(nameOf(c))}">✕</button><span class="drag" aria-hidden="true">⠿</span></div>`).join(''):'<p class="foot" style="padding:10px 0">還沒有成份股，用下面的搜尋框加入。</p>';
 }
 $('eStocks').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;syncRoles();
