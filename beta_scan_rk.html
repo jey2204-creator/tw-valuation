@@ -418,7 +418,7 @@ function render(){
   $('cnt').innerHTML=all?fz+rz+`<b>${R.length}</b>／${all} 檔${missTxt}・最新 ${md(DK)}${nSt?`・<b>${nSt}</b> 檔仍為昨收（排最後）`:''}・<b>${ROWS.filter(r=>r.d20!=null&&r.d20>=0).length}</b> 檔站上月線・<b>${ROWS.filter(r=>r.d60!=null&&r.d60>=0).length}</b> 檔站上季線・投信連買≥3 <b>${ROWS.filter(r=>r.ts>=3).length}</b> 檔・點小卡放大`:'';
   if(!R.length){$('grid').innerHTML=`<div class="empty">${all?'沒有符合篩選條件的股票':'這個清單讀不到日K'+(MISS.length?'（'+MISS.map(c=>esc(mn(c))).join('、')+'）':'')}</div>`;return}
   $('grid').innerHTML=R.map((r,i)=>`<article class="km${r.brk&&r.chg>0?' hot':''}" data-i="${i}" role="button" tabindex="0">
-    <div class="km-h"><span class="rk">${i+1}</span>${nmB(r.n)}<span class="cd">${esc(r.c)}</span>${r.split?'<span class="cd" title="近 130 日有分割／股數變動，價位概略還原">⚠</span>':''}${liveTag(r)}${nbadge(r.c)}</div>
+    <div class="km-h"><span class="rk">${i+1}</span>${nmB(r.n)}${/^00/.test(r.c)&&[...r.n].length>4?'':`<span class="cd">${esc(r.c)}</span>`}${r.split?'<span class="cd" title="近 130 日有分割／股數變動，價位概略還原">⚠</span>':''}${liveTag(r)}${nbadge(r.c)}</div>
     <div class="km-s"><span class="${cls(r.chg)}${r.stale?' st':''}" title="${r.stale?'昨天收盤的漲跌幅':''}">${r.stale?'昨':''}${pct(r.chg)}</span>${CHGP!=='d'?`<span class="${cls(r[CHGK()])}">${CHGP==='w'?'週':'月'}${pct(r[CHGK()])}</span>`:''}<span class="vr${r.vr>=1.5?' hi':''}">量${r.vr==null?'—':r.vr.toFixed(1)+'×'}</span>${badge(r.ts,'投')}${badge(r.fs,'外')}</div>
     <canvas class="km-cv"></canvas></article>`).join('');
   const io=new IntersectionObserver(es=>{es.forEach(e=>{if(!e.isIntersecting)return;const el=e.target,cv=el.querySelector('canvas');if(!cv.dataset.done){drawK(cv,R[+el.dataset.i],N,{mini:true});cv.dataset.done=1}io.unobserve(el)})},{rootMargin:'300px 0px'});
@@ -544,7 +544,7 @@ function valCnt(){const all=ROWS.length,n=ROWS.filter(r=>VAL[r.c]).length,bad=RO
   const mb=$('vMore');if(mb)mb.onclick=()=>{valKick()}}
 function renderV(){const R=rows();if(!R.length){$('grid').innerHTML=`<div class="empty">${ROWS.length?'沒有符合篩選條件的股票（估值資料還沒讀完的不算）':'這個清單讀不到資料'}</div>`;valCnt();return}
   $('grid').innerHTML=R.map((r,i)=>{const v=VAL[r.c];return `<article class="km${v?'':' vld'}${v&&v.mainPct>=80?' hot':''}" data-i="${i}" data-c="${esc(r.c)}" role="button" tabindex="0">
-    <div class="km-h"><span class="rk">${i+1}</span>${nmB(r.n)}<span class="cd">${esc(r.c)}</span>${v&&v.cyc?`<span class="tg cy" style="margin-left:auto" title="循環股（${esc(v.why)}）：以淨值比為主尺">循</span>`:''}${nbadge(r.c)}</div>
+    <div class="km-h"><span class="rk">${i+1}</span>${nmB(r.n)}${/^00/.test(r.c)&&[...r.n].length>4?'':`<span class="cd">${esc(r.c)}</span>`}${v&&v.cyc?`<span class="tg cy" style="margin-left:auto" title="循環股（${esc(v.why)}）：以淨值比為主尺">循</span>`:''}${nbadge(r.c)}</div>
     <div class="km-s">${vStat(r.c)}</div>
     <canvas class="km-cv"></canvas></article>`}).join('');
   const io=new IntersectionObserver(es=>{es.forEach(e=>{if(!e.isIntersecting)return;const el=e.target,cv=el.querySelector('canvas'),v=VAL[el.dataset.c];if(!cv.dataset.done&&v){drawRiver(cv,v,{mini:true,kind:mainRv(v)});cv.dataset.done=1}io.unobserve(el)})},{rootMargin:'300px 0px'});

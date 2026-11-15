@@ -102,6 +102,10 @@ rep("css(k==='it'?'--ma20':k==='fi'?'--accent':'--warm')", "css(k==='it'?'--ma20
 rep("title=\"${esc(m.r)}\">榜${m.n}</span>`:m.k==='g'?", "title=\"${esc(m.r)}\">${m.val||'榜'+m.n}</span>`:m.k==='g'?")
 rep("TLAB[nm.k]?'第 '+nm.rank+' 名・連 '+nm.n+' 天上榜':", "TLAB[nm.k]?'第 '+nm.rank+' 名'+(nm.val?'・'+nm.val:'')+'・連 '+nm.n+' 天上榜':")
 
+# ETF 名稱長、代號 5～6 碼：小卡放不下 → ETF 小卡不顯示代號（放大卡仍有），名稱才看得完整
+rep('<span class="rk">${i+1}</span>${nmB(r.n)}<span class="cd">${esc(r.c)}</span>',
+    '<span class="rk">${i+1}</span>${nmB(r.n)}${/^00/.test(r.c)&&[...r.n].length>4?\'\':`<span class="cd">${esc(r.c)}</span>`}', 2)
+
 # 統計列（K 線模式）
 rep("  $('cnt').innerHTML=all?fz+`<b>${R.length}</b>／${all} 檔${missTxt}",
     "  const rz=PMAP&&(TOPK==='v'||TOPK==='q')?(v=>{const e=v.filter(x=>/^00/.test(x.c)).length,o=v.filter(x=>MKT[x.c]==='上櫃').length,nw=v.filter(x=>x.n===1).length;"
