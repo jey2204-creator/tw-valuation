@@ -1,0 +1,39 @@
+name: 成交值成交量排行
+# 掃描頁「💰 成交值前50／📊 成交量前50」（data/rank.json）。資料來源同 fetch_momentum（證交所 MI_INDEX、櫃買 dailyQuotes）。
+on:
+  workflow_run:               # 跟在「更新股票資料」後面跑（那時 data/hist 已有當天的交易日）
+    workflows: ["更新股票資料"]
+    types: [completed]
+  push:
+    branches: [main]
+    paths: ["fetch_rank.py", ".github/workflows/rank.yml"]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: rank
+  cancel-in-progress: false
+jobs:
+  rank:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: 抓成交值／成交量排行（含 ETF 日K）
+        run: python fetch_rank.py
+      - name: 提交
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/rank.json data/rank
+          git diff --cached --quiet && exit 0
+          git commit -m "rank: $(TZ=Asia/Taipei date '+%F %H:%M')"
+          for i in 1 2 3; do
+            git pull --rebase -X theirs origin main && git push && exit 0
+            sleep 10
+          done
+          exit 1
