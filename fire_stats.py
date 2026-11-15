@@ -5,6 +5,7 @@
 進場價兩種：e1＝隔天收盤（訊號收盤後才知道，實際買得到的價位，預設）；e0＝當天收盤（理想值，買不到）。
 持有 1／3／5／10 個交易日，報酬＝收盤對收盤、還原除權息／減資／面額變更（data/adj.json）。
 對照＝同一天進場、持有同樣天數的「全市場所有股票」報酬中位數；超額＝個股報酬 − 對照。
+2026-11-15 另加條件切分 cuts：nt 注意股／處置中、sh 法人占量、who 誰在買（外資／投信），格式同 s，每個切分附「全部 🔥」一列。
 每格：n 筆數、nd 涵蓋幾個進場日、win 勝率、avg 平均、med 中位數、p10 最差 10%（第 10 百分位）、base 對照平均、ex 平均超額、exWin 贏過對照的比例。
 2026-11-15 起事件永久存檔在 data/fire_ev/YYYYMM.json，統計從存檔算（fire_hist.json 只留 60 個交易日會滾動，存檔不會掉）。
 由 fire_hist.py 的 main() 結尾呼叫；也可單獨跑：python fire_stats.py
@@ -177,8 +178,41 @@ def main():
                 tab[key][str(h)] = cell(rows)
         out[f"e{e}"] = tab
     fdays = adays
+    # ---- 2026-11-15：條件切分（不再跟「第幾天」交叉，樣本才夠）；每個切分最後都附「全部 🔥」一列 ----
+    sh = lambda v: max(v[11] or 0, v[12] or 0) if len(v) > 12 and (v[11] is not None or v[12] is not None) else None
+    fo = lambda v: (v[11] or 0) >= 1 if len(v) > 12 else None
+    tr = lambda v: (v[12] or 0) >= 1 if len(v) > 12 else None
+    nt_ = lambda v: v[10] if len(v) > 10 else None
+    CUTS = [
+        ("nt", "注意股", "事件當天的狀態", [
+            ("att", "🟡 列注意股", lambda v: nt_(v) is not None and nt_(v) & 1),
+            ("dis", "⛔ 處置中", lambda v: nt_(v) == 2),
+            ("no", "都不是", lambda v: nt_(v) == 0)]),
+        ("sh", "法人占量", "外資或投信 5 日買超 ÷ 5 日成交量（取大的）", [
+            ("a", "1～3%", lambda v: sh(v) is not None and sh(v) < 3),
+            ("b", "3～10%", lambda v: sh(v) is not None and 3 <= sh(v) < 10),
+            ("c", "10～20%", lambda v: sh(v) is not None and 10 <= sh(v) < 20),
+            ("d", "20% 以上", lambda v: sh(v) is not None and sh(v) >= 20)]),
+        ("who", "誰在買", "5 日買超達成交量 1% 的是誰", [
+            ("f", "只有外資", lambda v: fo(v) and not tr(v)),
+            ("t", "只有投信", lambda v: tr(v) and not fo(v)),
+            ("ft", "外資＋投信", lambda v: fo(v) and tr(v))]),
+    ]
+    cuts = {}
+    for ck, cname, cdesc, groups in CUTS:
+        cs = {}
+        for e in (0, 1):
+            tab = {}
+            for gk, _, fn in groups + [("all", "全部 🔥", lambda v: True)]:
+                tab[gk] = {}
+                for hi_, h in enumerate(HS):
+                    j = e * len(HS) + hi_
+                    rows = [(v[1 + j], (ARC[d]["b"] or [None] * 8)[j], d) for d, c, v in ev if v[1 + j] is not None and fn(v)]
+                    tab[gk][str(h)] = cell(rows)
+            cs[f"e{e}"] = tab
+        cuts[ck] = {"name": cname, "desc": cdesc, "buckets": [[gk, lb] for gk, lb, _ in groups] + [["all", "全部 🔥"]], "s": cs}
     res = {"updated": dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%MZ"), "from": fdays[0], "to": fdays[-1], "pxAsof": stems[-1],
-           "nDays": len(fdays), "nEv": len(ev), "hs": HS, "buckets": [[k, lb] for k, lb, *_ in BUCKETS] + [["all", "全部 🔥"]], "s": out}
+           "nDays": len(fdays), "nEv": len(ev), "hs": HS, "buckets": [[k, lb] for k, lb, *_ in BUCKETS] + [["all", "全部 🔥"]], "s": out, "cuts": cuts}
     OUT.write_text(json.dumps(res, ensure_ascii=False, separators=(",", ":")), "utf-8")
     c = out["e1"]["d1"]["5"] or {}
     print(f"fire_stats: {len(ev)} 筆事件（{fdays[0]}～{fdays[-1]}）；🆕 隔日收盤進場持有 5 日：n={c.get('n')} 勝率 {c.get('win')} 平均 {c.get('avg')} 超額 {c.get('ex')}")
