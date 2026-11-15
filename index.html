@@ -349,6 +349,7 @@ details.ind.hot summary b{color:var(--up)}
 .hub>.srlink span,.hub>details.ind>summary span{font-size:12px;color:var(--muted);font-family:var(--f-num);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .hub>.srlink span::after,.hub>details.ind>summary span::after{content:"›";display:inline-block;margin-left:6px;font-size:14px;transition:transform .15s}
 .hub>details.ind[open]>summary span::after{transform:rotate(90deg)}
+.hub>.rkrow{padding:0 8px 0 0;gap:6px}.hub>.rkrow .rkmain{flex:1;min-width:0;display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:44px;padding-left:12px;color:var(--fg);text-decoration:none}.hub>.rkrow span::after{content:none}.hub>.rkrow .rkbt{flex:none;display:flex;align-items:center;justify-content:center;min-width:38px;height:28px;padding:0 4px;box-sizing:border-box;border:1px solid var(--line);border-radius:8px;font-size:13px;font-weight:600;color:var(--fg);text-decoration:none;position:relative}.hub>.rkrow .rkbt::before{content:"";position:absolute;inset:-8px -3px}.hub>.rkrow .rkbt::after{content:"›";margin-left:3px;color:var(--muted);font-weight:400}
 .hub>details.ind[open]>summary{border-bottom:1px dashed var(--line)}
 .note.hnote{margin:2px 0 8px}
 .emgn{font-size:11px;line-height:1.45;margin-top:4px;padding:5px 8px;border-radius:8px;background:#fff7e0;color:#7a5200}
@@ -376,7 +377,7 @@ details.ind.hot summary b{color:var(--up)}
   <div class="tgrid" id="tgrid"></div>
   <div class="hub" id="hub"><a class="srlink" href="scan.html"><b>📈 K 線掃描</b><span>一面小卡掃 K、量、投信外資</span></a>
   <details class="ind hot" id="hotBox"><summary><b>🔥 主力訊號</b><span id="hotN"></span></summary><div style="padding:0 10px 8px"><div id="hotCtl"></div><p class="foot" id="hotWarn"></p><div class="tbl"><table class="lst" id="hotTbl"></table></div><p class="foot" id="hotDrop"></p><p class="foot" id="hotFoot"></p></div></details>
-  <a class="srlink" href="notice.html"><b>📢 注意／處置股</b><span id="ntSub">上市櫃注意、處置、快達處置名單</span></a><a class="srlink" href="flash.html#cal"><b>📅 財報日曆</b><span id="calSub">追蹤股近期公布日</span></a><a class="srlink" id="srLink" href="#s" hidden><b>💰 薪資排行</b><span id="srSub"></span></a>
+  <div class="srlink rkrow" id="rkRow"><a class="rkmain" href="scan.html#vtop"><b>💰 成交值排行</b><span id="rkSub">成交值／量前 50</span></a><a class="rkbt" href="scan.html#vtop" aria-label="成交值前 50">值</a><a class="rkbt" href="scan.html#qtop" aria-label="成交量前 50">量</a></div><a class="srlink" href="notice.html"><b>📢 注意／處置股</b><span id="ntSub">上市櫃注意、處置、快達處置名單</span></a><a class="srlink" href="flash.html#cal"><b>📅 財報日曆</b><span id="calSub">追蹤股近期公布日</span></a><a class="srlink" id="srLink" href="#s" hidden><b>💰 薪資排行</b><span id="srSub"></span></a>
   <details class="ind" id="aiBox" hidden><summary><b>🤖 AI 成分還沒查的</b><span id="aiN"></span></summary><div style="padding:0 12px 10px;font-size:13px"><p class="foot" id="aiList" style="white-space:normal;line-height:1.7"></p><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button type="button" class="star" id="aiCopy">📋 複製清單</button><span class="foot" id="aiMsg"></span></div><p class="foot">把清單貼給 Claude，查完會更新 data/ai.json，重新整理就有標籤。只看自選與自訂主題（內建主題成份股都已查過）。</p></div></details>
   <details class="ind" id="indAll"><summary><b>🏭 官方產業別</b><span>全部上市櫃</span></summary><div id="indBox" style="padding:0 8px 8px"></div></details></div>
 </section>
@@ -2948,14 +2949,21 @@ function hotPaint(){
     return `<a href="#${id}">${nameOf(id)}</a> <span class="${sign(ch)}">${ch==null?'':pct(ch,1)}</span>${why?`<span class="sm">（${why}）</span>`:''}`}).join('、'):'';
   $('hotFoot').innerHTML=MO?`範圍：產業主題＋自選共 ${pool.length} 檔。🔥＝月漲幅 &gt; 0、量比（5 日均量 ÷ 20 日均量）≥ 1.5、且投信或外資 5 日買超 ≥ 5 日成交量的 1%。是「有資金在推」的訊號，不是買進訊號，要搭配估值位階看。<a href="fstats.html">📊 上榜後勝率統計 ›</a>`
     +(hasH?`<br><b>日期選單</b>可看之前哪些股票上榜（從 ${ymd(days[0])} 起）；選了舊日期，「數字」預設最新，點一下看當天收盤的數字，還亮著 🔥 的＝今天仍符合。<b>上榜後</b>＝那天收盤 → 最新收盤。<b>🆕新進</b>＝前一個交易日還沒有 🔥；<b>連 N 天</b>＝連續符合的交易日數。<b>橘底 ⚠</b>＝這個進場時機過去抱 10 日輸大盤 2 個百分點以上；<b>短線</b>＝同時是注意股，過去 5 日有超額、10 日倒輸（都依統計頁的數字即時判斷）。大戶／股東一律是最新一週。`:'')
-    +` 資料 ${ymd(MO.asof)} <span style="opacity:.5">v1115j</span>`:'第一次需要回補約 3 個月的歷史資料，Actions 跑完後就會出現。';
+    +` 資料 ${ymd(MO.asof)} <span style="opacity:.5">v1115k</span>`:'第一次需要回補約 3 個月的歷史資料，Actions 跑完後就會出現。';
 }
 document.addEventListener('toggle',e=>{if(e.target&&e.target.id==='hotBox'&&e.target.open&&!FH)fhLoad().then(()=>{try{hotPaint()}catch(err){}})},true);
 document.addEventListener('change',e=>{if(e.target&&e.target.id==='fhDay'){HDAY=e.target.value;hotPaint()}});
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('#fhMode');if(!b)return;e.preventDefault();{const t=e.target.closest('i[data-p]');HMODE=t?t.dataset.p:HMODE==='day'?'now':'day'}hotPaint()});
 
+function rkHome(){
+  fetch('data/rank/home.json?t='+Math.floor(Date.now()/3e5)).then(r=>r.ok?r.json():null).then(h=>{const el=$('rkSub');if(!el||!h||!h.asof)return;
+    let m='a',e='1';try{const x=localStorage.getItem('scanRkM');if(x==='L'||x==='O')m=x;if(localStorage.getItem('scanRkE')==='0')e='0'}catch(x){}
+    const t=(h.v||{})[m+e]||(h.v||{}).a1;if(!t)return;
+    const f=t[2]>=100?Math.round(t[2]).toLocaleString():t[2].toFixed(1);
+    const md=`${+h.asof.slice(4,6)}/${+h.asof.slice(6)}`;el.textContent=(t[1].length<=4?t[1]+' ':'')+`${f}億`+(t[3]!=null?`・🆕${t[3]}`:'');
+    el.title=`${md} ${m==='L'?'上市':m==='O'?'上櫃':'上市櫃合併'}${e==='0'?'（不含 ETF）':''}成交值第 1 名；🆕＝前一個交易日不在前 50 的檔數`}).catch(()=>{})}
 function renderHome(){
-  RANK=null;srHome();try{calHome()}catch(e){}
+  RANK=null;srHome();try{calHome()}catch(e){}try{rkHome()}catch(e){}
   modeQ();$('sumAsof').innerHTML=S?`<span class="asof" id="sumPx">收盤 ${S.pxAsof?S.pxAsof.slice(4,6)+'/'+S.pxAsof.slice(6):S.updated.slice(5,10).replace('-','/')}</span>・營收 ${S.revYM?+S.revYM.slice(5)+'月':'—'}${QN?'・EPS '+QN:''}`:'數字待 Actions 產生';
   const fav=store.get('fav')||[];$('favEdit').hidden=!fav.length;try{asofPaint()}catch(e){}
   $('favBox').innerHTML=fav.length?'<div class="panel"><div class="tbl"><table class="lst" id="favTbl"></table></div></div>':'<p class="dtip">在個股頁點「☆ 加入自選」，就會出現在這裡。</p>';
