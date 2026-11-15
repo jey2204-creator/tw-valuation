@@ -218,7 +218,39 @@ def build(names):
     now = dt.datetime.utcnow() + dt.timedelta(hours=8)
     dump(OUT / "rank.json", {"asof": show[0], "builtAt": f"{now:%Y/%m/%d %H:%M}", "top": TOP, "days": show, "hist": hist,
                              "nm": {c: names.get(c, [c, ""]) for c in extra}, "xk": xk})
+    home(show, hist, names)
     print(f"rank.json: 名單 {len(show)} 天（最新 {show[0]}）、ETF {len(extra)} 檔、K 線 {len(kd)} 天、{(OUT / 'rank.json').stat().st_size // 1024} KB")
+
+
+def home(show, hist, names):
+    """首頁入口清單那一列用的小檔 data/rank/home.json（rank.json 太大，首頁不讀）。
+    v／q → 六種設定（a 合併、L 上市、O 上櫃 × 1 含 ETF、0 不含）各存 [第 1 名代號, 名稱, 數值, 新上榜檔數]。"""
+    try:
+        nm = {r[0]: r[1] for r in json.loads((OUT / "list.json").read_text("utf-8"))}
+    except Exception:
+        nm = {}
+
+    def lst(d, k, m, e):
+        h = hist.get(d) or {}
+
+        def g(x):
+            o = h.get(x) or {}
+            return o.get(k, []) if e else (o.get(k + "s") or [r for r in o.get(k, []) if not r[0].startswith("00")])
+        a = g("L") if m == "L" else g("O") if m == "O" else sorted(g("L") + g("O"), key=lambda r: -r[1])
+        return a[:TOP]
+
+    out = {"asof": show[0], "prev": show[1] if len(show) > 1 else None, "v": {}, "q": {}}
+    for k in ("v", "q"):
+        for m in ("a", "L", "O"):
+            for e in (1, 0):
+                a = lst(show[0], k, m, e)
+                if not a:
+                    continue
+                prev = {c for c, _ in lst(show[1], k, m, e)} if len(show) > 1 else None
+                c, x = a[0]
+                out[k][f"{m}{e}"] = [c, nm.get(c) or (names.get(c) or [c])[0], x,
+                                     sum(1 for r in a if r[0] not in prev) if prev is not None else None]
+    dump(RK / "home.json", out)
 
 
 def main():
