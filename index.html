@@ -356,7 +356,7 @@ details.ind.hot summary b{color:var(--up)}
 .ntday{font-size:16px;height:30px;border-radius:15px;border:1px solid var(--accent);background:var(--card);color:var(--fg);padding:0 4px;vertical-align:middle;font-weight:500;max-width:44vw}
 .ntday.old{background:#fef3c7;border-color:#b45309;color:#7c2d12}.ntday.nx{background:#dbeafe;border-color:#1d4ed8;color:#1e3a8a}
 .ntm{height:24px;line-height:22px;padding:0 8px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--fg);font-size:12px;vertical-align:middle;white-space:nowrap}
-.ntm i{font-style:normal;opacity:.45}.ntm i.on{font-weight:800;opacity:1;text-decoration:underline;text-underline-offset:2px}
+.ntm i{font-style:normal;opacity:.45;padding:3px 3px}.ntm i.on{font-weight:800;opacity:1;text-decoration:underline;text-underline-offset:2px}
 </style>
 
 </head>
@@ -710,12 +710,12 @@ function ntDayOpts(){const cur=NDAY||NT.asof,o=[];if(NTN)o.push([NTN.asof,'🆕'
   return o.map(([v,l])=>`<option value="${v}"${v===cur?' selected':''}>${l}</option>`).join('')}
 function ntHead(id){const d=NCUR,isNx=NTN&&d===NTN.asof;
   const lab=d===NT.asof?(NTN?`目前適用（${ntMd(d)} 公布，同 XQ）`:`名單日 ${ntMd(d)}（${ntWk(d)}）`):isNx?`${NXL}適用（${ntMd(d)} 公布）`:`歷史名單 ${ntMd(d)}（${ntWk(d)}）`;
-  const mb=MODE==='m'?`<button type="button" id="ntMode" class="ntm">數字 <i class="${NMODE==='now'?'on':''}">最新</i>·<i class="${NMODE==='day'?'on':''}">${ntMd(d)}當日</i></button>`:'';
+  const mb=MODE==='m'?`<button type="button" id="ntMode" class="ntm">數字 <i data-p="now" class="${NMODE==='now'?'on':''}">最新</i><i data-p="day" class="${NMODE==='day'?'on':''}">${ntMd(d)}當日</i></button>`:'';
   const w=isNx&&(id==='natt'||id==='npre')?ntStale(NTN):'';
   return `<span class="asof">🔄 ${lab}</span> ${mb}<br>${d===NT.asof?ntNxLine(id):w?`<b style="color:#b45309">${w}</b><br>`:''}`}
 function ntRe(){const h=decodeURIComponent(location.hash.slice(1));if(h.startsWith('t/'))showTheme(h.slice(2))}
 document.addEventListener('change',e=>{if(e.target&&e.target.id==='ntDay'){NDAY=e.target.value===NT.asof?'':e.target.value;ntRe()}});
-document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('#ntMode,#ntToNx');if(!b)return;e.preventDefault();if(b.id==='ntMode')NMODE=NMODE==='day'?'now':'day';else if(NTN)NDAY=NTN.asof;ntRe()});
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('#ntMode,#ntToNx');if(!b)return;e.preventDefault();if(b.id==='ntMode'){const t=e.target.closest('i[data-p]');NMODE=t?t.dataset.p:NMODE==='day'?'now':'day'}else if(NTN)NDAY=NTN.asof;ntRe()});
 
 function ntNxLine(id){const k={natt:'att',npre:'pre',ndis:'dis'}[id];if(!k)return '';
   if(!NTN){const w=(id==='natt'||id==='npre')?ntStale(NT):'';return w?`<b style="color:#b45309">${w}</b><br>`:''}
@@ -2937,7 +2937,7 @@ function hotPaint(){
   table(ht,hot.map(id=>[id,badge(id)+(THEMES.find(t=>t.stocks.some(x=>x[0]===id))||{name:'⭐ 自選'}).name]),undefined,'m');
   $('hotCtl').innerHTML=hasH&&days.length>1?`<select id="fhDay" class="ntday${isNow?'':' old'}" aria-label="主力訊號日期">${days.slice().reverse().map(d=>`<option value="${d}"${d===day?' selected':''}>${ymd(d)}（${ntWk(d)}）</option>`).join('')}</select>`
     +'<a class="ntm" href="scan.html'+(isNow?'':'?d='+day)+'#fire" style="text-decoration:none" title="用 3 欄小卡 K 線看這份名單（K 棒標上榜日）">K線 ›</a>'
-    +(isNow?'<a class="ntm" href="fstats.html" style="text-decoration:none">統計</a>':`<button type="button" id="fhMode" class="ntm" title="數字：最新／當日"><i class="${HMODE==='now'?'on':''}">最新</i>·<i class="${HMODE==='day'?'on':''}">當日</i></button>`)
+    +(isNow?'<a class="ntm" href="fstats.html" style="text-decoration:none">統計</a>':`<button type="button" id="fhMode" class="ntm" title="數字：最新／當日"><i data-p="now" class="${HMODE==='now'?'on':''}">最新</i><i data-p="day" class="${HMODE==='day'?'on':''}">當日</i></button>`)
     +(prev?`<span class="hsum"><b>🆕${nNew}</b>・續${hot.length-nNew}・⬇${drop.length}</span>`:''):'';
   {const c=fsC('streak','d6','10'),w=[];
    if(nBad&&c)w.push(`<b>⚠ ${nBad} 檔</b>已連太多天：過去這時才追，抱 10 日勝率 ${(c.win*100).toFixed(0)}%、輸大盤 ${Math.abs(c.ex*100).toFixed(1)} 點`);else if(nBad)w.push(`<b>⚠ ${nBad} 檔</b>的進場時機過去明顯輸大盤`);
@@ -2948,11 +2948,11 @@ function hotPaint(){
     return `<a href="#${id}">${nameOf(id)}</a> <span class="${sign(ch)}">${ch==null?'':pct(ch,1)}</span>${why?`<span class="sm">（${why}）</span>`:''}`}).join('、'):'';
   $('hotFoot').innerHTML=MO?`範圍：產業主題＋自選共 ${pool.length} 檔。🔥＝月漲幅 &gt; 0、量比（5 日均量 ÷ 20 日均量）≥ 1.5、且投信或外資 5 日買超 ≥ 5 日成交量的 1%。是「有資金在推」的訊號，不是買進訊號，要搭配估值位階看。<a href="fstats.html">📊 上榜後勝率統計 ›</a>`
     +(hasH?`<br><b>日期選單</b>可看之前哪些股票上榜（從 ${ymd(days[0])} 起）；選了舊日期，「數字」預設最新，點一下看當天收盤的數字，還亮著 🔥 的＝今天仍符合。<b>上榜後</b>＝那天收盤 → 最新收盤。<b>🆕新進</b>＝前一個交易日還沒有 🔥；<b>連 N 天</b>＝連續符合的交易日數。<b>橘底 ⚠</b>＝這個進場時機過去抱 10 日輸大盤 2 個百分點以上；<b>短線</b>＝同時是注意股，過去 5 日有超額、10 日倒輸（都依統計頁的數字即時判斷）。大戶／股東一律是最新一週。`:'')
-    +` 資料 ${ymd(MO.asof)} <span style="opacity:.5">v1115i</span>`:'第一次需要回補約 3 個月的歷史資料，Actions 跑完後就會出現。';
+    +` 資料 ${ymd(MO.asof)} <span style="opacity:.5">v1115j</span>`:'第一次需要回補約 3 個月的歷史資料，Actions 跑完後就會出現。';
 }
 document.addEventListener('toggle',e=>{if(e.target&&e.target.id==='hotBox'&&e.target.open&&!FH)fhLoad().then(()=>{try{hotPaint()}catch(err){}})},true);
 document.addEventListener('change',e=>{if(e.target&&e.target.id==='fhDay'){HDAY=e.target.value;hotPaint()}});
-document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('#fhMode');if(!b)return;e.preventDefault();HMODE=HMODE==='day'?'now':'day';hotPaint()});
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('#fhMode');if(!b)return;e.preventDefault();{const t=e.target.closest('i[data-p]');HMODE=t?t.dataset.p:HMODE==='day'?'now':'day'}hotPaint()});
 
 function renderHome(){
   RANK=null;srHome();try{calHome()}catch(e){}

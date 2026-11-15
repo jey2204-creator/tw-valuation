@@ -47,7 +47,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 .sb select{flex:none;height:26px;padding:0 4px;border-radius:13px;border:1px solid var(--accent);background:var(--card);color:var(--fg);font-size:16px;font-weight:500;max-width:40vw}
 .sb select.old{background:#fef3c7;border-color:#b45309;color:#7c2d12}
 .sb select.nx{background:#dbeafe;border-color:#1d4ed8;color:#1e3a8a}
-.sb #chgBtn i{font-style:normal;font-weight:400;opacity:.45;padding:0 1px}
+.sb #chgBtn i{font-style:normal;font-weight:400;opacity:.45;padding:3px 3px}
 .sb #chgBtn i.on{font-weight:800;opacity:1;text-decoration:underline;text-underline-offset:2px}
 .sb::-webkit-scrollbar{display:none}
 .sb .lab{flex:none;font-weight:700;color:var(--fg)}
@@ -189,7 +189,7 @@ async function init(){
   $('cnt').addEventListener('click',e=>{if(e.target.closest('#toNx')){e.preventDefault();setDay(NEXTD)}});
   const h=location.hash.slice(1);if(['att','dis','pre','dend','dpost'].includes(h))TAB=h;
   document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{TAB=b.dataset.tab;history.replaceState(null,'','#'+TAB);paint()});
-  $('bar').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.id==='noteBtn'){const on=$('note').classList.toggle('hid');b.setAttribute('aria-pressed',String(!on));return}if(b.dataset.m!=null)MK=b.dataset.m;else if(b.dataset.s){if(b.dataset.s==='chg'&&SORT==='chg')CHGP=CHGP==='d'?'w':CHGP==='w'?'m':'d';SORT=b.dataset.s}paint()});
+  $('bar').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.id==='noteBtn'){const on=$('note').classList.toggle('hid');b.setAttribute('aria-pressed',String(!on));return}if(b.dataset.m!=null)MK=b.dataset.m;else if(b.dataset.s){if(b.dataset.s==='chg'){const t=e.target.closest('i[data-p]');if(t)CHGP=t.dataset.p;else if(SORT==='chg')CHGP=CHGP==='d'?'w':CHGP==='w'?'m':'d'}SORT=b.dataset.s}paint()});
   $('list').addEventListener('click',e=>{if(e.target.closest('a'))return;const c=e.target.closest('.nc');if(c)c.classList.toggle('open')});
   await ensureK();
   paint();
@@ -227,7 +227,7 @@ function paint(){
   if(SORT==='ret'&&!['dis','dend','dpost'].includes(TAB))SORT='def';
   if(SORT==='n30'&&['dend','dpost'].includes(TAB))SORT='def';
   document.querySelectorAll('#bar button').forEach(b=>{if(b.dataset.m!=null)b.setAttribute('aria-pressed',String(b.dataset.m===MK));else if(b.dataset.s)b.setAttribute('aria-pressed',String(b.dataset.s===SORT))});
-  $('defBtn').textContent=T[TAB].def;$('chgBtn').innerHTML='漲幅 '+[['d','日'],['w','週'],['m','月']].map(([k,n])=>`<i class="${k===CHGP?'on':''}">${n}</i>`).join('·');$('chgBtn').title='連點切換 日→週→月';$('retBtn').hidden=!['dis','dend','dpost'].includes(TAB);$('n30Btn').hidden=['dend','dpost'].includes(TAB);
+  $('defBtn').textContent=T[TAB].def;$('chgBtn').innerHTML='漲幅 '+[['d','日'],['w','週'],['m','月']].map(([k,n])=>`<i data-p="${k}" class="${k===CHGP?'on':''}">${n}</i>`).join('');$('chgBtn').title='點字切換 日／週／月漲幅';$('retBtn').hidden=!['dis','dend','dpost'].includes(TAB);$('n30Btn').hidden=['dend','dpost'].includes(TAB);
   const toStats=['dend','dpost'].includes(TAB);
   $('scanLink').href=toStats?'stats.html':'scan.html#n'+TAB;$('scanLink').textContent=toStats?'📊 統計':'📈 掃 K 線';
   document.title=T[TAB].title;
@@ -263,7 +263,7 @@ function paint(){
     </article>`}).join('');
   const io=new IntersectionObserver(es=>{es.forEach(e=>{if(!e.isIntersecting)return;const el=e.target,cv=el.querySelector('canvas.kv');if(cv&&!cv.dataset.done){const x=LR[+el.dataset.i]||{};drawMini(cv,K[el.dataset.c],x.start?{s:x.start,e:x.end}:null);cv.dataset.done=1}io.unobserve(el)})},{rootMargin:'300px 0px'});
   $('list').querySelectorAll('.nc').forEach(el=>io.observe(el));
-  $('foot').innerHTML=`小圖＝近 40 根日K（<span class="num" style="color:var(--ma20)">━</span> 20日線、<span class="num" style="color:var(--ma60)">━</span> 60日線、紅虛線＝前 20 日最高，<b>紅色底色＝處置期間</b>），底下一條＝投信每日買賣超（紅買綠賣）。6日＝近六個交易日漲幅；量比＝今日量 ÷ 前 5 日均量；「結束後」＝處置最後一天收盤到最新收盤的累計漲跌。名單每個交易日 17:25 後自動更新（資料 ${esc(D.updated||'')}，本站歷史 ${D.histDays} 天）。處置歷史自動累積中——<a href="stats.html">📊 處置後統計</a>看結束後 1／3／5／10 日報酬與勝率。漲幅鈕連點＝日→週→月（週＝5 個交易日前、月＝上個月同一天；漲幅數字已還原除權息、減資、面額變更，跟 XQ 一致，小 K 線為原始價）。預設顯示「目前適用」的名單（前一個交易日晚上公布，跟 XQ 同步）；新公布的在日期選單「🆕 明日／週一」，到下個交易日才換成適用。本頁不構成投資建議。 v1115a`;
+  $('foot').innerHTML=`小圖＝近 40 根日K（<span class="num" style="color:var(--ma20)">━</span> 20日線、<span class="num" style="color:var(--ma60)">━</span> 60日線、紅虛線＝前 20 日最高，<b>紅色底色＝處置期間</b>），底下一條＝投信每日買賣超（紅買綠賣）。6日＝近六個交易日漲幅；量比＝今日量 ÷ 前 5 日均量；「結束後」＝處置最後一天收盤到最新收盤的累計漲跌。名單每個交易日 17:25 後自動更新（資料 ${esc(D.updated||'')}，本站歷史 ${D.histDays} 天）。處置歷史自動累積中——<a href="stats.html">📊 處置後統計</a>看結束後 1／3／5／10 日報酬與勝率。漲幅鈕連點＝日→週→月（週＝5 個交易日前、月＝上個月同一天；漲幅數字已還原除權息、減資、面額變更，跟 XQ 一致，小 K 線為原始價）。預設顯示「目前適用」的名單（前一個交易日晚上公布，跟 XQ 同步）；新公布的在日期選單「🆕 明日／週一」，到下個交易日才換成適用。本頁不構成投資建議。 v1115b`;
 }
 function drawMini(cv,r,band){if(!r)return;const dpr=window.devicePixelRatio||1,W=cv.clientWidth,Hh=cv.clientHeight;if(!W||!Hh)return;
   cv.width=Math.round(W*dpr);cv.height=Math.round(Hh*dpr);const g=cv.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,W,Hh);
