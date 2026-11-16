@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""2026-11-16 新增產業主題：itsvc「☁️ 資訊服務／軟體」7 檔（排在 net 網通後）。
-依市值排序、備註「類別｜說明」（≤約 9 個中文字寬）。通路股（零壹、邁達特、大綜）不放。
+"""2026-11-16 新增產業主題：itsvc「☁️ 資訊服務／軟體」10 檔（排在 net 網通後）。
+依市值排序、備註「類別｜說明」（≤約 9 個中文字寬）。通路股（零壹、邁達特、大綜）也放（世杰 11/16 23:58 改決定）。
 門檻例外（世杰指定）：宏碁資訊 6811（邊緣）、資通 2471（未達 100 億）。
 用法：python3 patch_itsvc.py → data/themes_beta.json＋beta.html（唯讀預覽）；python3 patch_itsvc.py prod → data/themes.json
 """
@@ -11,7 +11,7 @@ w=lambda t:sum(1 if ord(c)>255 else .55 for c in t)
 EXC={'6811','2471'}
 G=[('itsvc','☁️ 資訊服務／軟體',['ACN','IBM'],[['6702','富士通'],['4307','野村總研']],[],
     [['6214','整合｜資服龍頭'],['8099','整合｜大同集團'],['2480','整合｜企業資訊'],['6183','軟體｜通關金流'],
-     ['7765','資安｜中華電'],['6811','整合｜宏碁集團'],['2471','軟體｜ERP金融']])]
+     ['7765','資安｜中華電'],['3029','通路｜資安雲端'],['3147','整合｜伺服器'],['6112','通路｜雲端軟體'],['6811','整合｜宏碁集團'],['2471','軟體｜ERP金融']])]
 d=json.load(open('data/themes.json',encoding='utf-8'));lines=open('data/themes.json',encoding='utf-8').read().split('\n')
 used={c for t in d['themes'] if t['id'] not in {'fpg','hh','umc','asus','wal'} for c,_ in t['stocks']}
 for i,nm,us,jp,kr,L in G:
