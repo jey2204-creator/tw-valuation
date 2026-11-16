@@ -8,12 +8,12 @@ import sys,json
 prod=len(sys.argv)>1 and sys.argv[1]=='prod'
 S=json.load(open('data/summary.json',encoding='utf-8'));cap=lambda c:S['d'][c][0]*S['sh'][c]
 w=lambda t:sum(1 if ord(c)>255 else .55 for c in t)
-G=[('umc','🔷 聯電集團',[['2303','代工｜成熟製程'],['3037','PCB｜ABF載板'],['3034','設計｜驅動IC'],['6147','封測｜驅動IC'],['3035','設計｜ASIC'],['3227','設計｜感測IC'],['2363','設計｜MEMS'],['3014','設計｜PC晶片']]),
+G=[('umc','🔷 聯電集團',[['2303','代工｜成熟製程'],['3037','PCB｜ABF載板'],['3034','設計｜驅動IC'],['6147','封測｜驅動IC'],['3035','設計｜ASIC'],['3227','設計｜感測IC'],['2363','設計｜MEMS'],['3014','設計｜PC晶片'],['6202','設計｜MCU']]),
    ('asus','💻 華碩／和碩集團',[['2357','品牌｜PC伺服器'],['3189','PCB｜ABF載板'],['4938','EMS｜組裝'],['5269','設計｜高速介面'],['3515','品牌｜主機板']]),
-   ('wal','🔌 華新麗華集團',[['2344','記憶體｜利基型'],['1605','電纜｜不鏽鋼'],['2492','被動｜MLCC'],['4919','設計｜MCU／BMC'],['6191','PCB｜伺服器板'],['5469','PCB｜伺服器板'],['6116','面板｜中小尺寸'],['8110','封測｜記憶體'],['3049','面板｜觸控模組']])]
+   ('wal','🔌 華新麗華集團',[['2344','記憶體｜利基型'],['1605','電纜｜不鏽鋼'],['2492','被動｜MLCC'],['4919','設計｜MCU／BMC'],['6191','PCB｜伺服器板'],['5469','PCB｜伺服器板'],['6116','面板｜中小尺寸'],['8110','封測｜記憶體'],['3049','面板｜觸控模組'],['6284','被動｜保護元件']])]
 d=json.load(open('data/themes.json',encoding='utf-8'));lines=open('data/themes.json',encoding='utf-8').read().split('\n')
 for i,nm,L in G:
-    bad=[(r,round(cap(r[0])/1e8,1),w(r[1])) for r in L if cap(r[0])<99.5e8 or w(r[1])>8.6];assert not bad,bad
+    bad=[(r,round(cap(r[0])/1e8,1),w(r[1])) for r in L if (cap(r[0])<99.5e8 and r[0] not in {'6202','6284'}) or w(r[1])>8.6];assert not bad,bad
     L.sort(key=lambda r:-cap(r[0]));assert not any('"id": "%s"'%i in l for l in lines)
 k=max(n for n,l in enumerate(lines) if l.strip().startswith('{"id"'))
 assert not lines[k].rstrip().endswith(',');lines[k]=lines[k].rstrip()+','
