@@ -21,6 +21,8 @@ import urllib.request
 
 UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36"
 OUT = "data/ovs.json"
+DBG = {}
+DBGK = ("6981.T", "005930.KS", "688825.SS", "MU")
 KEEP = 130          # 跟台股分片一樣留 130 根（放大卡最多看 6 個月）
 SFX = {"us": [""], "jp": [".T"], "kr": [".KS", ".KQ"], "cn": [".SS", ".SZ"]}
 
@@ -74,6 +76,9 @@ def bars(sym):
     rmt, now = meta.get("regularMarketTime") or 0, time.time()
     if tp.get("start") and tp.get("end") and tp["start"] <= now < tp["end"] and 0 <= now - rmt < 1200:
         by.pop((dt.datetime.utcfromtimestamp(rmt) + dt.timedelta(seconds=off)).strftime("%Y%m%d"), None)
+    # 診斷：每檔記下 Yahoo 回的時段與最後幾根時間戳（寫進 ovs.json 的 dbg，這個環境看不到 Actions 日誌）
+    DBG[sym] = {"now": int(now), "rmt": rmt, "tp": [tp.get("start"), tp.get("end")], "off": off,
+                "ts": r["timestamp"][-3:], "cl": (q.get("close") or [])[-3:], "last": max(by) if by else None}
     rows = [by[d] for d in sorted(by)]
     if len(rows) < 30:
         raise RuntimeError(f"only {len(rows)} bars")
@@ -131,7 +136,7 @@ def main():
         print("全部失敗，不寫檔：", err)
         sys.exit(1)
     now = (dt.datetime.utcnow() + dt.timedelta(hours=8)).strftime("%Y-%m-%d %H:%M")
-    json.dump({"updated": now, "s": out, "err": err}, open(OUT, "w", encoding="utf-8"),
+    json.dump({"updated": now, "ver": 3, "dbg": {k: DBG.get(k) for k in DBGK}, "s": out, "err": err}, open(OUT, "w", encoding="utf-8"),
               ensure_ascii=False, separators=(",", ":"))
     last = {}
     for v in out.values():
