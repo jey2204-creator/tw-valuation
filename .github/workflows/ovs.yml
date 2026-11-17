@@ -1,9 +1,11 @@
 name: 海外龍頭日K
-# 掃描頁「🌏 海外龍頭」小卡（data/ovs.json）：themes.json 各主題 jp／kr 欄位的日股、韓股日 K，來源 Yahoo。
+# 掃描頁「🌏 海外龍頭」小卡（data/ovs.json）：themes.json 各主題 us／jp／kr 欄位的美股、日股、韓股日 K，來源 Yahoo。
 on:
   schedule:
     - cron: "50 6 * * 1-5"    # 台北 14:50（東京、首爾都在台北 14:30 收盤）
     - cron: "40 9 * * 1-5"    # 台北 17:40（排程延遲或 Yahoo 還沒結算時補一次）
+    - cron: "30 21 * * 1-5"   # 台北 05:30（週二～六；美股收盤後，夏令 04:00、冬令 05:00 收盤）
+    - cron: "0 0 * * 2-6"     # 台北 08:00（補一次，9 點開盤前看得到昨晚美股）
   push:
     branches: [main]
     paths: ["fetch_ovs.py", ".github/workflows/ovs.yml"]
@@ -22,7 +24,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: 抓日股／韓股日K
+      - name: 抓美股／日股／韓股日K
         run: python fetch_ovs.py
       - name: 提交
         if: always()

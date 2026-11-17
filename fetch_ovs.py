@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """2026-11-17 掃描頁「🌏 海外龍頭」小卡的日 K（data/ovs.json）
 
-名單＝data/themes.json 各主題的 jp／kr 欄位（對應日股、對應韓股），不另外維護。
-來源＝Yahoo v8 chart（{代號}.T；韓股先試 .KS 再試 .KQ）——公開報價，跟 J-Quants 無關，所以不用加密。
+名單＝data/themes.json 各主題的 us／jp／kr 欄位（對應美股、日股、韓股），不另外維護。
+（2026-11-17 晚加美股：us 欄位是代號清單，中文名取自 us/data/index.json 的 cn，沒有就只顯示代號）
+來源＝Yahoo v8 chart（美股直接用代號；{代號}.T；韓股先試 .KS 再試 .KQ）——公開報價，跟 J-Quants 無關，所以不用加密。
 價位：Yahoo 已做分割調整、未做除息調整（跟 jp/fetch_jp.py 同一基準）。
 
 輸出：{"updated": "YYYY-MM-DD HH:MM"(台北), "s": {"jp6981": {"c": "6981", "m": "jp", "n": "村田",
@@ -21,7 +22,7 @@ import urllib.request
 UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36"
 OUT = "data/ovs.json"
 KEEP = 130          # 跟台股分片一樣留 130 根（放大卡最多看 6 個月）
-SFX = {"jp": [".T"], "kr": [".KS", ".KQ"]}
+SFX = {"us": [""], "jp": [".T"], "kr": [".KS", ".KQ"]}
 
 
 def http(url, tries=3):
@@ -55,11 +56,13 @@ def bars(sym):
     n = len(r["timestamp"])
     col = lambda k: (q.get(k) or []) + [None] * n
     by = {}
-    # 東京、首爾都是 UTC+9；同一天重複（盤中＋收盤各一筆）取後面那筆
+    # 日期用交易所當地時間（meta.gmtoffset；東京、首爾 +9，紐約 −5／−4）；同一天重複（盤中＋收盤各一筆）取後面那筆
+    off = (r.get("meta") or {}).get("gmtoffset")
+    off = 32400 if off is None else off
     for t, o, h, l, c, v in zip(r["timestamp"], col("open"), col("high"), col("low"), col("close"), col("volume")):
         if not c:
             continue
-        d = (dt.datetime.utcfromtimestamp(t) + dt.timedelta(hours=9)).strftime("%Y%m%d")
+        d = (dt.datetime.utcfromtimestamp(t) + dt.timedelta(seconds=off)).strftime("%Y%m%d")
         if not (o and h and l):      # 開高低任一缺就只留收盤，避免畫出假影線
             o = h = l = c
         by[d] = [d, rd(o), rd(max(h, o, c)), rd(min(l, o, c)), rd(c), int(v or 0)]
@@ -75,7 +78,16 @@ def bars(sym):
 def main():
     themes = json.load(open("data/themes.json", encoding="utf-8"))["themes"]
     want = {}
+    cn = {}
+    try:
+        cn = {x["id"]: x.get("cn") or "" for x in json.load(open("us/data/index.json", encoding="utf-8"))}
+    except Exception:  # noqa
+        pass
     for t in themes:
+        for c in t.get("us") or []:
+            c = str(c).strip().upper()
+            if c:
+                want.setdefault("us" + c, {"c": c, "m": "us", "n": c, "cn": cn.get(c, "")})
         for m in ("jp", "kr"):
             for c, n in t.get(m) or []:
                 want.setdefault(m + str(c), {"c": str(c), "m": m, "n": n})
@@ -90,7 +102,7 @@ def main():
         got = None
         sfx = SFX[w["m"]]
         prev = (old.get(k) or {}).get("sym")
-        if prev:                      # 上次成功的代號尾碼先試
+        if prev and w["m"] != "us":   # 上次成功的代號尾碼先試
             sfx = [x for x in sfx if prev.endswith(x)] + [x for x in sfx if not prev.endswith(x)]
         why = ""
         for s in sfx:
@@ -105,7 +117,7 @@ def main():
         else:
             err.append(why)
             if k in old:
-                out[k] = {**old[k], "n": w["n"]}
+                out[k] = {**old[k], **w}
         time.sleep(0.35)
     if not out:
         print("全部失敗，不寫檔：", err)
