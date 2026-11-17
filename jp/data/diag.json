@@ -1,11 +1,11 @@
 {
- "asof": "2026-11-17 07:56 JST",
+ "asof": "2026-11-18 03:39 JST",
  "errors": [],
  "stocks": {
   "8035": {
    "yname": "Tokyo Electron Limited",
    "jname": "東京エレクトロン",
-   "px_n": 2462,
+   "px_n": 2461,
    "px_last": "2026-11-16",
    "q_n": 10,
    "q_first": "24Q2",
@@ -37,7 +37,7 @@
   "6857": {
    "yname": "Advantest Corporation",
    "jname": "アドバンテスト",
-   "px_n": 2462,
+   "px_n": 2461,
    "px_last": "2026-11-16",
    "q_n": 10,
    "q_first": "24Q2",
@@ -65,7 +65,7 @@
   "6146": {
    "yname": "Disco Corporation",
    "jname": "ディスコ",
-   "px_n": 2462,
+   "px_n": 2461,
    "px_last": "2026-11-16",
    "q_n": 8,
    "q_first": "24Q4",
@@ -93,7 +93,7 @@
   "6920": {
    "yname": "Lasertec Corporation",
    "jname": "レーザーテック",
-   "px_n": 2462,
+   "px_n": 2461,
    "px_last": "2026-11-16",
    "q_n": 9,
    "q_first": "24Q3",
@@ -125,7 +125,7 @@
   "7735": {
    "yname": "SCREEN Holdings Co., Ltd.",
    "jname": "ＳＣＲＥＥＮホールディングス",
-   "px_n": 2462,
+   "px_n": 2461,
    "px_last": "2026-11-16",
    "q_n": 10,
    "q_first": "24Q2",
@@ -180,7 +180,7 @@
   "7729": {
    "yname": "Tokyo Seimitsu Co., Ltd.",
    "jname": "東京精密",
-   "px_n": 2462,
+   "px_n": 2461,
    "px_last": "2026-11-16",
    "q_n": 10,
    "q_first": "24Q2",
@@ -203,7 +203,7 @@
   "4063": {
    "yname": "Shin-Etsu Chemical Co., Ltd.",
    "jname": "信越化学工業",
-   "px_n": 2462,
+   "px_n": 2461,
    "px_last": "2026-11-16",
    "q_n": 10,
    "q_first": "24Q2",
@@ -231,7 +231,7 @@
   "3436": {
    "yname": "Sumco Corporation",
    "jname": "ＳＵＭＣＯ",
-   "px_n": 2462,
+   "px_n": 2461,
    "px_last": "2026-11-16",
    "q_n": 9,
    "q_first": "24Q3",
@@ -254,7 +254,7 @@
   "4004": {
    "yname": "Resonac Holdings Corporation",
    "jname": "レゾナック・ホールディングス",
-   "px_n": 2462,
+   "px_n": 2461,
    "px_last": "2026-11-16",
    "q_n": 9,
    "q_first": "24Q3",
@@ -277,7 +277,7 @@
   "4186": {
    "yname": "Tokyo Ohka Kogyo Co., Ltd.",
    "jname": "東京応化工業",
-   "px_n": 2462,
+   "px_n": 2461,
    "px_last": "2026-11-16",
    "q_n": 9,
    "q_first": "24Q3",
@@ -305,7 +305,7 @@
   "2802": {
    "yname": "Ajinomoto Co., Inc.",
    "jname": "味の素",
-   "px_n": 2462,
+   "px_n": 2461,
    "px_last": "2026-11-16",
    "q_n": 10,
    "q_first": "24Q2",
@@ -333,7 +333,7 @@
   "4062": {
    "yname": "Ibiden Co.,Ltd.",
    "jname": "イビデン",
-   "px_n": 2462,
+   "px_n": 2461,
    "px_last": "2026-11-16",
    "q_n": 10,
    "q_first": "24Q2",
@@ -365,7 +365,7 @@
   "3110": {
    "yname": "Nitto Boseki Co., Ltd.",
    "jname": "日東紡績",
-   "px_n": 2462,
+   "px_n": 2461,
    "px_last": "2026-11-16",
    "q_n": 10,
    "q_first": "24Q2",
@@ -397,7 +397,7 @@
   "6981": {
    "yname": "Murata Manufacturing Co., Ltd.",
    "jname": "村田製作所",
-   "px_n": 2462,
+   "px_n": 2461,
    "px_last": "2026-11-16",
    "q_n": 10,
    "q_first": "24Q2",
@@ -429,7 +429,7 @@
   "6762": {
    "yname": "TDK Corporation",
    "jname": "ＴＤＫ",
-   "px_n": 2462,
+   "px_n": 2461,
    "px_last": "2026-11-16",
    "q_n": 10,
    "q_first": "24Q2",
@@ -461,7 +461,7 @@
   "6976": {
    "yname": "Taiyo Yuden Co., Ltd.",
    "jname": "太陽誘電",
-   "px_n": 2462,
+   "px_n": 2461,
    "px_last": "2026-11-16",
    "q_n": 10,
    "q_first": "24Q2",
@@ -484,7 +484,7 @@
   "6971": {
    "yname": "Kyocera Corporation",
    "jname": "京セラ",
-   "px_n": 2462,
+   "px_n": 2461,
    "px_last": "2026-11-16",
    "q_n": 10,
    "q_first": "24Q2",
@@ -512,7 +512,7 @@
   "5803": {
    "yname": "Fujikura Ltd.",
    "jname": "フジクラ",
-   "px_n": 2462,
+   "px_n": 2461,
    "px_last": "2026-11-16",
    "q_n": 10,
    "q_first": "24Q2",
@@ -540,7 +540,7 @@
   "5801": {
    "yname": "Furukawa Electric Co., Ltd.",
    "jname": "古河電気工業",
-   "px_n": 2462,
+   "px_n": 2461,
    "px_last": "2026-11-16",
    "q_n": 10,
    "q_first": "24Q2",
@@ -568,7 +568,7 @@
   "5802": {
    "yname": "Sumitomo Electric Industries, Ltd.",
    "jname": "住友電気工業",
-   "px_n": 2462,
+   "px_n": 2461,
    "px_last": "2026-11-16",
    "q_n": 10,
    "q_first": "24Q2",
@@ -652,7 +652,7 @@
   "6723": {
    "yname": "Renesas Electronics Corporation",
    "jname": "ルネサスエレクトロニクス",
-   "px_n": 2462,
+   "px_n": 2461,
    "px_last": "2026-11-16",
    "q_n": 9,
    "q_first": "24Q3",
@@ -675,7 +675,7 @@
   "6501": {
    "yname": "Hitachi, Ltd.",
    "jname": "日立製作所",
-   "px_n": 2462,
+   "px_n": 2461,
    "px_last": "2026-11-16",
    "q_n": 10,
    "q_first": "24Q2",
@@ -707,7 +707,7 @@
   "6503": {
    "yname": "Mitsubishi Electric Corporation",
    "jname": "三菱電機",
-   "px_n": 2462,
+   "px_n": 2461,
    "px_last": "2026-11-16",
    "q_n": 10,
    "q_first": "24Q2",
@@ -730,7 +730,7 @@
   "6504": {
    "yname": "Fuji Electric Co., Ltd.",
    "jname": "富士電機",
-   "px_n": 2462,
+   "px_n": 2461,
    "px_last": "2026-11-16",
    "q_n": 10,
    "q_first": "24Q2",
@@ -758,7 +758,7 @@
   "5706": {
    "yname": "Mitsui Kinzoku Company, Limited",
    "jname": "三井金属",
-   "px_n": 2462,
+   "px_n": 2461,
    "px_last": "2026-11-16",
    "q_n": 10,
    "q_first": "24Q2",
@@ -790,7 +790,7 @@
   "6516": {
    "yname": "Sanyo Denki Co., Ltd.",
    "jname": "山洋電気",
-   "px_n": 2462,
+   "px_n": 2461,
    "px_last": "2026-11-16",
    "q_n": 10,
    "q_first": "24Q2",
@@ -822,7 +822,7 @@
   "6594": {
    "yname": "Nidec Corporation",
    "jname": "ニデック",
-   "px_n": 2462,
+   "px_n": 2461,
    "px_last": "2026-11-16",
    "q_n": 8,
    "q_first": "24Q2",
@@ -854,7 +854,7 @@
   "6963": {
    "yname": "ROHM Co., Ltd.",
    "jname": "ローム",
-   "px_n": 2462,
+   "px_n": 2461,
    "px_last": "2026-11-16",
    "q_n": 10,
    "q_first": "24Q2",
@@ -882,7 +882,7 @@
   "6997": {
    "yname": "Nippon Chemi-Con Corporation",
    "jname": "日本ケミコン",
-   "px_n": 2462,
+   "px_n": 2461,
    "px_last": "2026-11-16",
    "q_n": 10,
    "q_first": "24Q2",
@@ -982,41 +982,20 @@
  },
  "tdnet": {
   "days_scanned": 2,
-  "rows": 76,
+  "rows": 3,
   "new_records": 0,
   "backfill": false
  },
  "validate_tdnet": {
-  "checked": 4,
-  "fields": {
-   "sales": [
-    4,
-    0
-   ],
-   "op": [
-    4,
-    0
-   ],
-   "odp": [
-    3,
-    0
-   ],
-   "np": [
-    4,
-    0
-   ],
-   "eps": [
-    4,
-    0
-   ]
-  },
+  "checked": 0,
+  "fields": {},
   "mismatch": []
  },
  "fx_src": {
-  "usdtwd": 32.9640007019043,
-  "usdjpy": 159.406005859375
+  "usdtwd": 32.91299819946289,
+  "usdjpy": 159.29200744628906
  },
- "fx_jpytwd": 0.20679,
+ "fx_jpytwd": 0.20662,
  "rs_x20": {
   "8035": 7,
   "6857": 7,
@@ -1054,26 +1033,26 @@
  "scan": {
   "n": 32,
   "asof": "2026-11-16",
-  "bt_from": "2016-11-16",
+  "bt_from": "2016-11-17",
   "bt_fresh": true,
   "ev_recent": 7,
   "bt_n": {
-   "nh": 477,
-   "b20": 947,
-   "up60": 1391,
+   "nh": 476,
+   "b20": 948,
+   "up60": 1390,
    "dn60": 1387,
-   "bull": 1163,
+   "bull": 1162,
    "bear": 787,
-   "ob": 935,
+   "ob": 930,
    "os": 507,
-   "base": 13011
+   "base": 12982
   }
  },
  "scan_cards": {
   "n": 32,
   "days": 60,
   "asof": "2026-11-16",
-  "rewritten": true,
+  "rewritten": false,
   "bytes": 96417
  },
  "ok": [
