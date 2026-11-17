@@ -8,7 +8,7 @@
 做法：
   1. 名單多讀 themes.json 的 us 欄位（代號清單），順序 美→日→韓；日 K 同樣來自 data/ovs.json（fetch_ovs.py 已加美股）。
   2. 標題列：「🌏 海外龍頭 N」＋「全｜美 11/16｜日 11/17｜韓 11/17」切換鈕（鈕上的日期＝該市場最新資料日）＋「收合」。
-     只有一個市場的主題不顯示切換鈕；選的市場這個主題沒有就當作「全」。選擇記在手機（scanOvF）。
+     只有一個市場的主題不顯示「全」。11/17 23:02 世杰要求「每次換主題自動回到全」→ 選擇不記在手機，pick() 換主題時重設。
   3. 美股小卡只顯示代號（右上標「美」）；放大卡標題多顯示中文名（us/data/index.json 的 cn，有才顯示），右下連到 us/#代號。
 """
 import sys
@@ -20,7 +20,7 @@ VER = 'v1117g'
 
 s = open(SRC, encoding='utf-8').read()
 assert 'ovPaint' in s, '要先套 patch_ovs.py'
-assert 'scanOvF' not in s, '已套用過'
+assert 'OVMK' not in s, '已套用過'
 
 
 def rep(old, new, cnt=1):
@@ -45,7 +45,7 @@ rep("  return [...(t.jp||b.jp||[]).map(x=>['jp'+x[0],x[1]]),...(t.kr||b.kr||[]).
 rep("return {ov:1,m:o.m,mk:o.m==='jp'?'日':'韓',c:k,cd:o.c,n:nm||o.n,bars,",
     "return {ov:1,m:o.m,mk:OVMK[o.m]||'外',c:k,lk:o.c,cd:o.m==='us'?(o.cn||''):o.c,n:o.m==='us'?o.c:(nm||o.n),bars,")
 rep("let OVS,OVR=[],OVK='',OVC=!!store.get('scanOvC'),OVB=null;",
-    "let OVS,OVR=[],OVK='',OVC=!!store.get('scanOvC'),OVB=null,OVF=store.get('scanOvF')||'a';const OVMK={us:'美',jp:'日',kr:'韓'};")
+    "let OVS,OVR=[],OVK='',OVC=!!store.get('scanOvC'),OVB=null,OVF='a';const OVMK={us:'美',jp:'日',kr:'韓'};")
 # 放大卡連結：美股 us/#代號
 rep('`<a href="${r.m}/#${esc(r.cd)}">${r.mk}股站 →</a>`', '`<a href="${r.m}/#${esc(r.lk)}">${r.mk}股站 →</a>`')
 
@@ -65,13 +65,16 @@ s = s[:a] + r'''function ovPaint(){const el=$('ovs');if(!el)return;const ids=ovI
     <div class="km-s"><span class="${cls(r.chg)}">${pct(r.chg)}</span>${CHGP!=='d'?`<span class="${cls(r[CHGK()])}">${CHGP==='w'?'週':'月'}${pct(r[CHGK()])}</span>`:''}<span class="vr${r.vr>=1.5?' hi':''}">量${r.vr==null?'—':r.vr.toFixed(1)+'×'}</span><span class="od">${md(r.d)}</span></div>
     <canvas class="km-cv"></canvas></article>`).join('')}</div>`);
   const tg=()=>{OVC=!OVC;store.set('scanOvC',OVC);ovPaint()};el.querySelector('.tt').onclick=tg;el.querySelector('.cl').onclick=tg;
-  el.querySelectorAll('.fs button').forEach(b=>b.onclick=()=>{if(MK.length<2)return;OVF=b.dataset.f;store.set('scanOvF',OVF);ovPaint()});
+  el.querySelectorAll('.fs button').forEach(b=>b.onclick=()=>{if(MK.length<2)return;OVF=b.dataset.f;ovPaint()});
   el.querySelectorAll('.km').forEach(k=>{const i=+k.dataset.i;drawK(k.querySelector('canvas'),R[i],N,{mini:true});k.onclick=()=>openSheet(R,i);k.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openSheet(R,i)}}})}
 ''' + s[b:]
 
+# ---- 換主題自動回到「全」（同一主題換日期、重畫不重設）----
+rep("async function pick(sel){cur=sel;apClose();nxPaint();", "async function pick(sel){if(!cur||cur.id!==sel.id||cur.kind!==sel.kind)OVF='a';cur=sel;apClose();nxPaint();")
+
 # ---- 版本、頁尾說明 ----
 rep('<b>🌏 海外龍頭</b>＝這個主題對應的日股／韓股（跟首頁主題頁的「對應日股／韓股」同一份名單），Yahoo 收盤價、平日約 15:00 與 17:40 更新、<b>非即時</b>；',
-    '<b>🌏 海外龍頭</b>＝這個主題對應的美股／日股／韓股（跟首頁主題頁的「對應美股／日股／韓股」同一份名單），順序美→日→韓，標題列「全 美 日 韓」可只看一國（鈕上的日期＝該市場最新資料日）；Yahoo 收盤價、<b>非即時</b>：日韓平日約 15:00 與 17:40、美股約 05:30 與 08:00 更新。<b>美股收盤是台北清晨</b>，早上看到的是昨晚那根、比日韓早一步，不是同一個交易日，不要直接橫向比當日漲跌；')
+    '<b>🌏 海外龍頭</b>＝這個主題對應的美股／日股／韓股（跟首頁主題頁的「對應美股／日股／韓股」同一份名單），順序美→日→韓，標題列「全 美 日 韓」可只看一國（鈕上的日期＝該市場最新資料日；換主題自動回到「全」）；Yahoo 收盤價、<b>非即時</b>：日韓平日約 15:00 與 17:40、美股約 05:30 與 08:00 更新。<b>美股收盤是台北清晨</b>，早上看到的是昨晚那根、比日韓早一步，不是同一個交易日，不要直接橫向比當日漲跌；')
 rep('<span style="opacity:.5">v1117f</span>', '<span style="opacity:.5">' + VER + '</span>')
 
 if not PROD:
