@@ -49,7 +49,7 @@ def rd(x):
     return int(x) if x == int(x) else x
 
 
-def bars(sym):
+def bars(sym, oldb=None):
     j = http(f"https://query1.finance.yahoo.com/v8/finance/chart/{sym}?range=2y&interval=1d")
     r = (j.get("chart", {}).get("result") or [None])[0]
     if not r or not r.get("timestamp"):
@@ -79,6 +79,25 @@ def bars(sym):
     # 診斷：每檔記下 Yahoo 回的時段與最後幾根時間戳（寫進 ovs.json 的 dbg，這個環境看不到 Actions 日誌）
     DBG[sym] = {"now": int(now), "rmt": rmt, "tp": [tp.get("start"), tp.get("end")], "off": off,
                 "ts": r["timestamp"][-3:], "cl": (q.get("close") or [])[-3:], "last": max(by) if by else None}
+    # 2026-11-18：Yahoo 在當地午夜過後會把「最後一根」的開高低收暫時變成 null（台北 00:17 實測：東京、首爾、上海 11/17 那根
+    # 都是 None，22:53 時還有值）→ 美股時段的排程（05:30／08:00）每天都會遇到。補法：
+    #   ① 上一次存檔裡有那幾天的就沿用；② 沒有（第一次抓）就用 meta 的收盤／最高／最低／量補一根（沒有開盤價 → 開＝收）。
+    tsd = {(dt.datetime.utcfromtimestamp(t) + dt.timedelta(seconds=off)).strftime("%Y%m%d") for t in r["timestamp"]}
+    lastd = max(by) if by else ""
+    hole = sorted(d for d in tsd if d > lastd)           # Yahoo 有時間戳但沒有價格的日子
+    openNow = bool(tp.get("start") and tp.get("end") and tp["start"] <= now < tp["end"])
+    if hole and not openNow:
+        keep = {x[0]: x for x in (oldb or [])}
+        for d in hole:
+            if d in keep:
+                by[d] = keep[d][:6]
+        d = (dt.datetime.utcfromtimestamp(rmt) + dt.timedelta(seconds=off)).strftime("%Y%m%d") if rmt else ""
+        px = meta.get("regularMarketPrice")
+        if d in hole and d not in by and px:
+            hi, lo = meta.get("regularMarketDayHigh") or px, meta.get("regularMarketDayLow") or px
+            by[d] = [d, rd(px), rd(max(hi, px)), rd(min(lo, px)), rd(px), int(meta.get("regularMarketVolume") or 0)]
+    DBG[sym]["hole"] = hole
+    DBG[sym]["last2"] = max(by) if by else None
     rows = [by[d] for d in sorted(by)]
     if len(rows) < 30:
         raise RuntimeError(f"only {len(rows)} bars")
@@ -120,7 +139,7 @@ def main():
         why = ""
         for s in sfx:
             try:
-                got = (w["c"] + s, bars(w["c"] + s))
+                got = (w["c"] + s, bars(w["c"] + s, (old.get(k) or {}).get("b")))
                 break
             except Exception as e:  # noqa
                 why = f"{w['c']}{s} {e}"
@@ -136,7 +155,7 @@ def main():
         print("全部失敗，不寫檔：", err)
         sys.exit(1)
     now = (dt.datetime.utcnow() + dt.timedelta(hours=8)).strftime("%Y-%m-%d %H:%M")
-    json.dump({"updated": now, "ver": 3, "dbg": {k: DBG.get(k) for k in DBGK}, "s": out, "err": err}, open(OUT, "w", encoding="utf-8"),
+    json.dump({"updated": now, "ver": 4, "dbg": {k: DBG.get(k) for k in DBGK}, "s": out, "err": err}, open(OUT, "w", encoding="utf-8"),
               ensure_ascii=False, separators=(",", ":"))
     last = {}
     for v in out.values():
