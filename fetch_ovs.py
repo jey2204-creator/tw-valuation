@@ -42,7 +42,8 @@ def http(url, tries=3):
 
 
 def rd(x):
-    return round(x, 1) if x >= 100 else round(x, 2)
+    x = round(x, 1) if x >= 100 else round(x, 2)
+    return int(x) if x == int(x) else x
 
 
 def bars(sym):
