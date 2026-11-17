@@ -7,7 +7,7 @@
 
 起因：世杰說想要的是「村田這種真正的龍頭排最前面」（不是市值、也不是 美→日→韓），選 A「22 個主題一次排好出 beta」。
 做法：
-  1. themes.json 主題多一個 ov 欄位＝[[鍵, 一句理由], …]，鍵＝us代號／jp代號／kr代號，順序＝產業地位（Claude 依既有認識初擬，
+  1. themes.json 主題多一個 ov 欄位＝[[鍵, 一句理由], …]，鍵＝us代號／jp代號／kr代號／cn代號，順序＝產業地位（Claude 依既有認識初擬，
      市占未逐一查證；世杰不同意就直接改這裡的 ORD 再跑 data）。沒列到的對應股照原順序接在後面。
   2. 掃描頁「全」＝照 ov 跨國混排，第 1 名標 👑；點「美／日／韓」＝同一份順序只留該國。
   3. 放大卡多一行「🌏 龍頭排序第 N・理由」。
@@ -26,7 +26,7 @@ ORD = {
               ('jp4004', 'SiC 磊晶・材料'), ('krSKC' , ''), ('usENTG', '半導體材料耗材'), ('jp4186', '光阻'),
               ('kr357780', '蝕刻液'), ('kr005290', '光阻')],
     'ai': [('usNVDA', 'AI GPU 龍頭'), ('usAMD', 'GPU／CPU 第二'), ('usARM', '處理器架構 IP'), ('jp6526', 'ASIC 設計服務'), ('jp6723', '車用 MCU・AI 關聯低')],
-    'mem': [('kr000660', 'HBM 龍頭'), ('kr005930', '記憶體產能最大'), ('usMU', 'DRAM 三強之一'), ('jp285A', 'NAND'), ('usSNDK', 'NAND')],
+    'mem': [('kr000660', 'HBM 龍頭'), ('kr005930', '記憶體產能最大'), ('usMU', 'DRAM 三強之一'), ('cn688825', 'DRAM 全球第四'), ('jp285A', 'NAND'), ('usSNDK', 'NAND')],
     'equip': [('usAMAT', '設備綜合龍頭'), ('jp8035', '塗佈顯影・蝕刻'), ('usLRCX', '蝕刻・沉積'), ('usKLAC', '檢測量測龍頭'),
               ('jp6146', '切割研磨龍頭'), ('kr042700', 'HBM 鍵合機'), ('jp6920', 'EUV 光罩檢測'), ('jp7735', '清洗龍頭'),
               ('jp6525', '成膜'), ('jp7729', '探針台・切割'), ('usONTO', '先進封裝檢測'), ('usCAMT', '先進封裝檢測'),
@@ -73,7 +73,7 @@ if ARG == 'data':
         t = json.loads(ln.strip().rstrip(','))
         assert '    ' + json.dumps({k: v for k, v in t.items() if k != 'ov'}, ensure_ascii=False) + (',' if comma else '') == ln or 'ov' in t, t['id']
         ids.add(t['id'])
-        keys = ['us' + str(u).upper() for u in t.get('us') or []] + ['jp' + c for c, _ in t.get('jp') or []] + ['kr' + c for c, _ in t.get('kr') or []]
+        keys = ['us' + str(u).upper() for u in t.get('us') or []] + ['jp' + c for c, _ in t.get('jp') or []] + ['kr' + c for c, _ in t.get('kr') or []] + ['cn' + c for c, _ in t.get('cn') or []]
         o = ORD.get(t['id'])
         if not keys:
             assert not o, t['id']

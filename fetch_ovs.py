@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """2026-11-17 掃描頁「🌏 海外龍頭」小卡的日 K（data/ovs.json）
 
-名單＝data/themes.json 各主題的 us／jp／kr 欄位（對應美股、日股、韓股），不另外維護。
+名單＝data/themes.json 各主題的 us／jp／kr／cn 欄位（對應美股、日股、韓股、陸股），不另外維護。
 （2026-11-17 晚加美股：us 欄位是代號清單，中文名取自 us/data/index.json 的 cn，沒有就只顯示代號）
 來源＝Yahoo v8 chart（美股直接用代號；{代號}.T；韓股先試 .KS 再試 .KQ）——公開報價，跟 J-Quants 無關，所以不用加密。
 價位：Yahoo 已做分割調整、未做除息調整（跟 jp/fetch_jp.py 同一基準）。
@@ -22,7 +22,7 @@ import urllib.request
 UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36"
 OUT = "data/ovs.json"
 KEEP = 130          # 跟台股分片一樣留 130 根（放大卡最多看 6 個月）
-SFX = {"us": [""], "jp": [".T"], "kr": [".KS", ".KQ"]}
+SFX = {"us": [""], "jp": [".T"], "kr": [".KS", ".KQ"], "cn": [".SS", ".SZ"]}
 
 
 def http(url, tries=3):
@@ -92,7 +92,7 @@ def main():
             c = str(c).strip().upper()
             if c:
                 want.setdefault("us" + c, {"c": c, "m": "us", "n": c, "cn": cn.get(c, "")})
-        for m in ("jp", "kr"):
+        for m in ("jp", "kr", "cn"):      # cn＝滬深 A 股（2026-11-18 加：長鑫科技 688825）
             for c, n in t.get(m) or []:
                 want.setdefault(m + str(c), {"c": str(c), "m": m, "n": n})
     old = {}
