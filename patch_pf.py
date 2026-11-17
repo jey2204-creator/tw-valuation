@@ -19,7 +19,7 @@ import sys
 PROD = len(sys.argv) > 1 and sys.argv[1] == 'prod'
 SRC = 'scan.html'
 OUT = 'scan.html' if PROD else 'beta_scan_pf.html'
-VER = 'v1117d'
+VER = 'v1117e'
 
 s = open(SRC, encoding='utf-8').read()
 assert 'pfRun' not in s, '已套用過'
@@ -36,10 +36,10 @@ rep('.foot{padding:4px 12px 12px;',
     '/* 2026-11-17 下一主題鈕 */\n'
     '.nx{display:flex;gap:6px;padding:0 5px 10px}\n'
     '.nx[hidden]{display:none}\n'
-    '.nx button{font:600 15px/1.3 var(--f-body);padding:12px 10px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--fg);-webkit-tap-highlight-color:transparent}\n'
-    '.nx .p{flex:0 0 auto;color:var(--muted);font-weight:500}\n'
-    '.nx .n{flex:1;min-width:0;background:var(--sel);color:var(--selfg);border-color:transparent}\n'
-    '.nx small{opacity:.65;font-weight:400;font-size:12px}\n'
+    '.nx button{font:500 13px/28px var(--f-body);height:28px;padding:0 12px;border-radius:14px;border:0;background:var(--chip);color:var(--fg);white-space:nowrap;-webkit-tap-highlight-color:transparent}\n'
+    '.nx .p{flex:0 0 auto}\n'
+    '.nx .n{flex:1;min-width:0;background:var(--sel);color:var(--selfg);font-weight:700;overflow:hidden;text-overflow:ellipsis}\n'
+    '.nx small{opacity:.6;font-weight:400;font-size:11px}\n'
     '.foot{padding:4px 12px 12px;')
 
 # ---- HTML ----
@@ -120,7 +120,7 @@ async function pfRun(){if(PF.busy||!pfWant())return;PF.busy=true;
 // ---- 下一主題鈕（順序＝上方名單橫列）----
 function nxPaint(){const el=document.getElementById('nx');if(!el)return;const n=nxAdj(1);if(!n){el.hidden=true;return}
   const nm=t=>t.name.replace(/\s*[（(]\d{1,2}\/\d{1,2}[）)]\s*$/,''),last=THEMES.findIndex(t=>t.id===cur.id)===THEMES.length-1;el.hidden=false;
-  el.innerHTML=`<button class="p" data-d="-1" title="上一主題：${esc(nm(nxAdj(-1)))}">‹ 上一個</button><button class="n" data-d="1">${last?'↺ 回第一個':'下一主題'}　${esc(nm(n))} <small>${n.stocks.length}</small> ›</button>`}
+  el.innerHTML=`<button class="p" data-d="-1" title="上一主題：${esc(nm(nxAdj(-1)))}">‹ 上一個</button><button class="n" data-d="1">${last?'↺ 回第一個':'下一主題'} ${esc(nm(n))} <small>${n.stocks.length}</small> ›</button>`}
 document.getElementById('nx').addEventListener('click',e=>{const b=e.target.closest('button[data-d]');if(!b)return;const t=nxAdj(+b.dataset.d);if(t){pick({kind:'t',id:t.id});scrollTo(0,0)}});
 // 滑動停下：畫面上有小卡還沒拿到今天的報價就立刻補問（不用等 60 秒那一輪）
 {let st=0;addEventListener('scroll',()=>{clearTimeout(st);st=setTimeout(()=>{if(CUR_IDS.some(c=>VISIBLE.has(c)&&lvOK(c)&&!liveHasToday(c)&&lvAgeF(c)>LV_FRESH))liveRefresh(true)},350)},{passive:true})}
