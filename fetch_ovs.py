@@ -66,6 +66,10 @@ def bars(sym):
         if not (o and h and l):      # 開高低任一缺就只留收盤，避免畫出假影線
             o = h = l = c
         by[d] = [d, rd(o), rd(max(h, o, c)), rd(min(l, o, c)), rd(c), int(v or 0)]
+    # 盤中執行（例如改程式觸發、排程延遲）：今天那根還沒收盤就不收，小卡一律是收盤價
+    tp = ((r.get("meta") or {}).get("currentTradingPeriod") or {}).get("regular") or {}
+    if tp.get("start") and tp.get("end") and tp["start"] <= time.time() < tp["end"]:
+        by.pop((dt.datetime.utcfromtimestamp(tp["start"]) + dt.timedelta(seconds=off)).strftime("%Y%m%d"), None)
     rows = [by[d] for d in sorted(by)]
     if len(rows) < 30:
         raise RuntimeError(f"only {len(rows)} bars")
