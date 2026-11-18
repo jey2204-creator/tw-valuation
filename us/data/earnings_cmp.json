@@ -4180,6 +4180,490 @@
      "https://s205.q4cdn.com/133937190/files/doc_financials/2026/q2/CRWV-US-CORRECTED-TRANSCRIPT-CoreWeave-Q2-2026-Earnings-Call-11August2026.pdf"
     ]
    ]
+  },
+  {
+   "ticker": "NVDA",
+   "name": "NVIDIA",
+   "exchange": "NASDAQ",
+   "date": "2026/11/17 盤後",
+   "reaction": {
+    "text": "盤後約 +4%（各家報 +3%～+4.8%）；首日收盤待補（11/18）",
+    "dir": "up",
+    "pct": 4.0
+   },
+   "kpi": [
+    {
+     "n": "營收（億）",
+     "v": "1,158",
+     "e": "預期 1,092",
+     "s": 6.1
+    },
+    {
+     "n": "非 GAAP EPS",
+     "v": "2.68",
+     "e": "預期 2.48",
+     "s": 8.1
+    },
+    {
+     "n": "資料中心 YoY",
+     "v": "+110%",
+     "e": "Q4 營收指引 1,300 億",
+     "s": null,
+     "label": "仍倍增"
+    },
+    {
+     "n": "自由現金流（億）",
+     "v": "+438",
+     "e": "營業現金流 483",
+     "s": null,
+     "label": "創新高"
+    }
+   ],
+   "kpiNote": "黃仁勳辭任後的第一份財報：營收 1,158 億（+103%）、非 GAAP EPS 2.68 雙 beat，Q4 指引 1,300 億也高於市場約 1,244 億；Vera Rubin 首季出貨近 200 億，FCF 438 億創高，盤後約 +4%。但 Q4 毛利率指引降到 71～72%（Kress 稱 Q4 即谷底、FY2028 維持 72～73%）、執行長人選未定。⚠️ 自動層 Finnhub 的共識偏高（營收 1,113 億、EPS 2.525），驚喜率會顯示營收 +4.1%／EPS +6.1%；這裡以 FactSet／Bloomberg 約 1,092 億、2.48 計為 +6.1%／+8.1%。",
+   "surprise": {
+    "labels": [
+     "營收",
+     "非 GAAP EPS",
+     "資料中心營收",
+     "Edge Computing 營收",
+     "Q4 營收指引 vs 共識"
+    ],
+    "data": [
+     6.1,
+     8.1,
+     5.6,
+     9.5,
+     4.5
+    ],
+    "min": -10,
+    "max": 15,
+    "note": "共識：營收 FactSet 1,090 億／Bloomberg 1,091.5 億（取 1,092）、EPS FactSet 2.48（Bloomberg 2.47 → +8.5%）、資料中心 Bloomberg 1,018.5 億、Edge Computing 74.9 億；Q4 指引 1,300 億 vs 市場約 1,244 億（TheStreet 寫約 1,250 億 → +4.0%）。另有媒體引用營收共識 1,088 億、Q4 共識 1,253 億，驚喜率差距在 1 個百分點內。"
+   },
+   "charts": [
+    {
+     "title": "🧩 分部 YoY（FY27Q3）",
+     "open": true,
+     "type": "bar",
+     "fmt": "pct",
+     "horizontal": true,
+     "min": 0,
+     "max": 300,
+     "labels": [
+      "AI 雲／產業／企業",
+      "資料中心（合計）",
+      "Compute & Networking",
+      "超大規模雲（Hyperscale）",
+      "Graphics",
+      "Edge Computing"
+     ],
+     "datasets": [
+      {
+       "label": "YoY",
+       "data": [
+        195,
+        110,
+        108,
+        71,
+        62,
+        42
+       ],
+       "color": "accent"
+      }
+     ],
+     "note": "資料中心 1,076 億拆成超大規模雲 601 億（+71%、QoQ +23%）與 AI 雲／產業／企業 475 億（+195%、QoQ +18%）；Edge Computing 82 億（+42%）靠 Blackwell 工作站與 Physical AI 邊緣運算，記憶體漲價壓抑消費 PC。本季對中國 Hopper 出貨 24 億。"
+    },
+    {
+     "title": "📈 營收與資料中心（億美元）",
+     "open": true,
+     "type": "bar",
+     "fmt": "num",
+     "min": 0,
+     "max": 1500,
+     "labels": [
+      "FY26Q3",
+      "FY26Q4",
+      "FY27Q1",
+      "FY27Q2",
+      "FY27Q3",
+      "FY27Q4 指引"
+     ],
+     "datasets": [
+      {
+       "label": "總營收",
+       "data": [
+        570,
+        681,
+        816,
+        962,
+        1158,
+        1300
+       ],
+       "color": "accent"
+      },
+      {
+       "label": "資料中心",
+       "data": [
+        512,
+        623,
+        752,
+        890,
+        1076,
+        null
+       ],
+       "color": "est"
+      }
+     ],
+     "note": "連五季加速放量，Q4 指引 1,300 億 ±3%（為 14 週季度、不計中國資料中心運算營收）。Vera Rubin 首季出貨近 200 億，公司稱史上最快爬坡。歷史值取自各季財報新聞稿。"
+    },
+    {
+     "title": "💸 營業現金流 vs CapEx（億美元）",
+     "open": true,
+     "type": "bar",
+     "fmt": "num",
+     "min": 0,
+     "max": 600,
+     "labels": [
+      "FY26Q3",
+      "FY26Q4",
+      "FY27Q1",
+      "FY27Q2",
+      "FY27Q3"
+     ],
+     "datasets": [
+      {
+       "label": "營業現金流",
+       "data": [
+        238,
+        362,
+        503,
+        241,
+        483
+       ],
+       "color": "est"
+      },
+      {
+       "label": "CapEx（PP&E＋無形資產）",
+       "data": [
+        16,
+        13,
+        18,
+        27,
+        44
+       ],
+       "color": "accent"
+      }
+     ],
+     "note": "輕資產模式：CapEx 44 億僅占營業現金流 9%，FCF 438 億（上季 213 億）。Q1／Q2 的起伏主要是聯邦現金稅繳納時點。但表外承諾快速膨脹：採購承諾 3,900 億（上季 2,790 億，主為多年期記憶體）、雲端服務與租賃 1,020 億、擔保曝險上限 1,180 億。歷史值取自各季財報新聞稿。"
+    },
+    {
+     "title": "📉 毛利率走勢（非 GAAP）",
+     "open": false,
+     "type": "line",
+     "fmt": "pct",
+     "min": 65,
+     "max": 80,
+     "labels": [
+      "FY26Q3",
+      "FY26Q4",
+      "FY27Q1",
+      "FY27Q2",
+      "FY27Q3",
+      "FY27Q4 指引"
+     ],
+     "datasets": [
+      {
+       "label": "非 GAAP 毛利率",
+       "data": [
+        73.5,
+        75.2,
+        75.0,
+        75.0,
+        74.9,
+        71.5
+       ],
+       "color": "accent"
+      }
+     ],
+     "note": "本季 74.9% 優於 74% 指引（產品組合較佳），但 QoQ 微降已反映 Rubin 初期爬坡；Q4 指引 71～72%（取中值 71.5）一口氣降約 3 個百分點，是這份財報最大的瑕疵。法說會上 Kress 稱 Q4 就是谷底，主因是照既有訂單價格出貨（記憶體成本已漲），FY2028 區間維持 72～73% 不變——也就是回不到 75%。"
+    },
+    {
+     "title": "⚖️ 預期 vs 實際（億美元）",
+     "open": false,
+     "type": "bar",
+     "fmt": "num",
+     "min": 0,
+     "max": 1550,
+     "labels": [
+      "營收",
+      "資料中心",
+      "Q4 營收指引中值"
+     ],
+     "datasets": [
+      {
+       "label": "市場預期",
+       "data": [
+        1092,
+        1019,
+        1244
+       ],
+       "color": "est"
+      },
+      {
+       "label": "實際／指引",
+       "data": [
+        1158,
+        1076,
+        1300
+       ],
+       "color": "accent"
+      }
+     ],
+     "note": "上季指引 1,080 億 ±2%，實際 1,158 億大幅超出上緣；Q4 指引比共識高約 56 億，差距與本季 beat 幅度（約 66 億）相近。"
+    }
+   ],
+   "impact": [
+    {
+     "d": "up",
+     "t": "營收 1,158 億（+103%）、Q4 指引 1,300 億，皆高於共識；FY2028 成長展望由約 70% 上修至約 75%",
+     "w": "需求仍供不應求，管理層稱雲端產業積壓（backlog）達 2.5 兆（三個月前 2 兆）；已鎖定供應並與 Kinsus、SEMCO、SPIL 新簽基板／封裝協議"
+    },
+    {
+     "d": "up",
+     "t": "Vera Rubin 首季出貨近 200 億，史上最快爬坡；AI 雲／產業／企業分部 +195%",
+     "w": "超大規模雲以外的客戶（新雲、主權 AI、企業）占資料中心 44%，客戶集中度下降；前沿實驗室約占資料中心營收 15%"
+    },
+    {
+     "d": "up",
+     "t": "FCF 438 億創高，單季回饋股東 281 億（庫藏股 221 億＋股利 60 億），額度尚餘 2,273 億",
+     "w": "近一個月股價跌約 28%，公司有現金與額度回購；CapEx 僅 44 億，現金流幾乎全數可供回饋"
+    },
+    {
+     "d": "down",
+     "t": "Q4 毛利率指引 71～72%，較本季 74.9% 下滑約 3 個百分點",
+     "w": "Kress 在法說會稱 Q4 即谷底，歸因於照既有訂單價格履約（記憶體漲價超出原先預期、成本先反映）；FY2028 毛利率區間維持 72～73%。谷底說法若成立是利空出盡，但新常態比過去 75% 低 2～3 點，且已有分析師預估 71.5%、低於共識 72.3%"
+    },
+    {
+     "d": "down",
+     "t": "執行長真空：黃仁勳 11/11 辭任，董事會表明不會回任，Kress 代理並委託尋才",
+     "w": "董事長 Harvey Jones 以違反行為準則說明辭任、拒答調查細節；另成立國安與出口管制監督委員會。這是估值折價的來源，數字好壞短期難以抹平"
+    },
+    {
+     "d": "flat",
+     "t": "表外承諾 5,180 億（採購 3,900 億＋雲端／租賃 1,020 億等），擔保曝險上限 1,180 億（SB Energy 1,050 億）；中國 Hopper 本季 24 億、Q4 不計入",
+     "w": "承諾規模一季跳增逾 1,000 億，若需求放緩會變成庫存與租賃負擔；庫存已增至 397 億（上季 316 億）"
+    }
+   ],
+   "other": [
+    {
+     "t": "營收 YoY",
+     "c": [
+      [
+       "實際",
+       "+103%"
+      ],
+      [
+       "QoQ",
+       "+20%"
+      ],
+      [
+       "非 GAAP 毛利率",
+       "74.9%"
+      ]
+     ]
+    },
+    {
+     "t": "營業利益（億）",
+     "c": [
+      [
+       "GAAP",
+       "775"
+      ],
+      [
+       "YoY",
+       "+115%"
+      ],
+      [
+       "利益率",
+       "67%"
+      ]
+     ]
+    },
+    {
+     "t": "EPS",
+     "c": [
+      [
+       "非 GAAP",
+       "2.68"
+      ],
+      [
+       "GAAP",
+       "2.70"
+      ],
+      [
+       "YoY",
+       "+111%"
+      ],
+      [
+       "tag",
+       "flat",
+       "GAAP 含 18 億股權投資利得"
+      ]
+     ]
+    },
+    {
+     "t": "資料中心（億）",
+     "c": [
+      [
+       "營收",
+       "1,076"
+      ],
+      [
+       "超大規模雲",
+       "601"
+      ],
+      [
+       "AI 雲／產業／企業",
+       "475"
+      ],
+      [
+       "tag",
+       "up",
+       "YoY +110%"
+      ]
+     ]
+    },
+    {
+     "t": "Edge Computing（億）",
+     "c": [
+      [
+       "營收",
+       "82"
+      ],
+      [
+       "YoY",
+       "+42%"
+      ],
+      [
+       "QoQ",
+       "+14%"
+      ]
+     ]
+    },
+    {
+     "t": "現金流（億）",
+     "c": [
+      [
+       "營業現金流",
+       "483"
+      ],
+      [
+       "自由現金流",
+       "438"
+      ],
+      [
+       "股東回饋",
+       "281"
+      ]
+     ]
+    },
+    {
+     "t": "承諾與庫存（億）",
+     "c": [
+      [
+       "採購承諾",
+       "3,900"
+      ],
+      [
+       "雲端／租賃",
+       "1,020"
+      ],
+      [
+       "庫存",
+       "397"
+      ],
+      [
+       "tag",
+       "down",
+       "採購承諾 QoQ +1,110"
+      ]
+     ]
+    },
+    {
+     "t": "FY27Q4 指引（14 週）",
+     "c": [
+      [
+       "營收（億）",
+       "1,300 ±3%"
+      ],
+      [
+       "毛利率",
+       "71～72%"
+      ],
+      [
+       "非 GAAP 營業費用（億）",
+       "約 107"
+      ],
+      [
+       "tag",
+       "flat",
+       "管理層稱毛利率谷底；FY28 72～73%"
+      ]
+     ]
+    }
+   ],
+   "flash": {
+    "q": "26Q3",
+    "fq": "FY27Q3",
+    "rev": 115844,
+    "gm": 74.8,
+    "om": 66.9,
+    "nm": 56.4,
+    "eps": 2.7,
+    "capex": 4422,
+    "ocf": 48253,
+    "sh": 24186,
+    "end": "2026-10-25",
+    "on": "2026-11-17",
+    "src": "8-K 新聞稿 GAAP：營收 115,844、營收成本 29,168（gm＝1−營收成本／營收，同 SEC 序列口徑）、營業利益 77,520、淨利 65,287、稀釋 EPS 2.70、加權稀釋股數 24,186；CapEx＝單季購置不動產設備及無形資產 4,422（九個月 8,856 − 前兩季 4,434）；OCF＝單季 48,253（九個月 122,675 − 前兩季 74,421，差 1 為四捨五入）"
+   },
+   "sources": [
+    [
+     "NVIDIA 新聞稿（FY27Q3 財報）",
+     "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-third-quarter-fiscal-2027"
+    ],
+    [
+     "CFO Commentary（MarketScreener 轉載）",
+     "https://www.marketscreener.com/news/nvidia-third-quarter-2027-cfo-commentary-ce785edcdc81f420"
+    ],
+    [
+     "法說會逐字稿（The Singju Post）：毛利率谷底、FY28 區間",
+     "https://singjupost.com/nvidia-q3-fy27-earnings-call-transcript/"
+    ],
+    [
+     "TheStreet：FactSet 共識、盤後走勢、董事會聲明",
+     "https://www.thestreet.com/latest-news/nvda-nvidia-corporation-q3-2027-earnings-stock-updates"
+    ],
+    [
+     "Yahoo Finance：Bloomberg 共識、黃仁勳辭任背景",
+     "https://finance.yahoo.com/technology/live/nvidia-live-updates-interim-ceo-kress-prepares-for-q3-earnings-with-huang-reportedly-planning-comeback-153114076.html"
+    ],
+    [
+     "法說會摘要（StockNow）",
+     "https://stocknow.ai/en/calls/eypmi9b1ke1950et1e6wnmoo/nvda_q3-2027-earnings-call"
+    ],
+    [
+     "XTB：Q4 指引共識約 1,244 億",
+     "https://www.xtb.com/en/market-analysis/nvidia-rebounds-4-after-earnings-can-the-ai-giant-lift-wall-street"
+    ],
+    [
+     "SEC 8-K：FY27Q2 新聞稿（歷史值）",
+     "https://www.sec.gov/Archives/edgar/data/0001045810/000104581026000073/q2fy27pr.htm"
+    ],
+    [
+     "SEC 8-K：FY27Q1 新聞稿（歷史值）",
+     "https://www.sec.gov/Archives/edgar/data/0001045810/000104581026000051/q1fy27pr.htm"
+    ]
+   ]
   }
  ]
 }
