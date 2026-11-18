@@ -69,33 +69,49 @@ def bars(sym, oldb=None):
             o = h = l = c
         by[d] = [d, rd(o), rd(max(h, o, c)), rd(min(l, o, c)), rd(c), int(v or 0)]
     # 盤中執行（例如改程式觸發、排程延遲）：今天那根還沒收盤就不收，小卡一律是收盤價。
-    # 判斷「正在盤中」＝現在落在 regular 時段內「而且」最後成交時間在 20 分鐘內。
-    # （2026-11-18 修：只看 currentTradingPeriod 會誤判——台北 00:17 跑時日韓早已收盤，卻把 11/17 那根丟掉了）
+    # 「正在盤中」＝現在落在 Yahoo 給的 regular 時段內（Yahoo 報價本身延遲 20 分，不能用最後成交時間判斷：
+    #   2026-11-18 10:20 韓股盤中，用「20 分鐘內有成交」判斷就漏掉，把盤中那根收進來了）。
     meta = r.get("meta") or {}
     tp = (meta.get("currentTradingPeriod") or {}).get("regular") or {}
     rmt, now = meta.get("regularMarketTime") or 0, time.time()
-    if tp.get("start") and tp.get("end") and tp["start"] <= now < tp["end"] and 0 <= now - rmt < 1200:
-        by.pop((dt.datetime.utcfromtimestamp(rmt) + dt.timedelta(seconds=off)).strftime("%Y%m%d"), None)
-    # 診斷：每檔記下 Yahoo 回的時段與最後幾根時間戳（寫進 ovs.json 的 dbg，這個環境看不到 Actions 日誌）
-    DBG[sym] = {"now": int(now), "rmt": rmt, "tp": [tp.get("start"), tp.get("end")], "off": off,
-                "ts": r["timestamp"][-3:], "cl": (q.get("close") or [])[-3:], "last": max(by) if by else None}
-    # 2026-11-18：Yahoo 在當地午夜過後會把「最後一根」的開高低收暫時變成 null（台北 00:17 實測：東京、首爾、上海 11/17 那根
-    # 都是 None，22:53 時還有值）→ 美股時段的排程（05:30／08:00）每天都會遇到。補法：
-    #   ① 上一次存檔裡有那幾天的就沿用；② 沒有（第一次抓）就用 meta 的收盤／最高／最低／量補一根（沒有開盤價 → 開＝收）。
-    tsd = {(dt.datetime.utcfromtimestamp(t) + dt.timedelta(seconds=off)).strftime("%Y%m%d") for t in r["timestamp"]}
-    lastd = max(by) if by else ""
-    hole = sorted(d for d in tsd if d > lastd)           # Yahoo 有時間戳但沒有價格的日子
+    ymd = lambda t: (dt.datetime.utcfromtimestamp(t) + dt.timedelta(seconds=off)).strftime("%Y%m%d")
     openNow = bool(tp.get("start") and tp.get("end") and tp["start"] <= now < tp["end"])
-    if hole and not openNow:
+    if openNow:
+        by.pop(ymd(tp["start"]), None)
+    # 2026-11-18：Yahoo 常把「最後一根」日 K 的開高低收回成 null（台北 00:17：東京、首爾、上海 11/17 那根都是 None，22:53 還有值；
+    # 台北 10:20：美股 11/17 那根也是 None）。那一天（hole）不在盤中時的補法，依序：
+    #   ① 用 15 分 K 自己合成當天的開高低（收盤、量用 meta）；② 上一次存檔有那天就沿用；③ 只用 meta 補（沒有開盤價 → 開＝收）。
+    tsd = {ymd(t) for t in r["timestamp"]}
+    lastd = max(by) if by else ""
+    hole = sorted(d for d in tsd if d > lastd and not (openNow and d == ymd(tp["start"])))
+    src = ""
+    if hole:
         keep = {x[0]: x for x in (oldb or [])}
-        for d in hole:
-            if d in keep:
-                by[d] = keep[d][:6]
-        d = (dt.datetime.utcfromtimestamp(rmt) + dt.timedelta(seconds=off)).strftime("%Y%m%d") if rmt else ""
+        d = ymd(rmt) if rmt else ""
         px = meta.get("regularMarketPrice")
+        if d in hole and px:
+            try:
+                j2 = http(f"https://query1.finance.yahoo.com/v8/finance/chart/{sym}?range=5d&interval=15m", tries=2)
+                r2 = j2["chart"]["result"][0]
+                q2 = r2["indicators"]["quote"][0]
+                bb = [(o2, h2, l2, v2) for t2, o2, h2, l2, c2, v2 in zip(r2["timestamp"], q2["open"], q2["high"], q2["low"], q2["close"], q2["volume"])
+                      if ymd(t2) == d and o2 and h2 and l2 and c2]
+                if len(bb) >= 4:
+                    vol = meta.get("regularMarketVolume") or sum(x[3] or 0 for x in bb)
+                    by[d] = [d, rd(bb[0][0]), rd(max(max(x[1] for x in bb), px)), rd(min(min(x[2] for x in bb), px)), rd(px), int(vol)]
+                    src = "15m"
+            except Exception as e:  # noqa
+                src = f"15m失敗 {e}"[:60]
+        for d2 in hole:
+            if d2 not in by and d2 in keep:
+                by[d2] = keep[d2][:6]
+                src += " old"
         if d in hole and d not in by and px:
             hi, lo = meta.get("regularMarketDayHigh") or px, meta.get("regularMarketDayLow") or px
             by[d] = [d, rd(px), rd(max(hi, px)), rd(min(lo, px)), rd(px), int(meta.get("regularMarketVolume") or 0)]
+            src += " meta"
+    DBG[sym] = {"now": int(now), "rmt": rmt, "tp": [tp.get("start"), tp.get("end")], "off": off, "open": openNow, "src": src,
+                "ts": r["timestamp"][-3:], "cl": (q.get("close") or [])[-3:], "last": lastd}
     DBG[sym]["hole"] = hole
     DBG[sym]["last2"] = max(by) if by else None
     rows = [by[d] for d in sorted(by)]
@@ -155,7 +171,7 @@ def main():
         print("全部失敗，不寫檔：", err)
         sys.exit(1)
     now = (dt.datetime.utcnow() + dt.timedelta(hours=8)).strftime("%Y-%m-%d %H:%M")
-    json.dump({"updated": now, "ver": 4, "dbg": {k: DBG.get(k) for k in DBGK}, "s": out, "err": err}, open(OUT, "w", encoding="utf-8"),
+    json.dump({"updated": now, "ver": 5, "dbg": {k: DBG.get(k) for k in DBGK}, "s": out, "err": err}, open(OUT, "w", encoding="utf-8"),
               ensure_ascii=False, separators=(",", ":"))
     last = {}
     for v in out.values():
