@@ -18,6 +18,11 @@ data/rank/state.json＝{日期:失敗次數}（某天一直抓不到就不再重
    xk:{days:[舊→新，最多 130 天], d:{ETF代號:[[收,張,開,高,低] 或 0,…]}}}   ← 只放近 30 天上過榜的 ETF
 
 第一次執行往回補 60 個交易日（約 6 分鐘），之後每次再補 35 天，直到 130 天（ETF 的 K 線＋均線用）。
+
+2026-11-19：週轉率前 50（掃描頁「🔄 週轉率前50」）——不另外抓資料，build() 時用本站已有的兩個檔算：
+  週轉率% ＝ data/hist/日期.json 的成交股數 ÷ data/summary.json 的 sh（已發行普通股數，目前值）× 100
+  門檻：成交值（收盤×成交股數，估算）≥ 1 億；不含 ETF（受益權單位天天變）。上市、上櫃各取前 50 → hist[日期][L|O]["t"]=[[代號,週轉率%]…]
+  股數用「目前」的值套回過去 30 天：期間內有增減資／分割的公司，舊日期會有誤差；>100% 多半是股數資料有誤，網頁標「?」。
 用法：python fetch_rank.py
 """
 import json, re, sys, time, datetime as dt
@@ -28,6 +33,7 @@ ROOT = Path(__file__).resolve().parent
 OUT = ROOT / "data"
 RK = OUT / "rank"
 TOP, SHOW_DAYS, KEEP = 50, 30, 130
+TR_MIN_AMT = 1e8                        # 週轉率榜的成交值門檻（元）
 FIRST_DAYS, MORE_DAYS = 60, 35          # 第一次補幾天／之後每次再補幾天
 BUDGET = 9 * 60                         # 單次最多抓 9 分鐘
 ETF = re.compile(r"^00[0-9A-Z]{2,4}$")
@@ -145,6 +151,33 @@ def day_rec(raw, stocks, mkt, names):
     return out, etf
 
 
+def turnover(show, hist):
+    """週轉率前 50：hist[日期][L|O]["t"]=[[代號,週轉率%]…]（成交值 ≥ 1 億、不含 ETF）。回傳有算出來的天數。"""
+    try:
+        mk = {r[0]: r[2] for r in json.loads((OUT / "list.json").read_text("utf-8"))}
+        sh = json.loads((OUT / "summary.json").read_text("utf-8")).get("sh") or {}
+    except Exception:
+        return 0
+    n = 0
+    for d in show:
+        p = load(OUT / "hist" / f"{d}.json", {}).get("p") or {}
+        rows = {"L": [], "O": []}
+        for c, v in p.items():
+            m = {"上市": "L", "上櫃": "O"}.get(mk.get(c))
+            s = sh.get(c)
+            if not m or not s or ETF.match(c) or not v or v[0] is None or not v[1]:
+                continue
+            if v[0] * v[1] < TR_MIN_AMT:
+                continue
+            rows[m].append([c, round(v[1] / s * 100, 2)])
+        if not rows["L"] and not rows["O"]:
+            continue
+        for m in ("L", "O"):
+            hist[d][m]["t"] = sorted(rows[m], key=lambda x: -x[1])[:TOP]
+        n += 1
+    return n
+
+
 def load(f, default):
     try:
         return json.loads(f.read_text("utf-8"))
@@ -206,6 +239,7 @@ def build(names):
     days = [d for d in sorted(recs, reverse=True) if recs[d].get("L") and recs[d].get("O")]
     show = days[:SHOW_DAYS]
     hist = {d: {"L": recs[d]["L"], "O": recs[d]["O"]} for d in show}
+    ntr = turnover(show, hist)
     stocks = stock_set()
     used = set()
     for d in show:
@@ -219,7 +253,7 @@ def build(names):
     dump(OUT / "rank.json", {"asof": show[0], "builtAt": f"{now:%Y/%m/%d %H:%M}", "top": TOP, "days": show, "hist": hist,
                              "nm": {c: names.get(c, [c, ""]) for c in extra}, "xk": xk})
     home(show, hist, names)
-    print(f"rank.json: 名單 {len(show)} 天（最新 {show[0]}）、ETF {len(extra)} 檔、K 線 {len(kd)} 天、{(OUT / 'rank.json').stat().st_size // 1024} KB")
+    print(f"rank.json: 名單 {len(show)} 天（最新 {show[0]}）、ETF {len(extra)} 檔、K 線 {len(kd)} 天、週轉率 {ntr} 天、{(OUT / 'rank.json').stat().st_size // 1024} KB")
 
 
 def home(show, hist, names):
