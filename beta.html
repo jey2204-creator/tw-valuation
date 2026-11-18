@@ -736,11 +736,11 @@ function ntHistSrc(day){const H=NHIST||{},days=Object.keys(H).filter(d=>d<=day&&
   const pre=[...set].filter(c=>!act[c]).map(c=>({c,n10:cnt(c,10),n30:cnt(c,30),est:true})).filter(x=>x.n10>=5||x.n30>=11).sort((x,y)=>y.n10-x.n10);
   return {asof:day,att:a,dis,pre,dend:dis.filter(x=>x.left<=3),dpost:Object.values(post).map(v=>({...dz(v),ago:ntWd(v.end,day)})).sort((x,y)=>x.ago-y.ago)}}
 function ntSrc(day){return day===NT.asof?NT:NTN&&day===NTN.asof?NTN:NHIST?ntHistSrc(day):null}
-function ntDayOpts(){const cur=NDAY||NT.asof,o=[];if(NTN)o.push([NTN.asof,'🆕'+NXL+' '+ntMd(NTN.asof)]);o.push([NT.asof,(NTN?'適用 ':'')+ntMd(NT.asof)+(NTN?'':'（'+ntWk(NT.asof)+'）')]);
-  Object.keys(NHIST||{}).filter(d=>d<NT.asof&&(NHIST[d].att||[]).length).sort().reverse().slice(0,40).forEach(d=>o.push([d,ntMd(d)+'（'+ntWk(d)+'）']));
+function ntDayOpts(){const cur=NDAY||NT.asof,o=[];if(NTN)o.push([NTN.asof,'🆕'+NXL+' '+ntMd(NTN.asof)]);o.push([NT.asof,(NTN?'適用 ':'')+ntMd(NT.asof)+(NTN?'':' ('+ntWk(NT.asof)+')')]);
+  Object.keys(NHIST||{}).filter(d=>d<NT.asof&&(NHIST[d].att||[]).length).sort().reverse().slice(0,40).forEach(d=>o.push([d,ntMd(d)+' ('+ntWk(d)+')']));
   return o.map(([v,l])=>`<option value="${v}"${v===cur?' selected':''}>${l}</option>`).join('')}
 function ntHead(id){const d=NCUR,isNx=NTN&&d===NTN.asof;
-  const lab=d===NT.asof?(NTN?`目前適用（${ntMd(d)} 公布，同 XQ）`:`名單日 ${ntMd(d)}（${ntWk(d)}）`):isNx?`${NXL}適用（${ntMd(d)} 公布）`:`歷史名單 ${ntMd(d)}（${ntWk(d)}）`;
+  const lab=d===NT.asof?(NTN?`目前適用 (${ntMd(d)} 公布，同 XQ)`:`名單日 ${ntMd(d)} (${ntWk(d)})`):isNx?`${NXL}適用 (${ntMd(d)} 公布)`:`歷史名單 ${ntMd(d)} (${ntWk(d)})`;
   const mb=MODE==='m'?`<button type="button" id="ntMode" class="ntm">數字 <i data-p="now" class="${NMODE==='now'?'on':''}">最新</i><i data-p="day" class="${NMODE==='day'?'on':''}">${ntMd(d)}當日</i></button>`:'';
   const w=isNx&&(id==='natt'||id==='npre')?ntStale(NTN):'';
   return `<span class="asof">🔄 ${lab}</span> ${mb}<br>${d===NT.asof?ntNxLine(id):w?`<b style="color:#b45309">${w}</b><br>`:''}`}
@@ -2993,7 +2993,7 @@ function hotPaint(){
     return `<a href="#${id}">${nameOf(id)}</a> <span class="${sign(ch)}">${ch==null?'':pct(ch,1)}</span>${why?`<span class="sm">（${why}）</span>`:''}`}).join('、'):'';
   $('hotFoot').innerHTML=MO?`範圍：產業主題＋自選共 ${pool.length} 檔。🔥＝月漲幅 &gt; 0、量比（5 日均量 ÷ 20 日均量）≥ 1.5、且投信或外資 5 日買超 ≥ 5 日成交量的 1%。是「有資金在推」的訊號，不是買進訊號，要搭配估值位階看。<a href="fstats.html">📊 上榜後勝率統計 ›</a>`
     +(hasH?`<br><b>日期選單</b>可看之前哪些股票上榜（從 ${ymd(days[0])} 起）；選了舊日期，「數字」預設最新，點一下看當天收盤的數字，還亮著 🔥 的＝今天仍符合。<b>上榜後</b>＝那天收盤 → 最新收盤。<b>🆕新進</b>＝前一個交易日還沒有 🔥；<b>連 N 天</b>＝連續符合的交易日數。<b>橘底 ⚠</b>＝這個進場時機過去抱 10 日輸大盤 2 個百分點以上；<b>短線</b>＝同時是注意股，過去 5 日有超額、10 日倒輸（都依統計頁的數字即時判斷）。大戶／股東一律是最新一週。`:'')
-    +` 資料 ${ymd(MO.asof)} <span style="opacity:.5">v1118d</span>`:'第一次需要回補約 3 個月的歷史資料，Actions 跑完後就會出現。';
+    +` 資料 ${ymd(MO.asof)} <span style="opacity:.5">v1118e</span>`:'第一次需要回補約 3 個月的歷史資料，Actions 跑完後就會出現。';
 }
 document.addEventListener('toggle',e=>{if(e.target&&e.target.id==='hotBox'&&e.target.open&&!FH)fhLoad().then(()=>{try{hotPaint()}catch(err){}})},true);
 document.addEventListener('change',e=>{if(e.target&&e.target.id==='fhDay'){HDAY=e.target.value;hotPaint()}});
@@ -3263,7 +3263,7 @@ addEventListener('hashchange',route);
     (js.data||[]).filter(s=>(s.type==='twse'||s.type==='tpex')&&/^[1-9]\d{3}$/.test(s.stock_id)).forEach(s=>{if(!m[s.stock_id]||s.date>m[s.stock_id].date)m[s.stock_id]=s});
     LIST=Object.values(m).map(s=>[s.stock_id,s.stock_name,s.type==='twse'?'上市':'上櫃',s.industry_category]).sort((a,b)=>a[0].localeCompare(b[0]));store.set('list',{t:Date.now(),d:LIST})}catch(e){}}}
   EMG.forEach(e=>{if(!LIST.some(s=>s[0]===e[0]))LIST.push(e)});
-  try{const r=await fetch('data/themes.json?t='+Date.now());if(r.ok)BASE=(await r.json()).themes||[]}catch(e){}
+  try{const r=await fetch('data/themes_beta.json?t='+Date.now());if(r.ok)BASE=(await r.json()).themes||[]}catch(e){}
   try{const r=await fetch('data/itrust_top.json?t='+Date.now());if(r.ok)TOP=await r.json()}catch(e){}
   try{const r=await fetch('data/notice.json?t='+Math.floor(Date.now()/3e5));if(r.ok)NT=ntDemo(await r.json())}catch(e){}
   try{if(NT){const TD=(()=>{const q=(location.search.match(/[?&]today=(\d{8})/)||[])[1];if(q)return q;return new Date(Date.now()+8*3600e3).toISOString().slice(0,10).replace(/-/g,'')})();if(TD<apF(NT)){const AF=apF(NT);const rp=await fetch('data/notice/prev.json?t='+Math.floor(Date.now()/3e5));const pv=rp.ok?await rp.json():null;if(pv&&pv.asof&&pv.asof<NT.asof){NTN=NT;NT=pv;NXL=nxLab(AF,TD)}}}}catch(e){}
