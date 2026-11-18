@@ -6,6 +6,9 @@ on:
     - cron: "40 9 * * 1-5"    # 台北 17:40（排程延遲或 Yahoo 還沒結算時補一次）
     - cron: "30 21 * * 1-5"   # 台北 05:30（週二～六；美股收盤後，夏令 04:00、冬令 05:00 收盤）
     - cron: "0 0 * * 2-6"     # 台北 08:00（補一次，9 點開盤前看得到昨晚美股）
+  workflow_run:               # 2026-11-18：GitHub 排程實測延遲 7～10 小時（05:30、08:00 那兩次到 10 點都還沒跑）→ 跟在「更新股票資料」後面跑
+    workflows: ["更新股票資料"]   #   （cron-job.org 16:40／21:40 準時觸發；它半夜被延遲的排程也會帶著跑，清晨通常有 1～2 次）
+    types: [completed]
   push:
     branches: [main]
     paths: ["fetch_ovs.py", ".github/workflows/ovs.yml"]
