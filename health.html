@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="zh-Hant-TW">
-<head>
+<head><script>/* hwj 2026-11-18：本站 data/ 的 JSON 文字全形括號／斜線→半形（只轉值、不轉鍵） */(()=>{const O=' \t\n\u3000>([{「『《〈\"\'`—–-/:：，、。；',F=/[（）／]/,hw=s=>F.test(s)?s.replace(/([\s\S]?)（/g,(m,p)=>p+(p===''||O.includes(p)?'(':' (')).replace(/）(?=[0-9A-Za-z\u3040-\u30ff\u4e00-\u9fff])/g,') ').replace(/）/g,')').replace(/／/g,'/'):s,dp=o=>{if(typeof o==='string')return hw(o);if(Array.isArray(o)){for(let i=0;i<o.length;i++){const v=o[i];if(typeof v==='string'||(v&&typeof v==='object'))o[i]=dp(v)}}else if(o&&typeof o==='object'){for(const k in o){const v=o[k];if(typeof v==='string'||(v&&typeof v==='object'))o[k]=dp(v)}}return o},J=Response.prototype.json;window.hwText=hw;Response.prototype.json=function(){let u='';try{u=new URL(this.url)}catch(e){}if(!u||u.origin!==location.origin||!/\/data\//.test(u.pathname))return J.call(this);return this.text().then(t=>{const o=JSON.parse(t);return F.test(t)?dp(o):o})}})()</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>台股體檢</title>
@@ -98,7 +98,7 @@ html{scroll-behavior:smooth}
 
   <section class="card" id="sRevAmt">
     <h2>營收：台積電 vs 其他 <small>上市櫃合計，兆元</small>
-      <span class="seg" id="revSeg" role="group" aria-label="切換月／年"><button type="button" data-v="m" aria-pressed="false">月</button><button type="button" data-v="y" aria-pressed="true">年</button></span></h2>
+      <span class="seg" id="revSeg" role="group" aria-label="切換月/年"><button type="button" data-v="m" aria-pressed="false">月</button><button type="button" data-v="y" aria-pressed="true">年</button></span></h2>
     <p class="take" id="revAmtTake"></p>
     <div class="chart" id="cRevAmt" role="img" aria-label="上市櫃營收直方圖，台積電與其他公司堆疊"></div>
     <div class="tbl"><table id="tRevAmt"></table></div>
@@ -108,9 +108,9 @@ html{scroll-behavior:smooth}
   <section class="card" id="sRev">
     <h2>營收廣度 <small>每月，與去年同月比</small></h2>
     <p class="take" id="revTake"></p>
-    <p class="ctitle">營收年增 &gt; 0 的公司占比（%）</p>
+    <p class="ctitle">營收年增 &gt; 0 的公司占比 (%)</p>
     <div class="chart" id="cBreadth" role="img" aria-label="每月營收年增大於零的公司占比折線圖"></div>
-    <p class="ctitle">營收年增率（%）：全體 vs 扣掉台積電</p>
+    <p class="ctitle">營收年增率 (%)：全體 vs 扣掉台積電</p>
     <div class="chart" id="cRevYoY" role="img" aria-label="每月全體與扣除台積電的營收年增率折線圖"></div>
     <p class="foot" id="revFoot"></p>
   </section>
@@ -126,9 +126,9 @@ html{scroll-behavior:smooth}
   <section class="card" id="sVal">
     <h2>估值位階 <small>灰色帶＝2010–2023 常態</small></h2>
     <p class="take" id="valTake"></p>
-    <p class="ctitle">本益比（倍）＝上市總市值 ÷ 近四季淨利</p>
+    <p class="ctitle">本益比 (倍)＝上市總市值 ÷ 近四季淨利</p>
     <div class="chart" id="cPE" role="img" aria-label="大盤本益比走勢與常態區間"></div>
-    <p class="ctitle">殖利率（%，含股票股利）</p>
+    <p class="ctitle">殖利率 (%，含股票股利)</p>
     <div class="chart" id="cYld" role="img" aria-label="大盤現金殖利率走勢與常態區間"></div>
     <p class="foot" id="valFoot"></p>
   </section>
@@ -146,12 +146,12 @@ html{scroll-behavior:smooth}
     <div class="tbl"><table class="thr" id="tThr"></table></div>
     <h3>怎麼算</h3>
     <ul>
-      <li><b>獲利</b>：公開資訊觀測站「綜合損益表彙總」逐家加總（上市＋上櫃，含 KY、金融），用「歸屬母公司淨利」。季資料是當年累計（Q2＝上半年）。</li>
+      <li><b>獲利</b>：公開資訊觀測站「綜合損益表彙總」逐家加總 (上市＋上櫃，含 KY、金融)，用「歸屬母公司淨利」。季資料是當年累計 (Q2＝上半年)。</li>
       <li><b>成長家數、扣台積電年增</b>：只拿今年和去年同期都有財報的「同一批公司」比，避免新上市把總數灌大。</li>
-      <li><b>營收直方圖</b>：每月營收彙總加總；「年」＝12 個月合計，今年為 1 月起累計（淡色）；「月」＝近 36 個月。台積電以外合計＝其他公司。</li>
-      <li><b>營收廣度</b>：每月營收彙總，去年同月營收 &gt; 0 的公司才算；最新一個月用證交所／櫃買每日資料即時更新（公布家數未達上月 9 成前先不計入）。</li>
-      <li><b>本益比、殖利率</b>：證交所定義（上市）＝上市總市值 ÷ 近四季歸母淨利合計，虧損公司也算；殖利率＝市值加權（含股票股利）。月底值用證交所當天個股收盤＋公開資訊觀測站財報自己算，和金管會公布值對帳。</li>
-      <li><b>股利、配發率</b>：媒體彙整的上市櫃現金股利總額 ÷ 稅後淨利（依盈餘年度）。</li>
+      <li><b>營收直方圖</b>：每月營收彙總加總；「年」＝12 個月合計，今年為 1 月起累計 (淡色)；「月」＝近 36 個月。台積電以外合計＝其他公司。</li>
+      <li><b>營收廣度</b>：每月營收彙總，去年同月營收 &gt; 0 的公司才算；最新一個月用證交所/櫃買每日資料即時更新 (公布家數未達上月 9 成前先不計入)。</li>
+      <li><b>本益比、殖利率</b>：證交所定義 (上市)＝上市總市值 ÷ 近四季歸母淨利合計，虧損公司也算；殖利率＝市值加權 (含股票股利)。月底值用證交所當天個股收盤＋公開資訊觀測站財報自己算，和金管會公布值對帳。</li>
+      <li><b>股利、配發率</b>：媒體彙整的上市櫃現金股利總額 ÷ 稅後淨利 (依盈餘年度)。</li>
     </ul>
     <h3>下一個檢查點</h3>
     <p id="checkpoint"></p>
@@ -311,7 +311,7 @@ function drawEarn(E){
   o.xAxis.data=A.map(r=>String(r.y));o.yAxis.axisLabel.formatter=v=>v+' 兆';
   const gap={borderColor:css('--card'),borderWidth:1};
   o.tooltip.axisPointer={type:'shadow',shadowStyle:{color:'rgba(127,127,127,.08)'}};
-  o.tooltip.formatter=ps=>{const r=A[ps[0].dataIndex];return `<b>${r.y}</b><br>全體 ${fmt(r.ni,2)} 兆（${sg(r.allY)}）<br>台積電 ${fmt(r.ts,2)} 兆，占 ${fmt(r.ts/r.ni*100,0)}%<br>其他 ${fmt(r.ni-r.ts,2)} 兆（${sg(r.exY)}）`};
+  o.tooltip.formatter=ps=>{const r=A[ps[0].dataIndex];return `<b>${r.y}</b><br>全體 ${fmt(r.ni,2)} 兆 (${sg(r.allY)})<br>台積電 ${fmt(r.ts,2)} 兆，占 ${fmt(r.ts/r.ni*100,0)}%<br>其他 ${fmt(r.ni-r.ts,2)} 兆 (${sg(r.exY)})`};
   o.series=[
     {name:'台積電',type:'bar',stack:'e',barMaxWidth:24,data:A.map(r=>+r.ts.toFixed(3)),itemStyle:{color:css('--s1'),...gap}},
     {name:'其他公司',type:'bar',stack:'e',barMaxWidth:24,data:A.map(r=>+(r.ni-r.ts).toFixed(3)),itemStyle:{color:css('--s2'),borderRadius:[4,4,0,0],...gap},
@@ -319,7 +319,7 @@ function drawEarn(E){
         formatter:p=>p.dataIndex===A.length-1||p.dataIndex===0?fmt(A[p.dataIndex].ni,1):''}}];
   c.setOption(o);
   const L=E.last,fy=A[A.length-1];
-  let t=`<strong>${fy.y} 年</strong>全體 ${fmt(fy.ni,2)} 兆（${sg(fy.allY)}），台積電占 <strong>${fmt(fy.ts/fy.ni*100,0)}%</strong>；扣掉台積電 <strong>${sg(fy.exY)}</strong>。`;
+  let t=`<strong>${fy.y} 年</strong>全體 ${fmt(fy.ni,2)} 兆 (${sg(fy.allY)})，台積電占 <strong>${fmt(fy.ts/fy.ni*100,0)}%</strong>；扣掉台積電 <strong>${sg(fy.exY)}</strong>。`;
   if(L&&L.q!==4)t+=` ${L.y} ${QN[L.q]}：全體 ${sg(L.allY)}、扣台積電 <strong>${sg(L.exY)}</strong>、獲利成長家數 ${fmt(L.grow,0)}%。`;
   $('earnTake').innerHTML=t;
   const rows=[...A];if(L&&L.q!==4)rows.push({...L,ytd:true});
@@ -327,8 +327,8 @@ function drawEarn(E){
   $('tEarn').innerHTML=`<tr><th>期間</th><th>全體</th><th>台積電</th><th>占比</th><th>扣台積電</th>${hasG?'<th>成長家數</th>':''}</tr>`+
     rows.map(r=>`<tr class="${r.ytd?'ytd':''}"><td>${r.ytd?`${String(r.y).slice(2)} ${QN[r.q]}`:r.y}</td><td>${fmt(r.ni,2)}</td><td>${fmt(r.ts,2)}</td><td>${fmt(r.ts/r.ni*100,0)}%</td><td>${sg(r.exY)}</td>${hasG?`<td>${fin(r.grow)?fmt(r.grow,0)+'%':'—'}</td>`:''}</tr>`).join('');
   const ys=E.seedYears;
-  $('earnFoot').textContent=(E.src==='seed'?'季財報彙總建置中，暫以媒體彙整的上市櫃稅後淨利顯示（2023 年為回推值）。'
-    :'來源：公開資訊觀測站綜合損益表彙總（逐家加總歸屬母公司淨利；年增率＝同一批公司比去年同期）。'+(ys.length?`${ys[0]}${ys.length>1?'–'+ys[ys.length-1]:''} 年暫用媒體彙整值，回補中。`:''))
+  $('earnFoot').textContent=(E.src==='seed'?'季財報彙總建置中，暫以媒體彙整的上市櫃稅後淨利顯示 (2023 年為回推值)。'
+    :'來源：公開資訊觀測站綜合損益表彙總 (逐家加總歸屬母公司淨利；年增率＝同一批公司比去年同期)。'+(ys.length?`${ys[0]}${ys.length>1?'–'+ys[ys.length-1]:''} 年暫用媒體彙整值，回補中。`:''))
     +'淡色列為今年累計。';
 }
 
@@ -349,35 +349,35 @@ function drawRevAmt(M,E){
     const A=M.slice(-36).map(r=>({...r,t:r.cur/1e4,ts:(r.cur-r.curEx)/1e4,ex:r.curEx/1e4,yoy:(r.cur/r.prev-1)*100,exYoY:(r.curEx/r.prevEx-1)*100})),last=A.length-1;
     o.xAxis.data=A.map(r=>r.ym);
     o.xAxis.axisLabel={...o.xAxis.axisLabel,interval:0,formatter:v=>v.endsWith('-01')?v.slice(0,4):''};
-    o.tooltip.formatter=ps=>{const r=A[ps[0].dataIndex];return `<b>${r.ym}</b><br>合計 ${fmt(r.t,2)} 兆（年增 ${sg(r.yoy)}）<br>台積電 ${fmt(r.ts*1e4,0)} 億（占 ${fmt(r.ts/r.t*100,1)}%）<br>其他 ${fmt(r.ex,2)} 兆（${sg(r.exYoY)}）<br>營收成長家數 ${fmt(r.up/r.n*100,0)}%`};
+    o.tooltip.formatter=ps=>{const r=A[ps[0].dataIndex];return `<b>${r.ym}</b><br>合計 ${fmt(r.t,2)} 兆 (年增 ${sg(r.yoy)})<br>台積電 ${fmt(r.ts*1e4,0)} 億 (占 ${fmt(r.ts/r.t*100,1)}%)<br>其他 ${fmt(r.ex,2)} 兆 (${sg(r.exYoY)})<br>營收成長家數 ${fmt(r.up/r.n*100,0)}%`};
     o.series=[{name:'台積電',type:'bar',stack:'r',barMaxWidth:24,data:A.map(r=>+r.ts.toFixed(3)),itemStyle:{color:css('--s1'),...gap}},
       {name:'其他公司',type:'bar',stack:'r',barMaxWidth:24,data:A.map(r=>+r.ex.toFixed(3)),itemStyle:{color:css('--s2'),borderRadius:[2,2,0,0],...gap},
         label:lab(i=>i===last,i=>fmt(A[i].t,2))}];
     c.setOption(o);
     const l=A[last],all=M.map(r=>r.cur),isMax=M[M.length-1].cur>=Math.max(...all);
     const L12=M.slice(-12),c12=L12.reduce((t,r)=>t+r.cur,0),p12=L12.reduce((t,r)=>t+r.prev,0);
-    $('revAmtTake').innerHTML=`<strong>${l.ym}</strong> 上市櫃營收 <strong>${fmt(l.t,2)} 兆</strong>，年增 ${sg(l.yoy)}（扣台積電 ${sg(l.exYoY)}）${isMax?'，<strong>單月歷史新高</strong>':''}；近 12 個月合計 ${fmt(c12/1e4,1)} 兆，年增 ${sg((c12/p12-1)*100)}。`;
+    $('revAmtTake').innerHTML=`<strong>${l.ym}</strong> 上市櫃營收 <strong>${fmt(l.t,2)} 兆</strong>，年增 ${sg(l.yoy)} (扣台積電 ${sg(l.exYoY)})${isMax?'，<strong>單月歷史新高</strong>':''}；近 12 個月合計 ${fmt(c12/1e4,1)} 兆，年增 ${sg((c12/p12-1)*100)}。`;
     $('tRevAmt').innerHTML='';
   }else{
     const A=Y,last=A.length-1,lf=[...A].reverse().find(r=>!r.ytd),yt=A[last].ytd?A[last]:null;
     o.xAxis.data=A.map(r=>r.ytd?`${r.y}\n1–${r.k}月`:String(r.y));
     o.xAxis.axisLabel={...o.xAxis.axisLabel,interval:0,lineHeight:12};
-    o.tooltip.formatter=ps=>{const r=A[ps[0].dataIndex],w=r.ytd?'比去年同期':'年增';return `<b>${r.ytd?r.y+' 年 1–'+r.k+' 月':r.y+' 全年'}</b><br>合計 ${fmt(r.cur,2)} 兆（${w} ${sg(r.yoy)}）<br>台積電 ${fmt(r.ts,2)} 兆（占 ${fmt(r.ts/r.cur*100,1)}%）<br>其他 ${fmt(r.ex,2)} 兆（${w} ${sg(r.exYoY)}）`};
+    o.tooltip.formatter=ps=>{const r=A[ps[0].dataIndex],w=r.ytd?'比去年同期':'年增';return `<b>${r.ytd?r.y+' 年 1–'+r.k+' 月':r.y+' 全年'}</b><br>合計 ${fmt(r.cur,2)} 兆 (${w} ${sg(r.yoy)})<br>台積電 ${fmt(r.ts,2)} 兆 (占 ${fmt(r.ts/r.cur*100,1)}%)<br>其他 ${fmt(r.ex,2)} 兆 (${w} ${sg(r.exYoY)})`};
     const op=r=>r.ytd?.55:1;
     o.series=[{name:'台積電',type:'bar',stack:'r',barMaxWidth:24,data:A.map(r=>({value:+r.ts.toFixed(3),itemStyle:{opacity:op(r)}})),itemStyle:{color:css('--s1'),...gap}},
       {name:'其他公司',type:'bar',stack:'r',barMaxWidth:24,data:A.map(r=>({value:+r.ex.toFixed(3),itemStyle:{opacity:op(r)}})),itemStyle:{color:css('--s2'),borderRadius:[4,4,0,0],...gap},
         label:lab(i=>i===0||i===last||A[i]===lf,i=>fmt(A[i].cur,1))}];
     c.setOption(o);
     const eY=lf&&E&&E.ann.find(r=>r.y===lf.y),pShare=eY&&eY.ni?eY.ts/eY.ni*100:null;
-    let t=lf?`<strong>${lf.y} 全年</strong>營收 ${fmt(lf.cur,2)} 兆（${sg(lf.yoy)}）`:'';
+    let t=lf?`<strong>${lf.y} 全年</strong>營收 ${fmt(lf.cur,2)} 兆 (${sg(lf.yoy)})`:'';
     if(yt)t+=`；<strong>${yt.y} 前 ${yt.k} 月</strong> ${fmt(yt.cur,2)} 兆，比去年同期 <strong>${sg(yt.yoy)}</strong>${lf&&lf.y===yt.y-1?`，已達去年全年 ${fmt(yt.cur/lf.cur*100,0)}%`:''}`;
-    if(lf)t+=`。台積電占營收 ${fmt(lf.ts/lf.cur*100,1)}%${fin(pShare)?`、卻占獲利 <strong>${fmt(pShare,0)}%</strong>（${lf.y}）——賺錢集中度遠高於營收`:''}。`;
+    if(lf)t+=`。台積電占營收 ${fmt(lf.ts/lf.cur*100,1)}%${fin(pShare)?`、卻占獲利 <strong>${fmt(pShare,0)}%</strong> (${lf.y})——賺錢集中度遠高於營收`:''}。`;
     $('revAmtTake').innerHTML=t;
     $('tRevAmt').innerHTML='<tr><th>年度</th><th>營收</th><th>年增</th><th>台積電</th><th>占比</th><th>扣台積電</th></tr>'+
       A.map(r=>`<tr class="${r.ytd?'ytd':''}"><td>${r.lbl}</td><td>${fmt(r.cur,2)}</td><td>${sg(r.yoy)}</td><td>${fmt(r.ts,2)}</td><td>${fmt(r.ts/r.cur*100,1)}%</td><td>${sg(r.exYoY)}</td></tr>`).join('');
   }
-  $('revAmtFoot').textContent=`來源：公開資訊觀測站每月營收彙總（上市櫃含 KY、金融業；${M[0].ym} 起）。合計只算去年同月也有營收的公司（約 99.5% 家數），年增率＝同一批公司比去年同期。`+
-    (mode==='y'?'淡色＝今年累計（未滿 12 個月，不能直接和全年比高低）。':'近 36 個月；點長條看當月年增與成長家數。月營收受農曆年、工作天數與匯率影響，看「年增率」比看月增準。');
+  $('revAmtFoot').textContent=`來源：公開資訊觀測站每月營收彙總 (上市櫃含 KY、金融業；${M[0].ym} 起)。合計只算去年同月也有營收的公司 (約 99.5% 家數)，年增率＝同一批公司比去年同期。`+
+    (mode==='y'?'淡色＝今年累計 (未滿 12 個月，不能直接和全年比高低)。':'近 36 個月；點長條看當月年增與成長家數。月營收受農曆年、工作天數與匯率影響，看「年增率」比看月增準。');
 }
 
 function drawRev(M){
@@ -389,11 +389,11 @@ function drawRev(M){
   const yAll=(m.cur/m.prev-1)*100,yEx=(m.curEx/m.prevEx-1)*100;
   const pd=pendingRev();
   $('revTake').innerHTML=`<strong>${m.ym}</strong>：${fmt(m.n)} 家中 <strong>${fmt(m.up/m.n*100,0)}%</strong> 營收比去年同月成長；全體營收 ${sg(yAll)}、扣台積電 <strong>${sg(yEx)}</strong>，年增中位數 ${sg(m.med)}。`+
-    (pd?`（${pd.ym} 營收公布中：已 ${fmt(pd.n)} 家，其中 ${fmt(pd.up/pd.n*100,0)}% 年增；每月 10 日公布完）`:'');
-  if(!ok){$('revFoot').innerHTML='<span class="ph" style="display:block">歷史月資料建置中（公開資訊觀測站每月營收彙總，回補到 2019 年）</span>';return}
+    (pd?` (${pd.ym} 營收公布中：已 ${fmt(pd.n)} 家，其中 ${fmt(pd.up/pd.n*100,0)}% 年增；每月 10 日公布完)`:'');
+  if(!ok){$('revFoot').innerHTML='<span class="ph" style="display:block">歷史月資料建置中 (公開資訊觀測站每月營收彙總，回補到 2019 年)</span>';return}
   const x=M.map(r=>r.ym),last=M.length-1;
   {const o=base(),c=mk('cBreadth');o.legend.show=false;o.xAxis.data=x;o.yAxis.min=0;o.yAxis.max=100;o.yAxis.axisLabel.formatter='{value}%';
-    o.tooltip.formatter=ps=>{const r=M[ps[0].dataIndex];return `<b>${r.ym}</b><br>成長 ${fmt(r.up)} / ${fmt(r.n)} 家（${fmt(r.up/r.n*100,1)}%）<br>年增中位數 ${sg(r.med)}`};
+    o.tooltip.formatter=ps=>{const r=M[ps[0].dataIndex];return `<b>${r.ym}</b><br>成長 ${fmt(r.up)} / ${fmt(r.n)} 家 (${fmt(r.up/r.n*100,1)}%)<br>年增中位數 ${sg(r.med)}`};
     o.series=[{name:'成長家數占比',type:'line',data:M.map(r=>+(r.up/r.n*100).toFixed(1)),lineStyle:{width:2,color:css('--s1')},itemStyle:{color:css('--s1'),...ring()},
       symbol:'circle',symbolSize:(v,p)=>p.dataIndex===last?8:0,showSymbol:true,
       label:{show:true,position:'top',color:css('--fg'),fontSize:10,formatter:p=>p.dataIndex===last?fmt(p.value,0)+'%':''},
@@ -408,7 +408,7 @@ function drawRev(M){
       {name:'扣掉台積電',type:'line',data:sE,lineStyle:{width:2,color:css('--s2')},itemStyle:{color:css('--s2'),...ring()},symbol:'circle',symbolSize:(v,p)=>p.dataIndex===last?8:0,label:{...end(),position:'bottom'},
         markLine:{silent:true,symbol:'none',lineStyle:{color:css('--muted'),type:'solid',width:1},label:{show:false},data:[{yAxis:0}]}}];
     c.setOption(o)}
-  $('revFoot').textContent=`來源：公開資訊觀測站每月營收彙總（${M[0].ym} 起，上市櫃含 KY）；最新月份含證交所／櫃買每日更新。1–2 月受農曆年落點影響會跳動，看趨勢要連看 3 個月。營收面台積電只占全體約 8%，所以兩條線很接近；獲利面台積電占三成以上，集中度要看上面的獲利卡。`;
+  $('revFoot').textContent=`來源：公開資訊觀測站每月營收彙總 (${M[0].ym} 起，上市櫃含 KY)；最新月份含證交所/櫃買每日更新。1–2 月受農曆年落點影響會跳動，看趨勢要連看 3 個月。營收面台積電只占全體約 8%，所以兩條線很接近；獲利面台積電占三成以上，集中度要看上面的獲利卡。`;
 }
 
 function drawVal(V){
@@ -422,7 +422,7 @@ function drawVal(V){
   let t='';
   if(d){
     const pv=P.map(r=>r.pe).filter(fin),pct=pv.length>=12?pv.filter(x=>x<d.pe).length/pv.length*100:null;
-    t+=`上市總市值 ÷ 近四季淨利（證交所口徑）：<strong>${d.date.slice(4,6)}/${d.date.slice(6)} ${fmt(d.pe,1)} 倍</strong>、殖利率 <strong>${fmt(d.yld,2)}%</strong>${d.est?'（盤後推估）':''}`;
+    t+=`上市總市值 ÷ 近四季淨利 (證交所口徑)：<strong>${d.date.slice(4,6)}/${d.date.slice(6)} ${fmt(d.pe,1)} 倍</strong>、殖利率 <strong>${fmt(d.yld,2)}%</strong>${d.est?' (盤後推估)':''}`;
     if(fin(pct))t+=`，比 ${P[0].ym.slice(0,4)} 年以來 <strong>${fmt(pct,0)}%</strong> 的月底都高`;
     t+='。';
   }
@@ -442,7 +442,7 @@ function drawVal(V){
     o.tooltip.valueFormatter=x=>fin(x)?fmt(x,dg)+unit:'—';
     const bandMk={silent:true,itemStyle:{color:css('--band')},label:{show:true,position:'insideTopRight',color:css('--muted'),fontSize:10,formatter:`常態 ${band[0]}–${band[1]}${unit}`},data:[[{yAxis:band[0]},{yAxis:band[1]}]]};
     o.series=[];
-    if(P.length)o.series.push({name:'月底（本站算）',type:'line',connectNulls:false,data:gapped(P,key),lineStyle:{width:2,color:css('--s2')},itemStyle:{color:css('--s2'),...ring()},
+    if(P.length)o.series.push({name:'月底 (本站算)',type:'line',connectNulls:false,data:gapped(P,key),lineStyle:{width:2,color:css('--s2')},itemStyle:{color:css('--s2'),...ring()},
       symbol:'circle',symbolSize:(x,p)=>p.value&&p.value[0]===P[lastP].t?8:0,showSymbol:true,markArea:bandMk});
     o.series.push({name:'每日',type:'line',data:D.map(r=>[r.t,r[key]]),lineStyle:{width:2,color:css('--s1')},itemStyle:{color:css('--s1'),...ring()},
       symbol:'circle',symbolSize:(x,p)=>p.dataIndex===lastD||D.length<15?8:0,showSymbol:true,
@@ -451,9 +451,9 @@ function drawVal(V){
       symbol:'circle',symbolSize:9,itemStyle:{color:css('--card'),borderColor:css('--fg'),borderWidth:1.5},lineStyle:{width:1,color:css('--muted')}});
     c.setOption(o)};
   draw('cPE','pe',nm.pe,' 倍',1,5);draw('cYld','yld',nm.yld,'%',2,1);
-  $('valFoot').textContent=(P.length?`橘線＝本站按證交所定義算的每月底值（上市總市值 ÷ 近四季歸母淨利，虧損公司也算；資料：證交所每日個股收盤＋公開資訊觀測站財報，${P[0].ym.replace('-','/')} 起）。`:'')+
-    `空心點＝金管會新聞稿引用的官方月底值（只在台股大跌時公布，所以不是每月都有）`+(chk.length?`，和本站算的對帳 ${chk.length} 點：平均差 ${fmt(mae,1)}%，最大 ${mx.ym.replace('-','/')} ${sg(mx.e)}`:'')+
-    `。藍線＝每日值（晚上更新）。殖利率含股票股利（金管會點用同口徑）；灰色帶為現金殖利率常態，含股票股利約高 0.1 個百分點。常態區間：${nm.src}。`;
+  $('valFoot').textContent=(P.length?`橘線＝本站按證交所定義算的每月底值 (上市總市值 ÷ 近四季歸母淨利，虧損公司也算；資料：證交所每日個股收盤＋公開資訊觀測站財報，${P[0].ym.replace('-','/')} 起)。`:'')+
+    `空心點＝金管會新聞稿引用的官方月底值 (只在台股大跌時公布，所以不是每月都有)`+(chk.length?`，和本站算的對帳 ${chk.length} 點：平均差 ${fmt(mae,1)}%，最大 ${mx.ym.replace('-','/')} ${sg(mx.e)}`:'')+
+    `。藍線＝每日值 (晚上更新)。殖利率含股票股利 (金管會點用同口徑)；灰色帶為現金殖利率常態，含股票股利約高 0.1 個百分點。常態區間：${nm.src}。`;
 }
 
 function drawDiv(){
@@ -472,9 +472,9 @@ function drawDiv(){
 function notes(st){
   $('tThr').innerHTML='<tr><th>指標</th><th>🟢</th><th>🟡</th><th>🔴</th></tr>'+THR.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join('');
   const L=st.L;
-  $('checkpoint').innerHTML=`下一季財報公布後（Q3 申報截止 11/14，Q4 為隔年 3/31）看兩個數字：<b>獲利成長家數 ≥ 50% 且扣台積電仍正成長</b> → 成長擴散、健康延續；<b>成長家數 &lt; 40% 或扣台積電轉負</b> → 又回到只靠台積電，轉弱訊號。`+
-    (L&&fin(L.grow)?`（目前 ${L.y} ${QN[L.q]}：成長家數 ${fmt(L.grow,0)}%、扣台積電 ${sg(L.exY)}）`:'');
-  const src=[['公開資訊觀測站：綜合損益表彙總、每月營收彙總','https://mopsov.twse.com.tw/mops/web/t163sb04'],['證交所／櫃買中心 OpenAPI：收盤、本益比、殖利率、月營收','https://openapi.twse.com.tw/'],...SEED.sources];
+  $('checkpoint').innerHTML=`下一季財報公布後 (Q3 申報截止 11/14，Q4 為隔年 3/31) 看兩個數字：<b>獲利成長家數 ≥ 50% 且扣台積電仍正成長</b> → 成長擴散、健康延續；<b>成長家數 &lt; 40% 或扣台積電轉負</b> → 又回到只靠台積電，轉弱訊號。`+
+    (L&&fin(L.grow)?` (目前 ${L.y} ${QN[L.q]}：成長家數 ${fmt(L.grow,0)}%、扣台積電 ${sg(L.exY)})`:'');
+  const src=[['公開資訊觀測站：綜合損益表彙總、每月營收彙總','https://mopsov.twse.com.tw/mops/web/t163sb04'],['證交所/櫃買中心 OpenAPI：收盤、本益比、殖利率、月營收','https://openapi.twse.com.tw/'],...SEED.sources];
   $('srcList').innerHTML=src.map(([t,u])=>`<li><a href="${u}" target="_blank" rel="noopener">${t}</a></li>`).join('');
 }
 

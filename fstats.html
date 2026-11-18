@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="zh-Hant-TW">
-<head>
+<head><script>/* hwj 2026-11-18：本站 data/ 的 JSON 文字全形括號／斜線→半形（只轉值、不轉鍵） */(()=>{const O=' \t\n\u3000>([{「『《〈\"\'`—–-/:：，、。；',F=/[（）／]/,hw=s=>F.test(s)?s.replace(/([\s\S]?)（/g,(m,p)=>p+(p===''||O.includes(p)?'(':' (')).replace(/）(?=[0-9A-Za-z\u3040-\u30ff\u4e00-\u9fff])/g,') ').replace(/）/g,')').replace(/／/g,'/'):s,dp=o=>{if(typeof o==='string')return hw(o);if(Array.isArray(o)){for(let i=0;i<o.length;i++){const v=o[i];if(typeof v==='string'||(v&&typeof v==='object'))o[i]=dp(v)}}else if(o&&typeof o==='object'){for(const k in o){const v=o[k];if(typeof v==='string'||(v&&typeof v==='object'))o[k]=dp(v)}}return o},J=Response.prototype.json;window.hwText=hw;Response.prototype.json=function(){let u='';try{u=new URL(this.url)}catch(e){}if(!u||u.origin!==location.origin||!/\/data\//.test(u.pathname))return J.call(this);return this.text().then(t=>{const o=JSON.parse(t);return F.test(t)?dp(o):o})}})()</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>主力訊號統計</title>
@@ -73,12 +73,12 @@ const cls=x=>x==null?'':x>0?'up':x<0?'dn':'',md=d=>d?+d.slice(4,6)+'/'+ +d.slice
 let D=null,E='e1',M='ex',H='5',G='streak';   // G＝分組方式：streak 第幾天｜nt 注意股｜sh 法人占量｜who 誰在買（2026-11-15 條件切分）
 const MINN=50;   // 少於這個筆數的分組標「⚠少」、不列入最好／最差
 // 指標：[鍵, 按鈕字, 標題, 格式, 著色用的中心與滿格幅度]
-const MET={ex:['超額','超額報酬（贏大盤多少）',pc,0,.03],avg:['平均','平均報酬',pc,0,.05],win:['勝率','勝率（報酬 > 0 的比例）',wr,.5,.3],med:['中位數','中位數報酬（一般情況）',pc,0,.05],p10:['最差10%','最差 10% 的報酬（十次有一次比這更慘）',pc,0,.2]};
+const MET={ex:['超額','超額報酬 (贏大盤多少)',pc,0,.03],avg:['平均','平均報酬',pc,0,.05],win:['勝率','勝率 (報酬 > 0 的比例)',wr,.5,.3],med:['中位數','中位數報酬 (一般情況)',pc,0,.05],p10:['最差10%','最差 10% 的報酬 (十次有一次比這更慘)',pc,0,.2]};
 const tint=(v,m)=>{if(v==null)return '';const [, , ,c,r]=MET[m],x=Math.max(-1,Math.min(1,(v-c)/r));return `background:rgba(${x>0?'var(--upRGB)':'var(--dnRGB)'},${(Math.abs(x)*.30).toFixed(2)})`};
 const CUT=()=>G!=='streak'&&D.cuts&&D.cuts[G]||null,SRC=()=>(CUT()||D).s[E],BK=()=>(CUT()||D).buckets;
 function cell(k,h){const s=SRC();return s[k]&&s[k][h]||null}
 function draw(){
-  if(!D){$('#wrap').innerHTML='<div class="empty">還沒有統計資料（排程跑完後就會出現）</div>';return}
+  if(!D){$('#wrap').innerHTML='<div class="empty">還沒有統計資料 (排程跑完後就會出現)</div>';return}
   const B=BK(),cut=CUT(),hs=D.hs.map(String),m=MET[M],fmt=m[2],entry=E==='e1'?'隔天收盤':'當天收盤';
   const all=cell('all',H)||{},rank=B.filter(([k])=>k!=='all').map(([k,lb])=>[lb,cell(k,H)]).filter(x=>x[1]&&x[1].ex!=null&&x[1].n>=MINN).sort((a,b)=>b[1].ex-a[1].ex),best=rank[0],worst=rank[rank.length-1];
   const weak=all.base!=null&&all.base<-0.005,strong=all.base!=null&&all.base>0.005;
@@ -86,7 +86,7 @@ function draw(){
     <li>📌 全部 🔥 ${entry}買進、抱 ${H} 日：勝率 <b>${wr(all.win)}</b>、平均 <b class="${cls(all.avg)}">${pc(all.avg)}</b>；同期全市場 <b class="${cls(all.base)}">${pc(all.base)}</b> → 超額 <b class="${cls(all.ex)}">${pc(all.ex)}</b></li>
     ${best&&worst&&best!==worst?`<li>${best[1].ex>0?'✅':'➖'} 相對最好：<b style="font-family:inherit">${best[0]}</b>${cut?'':'進場'}，超額 <b class="${cls(best[1].ex)}">${pc(best[1].ex)}</b>、勝率 <b>${wr(best[1].win)}</b></li>
     <li>${worst[1].ex<0?'⚠️':'➖'} 相對最差：<b style="font-family:inherit">${worst[0]}</b>${cut?'':'進場'}，超額 <b class="${cls(worst[1].ex)}">${pc(worst[1].ex)}</b>、勝率 <b>${wr(worst[1].win)}</b>、最差 10% <b class="dn">${pc(worst[1].p10)}</b></li>`:''}
-    ${weak?`<li>🌧️ 這段期間大盤偏弱（全市場中位數抱 ${H} 日 ${pc(all.base)}），絕對報酬偏低屬正常，<b style="font-family:inherit">要看超額</b></li>`:strong?`<li>☀️ 這段期間大盤偏強，勝率高不一定是訊號的功勞，<b style="font-family:inherit">要看超額</b></li>`:''}
+    ${weak?`<li>🌧️ 這段期間大盤偏弱 (全市場中位數抱 ${H} 日 ${pc(all.base)})，絕對報酬偏低屬正常，<b style="font-family:inherit">要看超額</b></li>`:strong?`<li>☀️ 這段期間大盤偏強，勝率高不一定是訊號的功勞，<b style="font-family:inherit">要看超額</b></li>`:''}
   </ul>`;
   const th=hs.map(h=>`<th class="h${h===H?' on':''}" data-h="${h}">${h}日</th>`).join('');
   const few=k=>((cell(k,H)||{}).n??0)<MINN,anyFew=B.some(([k])=>few(k));
@@ -99,16 +99,16 @@ function draw(){
   <div class="card"><h2>結論 <span>${md(D.from)}～${md(D.to)}・${D.nDays} 個交易日・全市場 ${D.nEv.toLocaleString()} 筆</span></h2>${key}</div>
   <div class="card">
     ${D.cuts?`<div class="seg" id="segG"><button data-g="streak" aria-pressed="${G==='streak'}">第幾天</button>${Object.entries(D.cuts).map(([k,v])=>`<button data-g="${k}" aria-pressed="${k===G}">${v.name}</button>`).join('')}</div>`:''}
-    <div class="seg" id="segE"><button data-e="e1" aria-pressed="${E==='e1'}">隔天收盤買（買得到）</button><button data-e="e0" aria-pressed="${E==='e0'}">當天收盤買（理想值）</button></div>
+    <div class="seg" id="segE"><button data-e="e1" aria-pressed="${E==='e1'}">隔天收盤買 (買得到)</button><button data-e="e0" aria-pressed="${E==='e0'}">當天收盤買 (理想值)</button></div>
     <div class="seg" id="segM">${Object.entries(MET).map(([k,v])=>`<button data-m="${k}" aria-pressed="${k===M}">${v[0]}</button>`).join('')}</div>
     <h2>${m[1]} <span>列＝${cut?cut.desc:'連續符合 🔥 的第幾天進場'}・欄＝抱幾個交易日</span></h2>
     <table><thead><tr><th>${cut?cut.name:'進場時機'}</th>${th}</tr></thead><tbody>${B.map(row).join('')}${baseRow}</tbody></table>
-    <p class="hint">點「1日／3日／5日／10日」換下面的圖與上面的結論。${M==='win'?'底色：<b>紅＝高於 50%、綠＝低於 50%</b>。':'底色越深＝數字越大（紅正、綠負）。'}${anyFew?`<br><span class="few">⚠少</span>＝不到 ${MINN} 筆，數字變淡、僅供參考，不列入上面的最好／最差。`:''}</p>
+    <p class="hint">點「1日/3日/5日/10日」換下面的圖與上面的結論。${M==='win'?'底色：<b>紅＝高於 50%、綠＝低於 50%</b>。':'底色越深＝數字越大 (紅正、綠負)。'}${anyFew?`<br><span class="few">⚠少</span>＝不到 ${MINN} 筆，數字變淡、僅供參考，不列入上面的最好/最差。`:''}</p>
   </div>
   <div class="card"><h2>抱 ${H} 日的${m[0]} <span>${entry}買進${M==='win'?'・中線＝50%':''}</span></h2><div class="bars">${bars}</div></div>
-  <p class="foot"><b>怎麼算</b>：事件＝全市場任何一檔在某天符合 🔥（月漲幅 &gt; 0、量比 ≥ 1.5、投信或外資 5 日買超 ≥ 5 日成交量 1%）。「第 N 天」＝已連續符合幾個交易日；🆕 第 1 天＝首頁標「🆕新進」那天。報酬＝收盤對收盤、還原除權息。<b>超額</b>＝個股報酬 − 同一天進場、抱同樣天數的全市場中位數。<br>
-  <b>分組</b>：「注意股」看事件當天是否列注意股或處置中（上櫃處置 10/29 前沒有資料）；「法人占量」＝外資或投信 5 日買超 ÷ 5 日成交量，取大的；「誰在買」＝占量達 1% 的是外資、投信還是兩者。這三種不跟「第幾天」交叉。<br>
-  <b>限制</b>：① 只有 ${D.nDays} 個交易日、單一行情，結論會隨行情變，不是定律；② 同一檔連續上榜會重複計算，事件彼此不獨立，實際可信度比筆數看起來低；③ 沒算手續費、證交稅（來回約 0.6%）與漲停買不到；④ 是全市場統計，不是只算你的主題＋自選。<br>
+  <p class="foot"><b>怎麼算</b>：事件＝全市場任何一檔在某天符合 🔥 (月漲幅 &gt; 0、量比 ≥ 1.5、投信或外資 5 日買超 ≥ 5 日成交量 1%)。「第 N 天」＝已連續符合幾個交易日；🆕 第 1 天＝首頁標「🆕新進」那天。報酬＝收盤對收盤、還原除權息。<b>超額</b>＝個股報酬 − 同一天進場、抱同樣天數的全市場中位數。<br>
+  <b>分組</b>：「注意股」看事件當天是否列注意股或處置中 (上櫃處置 10/29 前沒有資料)；「法人占量」＝外資或投信 5 日買超 ÷ 5 日成交量，取大的；「誰在買」＝占量達 1% 的是外資、投信還是兩者。這三種不跟「第幾天」交叉。<br>
+  <b>限制</b>：① 只有 ${D.nDays} 個交易日、單一行情，結論會隨行情變，不是定律；② 同一檔連續上榜會重複計算，事件彼此不獨立，實際可信度比筆數看起來低；③ 沒算手續費、證交稅 (來回約 0.6%) 與漲停買不到；④ 是全市場統計，不是只算你的主題＋自選。<br>
   價到 ${md(D.pxAsof)}・樣本從 ${md(D.from)} 起永久累積，每次排程加入新的交易日 <span style="opacity:.5">v1115w</span></p>`;
 }
 document.addEventListener('click',e=>{const b=e.target.closest('[data-e],[data-m],[data-h],[data-g]');if(!b)return;if(b.dataset.g)G=b.dataset.g;if(b.dataset.e)E=b.dataset.e;if(b.dataset.m)M=b.dataset.m;if(b.dataset.h)H=b.dataset.h;draw()});

@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="zh-Hant-TW">
-<head>
+<head><script>/* hwj 2026-11-18：本站 data/ 的 JSON 文字全形括號／斜線→半形（只轉值、不轉鍵） */(()=>{const O=' \t\n\u3000>([{「『《〈\"\'`—–-/:：，、。；',F=/[（）／]/,hw=s=>F.test(s)?s.replace(/([\s\S]?)（/g,(m,p)=>p+(p===''||O.includes(p)?'(':' (')).replace(/）(?=[0-9A-Za-z\u3040-\u30ff\u4e00-\u9fff])/g,') ').replace(/）/g,')').replace(/／/g,'/'):s,dp=o=>{if(typeof o==='string')return hw(o);if(Array.isArray(o)){for(let i=0;i<o.length;i++){const v=o[i];if(typeof v==='string'||(v&&typeof v==='object'))o[i]=dp(v)}}else if(o&&typeof o==='object'){for(const k in o){const v=o[k];if(typeof v==='string'||(v&&typeof v==='object'))o[k]=dp(v)}}return o},J=Response.prototype.json;window.hwText=hw;Response.prototype.json=function(){let u='';try{u=new URL(this.url)}catch(e){}if(!u||u.origin!==location.origin||!/\/data\//.test(u.pathname))return J.call(this);return this.text().then(t=>{const o=JSON.parse(t);return F.test(t)?dp(o):o})}})()</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>處置後統計</title>
@@ -62,7 +62,7 @@ td.nm .mk{font-size:9px;color:var(--muted);border:1px solid var(--line);border-r
 <div class="hd">
   <span class="t">📊 處置後統計</span>
   <button data-m="" aria-pressed="true">全部</button><button data-m="上市">上市</button><button data-m="上櫃">上櫃</button>
-  <a class="home" href="notice.html#dpost">← 注意／處置</a>
+  <a class="home" href="notice.html#dpost">← 注意/處置</a>
 </div>
 <div class="wrap" id="wrap"><div class="empty">計算中…</div></div>
 <script>
@@ -74,7 +74,7 @@ let MK='',ROWS=[],ASOF='';
 const H=[1,3,5,10];
 async function init(){
   const dh=await fetch('data/notice/dis_hist.json?t='+Math.floor(Date.now()/3e5)).then(r=>r.ok?r.json():null).catch(()=>null);
-  if(!dh||!Object.keys(dh).length){$('#wrap').innerHTML='<div class="empty">還沒有處置歷史（排程跑過新版後開始累積）</div>';return}
+  if(!dh||!Object.keys(dh).length){$('#wrap').innerHTML='<div class="empty">還沒有處置歷史 (排程跑過新版後開始累積)</div>';return}
   const recs=Object.values(dh);
   const SHARD={};
   await Promise.all([...new Set(recs.map(r=>r.c.slice(0,2)))].map(async g=>{try{const r=await fetch('data/chip_s/'+g+'.json?t='+Math.floor(Date.now()/600000));if(r.ok)SHARD[g]=await r.json()}catch(e){}}));
@@ -109,7 +109,7 @@ function paint(){
     <table class="big"><tr><th>結束後</th><th>樣本</th><th>勝率</th><th>平均</th><th>中位數</th></tr>
     ${sum.map(s=>`<tr><td style="font-family:var(--f-body)">+${s.h} 日</td><td>${s.n||'—'}</td><td class="${s.n?(s.win>=.5?'up':'dn'):''}">${s.n?Math.round(s.win*100)+'%':'—'}</td><td class="${cls(s.avg)}">${s.n?sgn(s.avg):'—'}</td><td class="${cls(s.med)}">${s.n?sgn(s.med):'—'}</td></tr>`).join('')}
     </table>
-    <div class="hint">${dur?`參考：這些股票<b>處置期間</b>平均 <b class="${cls(dur.avg)}">${sgn(dur.avg)}</b>（勝率 ${Math.round(dur.win*100)}%）。`:''}勝率＝結束後第 N 個交易日收盤高於基準的比例。<b>樣本還很少，先看、先累積，別急著當進場訊號</b>——目前樣本集中在同一段行情（10 月處置潮），同漲同跌會高估規律性；至少累積 1～2 個月、樣本 50+ 再下結論，也要小心只記得漲的那幾檔（倖存者偏差）。</div>
+    <div class="hint">${dur?`參考：這些股票<b>處置期間</b>平均 <b class="${cls(dur.avg)}">${sgn(dur.avg)}</b> (勝率 ${Math.round(dur.win*100)}%)。`:''}勝率＝結束後第 N 個交易日收盤高於基準的比例。<b>樣本還很少，先看、先累積，別急著當進場訊號</b>——目前樣本集中在同一段行情 (10 月處置潮)，同漲同跌會高估規律性；至少累積 1～2 個月、樣本 50+ 再下結論，也要小心只記得漲的那幾檔 (倖存者偏差)。</div>
   </div>
   <div class="card"><h2>各檔明細 <span>新結束在前・點股名看財報</span></h2><div class="scroll">
     <table><tr><th>股票</th><th>結束</th><th>期間</th><th>+1</th><th>+3</th><th>+5</th><th>+10</th></tr>
@@ -118,9 +118,9 @@ function paint(){
       <td class="${cls(r.during)}">${sgn(r.during)}</td>
       ${H.map(h=>`<td class="${cls(r.rets[h])}">${r.rets[h]==null?(r.maxN<h?'…':'—'):sgn(r.rets[h])}</td>`).join('')}</tr>`).join('')}
     </table></div>
-    <div class="hint">「…」＝結束未滿 N 個交易日，之後會自己補上。期間＝進處置前一天收盤 → 處置最後一天收盤（處置期間漲跌）。表可左右滑。</div>
+    <div class="hint">「…」＝結束未滿 N 個交易日，之後會自己補上。期間＝進處置前一天收盤 → 處置最後一天收盤 (處置期間漲跌)。表可左右滑。</div>
   </div>
-  <p class="foot">資料：data/notice/dis_hist.json（每個交易日 17:25 後自動累積；上市已回補近 60 天處置公告，上櫃官方只提供最近兩天、自 2026/10/29 起累積）＋ 本站日K收盤價${ASOF?`（至 ${md(ASOF)}）`:''}。紅＝漲／綠＝跌。本頁不構成投資建議。</p>`;
+  <p class="foot">資料：data/notice/dis_hist.json (每個交易日 17:25 後自動累積；上市已回補近 60 天處置公告，上櫃官方只提供最近兩天、自 2026/10/29 起累積)＋ 本站日K收盤價${ASOF?` (至 ${md(ASOF)})`:''}。紅＝漲/綠＝跌。本頁不構成投資建議。</p>`;
 }
 init();
 </script>

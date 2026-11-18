@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="zh-Hant-TW">
-<head>
+<head><script>/* hwj 2026-11-18：本站 data/ 的 JSON 文字全形括號／斜線→半形（只轉值、不轉鍵） */(()=>{const O=' \t\n\u3000>([{「『《〈\"\'`—–-/:：，、。；',F=/[（）／]/,hw=s=>F.test(s)?s.replace(/([\s\S]?)（/g,(m,p)=>p+(p===''||O.includes(p)?'(':' (')).replace(/）(?=[0-9A-Za-z\u3040-\u30ff\u4e00-\u9fff])/g,') ').replace(/）/g,')').replace(/／/g,'/'):s,dp=o=>{if(typeof o==='string')return hw(o);if(Array.isArray(o)){for(let i=0;i<o.length;i++){const v=o[i];if(typeof v==='string'||(v&&typeof v==='object'))o[i]=dp(v)}}else if(o&&typeof o==='object'){for(const k in o){const v=o[k];if(typeof v==='string'||(v&&typeof v==='object'))o[k]=dp(v)}}return o},J=Response.prototype.json;window.hwText=hw;Response.prototype.json=function(){let u='';try{u=new URL(this.url)}catch(e){}if(!u||u.origin!==location.origin||!/\/data\//.test(u.pathname))return J.call(this);return this.text().then(t=>{const o=JSON.parse(t);return F.test(t)?dp(o):o})}})()</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>財報快訊</title>
@@ -131,7 +131,7 @@ a:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid var
       <button data-f="all" aria-pressed="true">全部</button>
       <button data-f="w">⭐ 追蹤</button>
       <button data-f="g">📈 年增</button>
-      <button data-f="b">📉 衰退／轉虧</button>
+      <button data-f="b">📉 衰退/轉虧</button>
       <button data-f="dd">📈📈 營收淨利雙增</button>
       <button data-f="x">⚠️ 業外高</button>
     </div>
@@ -146,11 +146,11 @@ a:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid var
   <button class="more" id="more" hidden>顯示更多</button>
 
   <p class="foot">
-    數字來源：公開資訊觀測站「董事會通過財報」重大訊息（第 31 款標準格式，1 月 1 日累計數）。單季＝本期累計 − 上一季累計；去年同季、上一季用觀測站財報彙總。<br>
-    「法說」＝公司在董事會前自行公告的 EPS，董事會版出來後自動取代。<br>「分割還原」＝公司做過分割、面額變更（名稱帶 *），去年同季與近四季 EPS 已換算到目前股數基準，數字會跟新聞上的「官方 EPS 年增」不同但可比。<br>
-    營收＝單季營收（億）＋年增；「營收淨利雙增」＝單季營收與淨利年增都 > 0（淨利大增但營收沒跟上，多半是業外或一次性毛利，可持續性要打折）；銀行、保險無營收科目顯示「—」。<br>
+    數字來源：公開資訊觀測站「董事會通過財報」重大訊息 (第 31 款標準格式，1 月 1 日累計數)。單季＝本期累計 − 上一季累計；去年同季、上一季用觀測站財報彙總。<br>
+    「法說」＝公司在董事會前自行公告的 EPS，董事會版出來後自動取代。<br>「分割還原」＝公司做過分割、面額變更 (名稱帶 *)，去年同季與近四季 EPS 已換算到目前股數基準，數字會跟新聞上的「官方 EPS 年增」不同但可比。<br>
+    營收＝單季營收 (億)＋年增；「營收淨利雙增」＝單季營收與淨利年增都 > 0 (淨利大增但營收沒跟上，多半是業外或一次性毛利，可持續性要打折)；銀行、保險無營收科目顯示「—」。<br>
     業外占比＝(稅前 − 營業利益) ÷ 稅前，≥ 30% 標 ⚠️：淨利大增若來自業外，不宜直接推算未來 EPS。<br>
-    「今天」卡可點：今天 → 近3交易日 → 近7交易日 → 全部循環，只列那幾個交易日公布的（週末、休市日不佔名額），可跟篩選同時用。<br>
+    「今天」卡可點：今天 → 近3交易日 → 近7交易日 → 全部循環，只列那幾個交易日公布的 (週末、休市日不佔名額)，可跟篩選同時用。<br>
     ⭐ 追蹤＝首頁自選、自訂主題與內建主題成份股。點一列開個股頁。🔍 搜尋代號或名稱時不分季別、不套篩選，同一家各季都列出來。
   </p>
 </div>
@@ -203,7 +203,7 @@ function row(i){
   const pct=v=>v==null?'—':fmt(v,1)+'%';
   const rv=s.rev!=null?`<div>營收 <b>${fmt(s.rev,Math.abs(s.rev)>=100?0:1)}</b>${i.rvYoy!=null?`<i class="${cls(i.rvYoy)}">${i.rvYoy>0?'+':''}${fmt(i.rvYoy,0)}%</i>`:''}</div>`:'';
   const mg=(i.gm!=null||i.om!=null||i.nm!=null)?`<div class="r">毛 <b>${pct(i.gm)}</b> 營 <b>${pct(i.om)}</b> 淨 <b>${pct(i.nm)}</b>${i.mSrc==='累計'?'<span class="mu">(累計)</span>':''}${i.nonop!=null&&i.nonop>=30?`<span class="warn">⚠️業外${fmt(i.nonop,0)}%</span>`:''}</div>`:'';
-  const ep=`<div>EPS <b class="${cls(s.eps)}">${fmt(s.eps)}</b>${g(i.epsYoy,i.epsYoyT)}${i.adj?'<span class="warn" title="去年 EPS 已依股數變動（分割／減資）換算到目前基準">*</span>':''}</div>`;
+  const ep=`<div>EPS <b class="${cls(s.eps)}">${fmt(s.eps)}</b>${g(i.epsYoy,i.epsYoyT)}${i.adj?'<span class="warn" title="去年 EPS 已依股數變動 (分割/減資) 換算到目前基準">*</span>':''}</div>`;
   if(self){h+=`<div class="l2"><div class="ra">${rv}${mg}</div><div class="rb">${ep}</div><div class="self">公告 ${i.subj}</div></div></a>`;return h}
   const ni=`<div>淨利 <b class="${cls(s.ni)}">${fmt(s.ni,s.ni!=null&&Math.abs(s.ni)>=100?0:1)}</b>${g(i.qoq,i.qoqT)}<span class="mu">季</span></div>`;
   const tt=i.ttm!=null?`<div>近4季 <b>${fmt(i.ttm)}</b>${i.pe!=null?`<span class="mu">→本益比</span><b>${fmt(i.pe,i.pe>=100?0:1)}</b>`:''}</div>`:'';
@@ -217,8 +217,8 @@ function render(){
     const L=D.items.filter(i=>i.c.startsWith(q)||(i.n||'').toLowerCase().includes(q)).sort((a,b)=>a.c!==b.c?(a.c<b.c?-1:1):(a.q<b.q?1:-1));
     const n=new Set(L.map(i=>i.c)).size;
     $('stats').hidden=true;$('calBox').hidden=true;   // 搜尋時收起統計與日曆，結果直接在搜尋框下面
-    $('shint').hidden=false;$('shint').textContent=L.length?`找到 ${n} 家、${L.length} 則（各季都列，新的在前；不套季別與篩選）`:'沒有這家公司的財報快訊——可能還沒公布，或名稱／代號打錯';
-    $('list').innerHTML=L.slice(0,SHOW).map(row).join('');$('more').hidden=L.length<=SHOW;$('more').textContent=`顯示更多（還有 ${L.length-SHOW} 則）`;return}
+    $('shint').hidden=false;$('shint').textContent=L.length?`找到 ${n} 家、${L.length} 則 (各季都列，新的在前；不套季別與篩選)`:'沒有這家公司的財報快訊——可能還沒公布，或名稱/代號打錯';
+    $('list').innerHTML=L.slice(0,SHOW).map(row).join('');$('more').hidden=L.length<=SHOW;$('more').textContent=`顯示更多 (還有 ${L.length-SHOW} 則)`;return}
   $('shint').hidden=true;$('stats').hidden=false;$('calBox').hidden=false;
   const all=D.items.filter(i=>i.q===SEA);
   const md=d=>`${+d.slice(5,7)}/${+d.slice(8)}`,isT=tdays()[0]===new Date(Date.now()+8*3600e3).toISOString().slice(0,10);
@@ -227,7 +227,7 @@ function render(){
   const key={t:i=>i.t,eg:i=>growthOf(i)??-1e9,rg:i=>i.rvYoy??-1e9,ni:i=>(i.s&&i.s.ni)??-1e9,pe:i=>i.pe==null?1e9:-i.pe}[SORT];
   L.sort((a,b)=>{const x=key(a),y=key(b);return x<y?1:x>y?-1:0});
   $('list').innerHTML=L.slice(0,SHOW).map(row).join('')||`<div class="empty">${RNG?'這段期間'+(F==='w'?'追蹤的股票':'')+'沒有公布——點「'+rl+'」卡可放寬範圍':F==='w'?'追蹤的股票這一季還沒公布':'這個條件沒有公司'}</div>`;
-  $('more').hidden=L.length<=SHOW;$('more').textContent=`顯示更多（還有 ${L.length-SHOW} 家）`;
+  $('more').hidden=L.length<=SHOW;$('more').textContent=`顯示更多 (還有 ${L.length-SHOW} 家)`;
   // 摘要
   const b=all.filter(i=>i.k==='board'),eg=b.map(growthOf).filter(v=>v!=null);
   const up=eg.filter(v=>v>0).length,lose=b.filter(i=>i.s&&i.s.ni<0).length,nx=b.filter(i=>i.nonop!=null&&i.nonop>=30).length;
@@ -236,7 +236,7 @@ function render(){
   $('stats').innerHTML=[[all.length,'已公布'],null,[eg.length?Math.round(up/eg.length*100)+'%':'—','EPS年增'],[nx,'⚠️業外']]
     .map((x,k)=>k===1?`<button type="button" class="st${RNG?' on':''}" id="rbtn" aria-pressed="${!!RNG}" aria-label="公布日期範圍，點一下切換"><b>${inWin}</b><span>${RNG>1?`近${RNG}日`:rl}</span></button>`:`<div class="st"><b>${x[0]}</b><span>${x[1]}</span></div>`).join('');
   $('rhint').hidden=!RNG;
-  if(RNG)$('rhint').innerHTML=`只列 <span class="num">${md(wst)}</span>${RNG>1?`～<span class="num">${md(win[0])}</span>`:''} 公布的（${rl}，週末、休市日不算；可再加上面的篩選）· 再點一下換範圍`;
+  if(RNG)$('rhint').innerHTML=`只列 <span class="num">${md(wst)}</span>${RNG>1?`～<span class="num">${md(win[0])}</span>`:''} 公布的 (${rl}，週末、休市日不算；可再加上面的篩選)· 再點一下換範圍`;
   document.querySelectorAll('#chips button').forEach(x=>x.setAttribute('aria-pressed',x.dataset.f===F));
 }
 function rocToday(){const d=new Date(Date.now()+8*3600e3);return `${d.getUTCFullYear()-1911}/${String(d.getUTCMonth()+1).padStart(2,'0')}/${String(d.getUTCDate()).padStart(2,'0')}`}
@@ -259,10 +259,10 @@ function renderCal(){
     for(const d of ds){const arr=by[d].sort((a,b)=>(WATCH.has(b.c)-WATCH.has(a.c))||(a.src==='cal'?-1:0)-(b.src==='cal'?-1:0));
       if(shown>=LIM){html+=`<span class="cmore" id="calMore">還有 ${L.length-shown} 家 → 展開全部</span>`;break}
       const show=arr.slice(0,Math.max(0,LIM-shown));shown+=show.length;
-      html+=`<div class="cday${d===today?' today':''}"><h3>${+d.slice(5,7)}/${+d.slice(8)}（${wk[dow(d)]}）</h3><div>`+
+      html+=`<div class="cday${d===today?' today':''}"><h3>${+d.slice(5,7)}/${+d.slice(8)} (${wk[dow(d)]})</h3><div>`+
         show.map(c=>`<a href="./#${c.c}" class="${WATCH.has(c.c)?'w ':''}${c.src}">${WATCH.has(c.c)&&CALM==='a'?'⭐':''}${c.n}<i>${TAG[c.src]||''}</i></a>`).join('')+(show.length<arr.length?`<span class="mu" style="font-size:11px">…等 ${arr.length} 家</span>`:'')+'</div></div>'}
     if(shown>=LIM)break}
-  $('cal').innerHTML=html||`<div class="cday mu">${CALM==='w'?'追蹤的股票這一季都公布完了，或還沒加自選／主題':'沒有資料'}</div>`;
+  $('cal').innerHTML=html||`<div class="cday mu">${CALM==='w'?'追蹤的股票這一季都公布完了，或還沒加自選/主題':'沒有資料'}</div>`;
   const m=$('calMore');if(m)m.onclick=()=>{CALX=true;renderCal()};
   if(!renderCal.init){renderCal.init=true;$('calBox').open=mine.some(c=>c.d>=today&&c.d<w1)}   // 只有第一次載入決定自動展開；切換⭐／全市場、展開全部都維持原狀
 }

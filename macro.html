@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="zh-Hant-TW">
-<head>
+<head><script>/* hwj 2026-11-18：本站 data/ 的 JSON 文字全形括號／斜線→半形（只轉值、不轉鍵） */(()=>{const O=' \t\n\u3000>([{「『《〈\"\'`—–-/:：，、。；',F=/[（）／]/,hw=s=>F.test(s)?s.replace(/([\s\S]?)（/g,(m,p)=>p+(p===''||O.includes(p)?'(':' (')).replace(/）(?=[0-9A-Za-z\u3040-\u30ff\u4e00-\u9fff])/g,') ').replace(/）/g,')').replace(/／/g,'/'):s,dp=o=>{if(typeof o==='string')return hw(o);if(Array.isArray(o)){for(let i=0;i<o.length;i++){const v=o[i];if(typeof v==='string'||(v&&typeof v==='object'))o[i]=dp(v)}}else if(o&&typeof o==='object'){for(const k in o){const v=o[k];if(typeof v==='string'||(v&&typeof v==='object'))o[k]=dp(v)}}return o},J=Response.prototype.json;window.hwText=hw;Response.prototype.json=function(){let u='';try{u=new URL(this.url)}catch(e){}if(!u||u.origin!==location.origin||!/\/data\//.test(u.pathname))return J.call(this);return this.text().then(t=>{const o=JSON.parse(t);return F.test(t)?dp(o):o})}})()</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>台股總經對照</title>
@@ -83,10 +83,10 @@ html{scroll-behavior:smooth}
   <section class="card" id="sDecomp">
     <h2>① 指數拆解 <small>指數 ＝ 指數EPS × 本益比</small></h2>
     <p class="take" id="decTake"></p>
-    <p class="ctitle">加權指數（線）與指數EPS（柱，點）</p>
+    <p class="ctitle">加權指數 (線) 與指數EPS (柱，點)</p>
     <div class="chart" id="cDec" role="img" aria-label="加權指數與指數每股盈餘"></div>
     <div class="tbl"><table id="tDec"></table></div>
-    <p class="foot">指數EPS＝月底指數 ÷ 證交所口徑本益比（上市總市值 ÷ 近四季歸母淨利）。漲幅拆成「獲利貢獻」與「本益比貢獻」：(1+指數漲幅)＝(1+EPS 變化)×(1+本益比變化)。</p>
+    <p class="foot">指數EPS＝月底指數 ÷ 證交所口徑本益比 (上市總市值 ÷ 近四季歸母淨利)。漲幅拆成「獲利貢獻」與「本益比貢獻」：(1+指數漲幅)＝(1+EPS 變化)×(1+本益比變化)。</p>
   </section>
 
   <section class="card" id="sBuff">
@@ -101,14 +101,14 @@ html{scroll-behavior:smooth}
     <p class="take" id="growTake"></p>
     <div class="chart" id="cGrow" role="img" aria-label="上市櫃淨利年增率與名目GDP年增率"></div>
     <div class="tbl"><table id="tGrow"></table></div>
-    <p class="foot">淨利＝上市櫃歸母淨利（公開資訊觀測站逐家加總，近四季合計）；名目GDP＝近四季合計年增；經濟成長率＝主計總處公布的單季實質年增（p＝初步、f＝預測）。</p>
+    <p class="foot">淨利＝上市櫃歸母淨利 (公開資訊觀測站逐家加總，近四季合計)；名目GDP＝近四季合計年增；經濟成長率＝主計總處公布的單季實質年增 (p＝初步、f＝預測)。</p>
   </section>
 
   <section class="card" id="sLong">
     <h2>長期：指數 vs 經濟 <small>2000 年＝100</small></h2>
     <p class="take" id="longTake"></p>
     <div class="chart" id="cLong" role="img" aria-label="加權指數與名目GDP長期比較"></div>
-    <p class="foot">指數用季底收盤（未含息），GDP 用近四季名目合計，兩者都以 2000 年第 4 季＝100。</p>
+    <p class="foot">指數用季底收盤 (未含息)，GDP 用近四季名目合計，兩者都以 2000 年第 4 季＝100。</p>
   </section>
 
   <section class="card note" id="sNote">
@@ -124,8 +124,8 @@ html{scroll-behavior:smooth}
     <h3>資料來源</h3>
     <ul>
       <li>加權指數：證交所「發行量加權股價指數歷史資料」</li>
-      <li>GDP、經濟成長率：主計總處「國民所得統計-常用資料」（季／年，政府資料開放平臺）</li>
-      <li>上市市值、近四季淨利、本益比：本站體檢頁（證交所個股收盤＋公開資訊觀測站財報）</li>
+      <li>GDP、經濟成長率：主計總處「國民所得統計-常用資料」 (季/年，政府資料開放平臺)</li>
+      <li>上市市值、近四季淨利、本益比：本站體檢頁 (證交所個股收盤＋公開資訊觀測站財報)</li>
     </ul>
   </section>
 </div>
@@ -185,12 +185,12 @@ function drawDec(){
   // 最新：本月指數 ÷ 每日本益比
   const ymNow=Object.keys(I).sort().at(-1),xn=ymNow&&I[ymNow];
   if(xn&&xn.partial&&lc&&lc.date.slice(0,6)===xn.date.slice(0,6))R.push({t:tsDate(xn.date),ym:ymNow,idx:xn.close,pe:lc.pe,eps:xn.close/lc.pe,live:true,date:xn.date});
-  if(R.length<2){$('decTake').innerHTML='指數資料回補中（每天晚上自動補），稍後再看。';return null}
+  if(R.length<2){$('decTake').innerHTML='指數資料回補中 (每天晚上自動補)，稍後再看。';return null}
   const o=base(),c=mk('cDec'),L=R.length-1;
   o.yAxis=[{...o.yAxis,min:v=>Math.floor(v.min*0.9/5000)*5000,axisLabel:{...o.yAxis.axisLabel,formatter:v=>fmt(v/1000,0)+'k'}},
            {...o.yAxis,splitLine:{show:false},axisLabel:{...o.yAxis.axisLabel,formatter:v=>fmt(v,0)}}];
   o.series=[
-    {name:'指數EPS（右）',type:'bar',yAxisIndex:1,data:R.map(r=>[r.t,+r.eps.toFixed(0)]),itemStyle:{color:css('--s1'),opacity:.55},barMaxWidth:4},
+    {name:'指數EPS (右)',type:'bar',yAxisIndex:1,data:R.map(r=>[r.t,+r.eps.toFixed(0)]),itemStyle:{color:css('--s1'),opacity:.55},barMaxWidth:4},
     {name:'加權指數',type:'line',data:R.map(r=>[r.t,r.idx]),lineStyle:{width:2,color:css('--s2')},itemStyle:{color:css('--s2'),...ring()},
      symbol:'circle',symbolSize:(v,p)=>p.dataIndex===L?8:0,showSymbol:true,label:{show:true,position:'top',fontSize:10,color:css('--fg'),formatter:p=>p.dataIndex===L?fmt(p.value[1],0):''}}];
   o.tooltip.valueFormatter=v=>fmt(v,0);
@@ -217,7 +217,7 @@ function drawBuff(){
   const gq=Object.keys(G).filter(k=>fin(G[k].s4)).sort().at(-1);
   let live=null;
   if(lc&&gq){const gdp=G[gq].s4/1e4;live={t:tsDate(lc.date),date:lc.date,b:lc.cap/gdp*100,bx:lc.cap*(1-lc.tsCap/100)/gdp*100,gq,cap:lc.cap,gdp}}
-  if(!R.length&&!live){$('buffTake').innerHTML='GDP 資料還沒抓到（主計總處開放資料），每天晚上自動重試。';$('cBuff').innerHTML='<div class="ph">等待 GDP 資料</div>';return null}
+  if(!R.length&&!live){$('buffTake').innerHTML='GDP 資料還沒抓到 (主計總處開放資料)，每天晚上自動重試。';$('cBuff').innerHTML='<div class="ph">等待 GDP 資料</div>';return null}
   const A=live?[...R,{...live}]:R,L=A.length-1,o=base(),c=mk('cBuff');
   o.yAxis.axisLabel.formatter=v=>v+'%';o.tooltip.valueFormatter=v=>fin(v)?fmt(v,0)+'%':'—';
   const lab=p=>p.dataIndex===L?fmt(p.value[1],0)+'%':'';
@@ -226,12 +226,12 @@ function drawBuff(){
     {name:'扣台積電',type:'line',data:A.map(r=>[r.t,+r.bx.toFixed(1)]),lineStyle:{width:2,color:css('--s1')},itemStyle:{color:css('--s1'),...ring()},symbol:'circle',symbolSize:(v,p)=>p.dataIndex===L?8:0,showSymbol:true,label:{show:true,position:'bottom',fontSize:10,color:css('--fg'),formatter:lab}}];
   c.setOption(o);
   const now=A[L],hb=R.map(r=>r.b),hx=R.map(r=>r.bx),r0=R[0];
-  let t=`${live?'今天':'最新季底'} 上市市值約 <strong>${fmt(now.b,0)}%</strong> 的 GDP（扣台積電 <strong>${fmt(now.bx,0)}%</strong>）`;
+  let t=`${live?'今天':'最新季底'} 上市市值約 <strong>${fmt(now.b,0)}%</strong> 的 GDP (扣台積電 <strong>${fmt(now.bx,0)}%</strong>)`;
   const p1=pct(hb,now.b),p2=pct(hx,now.bx);
-  if(R.length>=6)t+=`，高於 ${r0.q.slice(0,4)} 年以來 <strong>${fmt(p1,0)}%</strong> 的季底（扣台積電 ${fmt(p2,0)}%）`;
-  if(r0)t+=`；${r0.q} 時是 ${fmt(r0.b,0)}%／${fmt(r0.bx,0)}%`;
+  if(R.length>=6)t+=`，高於 ${r0.q.slice(0,4)} 年以來 <strong>${fmt(p1,0)}%</strong> 的季底 (扣台積電 ${fmt(p2,0)}%)`;
+  if(r0)t+=`；${r0.q} 時是 ${fmt(r0.b,0)}%/${fmt(r0.bx,0)}%`;
   $('buffTake').innerHTML=t+'。';
-  $('buffFoot').textContent=`季底：上市市值（月底）÷ 同季近四季名目GDP。${live?`今天的點用最新每日市值 ${fmt(live.cap,1)} 兆 ÷ ${live.gq} 近四季 GDP ${fmt(live.gdp,1)} 兆（GDP 每季公布一次，季底後約 1 個月出初值）。`:''}只算上市（不含上櫃，和金管會、證交所口徑一致）。`;
+  $('buffFoot').textContent=`季底：上市市值 (月底)÷ 同季近四季名目GDP。${live?`今天的點用最新每日市值 ${fmt(live.cap,1)} 兆 ÷ ${live.gq} 近四季 GDP ${fmt(live.gdp,1)} 兆 (GDP 每季公布一次，季底後約 1 個月出初值)。`:''}只算上市 (不含上櫃，和金管會、證交所口徑一致)。`;
   return {now,p1,p2}
 }
 
@@ -254,9 +254,9 @@ function drawGrow(){
     tail.map(p=>`<tr><td>${p}${G[p]&&G[p].flag?' '+G[p].flag:''}</td><td>${sg(em[p]&&em[p].yoy,0)}</td><td>${sg(em[p]&&em[p].yoyEx,0)}</td><td>${sg(gnom(p))}</td><td>${sg(G[p]&&G[p].g,2)}</td></tr>`).join('');
   // 和 GDP 比：用兩邊都有的最新一季（GDP 季底後約 2 個月才公布）
   const lc=[...E].reverse().find(r=>fin(gnom(r.p)))||E.at(-1),le=E.at(-1),gp=gnom(lc.p),gl=Object.keys(G).filter(k=>fin(G[k].g)).sort().at(-1);
-  let t=`${le.p} 近四季淨利年增 <strong>${sg(le.yoy,0)}</strong>（扣台積電 <strong>${sg(le.yoyEx,0)}</strong>）`;
+  let t=`${le.p} 近四季淨利年增 <strong>${sg(le.yoy,0)}</strong> (扣台積電 <strong>${sg(le.yoyEx,0)}</strong>)`;
   if(fin(gp))t+=lc===le?`，同期名目GDP ${sg(gp)}，獲利成長是 GDP 的 <strong>${fmt(le.yoy/gp,1)} 倍</strong>`:`；GDP 最新到 ${lc.p}：淨利 ${sg(lc.yoy,0)} vs 名目GDP ${sg(gp)}，獲利成長是 GDP 的 <strong>${fmt(lc.yoy/gp,1)} 倍</strong>`;
-  if(gl)t+=`；最新經濟成長率 ${gl} <strong>${sg(G[gl].g,2)}</strong>${G[gl].flag?'（'+({p:'初步',f:'預測'}[G[gl].flag]||G[gl].flag)+'）':''}`;
+  if(gl)t+=`；最新經濟成長率 ${gl} <strong>${sg(G[gl].g,2)}</strong>${G[gl].flag?' ('+({p:'初步',f:'預測'}[G[gl].flag]||G[gl].flag)+')':''}`;
   $('growTake').innerHTML=t+'。<br>灰色虛線＝實質成長率；超過 +120% 的點截在上緣。';
   return {le:lc,gp}
 }
@@ -275,7 +275,7 @@ function drawLong(){
   c.setOption(o);
   const l=R.filter(r=>fin(r.i)).at(-1),yrs=(l.t-R[0].t)/3.156e10;
   const ci=(Math.pow(l.i/100,1/yrs)-1)*100,cg=(Math.pow(l.g/100,1/yrs)-1)*100;
-  $('longTake').innerHTML=`${qs[0]} → ${l.p}：指數 ×${fmt(l.i/100,1)}（年化 <strong>${fmt(ci,1)}%</strong>），名目GDP ×${fmt(l.g/100,1)}（年化 <strong>${fmt(cg,1)}%</strong>）。指數長期跑贏 GDP 的部分＝企業獲利占 GDP 提高＋本益比變化。`;
+  $('longTake').innerHTML=`${qs[0]} → ${l.p}：指數 ×${fmt(l.i/100,1)} (年化 <strong>${fmt(ci,1)}%</strong>)，名目GDP ×${fmt(l.g/100,1)} (年化 <strong>${fmt(cg,1)}%</strong>)。指數長期跑贏 GDP 的部分＝企業獲利占 GDP 提高＋本益比變化。`;
 }
 
 // ---------- 結論 ----------
@@ -284,7 +284,7 @@ function summary(d,b,g){
   if(d){tiles.push({h:'指數EPS',v:fmt(d.now.eps,0),i:d.y1?`近一年 ${sg(d.y1.de,0)}`:'',c:d.y1?(d.y1.de>0?'ok':'bad'):''});
         tiles.push({h:'本益比',v:fmt(d.now.pe,1)+' 倍',i:d.y1?`近一年 ${sg(d.y1.dp,0)}`:'',c:cls(d.now.pe,16,22)})}
   if(b)tiles.push({h:'上市市值/GDP',v:fmt(b.now.b,0)+'%',i:fin(b.p1)?`歷史位階 ${fmt(b.p1,0)}%；扣台積電 ${fmt(b.now.bx,0)}%`:`扣台積電 ${fmt(b.now.bx,0)}%`,c:fin(b.p1)?cls(b.p1,50,80):''});
-  if(g)tiles.push({h:'獲利 vs GDP 成長',v:fin(g.gp)?fmt(g.le.yoy/g.gp,1)+' 倍':sg(g.le.yoy,0),i:`淨利 ${sg(g.le.yoy,0)}、GDP ${sg(g.gp)}（${g.le.p}）`,c:fin(g.le.yoyEx)?(g.le.yoyEx>5?'ok':g.le.yoyEx>0?'mid':'bad'):''});
+  if(g)tiles.push({h:'獲利 vs GDP 成長',v:fin(g.gp)?fmt(g.le.yoy/g.gp,1)+' 倍':sg(g.le.yoy,0),i:`淨利 ${sg(g.le.yoy,0)}、GDP ${sg(g.gp)} (${g.le.p})`,c:fin(g.le.yoyEx)?(g.le.yoyEx>5?'ok':g.le.yoyEx>0?'mid':'bad'):''});
   $('tiles').innerHTML=tiles.map(x=>`<div class="tl ${x.c}"><div class="lh">${x.h}</div><b class="num">${x.v}</b><i>${x.i}</i></div>`).join('');
   const s=[];
   if(d&&d.y1)s.push(d.y1.se>=60?'近一年上漲<strong>主要來自獲利</strong>':d.y1.se<=40?'近一年上漲<strong>主要來自本益比擴張</strong>':'近一年獲利與估值各貢獻一半');
