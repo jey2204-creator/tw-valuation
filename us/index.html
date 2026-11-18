@@ -1326,9 +1326,9 @@ async function load(id){
 }
 // ---------- 首頁 ----------
 // 內建主題代號：沿用台股站同名主題的 id（#t/pcb，主題頁「台股同主題 →」連得過去）；雲端資本支出台股沒有，自訂 cloud
-const TID={'🛰️ 低軌衛星':'leo','💿 矽晶圓／基板':'wafer','⚡ 被動元件':'passive','🟩 PCB／EMS':'pcb','💡 矽光子／CPO':'cpo','🧱 先進封裝／設備':'pkg','🎯 AI 晶片／記憶體':'ai','☁️ 雲端資本支出':'cloud','🖥️ 伺服器':'server','❄️ 散熱／電源':'thermal','🔀 網通／傳輸':'net','🔌 電力':'power'};
+const TID={'🛰️ 低軌衛星':'leo','💿 矽晶圓／基板':'wafer','⚡ 被動元件':'passive','🪢 連接器／線材':'conn','🧪 半導體材料':'semimat','🟩 PCB／EMS':'pcb','💡 矽光子／CPO':'cpo','🧱 先進封裝／設備':'pkg','🎯 AI 晶片／記憶體':'ai','☁️ 雲端資本支出':'cloud','🖥️ 伺服器':'server','❄️ 散熱／電源':'thermal','🔀 網通／傳輸':'net','🔌 電力':'power'};
 // 預設順序：美股站自己的，不再跟台股站連動（不讀台股的 themeCfg／themes.json）。✏️ 編輯排過就以那份為準
-const DEF_ORDER=['pcb','ai','cpo','pkg','server','thermal','net','power','passive','wafer','leo','cloud'];
+const DEF_ORDER=['pcb','ai','cpo','pkg','server','thermal','net','power','passive','conn','wafer','semimat','leo','cloud'];
 const rankOf=t=>{const i=ORDER_IDS.indexOf(TID[t]);return i<0?999:i};   // 搜尋結果依首頁主題順序分組
 // 同義代號／俗名 → 本站代號（舊代號、另一股別、常見簡稱）
 const ALIAS={FB:'META',GOOG:'GOOGL',SPACEX:'SPCX',NVIDIA:'NVDA',BROADCOM:'AVGO',MICRON:'MU',GOOGLE:'GOOGL',ALPHABET:'GOOGL',AMAZON:'AMZN',MICROSOFT:'MSFT',FACEBOOK:'META',SUPERMICRO:'SMCI',VERTIV:'VRT',ARISTA:'ANET',ASTERA:'ALAB',LUMENTUM:'LITE',COHERENT:'COHR',FABRINET:'FN',CREDO:'CRDO',MARVELL:'MRVL',APPLIED:'AMAT',LAM:'LRCX',AMKOR:'AMKR',SANDISK:'SNDK'};
@@ -1388,7 +1388,7 @@ function homeRender(){
 // ---------- 產業主題：首頁卡片與主題頁 #t/{id}（數字在瀏覽器用 data/{T}.json 算，不改後端） ----------
 // 主題內細分：主題頁每檔標「做什麼」，同主題裡的上下游一眼分得出來
 const ROLE={SPCX:'火箭發射＋星鏈',ASTS:'手機直連衛星',RKLB:'小型火箭＋衛星',ECHO:'頻譜＋衛星服務',IRDM:'低軌衛星通訊',GSAT:'衛星通訊（Apple）',VSAT:'衛星寬頻',
-  WOLF:'碳化矽 SiC',COHR:'光通訊＋SiC 基板',ENTG:'半導體材料',VSH:'分離式＋被動元件',LFUS:'電路保護',APH:'連接器',
+  WOLF:'碳化矽 SiC',COHR:'光通訊＋SiC 基板',ENTG:'半導體材料',VSH:'分離式＋被動元件',LFUS:'電路保護',APH:'連接器',TEL:'連接器／感測器',LIN:'工業／電子氣體',Q:'CMP／光阻材料',
   TTMI:'PCB 製造',SANM:'EMS 代工',JBL:'EMS 代工',CLS:'EMS＋自有交換器',
   AVGO:'交換器晶片／ASIC',MRVL:'光 DSP／客製 ASIC',LITE:'雷射／光元件',FN:'光模組代工',CRDO:'AEC／SerDes',CIEN:'光傳輸設備',AAOI:'光模組',
   AMKR:'封測代工',AMAT:'前段設備',KLAC:'檢測量測',ONTO:'檢測量測（封裝）',CAMT:'檢測（先進封裝）',LRCX:'蝕刻／沉積',FORM:'探針卡',
