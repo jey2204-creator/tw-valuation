@@ -264,6 +264,17 @@ h2.sec small{font-weight:500;letter-spacing:0}
 .ttw{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;align-items:center}
 .ttw a{white-space:nowrap;font-size:12px;text-decoration:none;color:var(--fg);background:var(--card);border:1px solid var(--line);border-radius:999px;padding:2px 9px}
 .ttw a b{font-family:var(--f-num);font-weight:600;color:var(--accent);margin-right:4px}
+/* 主題頁「台股這邊」：美股 vs 對應台股並排（近一月、營收年增），下面是對應台股表 */
+#tTwSec h2.sec{margin-top:22px}
+.twcmp{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:6px 12px;font-size:13px}
+.twcmp table{width:100%;border-collapse:collapse}
+.twcmp th{font-size:11px;color:var(--muted);font-weight:500;text-align:right;padding:2px 0}
+.twcmp th:first-child,.twcmp td:first-child{text-align:left;color:var(--muted);font-size:12px}
+.twcmp td{text-align:right;padding:3px 0;font-family:var(--f-num);font-weight:600;border-top:1px solid var(--line)}
+.twcmp td small{display:block;font-weight:400;font-size:10.5px;color:var(--muted);font-family:var(--f-body)}
+.twcmp td:first-child{font-family:var(--f-body);font-weight:400}
+#twList th[data-w]{cursor:pointer;user-select:none}
+body.dense #twList td.sk .cd{max-width:5.2em}
 .ttw a.all{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 40%,var(--line))}
 .grp .it:first-child{border-top:0}
 /* 主題頁個股表：同台股站 .lst 五欄（股票／收盤／本益比／淨值比／營收年增） */
@@ -397,6 +408,12 @@ html{scroll-behavior:smooth}
   <div class="ttw" id="tTw"></div>
   <div class="panel"><div class="tbl"><table class="lst" id="tList"></table></div></div>
   <p class="legend" id="tFoot"></p>
+  <div id="tTwSec" hidden>
+    <h2 class="sec"><span>🇹🇼 台股這邊 <small id="twAsof"></small></span><a class="act" id="twAll" hidden>台股同主題 →</a></h2>
+    <div class="twcmp" id="twCmp"></div>
+    <div class="panel"><div class="tbl"><table class="lst" id="twList"></table></div></div>
+    <p class="legend" id="twFoot"></p>
+  </div>
 </div>
 
 <!-- ===== 編輯主題：#edit 清單（排序／隱藏／新增）、#edit/{id} 單一主題（名稱、成份股、細分）。只存在這支手機 ===== -->
@@ -1484,7 +1501,7 @@ function themeRender(tid){
   $('tTw').innerHTML=t.tw.length?'<span class="lb">對應台股</span>'+t.tw.map(([c,n])=>`<a href="../#${c}"><b>${c}</b>${esc(n)}</a>`).join('')+(!t.custom&&t.id!=='cloud'?`<a class="all" href="../#t/${t.id}">台股同主題 →</a>`:''):(t.dem?'<span class="lb">對應台股：全供應鏈（需求層）</span>':'');
   const nx=ids.filter(id=>!tracked(id)).length;
   if(LAST_TS!==tid){TS=tsGet(tid);LAST_TS=tid}loadPx(t);
-  tTable(t);
+  tTable(t);twRender(t);
   $('tFoot').innerHTML=`營收＝最新一季對比去年同季；EPS＝近四季合計對比前四季（「虧損」＝近四季合計 ≤ 0，「轉盈」＝前四季是虧損）；PEG＝本益比 ÷ EPS 年增，年增 &gt;300% 低基期不算${it.some(s=>s.cyc)?'；<span class="pill">循環</span> 股 PEG 參考性低，以淨值比河流為主':''}；本月＝最新收盤對比上月底。收盤為美元；市值＝最新季稀釋股數 × 收盤（全市場股票用 FinMind 即時抓的收盤；ADR 依每 ADR 股數換算）${fxOn()?'，台幣以固定匯率 '+FX.rate+' 換算':''}。點欄位標題可排序，每個主題會記住上次的排序（本益比連點：本益比 → EPS年增 → PEG；股票連點：市值 → 薪酬中位數）。${it.some(s=>sal(s.id,'med')!=null)?'<span class="cap sal" style="display:inline">薪</span>＝員工年度總薪酬中位數（全球全體員工、含股票，DEF 14A 揭露），跟台股「非主管全時」口徑不同。':''}`+
     (nx?'<br><span class="pill o">全市場</span>＝不在每日追蹤清單：只有每週更新的財報，沒有本益比與本月漲跌，點進個股頁才即時抓股價。':'')}
 // ---------- 主題頁個股表（排版同台股站）----------
@@ -1548,6 +1565,53 @@ function tTable(t){const el=$('tList'),[k,dir]=TS.split(':');let rows=t.stocks.s
   el.onclick=e=>{const h=e.target.closest('th[data-k]');if(h){const nk=h.dataset.k,cur=TS.split(':');
       if(nk==='pe'){const i=TPE.indexOf(TS);TS=TPE[i<0?0:(i+1)%TPE.length]}else if(nk==='cap'){const i=TCAP.indexOf(TS);TS=TCAP[i<0?0:(i+1)%TCAP.length]}else TS=cur[0]===nk?(cur[1]==='-1'?nk+':1':''):nk+':-1';tsSet(t.id,TS);tTable(t);return}
     const r=e.target.closest('tr[data-id]');if(r)location.hash=r.dataset.id}}
+// ---------- 主題頁「台股這邊」：對應台股的月營收年增、本益比／PEG、近一月漲跌，跟美股同主題並排 ----------
+// 台股資料直接讀台股站的 ../data/summary.json（收盤／本益比／月營收／近四季 EPS）與 ../data/momentum.json（dc＝[近一月%, 近一季%]，日曆日）
+// 美股近一月＝日 K（data/ohlc）最新收盤對比一個月前同一天（休市取前一交易日），算法跟台股 dc 一致，兩邊才能比
+let TWD=null,TWREQ=null,TWSORT='';const OHC={};
+const loadTw=()=>TWREQ||(TWREQ=Promise.all(['summary','momentum'].map(f=>fetch(`../data/${f}.json?t=${Date.now()}`).then(r=>r.ok?r.json():null).catch(()=>null))).then(([s,m])=>{if(s&&s.d)TWD={s,m:m||{}};else TWREQ=null;return TWD}));
+const getO=id=>OHC[id]||(OHC[id]=fetch(`data/ohlc/${id}.json?v=${dv()}`).then(r=>r.ok?r.json():null).catch(()=>null));
+function monRet(o){const k=o&&o.k;if(!k||k.length<2)return null;const l=k[k.length-1],[y,mo,dd]=l[0].split('-').map(Number);
+  const py=mo===1?y-1:y,pm=mo===1?12:mo-1,dim=new Date(Date.UTC(py,pm,0)).getUTCDate(),b=`${py}-${String(pm).padStart(2,'0')}-${String(Math.min(dd,dim)).padStart(2,'0')}`;
+  let i=k.length-1;while(i>=0&&k[i][0]>b)i--;return i<0||!(k[i][4]>0)?null:{v:(l[4]/k[i][4]-1)*100,base:k[i][0],last:l[0]}}
+const md8=s=>s?(s.length===8?`${+s.slice(4,6)}/${+s.slice(6)}`:`${+s.slice(5,7)}/${+s.slice(8,10)}`):'';
+function twRow(c){const S=TWD.s.d[c]||[],E=(TWD.s.eps||{})[c],A=(TWD.m.da||{})[c],M=A?[A[1],A[2]]:(TWD.m.dc||{})[c]||[];   // da＝還原除權息／減資／面額變更後（有差異的才有），沒有就用 dc
+  const r={c,close:S[0],chg:S[1],pe:S[2]>0?S[2]:null,pb:S[3],rev:S[5],ym:S[7],m:M[0],q:M[1],ey:null,ek:'',peg:null,eq:E?E[0]:''};
+  if(E){const e4=E[5],p4=E[6];if(p4!=null&&e4!=null){if(p4<=0)r.ek=e4>0?'轉盈':'虧損';else if(e4<=0)r.ek='轉虧';else r.ey=E[7]!=null?E[7]:(e4/p4-1)*100}
+    if(r.pe&&r.ey>0&&r.ey<=300)r.peg=r.pe/r.ey}
+  return r}
+function twRender(t){const sec=$('tTwSec'),tw=t.tw||[];if(!tw.length){sec.hidden=true;return}sec.hidden=false;
+  const al=$('twAll');al.hidden=!!t.custom||t.id==='cloud';al.href='../#t/'+t.id;
+  if(!TWD){$('twCmp').innerHTML='<span class="meta">台股資料載入中…</span>';$('twList').innerHTML='';$('twFoot').textContent='';
+    loadTw().then(d=>{if(CUR_T===t.id&&!$('themePage').hidden){if(d)twRender(t);else $('twCmp').innerHTML='<span class="meta">台股資料讀不到，稍後重新整理</span>'}});return}
+  const rows=tw.map(([c,n])=>Object.assign(twRow(c),{n}));
+  // 美股這邊：每日追蹤的成份股才有日 K
+  const ids=t.stocks.map(x=>x[0]),tr=ids.filter(tracked);
+  Promise.all(tr.map(id=>getO(id).then(monRet))).then(rs=>{if(CUR_T!==t.id)return;
+    const um=rs.filter(Boolean),uv=median(um.map(x=>x.v)),tv=median(rows.map(r=>r.m)),tn=rows.filter(r=>r.m!=null).length;
+    const ury=agg(itemsOf(t),'ry'),trv=median(rows.map(r=>r.rev)),trn=rows.filter(r=>r.rev!=null).length,ym=(rows.find(r=>r.ym)||{}).ym||'';
+    const gap=uv!=null&&tv!=null?uv-tv:null,cb=(TWD.m.calBase||{}).m,ub=um.length?um[0].base:'';
+    const cell=(v,sub,d=1)=>`<td><span class="${sgc(v)}">${v==null?'—':pct(v,d)}</span><small>${sub}</small></td>`;
+    $('twCmp').innerHTML=`<table><thead><tr><th></th><th>美股 ${ids.length} 檔</th><th>台股 ${rows.length} 檔</th><th>美股 − 台股</th></tr></thead><tbody>`+
+      `<tr><td>近一月漲跌</td>${cell(uv,`${um.length}/${ids.length} 檔・自 ${md8(ub)}`)}${cell(tv,`${tn}/${rows.length} 檔・自 ${md8(cb)}`)}<td>${gap==null?'—':(gap>0?'+':'')+fmt(gap,1)+' 點'}<small>${gap==null?'':Math.abs(gap)<3?'差不多':gap>0?'美股較強':'台股較強'}</small></td></tr>`+
+      `<tr><td>營收年增</td>${cell(ury.v,`${ury.n}/${ury.N} 檔・最新季`,0)}${cell(trv,`${trn}/${rows.length} 檔・${ym?+ym.slice(5)+' 月營收':'月營收'}`,0)}<td style="font-weight:400;font-family:var(--f-body);font-size:11px;color:var(--muted)">季 vs 月<small>口徑不同，不相減</small></td></tr></tbody></table>`});
+  const [k,dir]=TWSORT.split(':');let rs=rows.slice();if(k)rs.sort((a,b)=>a[k]==null?1:b[k]==null?-1:(a[k]-b[k])*(+dir));
+  const th=(key,lb)=>`<th data-w="${key}" class="${k===key?'on':''}">${lb}${k===key?(+dir>0?' ▲':' ▼'):''}</th>`;
+  const QN=rows.map(r=>r.eq).filter(Boolean).sort().pop();
+  $('twList').innerHTML=`<thead><tr><th data-w="">台股</th>${th('chg','收盤')}${th('pe','本益比')}${th('rev','月營收')}${th('m','近一月')}</tr></thead><tbody>`+rs.map(r=>{
+    let e;if(r.ek)e=`<span class="${r.ek==='轉盈'?'vu':'vd'}">${r.ek}</span>`;else if(r.ey!=null)e=`<span class="${sgc(r.ey)}">${r.ey>300?'>300%':pct(r.ey,0)}</span>`;else e='EPS —';
+    if(r.peg!=null)e+=` <span class="${pegc(r.peg)}">P${fmt(r.peg,r.peg<10?2:1)}</span>`;else if(r.ey>300)e+=' 低基';
+    if(r.eq&&r.eq!==QN)e+=` <span style="color:var(--warm)" title="跟其他檔不同季">${r.eq}</span>`;
+    return `<tr data-c="${r.c}"><td class="sk"><span class="nmw"><span class="nm">${r.c}</span><span class="cd">${esc(r.n)}</span></span></td>`+
+      `<td>${r.close!=null?fmt(r.close,r.close<100?2:r.close<1000?1:0):'—'}<span class="sub ${sgc(r.chg)}">${r.chg==null?'—':pct(r.chg,2)}</span></td>`+
+      `<td>${r.pe?fmt(r.pe,1):'—'}<span class="sub" title="近四季 EPS 年增；P＝PEG（本益比÷近四季 EPS 年增）">${e}</span></td>`+
+      `<td class="${sgc(r.rev)}">${r.rev!=null?pct(r.rev,1):'—'}<span class="sub">${r.ym?+r.ym.slice(5)+' 月':''}</span></td>`+
+      `<td class="${sgc(r.m)}">${r.m!=null?pct(r.m,1):'—'}<span class="sub">季 <span class="${sgc(r.q)}">${r.q!=null?pct(r.q,0):'—'}</span></span></td></tr>`}).join('')+'</tbody>';
+  $('twList').onclick=e=>{const h=e.target.closest('th[data-w]');if(h){const nk=h.dataset.w,[ck,cd]=TWSORT.split(':'),first=nk==='pe'?'1':'-1';
+      TWSORT=!nk?'':ck!==nk?nk+':'+first:cd===first?nk+':'+(-first):'';twRender(t);return}
+    const r=e.target.closest('tr[data-c]');if(r)location.href='../#'+r.dataset.c};
+  $('twAsof').textContent=`收盤 ${md8(TWD.s.pxAsof)}`;
+  $('twFoot').innerHTML='這幾檔是手動挑的代表台廠，<b>不代表受惠程度一樣</b>（各家來自這個主題的營收占比差很多）。近一月／季＝最新收盤對比一個月／三個月前同一天（休市取前一交易日），台股用還原價（除權息、減資、面額變更已還原），美股已還原分割；美股收盤比台股晚一個交易日更新。月營收＝單月年增；本益比小字＝近四季 EPS 年增，P＝PEG。「美股較強」只是描述落差，不是台股會補漲的訊號——先看月營收有沒有跟上。點列跳台股看板。'}
 // ---------- 員工薪酬（us/data/salary.json，fetch_salary.py 從 DEF 14A／10-K 抓）----------
 // d[代號] = {med 中位數USD, medPrev, medChg %, ceo CEO總薪酬USD, ratio 倍數, emp 員工人數, empDate, sbc 股票酬勞(億美元), sbcFY, fy 會計年度, filed 申報日, fpi 外國發行人, url, miss}
 // 口徑：美股中位數＝全球所有員工（含時薪、兼職、海外）的「年度總薪酬」（含股票），台股＝台灣非主管全時員工薪資；人數＝10-K 全球員工數
