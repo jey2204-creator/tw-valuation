@@ -4187,9 +4187,9 @@
    "exchange": "NASDAQ",
    "date": "2026/11/17 盤後",
    "reaction": {
-    "text": "盤後約 +4%（各家報 +3%～+4.8%）；首日收盤待補（11/18）",
-    "dir": "up",
-    "pct": 4.0
+    "text": "首日收盤 −2.9%（$150.96，11/18）；盤後曾約 +4%、開高 $159.19 後翻黑，連五跌",
+    "dir": "down",
+    "pct": -2.9
    },
    "kpi": [
     {
@@ -4219,7 +4219,7 @@
      "label": "創新高"
     }
    ],
-   "kpiNote": "黃仁勳辭任後的第一份財報：營收 1,158 億（+103%）、非 GAAP EPS 2.68 雙 beat，Q4 指引 1,300 億也高於市場約 1,244 億；Vera Rubin 首季出貨近 200 億，FCF 438 億創高，盤後約 +4%。但 Q4 毛利率指引降到 71～72%（Kress 稱 Q4 即谷底、FY2028 維持 72～73%）、執行長人選未定。⚠️ 自動層 Finnhub 的共識偏高（營收 1,113 億、EPS 2.525），驚喜率會顯示營收 +4.1%／EPS +6.1%；這裡以 FactSet／Bloomberg 約 1,092 億、2.48 計為 +6.1%／+8.1%。",
+   "kpiNote": "黃仁勳辭任後的第一份財報：營收 1,158 億（+103%）、非 GAAP EPS 2.68 雙 beat，Q4 指引 1,300 億也高於市場約 1,244 億；Vera Rubin 首季出貨近 200 億，FCF 438 億創高，盤後約 +4%、首日收盤 −2.9%（開高走低）。但 Q4 毛利率指引降到 71～72%（Kress 稱 Q4 即谷底、FY2028 維持 72～73%）、執行長人選未定。⚠️ 自動層 Finnhub 的共識偏高（營收 1,113 億、EPS 2.525），驚喜率會顯示營收 +4.1%／EPS +6.1%；這裡以 FactSet／Bloomberg 約 1,092 億、2.48 計為 +6.1%／+8.1%。",
    "surprise": {
     "labels": [
      "營收",
@@ -4445,7 +4445,7 @@
     {
      "d": "down",
      "t": "執行長真空：黃仁勳 11/11 辭任，董事會表明不會回任，Kress 代理並委託尋才",
-     "w": "董事長 Harvey Jones 以違反行為準則說明辭任、拒答調查細節；另成立國安與出口管制監督委員會。這是估值折價的來源，數字好壞短期難以抹平"
+     "w": "董事長 Harvey Jones 以違反行為準則說明辭任、拒答調查細節；另成立國安與出口管制監督委員會。這是估值折價的來源，數字好壞短期難以抹平。首日印證：11/18 開高 2.4% 後翻黑、收 −2.9%（$150.96），量約 3.4 億股為三個月均量兩倍多；媒體歸因於接班不確定與中國相關監管審查，而非財報數字"
     },
     {
      "d": "flat",
@@ -4642,6 +4642,14 @@
     [
      "TheStreet：FactSet 共識、盤後走勢、董事會聲明",
      "https://www.thestreet.com/latest-news/nvda-nvidia-corporation-q3-2027-earnings-stock-updates"
+    ],
+    [
+     "CNBC：首日收盤 −2.89%、董事長稱黃仁勳不回任",
+     "https://www.cnbc.com/2026/11/18/nvidia-stock-earnings.html"
+    ],
+    [
+     "Motley Fool：11/18 收 $150.96、成交量",
+     "https://www.fool.com/coverage/stock-market-today/2026/11/18/stock-market-today-nov-18-nvidia-slips-on-strong-results-as-succession-and-china-business-risks-weigh/"
     ],
     [
      "Yahoo Finance：Bloomberg 共識、黃仁勳辭任背景",
