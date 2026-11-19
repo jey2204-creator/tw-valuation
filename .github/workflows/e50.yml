@@ -1,0 +1,39 @@
+name: 0050成份股
+# 首頁產業主題表「🏛️ 0050成份股」與掃描頁同名名單（data/e50.json）。來源：元大投信官網／MoneyDJ，見 fetch_e50.py。
+on:
+  workflow_run:               # 跟在「更新股票資料」後面跑（那時 summary.json 的收盤是新的，市值排序才準）
+    workflows: ["更新股票資料"]
+    types: [completed]
+  push:
+    branches: [main]
+    paths: ["fetch_e50.py", ".github/workflows/e50.yml"]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: e50
+  cancel-in-progress: false
+jobs:
+  e50:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: 抓 0050 成份股
+        run: python fetch_e50.py
+      - name: 提交
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/e50.json data/e50_diag.json 2>/dev/null || git add data/e50_diag.json
+          git diff --cached --quiet && exit 0
+          git commit -m "e50: $(TZ=Asia/Taipei date '+%F %H:%M')"
+          for i in 1 2 3; do
+            git pull --rebase -X theirs origin main && git push && exit 0
+            sleep 10
+          done
+          exit 1
