@@ -78,6 +78,10 @@ def main():
         theme |= {r["c"] for L in (j.get("lists") or {}).values() for r in L}
     except Exception:
         pass
+    try:   # 2026-11-20：0050 成份股自動主題（data/e50.json）
+        theme |= {r[0] for r in json.loads((OUT / "e50.json").read_text("utf-8")).get("stocks") or []}
+    except Exception:
+        pass
     age = lambda c: 9999 if c not in cur or not cur[c] or len(cur[c]) < 8 else (today - date(int(cur[c][7][:4]), int(cur[c][7][4:6]), int(cur[c][7][6:]))).days
     todo = [c for c in codes if c in theme and age(c) > 30] + [c for c in codes if c not in theme and age(c) > 45]
     start = (today - timedelta(days=400)).isoformat()

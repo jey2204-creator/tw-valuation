@@ -162,9 +162,14 @@ def itrust_top_ids():
     """估值頁的投本比自動主題（data/itrust_top.json：投信／外資／土洋前 20）也當成主題成份股一起抓。"""
     try:
         j = json.loads((OUT / "itrust_top.json").read_text("utf-8"))
-        return {r["c"] for L in (j.get("lists") or {}).values() for r in L}
+        ids = {r["c"] for L in (j.get("lists") or {}).values() for r in L}
     except Exception:
-        return set()
+        ids = set()
+    try:   # 2026-11-20：0050 成份股自動主題（data/e50.json）
+        ids |= {r[0] for r in json.loads((OUT / "e50.json").read_text("utf-8")).get("stocks") or []}
+    except Exception:
+        pass
+    return ids
 
 
 def backfill(latest):

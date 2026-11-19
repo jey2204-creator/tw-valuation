@@ -4,8 +4,8 @@
 成份股一季才換一次（3／6／9／12 月），但每個交易日跟在「更新股票資料」後面抓一次（1～3 次請求），換股當週就會跟上。
 
 來源（依序試，第一個通過檢查的就採用）：
-  1 元大投信官網 API   www.yuantaetfs.com/api/StkWeights?date=&fundid=1066
-  2 MoneyDJ 全部持股   www.moneydj.com/ETF/X/Basic/Basic0007B.xdjhtm?etfid=0050.TW
+  1 MoneyDJ 全部持股   www.moneydj.com/ETF/X/Basic/Basic0007B.xdjhtm?etfid=0050.TW（2026-11-20 實測可用，50 檔＋資料日期）
+  2 元大投信官網 API   www.yuantaetfs.com/api/StkWeights?date=&fundid=1066（2026-11-20 實測回的是網頁不是 JSON，留作備援）
   3 元大投信 PCF 頁    www.yuantaetfs.com/tradeInfo/pcf/0050（網頁內嵌資料）
 檢查：45～55 檔、都是 data/list.json 裡的上市櫃普通股、含 2330、權重合計 90～101%。不通過就不覆蓋舊檔。
 
@@ -128,7 +128,7 @@ def main():
     except Exception:
         pass
     got = None
-    for fn in (src_yuanta_api, src_moneydj, src_yuanta_pcf):
+    for fn in (src_moneydj, src_yuanta_api, src_yuanta_pcf):
         rows, asof = fn()
         why = check(rows, common)
         diag[-1].update(n=len(rows), ok=not why, why=why, asof=asof)
