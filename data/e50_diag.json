@@ -1,22 +1,11 @@
 {
- "at": "2026-11-20 00:30",
+ "at": "2026-11-20 00:35",
  "ok": true,
  "tries": [
   {
-   "src": "yuanta_api",
-   "status": 200,
-   "len": 1298538,
-   "head": "<!doctype html>\r\n<html>\r\n  <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">\r\n  <script type=\"text/javascript\">function IE(e){return RegExp(\"msie\"+(isNaN(e)?\"\":\"\\\\s\"+e),\"i\").test(navigator.userAge",
-   "err": "JSONDecodeError: Expecting value: line 1 column 1 (char 0)",
-   "n": 0,
-   "ok": false,
-   "why": "檔數 0",
-   "asof": null
-  },
-  {
    "src": "moneydj",
    "status": 200,
-   "len": 65364,
+   "len": 65457,
    "head": " <!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"> <html xmlns=\"http://www.w3.org/1999/xhtml\" > <meta HTTP-EQUIV=\"C",
    "n": 50,
    "ok": true,
