@@ -23,6 +23,11 @@ OUT = ROOT / "data"
 diag = {}
 
 
+def okc(c):
+    c = str(c).strip()
+    return c if 4 <= len(c) <= 6 and c[:4].isdigit() and c.isalnum() else None
+
+
 def digits(v):
     return "".join(ch for ch in str(v or "") if ch.isdigit())
 
@@ -59,7 +64,7 @@ def twse_margin(d):
             continue
         out = {}
         for r in rows:
-            c = fm.ok_code(r[ic])
+            c = okc(r[ic])
             if not c or len(r) <= now[1]:
                 continue
             mb, sp, sb = fm.num(r[now[0]]), fm.num(r[prev[1]]), fm.num(r[now[1]])
@@ -90,7 +95,7 @@ def tpex_margin(d):
             continue
         out = {}
         for r in rows:
-            c = fm.ok_code(r[0])
+            c = okc(r[0])
             if not c or len(r) <= n2:
                 continue
             mb, sp, sb = fm.num(r[n1]), fm.num(r[p2]), fm.num(r[n2])
@@ -143,14 +148,42 @@ def api(base, path, tag):
     return [r for r in rows if isinstance(r, dict)]
 
 
+FLAT_D = {}
+
+
+def twse_flat_rwd():
+    """證交所「平盤下得融(借)券賣出之證券名單」（TWT92U）→ [dict]；格式不確定，欄位名稱與前幾列記到診斷檔"""
+    tried = []
+    for u in ("https://www.twse.com.tw/rwd/zh/marginTrading/TWT92U?response=json",
+              "https://www.twse.com.tw/exchangeReport/TWT92U?response=json",
+              "https://www.twse.com.tw/rwd/zh/marginTrading/TWT92U?date={:%Y%m%d}&response=json".format(dt.datetime.now(dt.timezone(dt.timedelta(hours=8))))):
+        try:
+            js = fm.get(u, "twse")
+        except Exception as e:
+            tried.append([u[-60:], str(e)[:100]])
+            continue
+        tabs = fm.tables_of(js)
+        tried.append([u[-60:], str(js.get("stat", ""))[:40] if isinstance(js, dict) else type(js).__name__, len(tabs), list(js.keys())[:14] if isinstance(js, dict) else []])
+        for fields, rows in tabs:
+            fs = [str(f) for f in fields]
+            if not rows or not fs:
+                continue
+            d = fm.resp_date(js)
+            FLAT_D["twse"] = f"{d:%Y%m%d}" if d else None
+            diag["twse_flat"] = {"url": u, "rows": len(rows), "fields": fs, "first": rows[:4], "title": str(js.get("title", ""))[:60], "notes": [str(x)[:160] for x in (js.get("notes") or [])][:8], "tried": tried}
+            return [dict(zip(fs, r)) for r in rows]
+    diag["twse_flat"] = {"rows": 0, "tried": tried}
+    return []
+
+
 def code_of(r):
     for k, v in r.items():
         if "代號" in k or k.lower() in ("code", "securitiescompanycode", "stockno", "stockcode", "symbol"):
-            c = fm.ok_code(v)
+            c = okc(v)
             if c:
                 return c
     for v in r.values():                                   # 找不到欄名就取第一個像代號的值
-        c = fm.ok_code(v)
+        c = okc(v)
         if c:
             return c
     return None
@@ -179,7 +212,7 @@ def flat_list(rows):
             if not v or v in ("0", "N", "n", "否", "-") or "代號" in k or "名稱" in k or "日期" in k or k.lower() in ("date", "code", "name", "companyname", "securitiescompanycode"):
                 continue
             kl = k.lower()
-            if "跌停" in k or "limit" in kl:
+            if "跌停" in k or "limit" in kl or "uptick" in kl:
                 m += "L"
             elif "融券" in k or "margin" in kl or "shortsale" in kl:
                 m += "X"
@@ -234,6 +267,13 @@ def main():
         ps = find_paths(base, sw, tag)
         fp = [p for p, dsc in ps if "平盤" in dsc] or (["/exchangeReport/TWT92U"] if tag == "twse" else [])
         sp = [p for p, dsc in ps if "停券" in dsc or "暫停融券賣出預告" in dsc or "融券回補" in dsc] or (["/exchangeReport/BFI84U"] if tag == "twse" else [])
+        if tag == "twse":                                  # 證交所 OpenAPI 沒有平盤下名單 → 用網站的 rwd JSON
+            rows = twse_flat_rwd()
+            fl = flat_list(rows)
+            flat.update(fl)
+            if fl:
+                fd[tag] = FLAT_D.get("twse") or "?"
+            fp = []
         for p in fp[:1]:
             rows = api(base, p, tag + "_flat")
             fl = flat_list(rows)
