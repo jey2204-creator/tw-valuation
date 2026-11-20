@@ -5,6 +5,8 @@
   投信、外資：買超金額 ≥ 0.5 億、不設張數門檻、市值不限；依買超佔股本％由高到低取前 20
   土洋同買：投信買超（套用投信門檻）且外資當天也淨買超；依投本比＋外本比由高到低取前 20
   連買天數：連續幾個交易日都在該榜前 20 名（土洋＝連續幾天投信、外資同時淨買超）
+  投信賣超前 20（2026-11-20，lists.is／hist[日].is，給掃描頁「📉 投信賣超前20」用）：
+    賣超金額 ≥ 0.5 億；依賣超佔股本％由大到小取前 20；p／amt／lots 都是負值；streak＝連續幾天在這個榜上；fs＝外資當天也賣超
 
 用法：python itrust/top_extract.py          （data.js 變了就由 .github/workflows/itrust_top.yml 自動跑）
 """
@@ -38,6 +40,20 @@ def top_set_t(days, d):
     rows = [r for r in doc.get("rows", []) if pass_t(r)]
     rows.sort(key=lambda r: -r["p"])
     return {r["c"] for r in rows[:20]}
+
+
+def pass_s(r):
+    return (r.get("v") or 0) < 0 and (r.get("amt") or 0) <= -MIN_AMT
+
+
+def top_list_s(days, d):
+    """投信賣超前 20 的代號（賣超佔股本％由大到小）；那天沒資料回 None。"""
+    doc = days.get(d)
+    if not doc:
+        return None
+    rows = [r for r in doc.get("rows", []) if pass_s(r)]
+    rows.sort(key=lambda r: r["p"])
+    return [r["c"] for r in rows[:20]]
 
 
 def top_set_f(fdays, d):
@@ -158,6 +174,18 @@ def main():
             both.append({**base(r), "rank": i + 1, "p": round(r["p"], 2), "fp": round(fp, 2),
                          "sum": round(r["p"] + fp, 2), "amt": r.get("amt"), "lots": r.get("lots"), "streak": ds})
 
+    # 投信賣超前 20（2026-11-20）
+    cache_s = {}
+    list_s = lambda d: cache_s.setdefault(d, top_list_s(days, d))
+    set_s = lambda d: (lambda L: None if L is None else set(L))(list_s(d))
+    rmap = {r["c"]: r for r in days[cur].get("rows", [])}
+    isl = []
+    for i, c in enumerate(list_s(cur) or []):
+        r = rmap[c]
+        fv = fv_of(fdays, cur, c)
+        isl.append({**base(r), "rank": i + 1, "p": round(r["p"], 2), "amt": r.get("amt"), "lots": r.get("lots"),
+                    "streak": streak(set_s, c, cal, pos), "fs": bool(fv and fv < 0)})
+
     # 歷史名單（2026-10-30）：每個名單日的投信／外資／土洋前 20 代號，給掃描頁「看前幾天的名單」用。
     # data.js 只留約 20 個交易日，所以跟上一版 itrust_top.json 的 hist 合併累積（保留 150 天）。
     def both_set(d):
@@ -184,13 +212,13 @@ def main():
         st, sf, sb = set_t(d), set_f(d), both_set(d)
         hist[d] = {"it": sorted(st or [], key=lambda c: -next((r["p"] for r in days[d]["rows"] if r["c"] == c), 0)),
                    "fi": sorted(sf or [], key=lambda c: -next((r["p"] for r in fdays.get(d, {}).get("rows", []) if r["c"] == c), 0)),
-                   "both": sb or []}
+                   "both": sb or [], "is": list_s(d) or []}
     hist = {k: hist[k] for k in sorted(hist)[-150:]}
 
     out = {"asof": cur, "builtAt": j.get("builtAt"), "minAmt": MIN_AMT,
-           "lists": {"it": it, "fi": fi, "both": both}, "hist": hist}
+           "lists": {"it": it, "fi": fi, "both": both, "is": isl}, "hist": hist}
     OUT.write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")), "utf-8")
-    print(f"{cur}: 投信 {len(it)}、外資 {len(fi)}、土洋 {len(both)} 檔 → {OUT.relative_to(ROOT)} ({OUT.stat().st_size} bytes)")
+    print(f"{cur}: 投信 {len(it)}、外資 {len(fi)}、土洋 {len(both)}、投信賣超 {len(isl)} 檔 → {OUT.relative_to(ROOT)} ({OUT.stat().st_size} bytes)")
 
 
 if __name__ == "__main__":
