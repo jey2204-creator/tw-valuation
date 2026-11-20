@@ -354,7 +354,7 @@ async function pick(sel){{const a=sel.kind==='t'&&sel.id==='isell',b=!!cur&&cur.
   if(sel.kind==='t'){try{sessionStorage.setItem('lastTheme',sel.id)}catch(e){}}
   if(!(sel.kind==='t'&&(NSET.has(sel.id)||(sel.id in TKEY)||(sel.id in RKEY)||sel.id==='fire')))NDATE='';
   history.replaceState(null,'',sel.kind==='t'?'#'+sel.id:(sel.kind==='n'?'#n/':'#i/')+encodeURIComponent(sel.id));
-  document.querySelector('.hd a.home').href=sel.kind==='t'&&sel.id!=='_fav'&&sel.id!=='fire'&&sel.id!=='isell'&&!(sel.id in RKEY)?'index.html#t/'+encodeURIComponent(sel.id):'index.html';
+  document.querySelector('.hd a.home').href=sel.kind==='t'&&sel.id!=='_fav'&&sel.id!=='fire'&&!(sel.id in RKEY)?(sel.id==='isell'?'beta.html?v=17#t/':'index.html#t/')+encodeURIComponent(sel.id):'index.html';
   // 注意／處置名單（2026-10-29）：notice.html 的「掃 K 線」入口 → #n/att|dis|pre，名單來自 data/notice.json
   if(sel.kind==='n'&&!NOTICE){try{NOTICE=await fetch('data/notice.json?t='+Math.floor(Date.now()/3e5)).then(r=>r.ok?r.json():null)}catch(e){NOTICE=null}}
   const NN={att:'🟡 注意股',dis:'🔴 處置股',pre:'🟠 快達處置'};
