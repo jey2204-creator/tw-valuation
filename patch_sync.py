@@ -1,141 +1,130 @@
-"""雲端同步（⭐自選＋自訂主題）：把 index.html 套成 beta.html
-用法：python3 patch_sync.py index.html beta.html
-搬正式版：python3 patch_sync.py index.html index.html
-後端：Supabase 免費方案，一張表 sync(code, data, updated_at)，瀏覽器只透過兩個 RPC（sync_get／sync_put）讀寫，
-     表本身開 RLS 不給 anon 直接讀，所以別人拿到 anon key 也列不出所有配對碼。
-配對碼：12 碼隨機（去掉 0/O/1/I），存在每台裝置的 localStorage（syncCode）。
-同步規則：開頁／回到前景時拉一次；改自選或主題後 1.2 秒推一次；兩邊都有未同步修改時自選取聯集（合併，不覆蓋）。
+#!/usr/bin/env python3
+"""2026-11-21 batch17 美股站產業主題跟台股站同步（台股 data/themes.json 當唯一主檔）
+台股端（Q2／Q3）：themes.json 的 us 欄補美股、新增 🏭 晶圓代工主題（2330 2303 5347 6770 ↔ TSM INTC GFS TSEM）
+美股端：內建主題＝台股主題裡有 us 欄的（同 id、同名、同順序；台股站在同一個瀏覽器排過的順序／改過的成份股也跟著），
+        後面接美股獨有：🏛️ 費城半導體（指數）、☁️ 雲端資本支出（需求層）。對應台股＝台股主題的全部成份股（名稱讀 ../data/list.json）。
+        美股自訂主題固定排最上面、可拖曳；內建主題 🔒 不能拖（要排就到台股站排）。
+用法：python3 patch_sync.py      → data/themes_beta_sync.json＋beta_sync.html（台股測試頁）＋us/index_test.html（美股測試頁，讀 beta 對照表）
+     python3 patch_sync.py prod → data/themes.json＋us/index.html＋us/fetch_us.py（每日追蹤名單改由 themes.json 產生）
 """
-import sys
+import sys,json,os
+prod=len(sys.argv)>1 and sys.argv[1]=='prod'
+# ---------- 台股 themes.json ----------
+ADD={'power':['CEG','VST'],'equip':['ASML'],'cpo':['MTSI'],'icd':['TXN','ADI','NXPI','MCHP','ON','LSCC','SITM'],
+     'itsvc':['PLTR','NOW','CRM','APP'],'ai':['CRWV']}
+FOUNDRY={"id":"foundry","name":"🏭 晶圓代工","us":["TSM","INTC","GFS","TSEM"],
+  "ov":[["usTSM","晶圓代工龍頭"],["usINTC","CPU＋晶圓代工"],["usGFS","成熟製程代工"],["usTSEM","特殊製程代工"]],
+  "stocks":[["2330","代工｜先進製程"],["2303","代工｜成熟製程"],["5347","代工｜8 吋成熟"],["6770","代工｜記憶體／邏輯"]]}
+lines=open('data/themes.json',encoding='utf-8').read().split('\n');done=set();ai_at=None
+for k,l in enumerate(lines):
+    s=l.strip()
+    if not s.startswith('{"id"'):continue
+    t=json.loads(s.rstrip(','))
+    if t['id']=='ai':ai_at=k
+    if t['id']=='foundry':sys.exit('themes.json 已經有 foundry，不要重跑')
+    if t['id'] not in ADD:continue
+    t['us']=t.get('us',[])+[u for u in ADD[t['id']] if u not in t.get('us',[])]
+    lines[k]='    '+json.dumps(t,ensure_ascii=False)+(',' if s.endswith(',') else '');done.add(t['id'])
+assert done==set(ADD),set(ADD)-done
+lines.insert(ai_at+1,'    '+json.dumps(FOUNDRY,ensure_ascii=False)+',')
+out='\n'.join(lines);TH=json.loads(out)['themes']
+for u in {x for t in TH for x in t.get('us',[])}:assert os.path.exists(f'us/data/all/{u}.json') or os.path.exists(f'us/data/{u}.json'),u
+# ---------- 美股前端 ----------
+s=open('us/index.html',encoding='utf-8').read()
+def rep(old,new,n=1):
+    global s
+    assert s.count(old)==n,(s.count(old),old[:70]);s=s.replace(old,new)
+TWF='../data/themes.json' if prod else '../data/themes_beta_sync.json'
+rep("let SOX={w:{}};","// 產業主題跟台股站同步（batch17）：TWT＝台股 themes.json（讀不到就退回舊版：依 index.json 分組）、TWN＝台股代號→名稱（../data/list.json）\nlet TWT=null,TWN={};const TWF='"+TWF+"';\nlet SOX={w:{}};")
+rep("  BASE=baseThemes();applyCfg();syStat();syncRun();",
+    "  try{const [a,b]=await Promise.all([fetch(TWF+'?t='+Date.now()).then(r=>r.ok?r.json():null),fetch('../data/list.json?d='+new Date().toISOString().slice(0,10)).then(r=>r.ok?r.json():null)]);\n"
+    "    if(b)b.forEach(r=>TWN[r[0]]=r[1]);if(a&&Array.isArray(a.themes))TWT=a.themes}catch(e){}\n"
+    "  BASE=baseThemes();applyCfg();syStat();syncRun();")
+rep("function baseThemes(){const g=[];IDX.forEach(s=>{const id=TID[s.theme];",
+    "function baseThemes(){if(!TWT)return baseThemesOld();\n"
+    "  let tc={};try{tc=JSON.parse(localStorage.getItem('themeCfg'))||{}}catch(e){}   // 台股站在同一個瀏覽器的設定：排序、改過的成份股、自訂主題\n"
+    "  const tth=tc.themes||{},bm=Object.fromEntries(TWT.map(t=>[t.id,t])),g=[];\n"
+    "  [...(Array.isArray(tc.order)?tc.order:[]),...TWT.map(t=>t.id),...Object.keys(tth)].filter((v,i,a)=>a.indexOf(v)===i).forEach(id=>{\n"
+    "    const src=tth[id]||bm[id];if(!src||!Array.isArray(src.us)||!src.us.length)return;\n"
+    "    const ov=Object.fromEntries((src.ov||(bm[id]||{}).ov||[]).filter(x=>/^us/.test(x[0])).map(x=>[x[0].slice(2),x[1]]));\n"
+    "    g.push({id,name:src.name||(bm[id]||{}).name||id,stocks:src.us.map(u=>[u,ROLE[u]||ov[u]||'']),tw:(src.stocks||[]).map(x=>[x[0],TWN[x[0]]||x[0]]),dem:false})});\n"
+    "  // 美股獨有（台股沒有對應主題）：放最後\n"
+    "  const sw=Object.keys(SOX.w).sort((a,b)=>SOX.w[b]-SOX.w[a]);if(sw.length)g.push({id:'sox',name:'🏛️ 費城半導體',stocks:sw.map(u=>[u,ROLE[u]||'']),tw:[],dem:false,idx:true,uso:true});\n"
+    "  g.push({id:'cloud',name:'☁️ 雲端資本支出',stocks:['MSFT','GOOGL','AMZN','META','ORCL'].map(u=>[u,ROLE[u]||'']),tw:[],dem:true,uso:true});\n"
+    "  // 每檔的「本籍」主題＝第一個有它的產業主題：個股頁對應台股、搜尋分組用（同一檔可以同時在好幾個主題）\n"
+    "  const hm={};g.forEach(t=>{if(!t.idx)t.stocks.forEach(([u])=>{if(!hm[u])hm[u]=t})});\n"
+    "  Object.keys(TID).forEach(k=>delete TID[k]);g.forEach(t=>TID[t.name]=t.id);\n"
+    "  IDX.forEach(x=>{const t=hm[x.id];if(t){x.theme=t.name;x.tw=t.tw}else x.theme='其他'});\n"
+    "  return g}\n"
+    "function baseThemesOld(){const g=[];IDX.forEach(s=>{const id=TID[s.theme];")
+rep("  const ids=[...c.order,...BASE.map(t=>t.id),...Object.keys(c.themes)].filter((v,i,a)=>a.indexOf(v)===i&&(bm[v]||c.themes[v]));",
+    "  // 同步模式：美股自訂主題排最上面（照自己拖的順序），內建主題照台股站順序\n"
+    "  const ids=(TWT?[...[...c.order,...Object.keys(c.themes)].filter(i=>!bm[i]&&c.themes[i]),...BASE.map(t=>t.id)]:[...c.order,...BASE.map(t=>t.id),...Object.keys(c.themes)]).filter((v,i,a)=>a.indexOf(v)===i&&(bm[v]||c.themes[v]));")
+# 編輯頁：內建主題鎖順序
+rep('<span class="drag" aria-hidden="true">⠿</span></div>`}).join(\'\');',
+    '${TWT&&!t.custom?\'<span class="lk" title="順序跟台股站：要調整請到台股站排">🔒</span>\':\'<span class="drag" aria-hidden="true">⠿</span>\'}</div>`}).join(\'\');\n'
+    '  $(\'oNote\').hidden=!TWT;')
+rep('  <div class="panel" id="olist"></div>','  <p class="foot" id="oNote" hidden>🔒 內建主題跟台股站同步：主題、順序、成份股都照台股站（到台股站排序或改「對應美股」，這裡隔次打開就跟著變）。自訂主題固定排在最上面，可以按住 ⠿ 拖曳。</p>\n  <div class="panel" id="olist"></div>')
+rep(".tlt tr:last-child td{border-bottom:0}",".tlt tr:last-child td{border-bottom:0}\n#olist .lk{flex:none;width:28px;text-align:center;font-size:13px;opacity:.55}")
+# 台股同主題 →：美股獨有主題沒有
+rep("(!t.custom&&t.id!=='cloud'&&t.id!=='foundry'?","(!t.custom&&!t.uso&&t.id!=='cloud'&&(TWT||t.id!=='foundry')?")
+rep("const al=$('twAll');al.hidden=!!t.custom||t.id==='cloud';","const al=$('twAll');al.hidden=!!t.custom||!!t.uso||t.id==='cloud';")
+# 個股頁「← 主題」與上下檔：剛看的主題 → 內建產業主題 → 自訂主題 → 指數主題（自訂主題排最上面後，不要搶走本籍）
+rep("const themeOfStock=id=>THEMES.find(t=>t.id===LAST_T&&t.stocks.some(x=>x[0]===id))||THEMES.find(t=>!t.idx&&t.stocks.some(x=>x[0]===id))||",
+    "const themeOfStock=id=>THEMES.find(t=>t.id===LAST_T&&t.stocks.some(x=>x[0]===id))||THEMES.find(t=>!t.idx&&!t.custom&&t.stocks.some(x=>x[0]===id))||THEMES.find(t=>!t.idx&&t.stocks.some(x=>x[0]===id))||")
+# 個股頁對應台股：跟本籍主題（台股站）一致
+rep("    D=await loadAny(id);await injectFlash(D);","    D=await loadAny(id);await injectFlash(D);if(TWT){const x=IDX.find(z=>z.id===D.id);if(x&&x.tw)D.tw=x.tw}")
+rep("  SMCI:'AI 伺服器',","  ACN:'IT 顧問',IBM:'混合雲＋顧問',CSCO:'企業網通',DELL:'AI 伺服器＋PC',HPQ:'PC／印表機',COHU:'測試分選機',NVT:'機櫃／液冷',VICR:'48V 電源模組',RMBS:'記憶體介面晶片',SYNA:'人機介面 IC',\n"
+    "  HUBB:'電網設備',PWR:'電網工程',ROK:'工業自動化',ISRG:'手術機器人',LMT:'軍工龍頭',RTX:'飛彈／引擎',AVAV:'軍用無人機',KTOS:'無人機／靶機',\n"
+    "  JPM:'綜合金控',BAC:'商業銀行',MS:'投資銀行／財管',WFC:'商業銀行',USB:'區域銀行',DHI:'住宅建商',LEN:'住宅建商',\n  SMCI:'AI 伺服器',")
+if prod:
+    open('data/themes.json','w',encoding='utf-8').write(out)
+    open('us/index.html','w',encoding='utf-8').write(s)
+    f=open('us/fetch_us.py',encoding='utf-8').read()
+    old='CFG = {t: dict(theme=th, flags=f, tw=tw, cn=CN.get(t, "")) for th, items, tw in THEMES for t, f in items}'
+    assert f.count(old)==1
+    f=f.replace(old,'''# 2026-11-21 batch17：追蹤名單與主題改由台股 data/themes.json 產生（有 us 欄的主題；一檔的本籍＝第一個出現的主題、對應台股＝該主題全部成份股），
+# 再加美股獨有的雲端資本支出；上面的 THEMES 只在讀不到 themes.json 時備用。旗標 C＝循環股、D＝需求層（個股頁 CapEx 圖）
+FLAGS = {"WOLF": "C", "VSH": "C", "AMAT": "C", "LRCX": "C", "MU": "C", "SNDK": "C",
+         "MSFT": "D", "GOOGL": "D", "AMZN": "D", "META": "D", "ORCL": "D", "CRWV": "D"}
+US_ONLY = [("☁️ 雲端資本支出", ["MSFT", "GOOGL", "AMZN", "META", "ORCL"])]
 
-src, dst = sys.argv[1], sys.argv[2]
-BETA = dst != src
-h = open(src, encoding="utf-8").read()
 
-# ↓ 之後由世杰提供 Supabase 專案的 URL 與 anon key，填在這裡
-SB_URL = "https://iszztgcjxyzwjzmrmxkw.supabase.co"
-SB_KEY = "sb_publishable_W4CH98UR-Dp-WgknERYg2A_TRg8-v7t"
+def _sync_themes():
+    root = Path(__file__).resolve().parent.parent / "data"
+    th = json.loads((root / "themes.json").read_text("utf-8"))["themes"]
+    try:
+        nm = {r[0]: r[1] for r in json.loads((root / "list.json").read_text("utf-8"))}
+    except Exception:
+        nm = {}
+    out, seen = [], set()
+    for t in th:
+        us = [u for u in t.get("us") or [] if u not in seen]
+        if not us:
+            continue
+        seen.update(us)
+        out.append((t["name"], [(u, FLAGS.get(u, "")) for u in us], [(c, nm.get(c, c)) for c, *_ in t["stocks"]]))
+    for name, us in US_ONLY:
+        us = [u for u in us if u not in seen]
+        seen.update(us)
+        if us:
+            out.append((name, [(u, FLAGS.get(u, "")) for u in us], []))
+    return out
 
 
-def rep(old, new, n=1):
-    global h
-    c = h.count(old)
-    assert c == n, f"錨點出現 {c} 次（預期 {n}）：{old[:60]}"
-    h = h.replace(old, new)
-
-
-if BETA:
-    rep("<title>台股估值看板</title>", "<title>台股估值看板 β同步</title>")
-
-# 1) 首頁自選標題：加雲端狀態小圖示（點了進設定頁）
-rep('<a class="act" href="#f" id="favEdit" hidden aria-label="自選排序" title="自選排序">✏️</a>',
-    '<a class="act" href="#f" id="favEdit" hidden aria-label="自選排序" title="自選排序">✏️</a>'
-    '<a class="act" href="#e" id="favCloud" hidden aria-label="雲端同步" title="雲端同步">☁️</a>')
-
-# 2) 編輯主題頁：備份區上面插入「雲端同步」區
-rep('''  <details class="ind" style="margin-top:22px"><summary><b>💾 備份／換手機</b><span>複製設定碼</span></summary>''',
-    '''  <details class="ind" style="margin-top:22px" id="syncBox" open><summary><b>☁️ 雲端同步</b><span id="syncSum">未開啟</span></summary>
-    <div style="padding:0 12px 12px">
-      <div id="syncOffUi">
-        <p class="foot">開啟後，⭐自選與自訂主題會存到雲端，手機、電腦任一邊改，另一邊打開網站就自動更新。第一台裝置按「開啟同步」拿到配對碼，其他裝置輸入同一組配對碼即可。</p>
-        <div class="ebar"><button type="button" class="ib pri" id="syncNew">開啟同步（產生配對碼）</button></div>
-        <label class="efield" for="syncIn">已有配對碼？在這裡輸入<input id="syncIn" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="例：K7MQ-4XZP-9PDW"></label>
-        <div class="ebar"><button type="button" class="ib" id="syncJoin">配對這台裝置</button></div>
-      </div>
-      <div id="syncOnUi" hidden>
-        <p style="margin:8px 0 4px;font-size:14px">配對碼 <b class="cd" id="syncCodeTxt" style="font-size:16px;letter-spacing:.5px"></b></p>
-        <p class="foot">到另一台裝置的「編輯主題 → ☁️ 雲端同步」輸入這組配對碼就會同步。配對碼請自己收好，知道配對碼的人就能看到／改你的自選。</p>
-        <p class="foot" id="syncStat" role="status"></p>
-        <div class="ebar"><button type="button" class="ib" id="syncCopy">複製配對碼</button><button type="button" class="ib" id="syncNow">立即同步</button><button type="button" class="ib warn" id="syncStop">關閉同步</button></div>
-      </div>
-      <p class="foot" id="syncMsg" role="status"></p>
-    </div>
-  </details>
-  <details class="ind" style="margin-top:22px"><summary><b>💾 備份／換手機</b><span>複製設定碼</span></summary>''')
-
-# 3) 同步模組（放在 Cloudflare 統計碼前）
-SYNC_JS = r'''<script>
-// ---------- ☁️ 雲端同步（Supabase RPC）：fav + themeCfg ----------
-(function(){
-const URL_='%SB_URL%',KEY='%SB_KEY%';
-if(!URL_||URL_.includes('YOUR-')){console.warn('sync: 尚未設定 Supabase');}
-const HDR={apikey:KEY,'Content-Type':'application/json',...(KEY.startsWith('sb_')?{}:{Authorization:'Bearer '+KEY})};
-const raw=store.set.bind(store);
-let code=store.get('syncCode')||'',meta=store.get('syncMeta')||{},tm=null,busy=false,lastMerged=false;
-const save=()=>raw('syncMeta',meta);
-const local=()=>({fav:store.get('fav')||[],cfg:store.get('themeCfg')||null});
-const hhmm=d=>{d=new Date(d);return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`};
-const rpc=async(fn,body)=>{const ac=new AbortController(),t=setTimeout(()=>ac.abort(),10000);try{const r=await fetch(`${URL_}/rest/v1/rpc/${fn}`,{method:'POST',headers:HDR,body:JSON.stringify(body),signal:ac.signal});if(!r.ok)throw new Error('HTTP '+r.status);return await r.json()}catch(e){throw new Error(e.name==='AbortError'?'逾時':/HTTP \d+/.test(e.message)?e.message:'連線失敗')}finally{clearTimeout(t)}};
-
-// 攔截 store.set：改到 fav / themeCfg 就排程上傳
-store.set=function(k,v){raw(k,v);if(code&&(k==='fav'||k==='themeCfg')){meta.dirty=true;save();schedule()}};
-function schedule(){clearTimeout(tm);tm=setTimeout(()=>push().catch(()=>{}),1200);paint()}
-
-function repaint(){try{applyCfg()}catch(e){}
-  const v=document.body.dataset.view;
-  try{if(v==='home')renderHome();else if(v==='flist')renderFav();else if(v==='tlist')renderOrder();else if(v==='stock'&&D)stockExtras(D.id)}catch(e){}}
-
-async function push(){if(!code||busy)return;busy=true;paint();
-  try{const d=local(),ts=await rpc('sync_put',{p_code:code,p_data:d});
-    meta={ts,at:Date.now(),dirty:false};save();}
-  catch(e){meta.err=String(e.message||e);save();}
-  finally{busy=false;paint()}}
-
-async function pull(){if(!code||busy)return;busy=true;paint();
-  try{const row=await rpc('sync_get',{p_code:code});
-    if(!row){busy=false;await push();return}          // 雲端還沒有 → 先把本機的放上去
-    if(row.updated_at!==meta.ts){                    // 雲端比上次看到的新
-      const L=local(),R=row.data||{};let fav=R.fav||[],cfg=('cfg' in R)?R.cfg:null,merged=false;
-      if(meta.dirty){                                // 兩邊都改過 → 合併（聯集，雲端順序在前）
-        fav=[...fav,...L.fav.filter(x=>!fav.includes(x))].slice(0,30);
-        if(L.cfg)cfg=L.cfg;merged=true;lastMerged=true}
-      raw('fav',fav);if(cfg)raw('themeCfg',cfg);else{raw('themeCfg',null);try{localStorage.removeItem('themeCfg')}catch(e){}}
-      meta={ts:row.updated_at,at:Date.now(),dirty:merged};save();repaint();
-      if(merged){busy=false;await push();return}
-    }else if(meta.dirty){busy=false;await push();return}
-    else{meta.at=Date.now();delete meta.err;save()}
-  }catch(e){meta.err=String(e.message||e);save()}
-  finally{busy=false;paint()}}
-
-// ---- 介面 ----
-const $$=id=>document.getElementById(id);
-function paint(){
-  const on=!!code,ok=on&&!meta.err;
-  const stat=!on?'':busy?'同步中…':meta.err?`⚠️ 同步失敗（${meta.err}），改動已先存在這台裝置，連上網會再試`:meta.dirty?'有改動尚未上傳':meta.at?`已同步 ${hhmm(meta.at)}`:'尚未同步';
-  const sum=$$('syncSum');if(sum)sum.textContent=!on?'未開啟':busy?'同步中…':meta.err?'⚠️ 失敗':meta.at?'已同步 '+hhmm(meta.at):'已開啟';
-  if($$('syncOffUi')){$$('syncOffUi').hidden=on;$$('syncOnUi').hidden=!on;$$('syncCodeTxt').textContent=code;$$('syncStat').textContent=stat;$$('syncBox').open=$$('syncBox').open||on}
-  const fc=$$('favCloud');if(fc){fc.hidden=!on;fc.textContent=meta.err?'⚠️':busy?'🔄':'☁️';fc.title=stat}
-  document.querySelectorAll('.ehead .meta').forEach(m=>{if(/存在這支手機上|雲端同步/.test(m.textContent))m.textContent=on?(ok?'☁️ 雲端同步中':'⚠️ 雲端同步失敗'):'存在這支手機上'});
-}
-const genCode=()=>{const A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',b=crypto.getRandomValues(new Uint8Array(12));
-  const s=[...b].map(x=>A[x%A.length]).join('');return s.slice(0,4)+'-'+s.slice(4,8)+'-'+s.slice(8)};
-const norm=s=>String(s||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
-$$('syncNew').addEventListener('click',async()=>{code=genCode();raw('syncCode',code);meta={dirty:true};save();paint();$$('syncMsg').textContent='';await push();$$('syncMsg').textContent=meta.err?'':'已開啟。把配對碼輸入到另一台裝置就會同步。'});
-$$('syncJoin').addEventListener('click',async()=>{const c=norm($$('syncIn').value);if(c.length!==12){$$('syncMsg').textContent='配對碼是 12 碼（可含「-」），請再確認';return}
-  code=c.slice(0,4)+'-'+c.slice(4,8)+'-'+c.slice(8);raw('syncCode',code);
-  const L=local();meta={dirty:!!(L.fav.length||L.cfg)};lastMerged=false;save();paint();$$('syncMsg').textContent='';
-  await pull();$$('syncMsg').textContent=meta.err?'':(lastMerged?'已配對，並把兩邊的自選合併。':'已配對，拉到雲端的自選。')});
-$$('syncCopy').addEventListener('click',async()=>{try{await navigator.clipboard.writeText(code);$$('syncMsg').textContent='已複製配對碼'}catch(e){$$('syncMsg').textContent='複製失敗，請長按配對碼選取'}});
-$$('syncNow').addEventListener('click',()=>{meta.dirty=true;save();pull()});
-let stopArm=0;
-$$('syncStop').addEventListener('click',()=>{if(Date.now()-stopArm>4000){stopArm=Date.now();$$('syncMsg').textContent='關閉後這台裝置不再同步（本機資料保留，雲端的也保留）。4 秒內再按一次確認';return}
-  code='';raw('syncCode','');meta={};save();paint();$$('syncMsg').textContent='已關閉同步'});
-
-// ---- 觸發時機 ----
-paint();addEventListener('load',()=>{if(code)pull()});
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&code){if(meta.dirty)push();else pull()}});
-addEventListener('pagehide',()=>{if(code&&meta.dirty&&!busy){clearTimeout(tm);try{fetch(`${URL_}/rest/v1/rpc/sync_put`,{method:'POST',headers:HDR,body:JSON.stringify({p_code:code,p_data:local()}),keepalive:true}).then(()=>{meta.dirty=false;save()}).catch(()=>{})}catch(e){}}});
-addEventListener('hashchange',()=>setTimeout(paint,0));
-window.__sync={pull,push,get code(){return code}};
-})();
-</script>
-'''.replace('%SB_URL%', SB_URL).replace('%SB_KEY%', SB_KEY)
-
-rep('<!-- Cloudflare Web Analytics -->', SYNC_JS + '<!-- Cloudflare Web Analytics -->')
-
-# 4) 「全部還原預設」也要同步（它直接 removeItem，沒經過 store.set）
-rep("store.set('themeCfg',null);try{localStorage.removeItem('themeCfg')}catch(e){}applyCfg();renderOrder();$('bkMsg').textContent='已還原預設'",
-    "try{localStorage.removeItem('themeCfg')}catch(e){}store.set('themeCfg',null);applyCfg();renderOrder();$('bkMsg').textContent='已還原預設'")
-
-open(dst, "w", encoding="utf-8").write(h)
-print("ok", dst, len(h))
+try:
+    THEMES = _sync_themes()
+except Exception as e:   # 讀不到台股 themes.json：用上面寫死的舊清單
+    print("themes.json 讀取失敗，改用內建清單：", e, file=sys.stderr)
+'''+old)
+    open('us/fetch_us.py','w',encoding='utf-8').write(f);print('prod ok');sys.exit()
+open('data/themes_beta_sync.json','w',encoding='utf-8').write(out)
+tw=open('index.html',encoding='utf-8').read()
+assert tw.count("fetch('data/themes.json?t='")==1
+tw=tw.replace("fetch('data/themes.json?t='","fetch('data/themes_beta_sync.json?t='").replace('<title>','<title>[測試] ',1)
+open('beta_sync.html','w',encoding='utf-8').write(tw)
+s=s.replace('<title>','<title>[測試] ',1)
+open('us/index_test.html','w',encoding='utf-8').write(s)
+for t in TH:
+    if t['id'] in ADD or t['id']=='foundry':print(t['id'],t['name'],t['us'])
+print('test ok')
