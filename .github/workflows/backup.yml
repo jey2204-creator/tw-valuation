@@ -52,16 +52,17 @@ jobs:
           set -e
           D=$(TZ=Asia/Taipei date +%Y%m%d)
           SHA=$(git rev-parse --short HEAD)
+          [ -z "$TELEGRAM_CHAT_ID" ] && TELEGRAM_CHAT_ID=$(python3 -c "import json;print(json.load(open('data/flash/tg.json'))['chat'])")
           mkdir -p /tmp/bk && cd /tmp/bk
-          git -C "$GITHUB_WORKSPACE" archive --format=zip -9 -o "tw-valuation_${D}.zip" HEAD
+          git -C "$GITHUB_WORKSPACE" archive --format=zip -9 -o "/tmp/bk/tw-valuation_${D}.zip" HEAD
           SIZE=$(stat -c %s "tw-valuation_${D}.zip")
           LIMIT=$((48*1024*1024))
           if [ "$SIZE" -le "$LIMIT" ]; then
             FILES="tw-valuation_${D}.zip"; MODE="整包"
           else
             rm "tw-valuation_${D}.zip"
-            git -C "$GITHUB_WORKSPACE" archive --format=zip -9 -o "tw-valuation_${D}_code.zip" HEAD -- . ':(exclude)data'
-            git -C "$GITHUB_WORKSPACE" archive --format=zip -9 -o "data_${D}.zip" HEAD -- data
+            git -C "$GITHUB_WORKSPACE" archive --format=zip -9 -o "/tmp/bk/tw-valuation_${D}_code.zip" HEAD -- . ':(exclude)data'
+            git -C "$GITHUB_WORKSPACE" archive --format=zip -9 -o "/tmp/bk/data_${D}.zip" HEAD -- data
             split -b 45m -d "data_${D}.zip" "tw-valuation_${D}_data.zip.part"
             rm "data_${D}.zip"
             FILES=$(ls tw-valuation_${D}_*); MODE="分割（還原：cat *_data.zip.part* > data.zip）"
