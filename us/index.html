@@ -299,7 +299,7 @@ body.dense .lst .nm{font-size:13.5px}
 body.dense .lst td.sk .nmw{white-space:nowrap}body.dense .lst td.sk .cd{display:inline-block;margin-left:3px;max-width:3.6em;font-size:10.5px;vertical-align:-2px}
 body.dense .lst .dl{display:block;font-size:10.5px;color:var(--muted);font-family:var(--f-num);white-space:nowrap}
 body.dense .lst .dl .pill{font-size:10px;padding:0 5px;margin-left:3px;vertical-align:1px;font-family:var(--f-body)}
-body.dense .lst .sub{font-size:10.5px}body.dense .lst .rk{margin-right:3px}
+body.dense #tList.ix td.sk .cd{max-width:2.4em}body.dense .lst .sub{font-size:10.5px}body.dense .lst .rk{margin-right:3px}
 /* 主題表股票欄：代號／短名、薪資／年變化各自換行（同台股），讓收盤往左、營收年增不被切 */
 .lst td.sk .nmw{white-space:normal}.lst td.sk .cd{display:block;margin-left:0;max-width:6.5em;vertical-align:baseline}.tw a small{font-size:10.5px;color:var(--muted);margin-left:4px}
 .nfo{font:inherit;font-size:14px;line-height:1;border:0;background:none;color:var(--muted);padding:2px 4px;cursor:pointer}.nfo[aria-expanded=true]{color:var(--accent)}
@@ -1326,9 +1326,9 @@ async function load(id){
 }
 // ---------- 首頁 ----------
 // 內建主題代號：沿用台股站同名主題的 id（#t/pcb，主題頁「台股同主題 →」連得過去）；雲端資本支出台股沒有，自訂 cloud
-const TID={'🛰️ 低軌衛星':'leo','💿 矽晶圓／基板':'wafer','⚡ 被動元件':'passive','🪢 連接器／線材':'conn','🧪 半導體材料':'semimat','🟩 PCB／EMS':'pcb','💡 矽光子／CPO':'cpo','🧱 先進封裝／設備':'pkg','🎯 AI 晶片／記憶體':'ai','☁️ 雲端資本支出':'cloud','🖥️ 伺服器':'server','❄️ 散熱／電源':'thermal','🔀 網通／傳輸':'net','🔌 電力':'power'};
+const TID={'🛰️ 低軌衛星':'leo','💿 矽晶圓／基板':'wafer','⚡ 被動元件':'passive','🪢 連接器／線材':'conn','🧪 半導體材料':'semimat','🟩 PCB／EMS':'pcb','💡 矽光子／CPO':'cpo','🧱 先進封裝／設備':'pkg','🎯 AI 晶片／記憶體':'ai','☁️ 雲端資本支出':'cloud','🖥️ 伺服器':'server','❄️ 散熱／電源':'thermal','🔀 網通／傳輸':'net','🔌 電力':'power','🏭 晶圓代工':'foundry','🧩 類比／IC 設計':'icd'};
 // 預設順序：美股站自己的，不再跟台股站連動（不讀台股的 themeCfg／themes.json）。✏️ 編輯排過就以那份為準
-const DEF_ORDER=['pcb','ai','cpo','pkg','server','thermal','net','power','passive','conn','wafer','semimat','leo','cloud'];
+const DEF_ORDER=['sox','pcb','ai','cpo','pkg','foundry','icd','server','thermal','net','power','passive','conn','wafer','semimat','leo','cloud'];
 const rankOf=t=>{const i=ORDER_IDS.indexOf(TID[t]);return i<0?999:i};   // 搜尋結果依首頁主題順序分組
 // 同義代號／俗名 → 本站代號（舊代號、另一股別、常見簡稱）
 const ALIAS={FB:'META',GOOG:'GOOGL',SPACEX:'SPCX',NVIDIA:'NVDA',BROADCOM:'AVGO',MICRON:'MU',GOOGLE:'GOOGL',ALPHABET:'GOOGL',AMAZON:'AMZN',MICROSOFT:'MSFT',FACEBOOK:'META',SUPERMICRO:'SMCI',VERTIV:'VRT',ARISTA:'ANET',ASTERA:'ALAB',LUMENTUM:'LITE',COHERENT:'COHR',FABRINET:'FN',CREDO:'CRDO',MARVELL:'MRVL',APPLIED:'AMAT',LAM:'LRCX',AMKOR:'AMKR',SANDISK:'SNDK'};
@@ -1394,6 +1394,7 @@ const ROLE={SPCX:'火箭發射＋星鏈',ASTS:'手機直連衛星',RKLB:'小型�
   AMKR:'封測代工',AMAT:'前段設備',KLAC:'檢測量測',ONTO:'檢測量測（封裝）',CAMT:'檢測（先進封裝）',LRCX:'蝕刻／沉積',FORM:'探針卡',
   NVDA:'GPU',AMD:'CPU／GPU',MU:'DRAM／HBM',ARM:'架構授權',SNDK:'NAND',
   MSFT:'Azure',GOOGL:'Google Cloud／TPU',AMZN:'AWS',META:'自建 AI 資料中心',
+  TSM:'晶圓代工龍頭',INTC:'CPU＋晶圓代工',GFS:'成熟製程代工',TSEM:'特殊製程代工',TXN:'類比 IC 龍頭',ADI:'類比／訊號鏈',QCOM:'手機 SoC／數據機',NXPI:'車用 MCU',MPWR:'電源管理 IC',MCHP:'MCU／類比',ON:'功率／SiC',LSCC:'低功耗 FPGA',SITM:'MEMS 時脈',ASML:'微影（EUV）',TER:'測試機',MTSI:'類比／光通訊晶片',
   SMCI:'AI 伺服器',VRT:'散熱＋電源',ETN:'配電／電源管理',ANET:'資料中心交換器',ALAB:'PCIe／CXL 連接',GEV:'燃氣渦輪＋電網'};
 const median=a=>{a=a.filter(x=>x!=null&&isFinite(x)).sort((x,y)=>x-y);if(!a.length)return null;const m=a.length>>1;return a.length%2?a[m]:(a[m-1]+a[m])/2};
 const pct=(v,d=0)=>{if(v==null)return '—';const t=fmt(v,d);return /^-0(\.0+)?$/.test(t)?t.slice(1)+'%':(v>0?'+':'')+t+'%'};   // 四捨五入成 0 的負數顯示 0%，不出現「-0%」
@@ -1422,6 +1423,8 @@ function loadStats(){return ST_P||(ST_P=Promise.all(IDX.map(async s=>{const d=aw
 // themes 只存「改過的內建主題」與「自己新增的主題」；沒改過的內建主題一律用 index.json 最新的成份股
 const UKEY='usThemeCfg';
 let BASE=[],THEMES=[],ORDER_IDS=[],ALLM={};
+// 費城半導體指數（data/sox.json，手動維護）：w＝{代號:權重%}。指數主題 idx:true，成份股可跟產業主題重疊
+let SOX={w:{}};const soxW=id=>SOX.w[id];
 const tracked=id=>IDX.some(s=>s.id===id);   // 每日追蹤的 46 檔（有股價、本益比）
 const stockOf=id=>IDX.find(s=>s.id===id)||ALLM[id]||{id,name:'',tw:[],unk:true};
 const itemsOf=t=>t.stocks.map(([id])=>stockOf(id));
@@ -1435,6 +1438,7 @@ function cfgSave(c){try{localStorage.setItem(UKEY,JSON.stringify({site:'us',orde
 // 內建主題：index.json 依主題分組；成份股順序＝index.json 順序，細分預設用 ROLE
 function baseThemes(){const g=[];IDX.forEach(s=>{const id=TID[s.theme];if(!id)return;let t=g.find(x=>x.id===id);
     if(!t)g.push(t={id,name:s.theme,stocks:[],tw:s.tw||[],dem:!!s.dem});t.stocks.push([s.id,ROLE[s.id]||''])});
+  const sw=Object.keys(SOX.w).sort((a,b)=>SOX.w[b]-SOX.w[a]);if(sw.length)g.push({id:'sox',name:'🏛️ 費城半導體',stocks:sw.map(u=>[u,ROLE[u]||'']),tw:[],dem:false,idx:true});
   const r=id=>{const i=DEF_ORDER.indexOf(id);return i<0?99:i};return g.sort((a,b)=>r(a.id)-r(b.id))}
 function allThemes(){
   const c=cfgGet(),bm=Object.fromEntries(BASE.map(t=>[t.id,t]));
@@ -1522,16 +1526,20 @@ function themeRender(tid){
   const lqs=[...new Set(ids.map(i=>(ST[i]||{}).lq).filter(l=>l&&/^\d\dQ\d$/.test(l)))].sort();
   $('tSum').innerHTML=`${it.length} 檔${it.length>1?'中位數':''}：營收年增 ${b(A.ry,v=>pct(v),sgc(A.ry.v))}・EPS 年增（四季）${b(A.ey,v=>pct(v),sgc(A.ey.v))}・本益比 ${b(A.pe,v=>fmt(v,1))}・PEG ${b(A.peg,v=>fmt(v,2),pegc(A.peg.v))}・淨值比 ${b(A.pb,v=>fmt(v,2))}・本月至今 ${b(A.mtd,v=>pct(v,1),sgc(A.mtd.v))}${sm!=null?`・薪酬中位 <b>${salTxt(sm)}</b>`:''}`+
     (()=>{const sg=sigOf(t);return sg.lt?`<br>美股財報動能 ${sg.lt}：`+sg.c.map(x=>`${x.lb} ${x.v==null?'<span title="不到一半檔數有值">—</span>':`<b class="${sgc(x.v)}">${x.v>0?'✓':'✗'} ${x.f(x.v)}</b>${cvT(x)}`}`).join('・'):''})()+
+    (t.idx?(()=>{const w=ids.map(soxW),top=w.slice().sort((a,b)=>b-a).slice(0,5).reduce((a,b)=>a+b,0);let sw=0,sm2=0,up=0,nn=0;
+      ids.forEach(i=>{const m=(ST[i]||{}).mtd,c=stockOf(i).chg;if(m!=null&&soxW(i)){sw+=soxW(i);sm2+=soxW(i)*m}if(c!=null){nn++;if(c>0)up++}});const wm=sw?sm2/sw:null;
+      return `<br>指數權重（Nasdaq ${SOX.asof?+SOX.asof.slice(5,7)+'/'+ +SOX.asof.slice(8):''}）：前 5 大合計 <b>${fmt(top,1)}%</b>・權重加權本月至今 ${wm==null?'—':`<b class="${sgc(wm)}">${pct(wm,1)}</b>`}・最新交易日上漲 <b>${up}</b>／${nn} 檔`+
+        `<br><span style="color:var(--warm)">⚠️ 30 檔混了 AI、類比、設備、代工不同循環，上面的本益比／PEG 中位數只當參考；估值請回各產業主題看。</span>`})():'')+
     (lqs.length>1?`<br>最新季 ${lqs[0]}～${lqs[lqs.length-1]}：財報季各家進度不同，中位數會混到兩季`:lqs.length?`<br>最新季 ${lqs[0]}`:'');
   // 本主題財報：近 10 天已公布（✅）＋未來 45 天
   const tdy=etToday(),ev=[];ids.forEach(id=>(EARN.e[id]||[]).forEach(x=>{const dd=dayDiff(tdy,x[0]);if(dd>=-10&&dd<=45)ev.push([id,x,dd])}));
   ev.sort((a,c)=>a[1][0]<c[1][0]?-1:a[1][0]>c[1][0]?1:a[0]<c[0]?-1:1);
   $('tEarn').innerHTML=ev.length?'<span class="lb">📅 財報</span>'+ev.map(([id,x,dd])=>`<a class="ec${dd<0?' done':''}" href="#${id}">${dd<0?'✅':''}<b>${id}</b><small>${+x[0].slice(5,7)}/${+x[0].slice(8)}${dd<0?' 已公布':({bmo:' 盤前',amc:' 盤後',dmh:' 盤中'}[x[1]]||'')}</small></a>`).join(''):'';
-  $('tTw').innerHTML=t.tw.length?'<span class="lb">對應台股</span>'+t.tw.map(([c,n])=>`<a href="../#${c}"><b>${c}</b>${esc(n)}</a>`).join('')+(!t.custom&&t.id!=='cloud'?`<a class="all" href="../#t/${t.id}">台股同主題 →</a>`:''):(t.dem?'<span class="lb">對應台股：全供應鏈（需求層）</span>':'');
+  $('tTw').innerHTML=t.tw.length?'<span class="lb">對應台股</span>'+t.tw.map(([c,n])=>`<a href="../#${c}"><b>${c}</b>${esc(n)}</a>`).join('')+(!t.custom&&t.id!=='cloud'&&t.id!=='foundry'?`<a class="all" href="../#t/${t.id}">台股同主題 →</a>`:''):(t.dem?'<span class="lb">對應台股：全供應鏈（需求層）</span>':'');
   const nx=ids.filter(id=>!tracked(id)).length;
-  if(LAST_TS!==tid){TS=tsGet(tid);LAST_TS=tid}loadPx(t);
+  if(LAST_TS!==tid){TS=tsGet(tid);LAST_TS=tid}if(t.idx&&!TS)TS='w:-1';loadPx(t);
   tTable(t);twRender(t);
-  $('tFoot').innerHTML=`美股財報動能＝三項的主題中位數：營收加速（最新季年增 − 上一季年增，百分點）、EPS 驚喜率與首日反應（各檔最近一次有預估的財報；首日還沒收盤的不算）；全正 🟢、全負 🔴、其他 🟡，只描述美股這邊，不是買賣訊號。營收＝最新一季對比去年同季；EPS＝近四季合計對比前四季（「虧損」＝近四季合計 ≤ 0，「轉盈」＝前四季是虧損）；PEG＝本益比 ÷ EPS 年增，年增 &gt;300% 低基期不算${it.some(s=>s.cyc)?'；<span class="pill">循環</span> 股 PEG 參考性低，以淨值比河流為主':''}；本月＝最新收盤對比上月底。收盤為美元；市值＝最新季稀釋股數 × 收盤（全市場股票用 FinMind 即時抓的收盤；ADR 依每 ADR 股數換算）${fxOn()?'，台幣以固定匯率 '+FX.rate+' 換算':''}。點欄位標題可排序，每個主題會記住上次的排序（本益比連點：本益比 → EPS年增 → PEG；股票連點：市值 → 薪酬中位數）。${it.some(s=>sal(s.id,'med')!=null)?'<span class="cap sal" style="display:inline">薪</span>＝員工年度總薪酬中位數（全球全體員工、含股票，DEF 14A 揭露），跟台股「非主管全時」口徑不同。':''}`+
+  $('tFoot').innerHTML=`美股財報動能＝三項的主題中位數：營收加速（最新季年增 − 上一季年增，百分點）、EPS 驚喜率與首日反應（各檔最近一次有預估的財報；首日還沒收盤的不算）；全正 🟢、全負 🔴、其他 🟡，只描述美股這邊，不是買賣訊號。營收＝最新一季對比去年同季；EPS＝近四季合計對比前四季（「虧損」＝近四季合計 ≤ 0，「轉盈」＝前四季是虧損）；PEG＝本益比 ÷ EPS 年增，年增 &gt;300% 低基期不算${it.some(s=>s.cyc)?'；<span class="pill">循環</span> 股 PEG 參考性低，以淨值比河流為主':''}；本月＝最新收盤對比上月底。收盤為美元；市值＝最新季稀釋股數 × 收盤（全市場股票用 FinMind 即時抓的收盤；ADR 依每 ADR 股數換算）${fxOn()?'，台幣以固定匯率 '+FX.rate+' 換算':''}。點欄位標題可排序，每個主題會記住上次的排序（本益比連點：本益比 → EPS年增 → PEG；股票連點：${t.idx?'權重 → ':''}市值 → 薪酬中位數）。${t.idx?`權重＝Nasdaq 公布的指數權重（${SOX.asof||''}，手動更新）。`:''}${it.some(s=>sal(s.id,'med')!=null)?'<span class="cap sal" style="display:inline">薪</span>＝員工年度總薪酬中位數（全球全體員工、含股票，DEF 14A 揭露），跟台股「非主管全時」口徑不同。':''}`+
     (nx?'<br><span class="pill o">全市場</span>＝不在每日追蹤清單：只有每週更新的財報，沒有本益比與本月漲跌，點進個股頁才即時抓股價。':'')}
 // ---------- 主題頁個股表（排版同台股站）----------
 // 市值＝最新季稀釋股數 × 收盤（百萬美元），跟著美元／台幣切換：美元顯示「億美元」、台幣顯示「≈ 億」
@@ -1548,9 +1556,9 @@ function loadPx(t){const ids=t.stocks.map(x=>x[0]).filter(id=>!tracked(id)&&ALLM
 const capM=id=>{const s=stockOf(id),o=ST[id]||{};if(tracked(id))return s.close&&o.sh?o.sh*s.close:null;
   return PX[id]&&o.sh?o.sh/(ADR[id]||1)*PX[id].close:null};
 const capT=m=>{if(m==null)return '';const a=fxOn()?m*FX.rate/100:m/100;return (fxOn()?'≈':'$')+(a>=1e4?fmt(a/1e4,2)+'兆':fmt(a,a<10?1:0)+'億')};
-const TSORT={cap:capM,sal:id=>sal(id,'med'),px:id=>stockOf(id).chg,pe:id=>stockOf(id).pe||null,eps:id=>(ST[id]||{}).ey,peg:id=>(ST[id]||{}).peg,pb:id=>stockOf(id).pb||null,ry:id=>(ST[id]||{}).ry};
+const TSORT={w:id=>soxW(id),cap:capM,sal:id=>sal(id,'med'),px:id=>stockOf(id).chg,pe:id=>stockOf(id).pe||null,eps:id=>(ST[id]||{}).ey,peg:id=>(ST[id]||{}).peg,pb:id=>stockOf(id).pb||null,ry:id=>(ST[id]||{}).ry};
 const TPE=['pe:-1','pe:1','eps:-1','peg:1',''],TPEL={pe:'本益比',eps:'EPS年增',peg:'PEG'};
-const TCAP=['cap:-1','sal:-1',''],TCAPL={cap:'市值',sal:'薪酬中位'};   // 「股票」欄連點：市值 → 薪酬中位數 → 預設
+const TCAP=['cap:-1','sal:-1',''],TCAPL={cap:'市值',sal:'薪酬中位',w:'權重'},TCAPX=['w:-1','cap:-1','sal:-1'];   // 「股票」欄連點：市值 → 薪酬中位數 → 預設
 let TS='';
 // 主題表緊湊模式：預設開，存這台 localStorage usDense（跟台股站 tDense 分開，兩邊各自記）
 let DENSE=(()=>{try{return localStorage.getItem('usDense')!=='false'}catch(e){return true}})();
@@ -1567,7 +1575,7 @@ function tsSet(tid,v){const c=cfgGet();if(c.themes[tid]&&!BASE.some(b=>b.id===ti
     if(v)c.themes[tid].sort=v;else delete c.themes[tid].sort;
     try{localStorage.setItem(UKEY,JSON.stringify({site:'us',order:c.order,hidden:c.hidden,themes:c.themes,at:Date.now()}))}catch(e){}syncDirty();return}   // 不呼叫 cfgSave：免得整頁重畫
   try{const m=JSON.parse(localStorage.getItem(TSKEY))||{};if(v)m[tid]=v;else delete m[tid];localStorage.setItem(TSKEY,JSON.stringify(m))}catch(e){}}
-function tTable(t){const el=$('tList'),[k,dir]=TS.split(':');let rows=t.stocks.slice();
+function tTable(t){const el=$('tList'),[k,dir]=TS.split(':');el.classList.toggle('ix',!!t.idx&&(k==='cap'||k==='sal'));let rows=t.stocks.slice();
   if(k){const f=TSORT[k];rows.sort((a,b)=>{const x=f(a[0]),y=f(b[0]);if(x==null)return 1;if(y==null)return -1;return (x-y)*(+dir||-1)})}
   const lqs=rows.map(([id])=>(ST[id]||{}).lq).filter(Boolean).sort(),LQ=lqs[lqs.length-1];let RK=0;
   const th=(key,lb)=>{const on=key==='pe'?k in TPEL:key==='cap'?k in TCAPL:k===key;return `<th data-k="${key}" class="${on?'on':''}">${key==='pe'&&on?TPEL[k]:key==='cap'&&on?TCAPL[k]:lb}${on?(+dir>0?' ▲':' ▼'):''}</th>`};
@@ -1582,17 +1590,17 @@ function tTable(t){const el=$('tList'),[k,dir]=TS.split(':');let rows=t.stocks.s
       let d;if(o.ek)d=`<span class="${o.ek==='轉盈'?'vu':'vd'}">${o.ek}</span>`;else if(o.ey!=null)d=`<span class="${sgc(o.ey)}">${o.ey>300?'>300%':pct(o.ey,0)}</span>`;else d='EPS —';
       if(o.peg!=null)d+=` <span class="${pegc(o.peg)}">P${fmt(o.peg,o.peg<10?2:1)}</span>`;else if(o.ey>300)d+=' 低基';
       const pd=(tr?'':`<span class="pill o">${s.unk?'查無':'全市場'}</span>`)+(s.cyc?'<span class="pill">循環</span>':'')+(s.freq==='A'?'<span class="pill b">年報</span>':''),
-        sv=k==='sal'&&sal(id,'med')!=null?'薪'+salK(sal(id,'med')).replace('≈',''):cm?capT(cm).replace('≈',''):'';
+        sv=k==='sal'&&sal(id,'med')!=null?'薪'+salK(sal(id,'med')).replace('≈',''):t.idx&&k!=='cap'&&soxW(id)!=null?fmt(soxW(id),2)+'%':cm?capT(cm).replace('≈',''):'';
       return `<tr data-id="${id}"><td class="sk">${(k==='cap'&&cm!=null)||(k==='sal'&&sal(id,'med')!=null)?`<span class="rk">#${++RK}</span>`:''}<span class="nmw"><span class="nm">${id}</span><span class="cd" title="${esc(s.name||'')}">${esc(shortOf(s))}</span></span>${sv||pd?`<span class="dl">${sv}${pd}</span>`:''}</td>`+
         (!tr&&PX[id]?`<td>${fmt(PX[id].close,2)}<span class="sub ${sgc(PX[id].chg)}">${PX[id].chg==null?'—':pct(PX[id].chg,2)}</span></td>`:tr?`<td>${fmt(s.close,2)}<span class="sub ${sgc(s.chg)}">${s.chg==null?'—':pct(s.chg,2)}</span></td>`:'<td>—</td>')+
         `<td>${s.pe?fmt(s.pe,1):'—'}<span class="sub" title="近四季 EPS 年增；P＝PEG（本益比÷EPS 年增）">${d}</span></td><td>${s.pb?fmt(s.pb,2):'—'}</td>`+
         `<td class="${sgc(o.ry)}">${o.ry!=null?pct(o.ry,1):'—'}<span class="sub"${o.lq&&o.lq!==LQ?' style="color:var(--warm)" title="跟其他檔不同季"':''}>${o.lq||''}</span></td></tr>`}
-    return `<tr data-id="${id}"><td class="sk">${k==='cap'&&capM(id)!=null?`<span class="rk">#${++RK}</span>`:''}<span class="nmw"><span class="nm">${id}</span><span class="cd" title="${esc(s.name||'')}">${esc(shortOf(s))}</span></span>${cm?`<span class="cap">${capT(cm).replace('≈','')}</span>`:''}${salCell(id)}${pills||note?`<div class="role">${pills}${esc(note||'')}</div>`:''}</td>`+
+    return `<tr data-id="${id}"><td class="sk">${k==='cap'&&capM(id)!=null?`<span class="rk">#${++RK}</span>`:''}<span class="nmw"><span class="nm">${id}</span><span class="cd" title="${esc(s.name||'')}">${esc(shortOf(s))}</span></span>${t.idx&&soxW(id)!=null?`<span class="cap">權重 ${fmt(soxW(id),2)}%</span>`:''}${cm?`<span class="cap">${capT(cm).replace('≈','')}</span>`:''}${salCell(id)}${pills||note?`<div class="role">${pills}${esc(note||'')}</div>`:''}</td>`+
       (!tr&&PX[id]?`<td>${fmt(PX[id].close,2)}<span class="sub ${sgc(PX[id].chg)}">${PX[id].chg==null?'—':pct(PX[id].chg,2)}</span></td>`:tr?`<td>${fmt(s.close,2)}<span class="sub ${sgc(s.chg)}">${s.chg==null?'—':pct(s.chg,2)}</span>${o.mtd!=null?`<span class="sub sm">本月 <span class="${sgc(o.mtd)}">${pct(o.mtd,1)}</span></span>`:''}</td>`:'<td>—</td>')+
       `<td>${s.pe?fmt(s.pe,1):'—'}${e}</td><td>${s.pb?fmt(s.pb,2):'—'}</td>`+
       `<td class="${sgc(o.ry)}">${o.ry!=null?pct(o.ry,1):'—'}<span class="sub"${o.lq&&o.lq!==LQ?' style="color:var(--warm)" title="跟其他檔不同季"':''}>${o.lq||''}</span></td></tr>`}).join('')+'</tbody>';
   el.onclick=e=>{const h=e.target.closest('th[data-k]');if(h){const nk=h.dataset.k,cur=TS.split(':');
-      if(nk==='pe'){const i=TPE.indexOf(TS);TS=TPE[i<0?0:(i+1)%TPE.length]}else if(nk==='cap'){const i=TCAP.indexOf(TS);TS=TCAP[i<0?0:(i+1)%TCAP.length]}else TS=cur[0]===nk?(cur[1]==='-1'?nk+':1':''):nk+':-1';tsSet(t.id,TS);tTable(t);return}
+      if(nk==='pe'){const i=TPE.indexOf(TS);TS=TPE[i<0?0:(i+1)%TPE.length]}else if(nk==='cap'){const C=t.idx?TCAPX:TCAP,i=C.indexOf(TS);TS=C[i<0?0:(i+1)%C.length]}else TS=cur[0]===nk?(cur[1]==='-1'?nk+':1':''):nk+':-1';tsSet(t.id,TS);tTable(t);return}
     const r=e.target.closest('tr[data-id]');if(r)location.hash=r.dataset.id}}
 // ---------- 主題頁「台股這邊」：對應台股的月營收年增、本益比／PEG、近一月漲跌，跟美股同主題並排 ----------
 // 台股資料直接讀台股站的 ../data/summary.json（收盤／本益比／月營收／近四季 EPS）與 ../data/momentum.json（dc＝[近一月%, 近一季%]，日曆日）
@@ -1726,7 +1734,7 @@ async function capexAll(){
   $('capexAll').hidden=false;c.resize();
 }
 // 個股頁左上「← 主題」：剛看的主題頁有這檔就回那個主題，否則首頁順序第一個有它的主題；都不在就回首頁
-const themeOfStock=id=>THEMES.find(t=>t.id===LAST_T&&t.stocks.some(x=>x[0]===id))||THEMES.find(t=>t.stocks.some(x=>x[0]===id))||null;
+const themeOfStock=id=>THEMES.find(t=>t.id===LAST_T&&t.stocks.some(x=>x[0]===id))||THEMES.find(t=>!t.idx&&t.stocks.some(x=>x[0]===id))||THEMES.find(t=>t.stocks.some(x=>x[0]===id))||null;
 function backPaint(id){const t=themeOfStock(id);$('back').href=t?'#t/'+t.id:'#';$('back').textContent=t?'← '+t.name:'← 全部主題';$('theme').textContent=t||tracked(id)?'':'全市場'}
 let HOMEY=0;
 function route(){
@@ -2002,6 +2010,7 @@ addEventListener('hashchange',route);
   try{const r=await fetch('data/salary.json?t='+Date.now());if(r.ok)SA=await r.json()}catch(e){}
   fetch('../data/salary.json?t='+Date.now()).then(r=>r.ok?r.json():null).then(j=>{if(j){TWSA=j;if(D&&!$('stock').hidden)salLine(D.id)}}).catch(()=>{});   // 台股薪資：對應台股 chip 旁小字
   try{const r=await fetch('data/earnings_auto.json?t='+Date.now());if(r.ok){AUTOQ=(await r.json()).q||{};CMPSET=new Set(Object.keys(AUTOQ))}}catch(e){}
+  try{const r=await fetch('data/sox.json?t='+Date.now());if(r.ok){const j=await r.json();if(j&&j.w)SOX=j}}catch(e){}
   BASE=baseThemes();applyCfg();syStat();syncRun();
   homeRender();earnMini();srHome();route();capexAll();
   // 主題卡的年增／PEG／本月至今要讀 46 個個股檔（各約 6KB），主題裡的全市場股票另讀 data/all；讀完重畫卡片與主題頁
