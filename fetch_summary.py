@@ -95,7 +95,63 @@ def itrust_top_ids():
         ids |= {r[0] for r in json.loads((OUT / "e50.json").read_text("utf-8")).get("stocks") or []}
     except Exception:
         pass
+    try:   # 2026-11-21：高價股前50 自動主題（data/hp50.json，本程式 write_hp50 產生）
+        ids |= {r[0] for r in json.loads((OUT / "hp50.json").read_text("utf-8")).get("stocks") or []}
+    except Exception:
+        pass
     return ids
+
+
+HP_N = 50
+
+
+def roc_date(v):
+    """證交所／櫃買的「1151120」或「20261120」→ "20261120"；看不懂回 None"""
+    t = "".join(ch for ch in str(v or "") if ch.isdigit())
+    if len(t) == 7:
+        return f"{int(t[:3]) + 1911}{t[3:]}"
+    return t if len(t) == 8 else None
+
+
+def write_hp50(d, src, asof):
+    """2026-11-21 首頁自動主題「💎 高價股前50」→ data/hp50.json
+    收盤價由高到低前 50（上市櫃合併、只收 list.json 的上市櫃普通股；代號 0 開頭的 ETF 在 load() 就排除了）。
+    格式：{asof, updated, n, stocks:[[代號, 收盤]…], days:{代號: 連續上榜天數}, chg:{d, prev, in:[…], out:[…]}}
+    上市或上櫃收盤有一邊沒抓到（< 500 檔）就不覆蓋舊檔，避免名單只剩半個市場。"""
+    F = OUT / "hp50.json"
+    if (src.get("上市收盤") or 0) < 500 or (src.get("上櫃收盤") or 0) < 500:
+        print("hp50: 收盤資料不完整，沿用舊檔", file=sys.stderr)
+        return
+    try:
+        lst = {r[0] for r in json.loads((OUT / "list.json").read_text("utf-8")) if len(r) > 2 and r[2] in ("上市", "上櫃")}
+    except Exception:
+        lst = None
+    rows = sorted(((x[0], c) for c, x in d.items() if x[0] and (lst is None or c in lst)), key=lambda r: (-r[0], r[1]))[:HP_N]
+    if len(rows) < HP_N:
+        print(f"hp50: 只有 {len(rows)} 檔，沿用舊檔", file=sys.stderr)
+        return
+    try:
+        old = json.loads(F.read_text("utf-8"))
+    except Exception:
+        old = {}
+    if old.get("asof") and asof < old["asof"]:
+        print(f"hp50: 收盤日 {asof} 比舊檔 {old['asof']} 舊，沿用舊檔", file=sys.stderr)
+        return
+    cur = [c for _, c in rows]
+    if old.get("stocks") == [[c, p] for p, c in rows]:   # 收盤完全沒變（休市日重跑、來源還沒換日）→ 當成同一天
+        asof = old.get("asof") or asof
+    if old.get("asof") == asof:                # 同一天重跑：連續天數、換股紀錄沿用
+        days, chg = old.get("days") or {}, old.get("chg")
+        days = {c: days.get(c, 1) for c in cur}
+    else:
+        od, prev = old.get("days") or {}, [r[0] for r in old.get("stocks") or []]
+        days = {c: od.get(c, 0) + 1 for c in cur}
+        chg = {"d": asof, "prev": old.get("asof"), "in": [c for c in cur if c not in prev], "out": [c for c in prev if c not in cur]} if prev else old.get("chg")
+    out = dict(asof=asof, updated=dt.datetime.utcnow().strftime("%Y-%m-%dT%H:%MZ"), n=len(rows),
+               stocks=[[c, p] for p, c in rows], days=days, chg=chg)
+    F.write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")), "utf-8")
+    print(f"hp50.json: {asof} {len(rows)} 檔，榜首 {rows[0][1]} {rows[0][0]}，第 50 名 {rows[-1][0]}"
+          + (f"，新上榜 {len(chg['in'])}" if chg and chg.get("d") == asof else ""))
 
 
 def eps_of(rows):
@@ -282,10 +338,15 @@ def main():
             errs.append(f"{name}: {e}")
             print(f"{name} FAILED: {e}", file=sys.stderr)
 
+    pxd = []                                  # 收盤資料日（hp50.json 用）
+
     def price(c, r, close_keys, chg_keys):
         close, chg = num(pick(r, *close_keys)), num(pick(r, *chg_keys))
         if close is None:
             return False
+        dd = roc_date(pick(r, "Date", "日期", "資料日期"))
+        if dd:
+            pxd.append(dd)
         x = row(c)
         x[0] = close
         if chg is not None and close - chg > 0:
@@ -333,6 +394,15 @@ def main():
         if x[2] == 0:
             x[2] = None
     yms = sorted({x[7] for x in d.values() if x[7]})
+    try:                                     # 先寫 hp50.json，新上榜的股票這一輪就一起抓 EPS
+        tw = dt.datetime.utcnow() + dt.timedelta(hours=8)
+        if not pxd:                          # 來源沒給日期：用台北今天（週末往前推到週五）
+            while tw.weekday() > 4:
+                tw -= dt.timedelta(days=1)
+        write_hp50(d, src, max(pxd) if pxd else tw.strftime("%Y%m%d"))
+    except Exception as e:
+        errs.append(f"hp50: {e}")
+        print(f"hp50 FAILED: {e}", file=sys.stderr)
     try:
         eps = fetch_eps(theme_ids())
     except Exception as e:

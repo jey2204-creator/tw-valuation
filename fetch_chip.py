@@ -268,6 +268,10 @@ def itrust_top_ids():
         ids |= {r[0] for r in json.loads((OUT / "e50.json").read_text("utf-8")).get("stocks") or []}
     except Exception:
         pass
+    try:   # 2026-11-21：高價股前50 自動主題（data/hp50.json，fetch_summary 產生）
+        ids |= {r[0] for r in json.loads((OUT / "hp50.json").read_text("utf-8")).get("stocks") or []}
+    except Exception:
+        pass
     return ids
 
 
