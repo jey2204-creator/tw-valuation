@@ -1437,7 +1437,7 @@ function cfgGet(){let c=null;try{c=JSON.parse(localStorage.getItem(UKEY))}catch(
   return {order:ls(c.order),hidden:ls(c.hidden),themes:th}}
 function cfgSave(c){try{localStorage.setItem(UKEY,JSON.stringify({site:'us',order:c.order,hidden:c.hidden,themes:c.themes,at:Date.now()}))}catch(e){}applyCfg();syncDirty()}   // at＝這次修改時間，雲端同步用來判斷哪份比較新
 // 內建主題：index.json 依主題分組；成份股順序＝index.json 順序，細分預設用 ROLE
-function baseThemes(){const g=[];const _o={CEG:'🔌 電力',VST:'🔌 電力',CRWV:'☁️ 雲端資本支出',ORCL:'☁️ 雲端資本支出',PLTR:'🧠 AI 應用軟體',NOW:'🧠 AI 應用軟體',CRM:'🧠 AI 應用軟體',APP:'🧠 AI 應用軟體'};IDX.forEach(s=>{const o=_o[s.id];if(o){const b=IDX.find(x=>x.theme===o&&!_o[x.id]);s.theme=o;s.tw=b?b.tw:[];if(o.startsWith('☁️'))s.dem=true}});const _w=IDX.filter(s=>_o[s.id]);IDX=IDX.filter(s=>!_o[s.id]).concat(_w);IDX.forEach(s=>{const id=TID[s.theme];if(!id)return;let t=g.find(x=>x.id===id);
+function baseThemes(){const g=[];const _o={CEG:'🔌 電力',VST:'🔌 電力',CRWV:'🎯 AI 晶片／記憶體',ORCL:'☁️ 雲端資本支出',PLTR:'🧠 AI 應用軟體',NOW:'🧠 AI 應用軟體',CRM:'🧠 AI 應用軟體',APP:'🧠 AI 應用軟體'};IDX.forEach(s=>{const o=_o[s.id];if(o){const b=IDX.find(x=>x.theme===o&&!_o[x.id]);s.theme=o;s.tw=b?b.tw:[];if(_DEM.has(s.id))s.dem=true}});const _w=IDX.filter(s=>_o[s.id]);IDX=IDX.filter(s=>!_o[s.id]).concat(_w);IDX.forEach(s=>{const id=TID[s.theme];if(!id)return;let t=g.find(x=>x.id===id);
     if(!t)g.push(t={id,name:s.theme,stocks:[],tw:s.tw||[],dem:!!s.dem});t.stocks.push([s.id,ROLE[s.id]||''])});
   const sw=Object.keys(SOX.w).sort((a,b)=>SOX.w[b]-SOX.w[a]);if(sw.length)g.push({id:'sox',name:'🏛️ 費城半導體',stocks:sw.map(u=>[u,ROLE[u]||'']),tw:[],dem:false,idx:true});
   const r=id=>{const i=DEF_ORDER.indexOf(id);return i<0?99:i};return g.sort((a,b)=>r(a.id)-r(b.id))}
@@ -1710,7 +1710,7 @@ function renderSal(){
 $('sTabs').addEventListener('click',e=>{const b=e.target.closest('button[data-tab]');if(!b)return;SR.tab=b.dataset.tab;renderSal()});
 $('sTbl').addEventListener('click',e=>{const r=e.target.closest('tr[data-id]');if(r)location.hash=r.dataset.id});
 async function capexAll(){
-  const ids=['MSFT','GOOGL','AMZN','META'].filter(id=>IDX.some(s=>s.id===id));if(!ids.length)return;   // 只算四大；雲端主題其他 D 旗標股（CRWV、ORCL）不併進來
+  const ids=['MSFT','GOOGL','AMZN','META'].filter(id=>IDX.some(s=>s.id===id));if(!ids.length)return;   // 只算四大；其他 D 旗標股（CRWV、ORCL）不併進來
   const ds=(await Promise.all(ids.map(getD))).filter(Boolean);
   if(!ds.length)return;
   const lbls=[...new Set(ds.flatMap(d=>d.q.filter(x=>x[7]!=null).map(x=>x[0])))].sort().slice(-16);
