@@ -552,6 +552,9 @@ def build(tk, cik_map, today=None):
                 ttm=None if t is None else round(t, 3), bvps=None if b is None else round(b, 2),
                 pe=round(last_r["c"] / t, 1) if t and t >= 0.01 else None,
                 pb=round(last_r["c"] / b, 2) if b and b > 0 else None)
+    stale = bool(Q) and days(Q[-1]["end"], today.isoformat()) > 500   # 最新一期財報超過 500 天（SEC 沒收到新年報）：舊 EPS 算出來的本益比會誤導，不算
+    if stale:
+        last["pe"] = last["pb"] = None
     q = [[x["cal"], x["fis"], x["rev"], x["gm"], x["om"], x["nm"], x["eps"], x["capex"], x["sh"], x["end"], x["filed"], x.get("ocf"),
           x.get("inv"), x.get("ar"), x.get("sbc"), x.get("cash"), x.get("debt")]
          for x in Q if x["end"] >= f"{today.year - YEARS - 1}-01-01"]
@@ -562,6 +565,8 @@ def build(tk, cik_map, today=None):
         note.append("外國發行人只交年報（20-F／40-F），財報為年度資料")
     elif cik and len(Q) < 4:
         note.append(f"上市不久，財報只有 {len(Q)} 季，歷史資料不足")
+    if stale:
+        note.append(f"SEC 最新財報只到 {Q[-1]['cal']}，資料過舊，本益比／淨值比不計算")
     if tk in ADR:
         note.append(f"ADR：1 ADR = {ADR[tk]} 股普通股，EPS、每股淨值已換算成每 ADR")
     if tk in PRICE_ALIAS:
