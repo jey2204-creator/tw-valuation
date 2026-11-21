@@ -38,6 +38,13 @@ THEMES = [
      [("2345", "智邦"), ("4966", "譜瑞-KY"), ("5269", "祥碩")]),
     ("🔌 電力", [("GEV", "")],
      [("1519", "華城"), ("1503", "士電"), ("1513", "中興電"), ("1514", "亞力")]),
+    # 2026-11-21 費城半導體（SOX）30 檔補齊：原本不在追蹤清單的 16 檔。費半本身是前端的「指數主題」（us/data/sox.json 權重表，可跟產業主題重疊）
+    ("🏭 晶圓代工", [("TSM", ""), ("INTC", ""), ("GFS", ""), ("TSEM", "")],
+     [("2330", "台積電"), ("2303", "聯電"), ("5347", "世界"), ("6770", "力積電")]),
+    ("🧩 類比／IC 設計", [("TXN", ""), ("ADI", ""), ("QCOM", ""), ("NXPI", ""), ("MPWR", ""), ("MCHP", ""), ("ON", ""), ("LSCC", ""), ("SITM", "")],
+     [("6415", "矽力*-KY"), ("8081", "致新"), ("6138", "茂達"), ("2379", "瑞昱"), ("3034", "聯詠"), ("6719", "力智"), ("2481", "強茂")]),
+    # 暫放：ASML、TER 要進「先進封裝／設備」、MTSI 進「矽光子／CPO」，等測試頁驗收後再搬（先搬會直接出現在正式站）
+    ("🏛️ 費半補檔", [("ASML", ""), ("TER", ""), ("MTSI", "")], []),
 ]
 # 中文名（首頁、個股頁、搜尋顯示用；沒有通用中文名的就留英文簡稱）
 CN = {
@@ -54,10 +61,14 @@ CN = {
     "MSFT": "微軟", "GOOGL": "字母 Google", "AMZN": "亞馬遜", "META": "Meta",
     "SMCI": "美超微", "VRT": "維諦 Vertiv", "ETN": "伊頓",
     "ANET": "Arista", "ALAB": "Astera Labs", "GEV": "奇異威諾華",
+    "TSM": "台積電 ADR", "INTC": "英特爾", "GFS": "格芯", "TSEM": "高塔半導體",
+    "TXN": "德州儀器", "ADI": "亞德諾", "QCOM": "高通", "NXPI": "恩智浦", "MPWR": "芯源 MPS", "MCHP": "微芯",
+    "ON": "安森美", "LSCC": "萊迪思", "SITM": "SiTime", "ASML": "艾司摩爾", "TER": "泰瑞達", "MTSI": "MACOM",
 }
 CFG = {t: dict(theme=th, flags=f, tw=tw, cn=CN.get(t, "")) for th, items, tw in THEMES for t, f in items}
 STOCKS = list(CFG)
 PRICE_ALIAS = {"ECHO": ["SATS"]}   # 改過代號：舊代號的股價接在前面，歷史才不會斷
+ADR = {"TSM": 5}   # 1 ADR = n 股普通股：SEC 的 EPS／股數是普通股，股價是 ADR → EPS × n、股數 ÷ n，本益比／淨值比／市值才對得上
 
 YEARS = 6
 FM = "https://api.finmindtrade.com/api/v4/data"
@@ -501,6 +512,12 @@ def build(tk, cik_map, today=None):
         print(f"{tk:5} ohlc FAILED: {e}", file=sys.stderr)
 
     Q, EQS = fin["q"], fin["eq"]
+    if tk in ADR:   # 換算成每 ADR
+        for x in Q:
+            if x.get("eps") is not None:
+                x["eps"] = round(x["eps"] * ADR[tk], 4)
+            if x.get("sh"):
+                x["sh"] = round(x["sh"] / ADR[tk], 3)
     need = 4 if fin["freq"] == "Q" else 1
 
     def ttm_at(day):
@@ -545,6 +562,8 @@ def build(tk, cik_map, today=None):
         note.append("外國發行人只交年報（20-F／40-F），財報為年度資料")
     elif cik and len(Q) < 4:
         note.append(f"上市不久，財報只有 {len(Q)} 季，歷史資料不足")
+    if tk in ADR:
+        note.append(f"ADR：1 ADR = {ADR[tk]} 股普通股，EPS、每股淨值已換算成每 ADR")
     if tk in PRICE_ALIAS:
         note.append("原代號 " + "、".join(PRICE_ALIAS[tk]) + "，股價歷史已合併")
     if fix:
