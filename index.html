@@ -1704,7 +1704,7 @@ let LIST=[],WATCH=[];
 //      最新名單日的投信前20／外資前20／土洋同買前20，口徑同分享版排行頁預設（買超 ≥0.5 億、市值不限）。
 //      這三個主題每天自動換名單、不可編輯、不佔 ⭐自選 30 檔額度；要長期盯的股票仍由個股頁 ☆ 自己加。
 let NXL='明日';const apF=N=>{if(N.applyFrom)return N.applyFrom;const d=new Date(Date.UTC(+N.asof.slice(0,4),+N.asof.slice(4,6)-1,+N.asof.slice(6)));do{d.setUTCDate(d.getUTCDate()+1)}while(d.getUTCDay()%6===0);return d.toISOString().slice(0,10).replace(/-/g,'')};const nxLab=(af,td)=>{const D=s=>new Date(Date.UTC(+s.slice(0,4),+s.slice(4,6)-1,+s.slice(6)));return (D(af)-D(td))/864e5===1?'明日':'週'+'日一二三四五六'[D(af).getUTCDay()]};
-let TOP=null,NT=null,NTN=null;   /* NT＝今日適用的名單（同 XQ）；NTN＝今晚新公布、明日才適用的（沒有就是 null） */const AUTO_IDS=['e50','itop','ftop','btop','isell','natt','npre','ndis','nend','npost'];const FAVT='_fav';let E50=null;const lowT=id=>id===FAVT||id==='e50';   /* lowT＝找「這檔屬於哪個主題」時最後才考慮的主題 */const isAuto=id=>AUTO_IDS.includes(id)||id===FAVT;
+let TOP=null,NT=null,NTN=null;   /* NT＝今日適用的名單（同 XQ）；NTN＝今晚新公布、明日才適用的（沒有就是 null） */const AUTO_IDS=['e50','hp50','itop','ftop','btop','isell','natt','npre','ndis','nend','npost'];const FAVT='_fav';let E50=null,HP50=null;const lowT=id=>id===FAVT||id==='e50'||id==='hp50';   /* lowT＝找「這檔屬於哪個主題」時最後才考慮的主題 */const isAuto=id=>AUTO_IDS.includes(id)||id===FAVT;
 // ---- 自選加入紀錄（2026-11-17）：favMeta={代號:[加入日,加入時最新收盤,該收盤日期]}；沒紀錄的（舊自選）從第一次看到的那天起算 ----
 const twToday=()=>new Date(Date.now()+8*3600e3).toISOString().slice(0,10).replace(/-/g,'');
 function favMetaFix(){const f=store.get('fav')||[],m=store.get('favMeta')||{},o={};let ch=false;
@@ -1721,14 +1721,17 @@ function favTheme(){const f=(store.get('fav')||[]).filter(x=>/^\d{4,6}[A-Z]?$/.t
 // ---- 0050 成份股自動主題（2026-11-20）：data/e50.json 由 e50.yml 每個交易日抓；成份股已依市值排好，備註＝權重
 function e50Theme(){if(!E50||!(E50.stocks||[]).length)return [];const a=E50.asof||'',md=a?`${+a.slice(4,6)}/${+a.slice(6)}`:'';
   return [{id:'e50',name:`🏆 0050成份股${md?` (${md})`:''}`,auto:true,e50:true,desc:'元大台灣50 (0050) 目前持有的成份股，依市值由大到小排序',stocks:E50.stocks.map(([c,w])=>[c,w!=null?`權重${(+w).toFixed(2)}%`:''])}]}
+// ---- 高價股前50 自動主題（2026-11-21）：data/hp50.json 由 fetch_summary.py 每個交易日盤後算；已依收盤價由高到低排好，備註＝🆕新上榜
+function hp50Theme(){if(!HP50||!(HP50.stocks||[]).length)return [];const a=HP50.asof||'',md=a?`${+a.slice(4,6)}/${+a.slice(6)}`:'',c=HP50.chg,nw=new Set(c&&c.d===a?c.in||[]:[]);
+  return [{id:'hp50',name:`💎 高價股前50${md?` (${md})`:''}`,auto:true,hp50:true,desc:'收盤價由高到低前 50 名 (上市櫃合併、不含 ETF)',stocks:HP50.stocks.map(([x])=>[x,nw.has(x)?'🆕新上榜':''])}]}
 function autoThemes(){
-  if(!TOP||!TOP.lists)return e50Theme();
+  if(!TOP||!TOP.lists)return [...e50Theme(),...hp50Theme()];
   const md=TOP.asof?`${+TOP.asof.slice(4,6)}/${+TOP.asof.slice(6)}`:'';
   const note=(r,k)=>{const s=r.streak>1?`連${r.streak}`:'';   // 手機欄窄，備註只留「投0.77%・連3」
     const p=k==='both'?`投${r.p}%＋外${r.fp}%`:k==='is'?`投賣${Math.abs(r.p)}%`:`${k==='it'?'投':'外'}${r.p}%`;
     return [p,s].filter(Boolean).join('・')};
   const mk=(id,name,k,desc)=>{const L=TOP.lists[k]||[];return L.length?[{id,name:`${name} (${md})`,auto:true,desc,stocks:L.map(r=>[r.c,note(r,k)])}]:[]};
-  return [...e50Theme(),...mk('itop','📈 投信買超前20','it','投信買超佔股本前 20 名 (買超金額 ≥0.5 億、市值不限)，排序＝投本比由高到低'),
+  return [...e50Theme(),...hp50Theme(),...mk('itop','📈 投信買超前20','it','投信買超佔股本前 20 名 (買超金額 ≥0.5 億、市值不限)，排序＝投本比由高到低'),
           ...mk('ftop','🌐 外資買超前20','fi','外資買超佔股本前 20 名 (買超金額 ≥0.5 億、市值不限)，排序＝外本比由高到低'),
           ...mk('btop','🤝 土洋同買前20','both','投信買超 (≥0.5 億) 且外資當天也淨買超，排序＝投本比＋外本比'),
           ...mk('isell','📉 投信賣超前20','is','投信賣超佔股本前 20 名 (賣超金額 ≥0.5 億、市值不限)，排序＝賣超佔股本％由大到小 (第 1 名＝賣最兇)'),
@@ -2997,7 +3000,7 @@ function hotPaint(){
     return `<a href="#${id}">${nameOf(id)}</a> <span class="${sign(ch)}">${ch==null?'':pct(ch,1)}</span>${why?`<span class="sm">(${why})</span>`:''}`}).join('、'):'';
   $('hotFoot').innerHTML=MO?`範圍：產業主題＋自選共 ${pool.length} 檔。🔥＝月漲幅 &gt; 0、量比 (5 日均量 ÷ 20 日均量)≥ 1.5、且投信或外資 5 日買超 ≥ 5 日成交量的 1%。是「有資金在推」的訊號，不是買進訊號，要搭配估值位階看。<a href="fstats.html">📊 上榜後勝率統計 ›</a>`
     +(hasH?`<br><b>日期選單</b>可看之前哪些股票上榜 (從 ${ymd(days[0])} 起)；選了舊日期，「數字」預設最新，點一下看當天收盤的數字，還亮著 🔥 的＝今天仍符合。<b>上榜後</b>＝那天收盤 → 最新收盤。<b>🆕新進</b>＝前一個交易日還沒有 🔥；<b>連 N 天</b>＝連續符合的交易日數。<b>橘底 ⚠</b>＝這個進場時機過去抱 10 日輸大盤 2 個百分點以上；<b>短線</b>＝同時是注意股，過去 5 日有超額、10 日倒輸 (都依統計頁的數字即時判斷)。大戶/股東一律是最新一週。`:'')
-    +` 資料 ${ymd(MO.asof)} <span style="opacity:.5">v1120i</span>`:'第一次需要回補約 3 個月的歷史資料，Actions 跑完後就會出現。';
+    +` 資料 ${ymd(MO.asof)} <span style="opacity:.5">v1121a</span>`:'第一次需要回補約 3 個月的歷史資料，Actions 跑完後就會出現。';
 }
 document.addEventListener('toggle',e=>{if(e.target&&e.target.id==='hotBox'&&e.target.open&&!FH)fhLoad().then(()=>{try{hotPaint()}catch(err){}})},true);
 document.addEventListener('change',e=>{if(e.target&&e.target.id==='fhDay'){HDAY=e.target.value;hotPaint()}});
@@ -3057,6 +3060,7 @@ function showTheme(tid){
   if(t.favt&&!NLOAD)ntLoad().then(()=>{if(decodeURIComponent(location.hash.slice(1))==='t/'+tid){applyCfg();showTheme(tid)}}).catch(()=>{});
   if(t.notice)$('tSum').innerHTML=`${ntHead(t.id)}${t.desc}。<b>列注意不是買進訊號</b>——常見高開低走；自選股出現在這裡請當減碼提醒。看原因全文與處置細節：<a href="notice.html#${t.id==='natt'?'att':t.id==='npre'?'pre':'dis'}">注意/處置頁 →</a><br>`+$('tSum').innerHTML;
   else if(t.favt)$('tSum').innerHTML=`<span class="asof">⭐ 自選 ${ids.length}/30 檔・${store.get('syncCode')?'已開雲端同步':'只存在這支手機'}</span><br>${ids.length?'按右上「✏️ 編輯」可搜尋加入、拖曳排序、移除；個股頁按 ☆ 也會進來。股名下方「28天 +5.2%」＝加入自選幾天、加入後的漲跌 (點一下看基準日)。':'還沒有自選：按右上「✏️ 編輯」搜尋加入，或在個股頁按「☆ 加入自選」。'}<br>`+(ids.length?$('tSum').innerHTML:'');
+  else if(t.hp50)$('tSum').innerHTML=`<span class="asof">🔄 收盤日 ${HP50.asof.slice(0,4)}/${HP50.asof.slice(4,6)}/${HP50.asof.slice(6)}・每個交易日盤後自動更新，不可編輯、不佔自選額度</span><br>${t.desc}，第 50 名收盤 ${(HP50.stocks[HP50.stocks.length-1]||[])[1]??'—'} 元。<b>高價不代表貴</b>：股價高低跟股本大小有關，貴不貴請看本益比、PEG。名單每天跟著收盤換，中位數漲跌會受換股影響。${(()=>{const c=HP50.chg;if(!c||c.d!==HP50.asof||!c.prev)return '';const nm=a=>(a||[]).map(nameOf).join('、')||'無';return `<br>🔁 ${+c.d.slice(4,6)}/${+c.d.slice(6)} 對比 ${+c.prev.slice(4,6)}/${+c.prev.slice(6)}：新上榜 <strong>${nm(c.in)}</strong>・掉出 <strong>${nm(c.out)}</strong>`})()}<br>`+$('tSum').innerHTML;
   else if(t.e50)$('tSum').innerHTML=`<span class="asof">🔄 持股日 ${E50.asof.slice(0,4)}/${E50.asof.slice(4,6)}/${E50.asof.slice(6)}・盤後自動更新，換股會自動跟上</span><br>${t.desc}；每年 3/6/9/12 月換股。股名下方「權重59.34%」＝占 0050 淨值的比重；台積電一檔就占約六成，所以這裡的中位數不代表 0050 本身的表現，比較適合拿來一次掃大型股。${(()=>{const c=E50.chg;if(!c||!c.d)return '';const U=d=>Date.UTC(+d.slice(0,4),+d.slice(4,6)-1,+d.slice(6));if((U(E50.asof)-U(c.d))/864e5>45)return '';const nm=a=>(a||[]).map(nameOf).join('、')||'無';return `<br>🔁 最近換股 ${+c.d.slice(4,6)}/${+c.d.slice(6)}：納入 <strong>${nm(c.in)}</strong>・剔除 <strong>${nm(c.out)}</strong>`})()}<br>`+$('tSum').innerHTML;
   else if(t.auto)$('tSum').innerHTML=`<span class="asof">🔄 名單日 ${TOP.asof.slice(0,4)}/${TOP.asof.slice(4,6)}/${TOP.asof.slice(6)}・每個交易日盤後自動更新，不可編輯、不佔自選額度</span><br>${t.desc}。股名下方「${t.id==='isell'?'投賣0.77%・連3」＝賣超':'投0.77%・連3」＝'}佔股本％、連續 3 個交易日在這個榜上。想長期盯的股票，進個股頁按 ☆ 加入自選。<br>`+$('tSum').innerHTML;
   if(MODE==='m'){$('tFoot').innerHTML=`${MO&&MO.dc?`週＝收盤對比 5 個交易日前；月/季＝對比上個月/三個月前同一天 (${calMd('m')}、${calMd('q')}，日曆日，跟 XQ 一致；那天休市取前一交易日)`:'週/月/季＝收盤對比 5/20/60 個交易日前'}${MO&&MO.da?' (已還原除權息、減資、面額變更，跟 XQ 一致)':' (未還原除權息，跨除息日會略低)'}。量比＝5 日均量 ÷ 20 日均量，≥1.5 標紅＝放量。投/外＝投信、外資近 5 日買賣超張數；「投連N天」＝投信連續買超 3 天以上。🔥＝月漲＋量比≥1.5＋法人 5 日買超≥成交量 1%。<br>投/外 5日＝投信、外資近 5 個交易日買賣超 (張)。大戶＝集保持股 400 張以上的持股占比 (每週六更新)，後面數字是占比變化 (百分點)；股東＝集保股東人數變化%。<b>虛線底的字、標籤都可以點，會跳出說明。</b>籌碼標籤看 4 週：<span class="flag" style="color:var(--up);border-color:var(--up)">集中</span>＝大戶↑、股東人數↓ (散戶賣大戶接)；<span class="flag" style="color:var(--warm);border-color:var(--warm)">散戶追</span>＝大戶↑但人數也增加超過 3% (熱度高、留意追高)；<span class="flag" style="color:var(--down);border-color:var(--down)">分散</span>＝大戶↓、人數↑；變化很小不標。🔥 旁的 <span class="flag" style="color:var(--up);border-color:var(--up)">集中↑</span>＝🔥 且籌碼集中。增資、可轉債轉換會讓大戶比失真，大幅變化請查公告。<br>點欄位標題排序；「量比」連點可切換投信 5 日、外資 5 日、投信連買、大戶週增、大戶 4 週、股東人數 4 週減少排序。`+(TD&&TD.weeks.length<2?'<br>⚠️ 集保資料目前只有 1 週，週變化要等下週六更新後才有。':'')+(MO&&MO.nPx<61?`<br>⚠️ 歷史資料目前 ${MO.nPx} 個交易日，季%需要 61 天，回補完成前顯示「—」。`:'');return}
@@ -3105,6 +3109,7 @@ const cfgGet=()=>{const c=store.get('themeCfg')||{};return {order:c.order||[],hi
 function allThemes(){
   const c=cfgGet(),bm=Object.fromEntries([...BASE,favTheme()].map(t=>[t.id,t]));
   const ids=[...AUTO_IDS.filter(i=>bm[i]&&!c.order.includes(i)),...c.order.filter(i=>bm[i]||c.themes[i]),...BASE.map(t=>t.id),...Object.keys(c.themes)].filter((v,i,a)=>a.indexOf(v)===i&&(bm[v]||c.themes[v]));   // 自動主題沒被手動排序過時放最上面
+  if(c.order.length&&!c.order.includes('hp50')&&ids.includes('hp50')){ids.splice(ids.indexOf('hp50'),1);const k=ids.indexOf('e50');ids.splice(k<0?0:k+1,0,'hp50')}   // 2026-11-21：高價股前50 接在 0050 後面
   if(!ids.includes(FAVT)){const k=ids.indexOf('leo'),j=k>=0?k:ids.findIndex(i=>!AUTO_IDS.includes(i));ids.splice(j<0?ids.length:j,0,FAVT)}   // ⭐ 自選股：預設在低軌衛星上方
   return ids.map(i=>({...((!isAuto(i)&&c.themes[i])||bm[i]),id:i,hidden:c.hidden.includes(i),edited:!!(!isAuto(i)&&c.themes[i]&&bm[i]),custom:!bm[i]}));
 }
@@ -3271,6 +3276,7 @@ addEventListener('hashchange',route);
   try{const r=await fetch('data/themes.json?t='+Date.now());if(r.ok)BASE=(await r.json()).themes||[]}catch(e){}
   try{const r=await fetch('data/itrust_top.json?t='+Date.now());if(r.ok)TOP=await r.json()}catch(e){}
   try{const r=await fetch('data/e50.json?t='+Math.floor(Date.now()/3e5));if(r.ok)E50=await r.json()}catch(e){}
+  try{const r=await fetch('data/hp50.json?t='+Math.floor(Date.now()/3e5));if(r.ok)HP50=await r.json()}catch(e){}
   try{const r=await fetch('data/notice.json?t='+Math.floor(Date.now()/3e5));if(r.ok)NT=ntDemo(await r.json())}catch(e){}
   try{if(NT){const TD=(()=>{const q=(location.search.match(/[?&]today=(\d{8})/)||[])[1];if(q)return q;return new Date(Date.now()+8*3600e3).toISOString().slice(0,10).replace(/-/g,'')})();if(TD<apF(NT)){const AF=apF(NT);const rp=await fetch('data/notice/prev.json?t='+Math.floor(Date.now()/3e5));const pv=rp.ok?await rp.json():null;if(pv&&pv.asof&&pv.asof<NT.asof){NTN=NT;NT=pv;NXL=nxLab(AF,TD)}}}}catch(e){}
   BASE=[...autoThemes(),...BASE];
