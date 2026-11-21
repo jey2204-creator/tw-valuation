@@ -267,6 +267,7 @@ h2.sec small{font-weight:500;letter-spacing:0}
 .ttw a b{font-family:var(--f-num);font-weight:600;color:var(--accent);margin-right:4px}
 /* 主題頁「台股這邊」：美股 vs 對應台股並排（近一月、營收年增），下面是對應台股表 */
 #tTwSec h2.sec{margin-top:22px}
+.uso{font-family:var(--f-body);font-size:9.5px;color:var(--muted);border:1px solid var(--line);border-radius:4px;padding:0 3px;margin-left:4px;vertical-align:1px;font-weight:500}
 .sgl{font-size:10px;vertical-align:1px}.tcard b .sgl{font-size:11px;vertical-align:2px}
 .tlt td:not(:first-child),.tlt th:not(:first-child){padding-inline:1px}.tlt td.gp{font-weight:600}.tlt td:first-child{max-width:92px}.tlt .gs{display:block;font-size:9px;font-weight:400;color:var(--muted);white-space:nowrap;letter-spacing:-.04em}
 .twcmp{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:6px 12px;font-size:13px}
@@ -1513,7 +1514,7 @@ function cardsRender(){
   if(DENSE&&THEMES.length){themeList($('tgrid'));return}
   $('tgrid').innerHTML=THEMES.length?THEMES.map(t=>{const it=itemsOf(t),ry=agg(it,'ry'),ey=agg(it,'ey'),pe=agg(it,'pe'),pg=agg(it,'peg'),mt=agg(it,'mtd'),ne=soon(it.map(s=>s.id),14);
     const sg=sigOf(t),gp=gapOf(t);
-    return `<a class="tcard" href="#t/${t.id}"><b>${esc(t.name)}${sg.lt?` <span class="sgl" title="${sg.tip}">${sg.lt}</span>`:''}</b>`+
+    return `<a class="tcard" href="#t/${t.id}"><b>${esc(t.name)}${sg.lt?` <span class="sgl" title="${sg.tip}">${sg.lt}</span>`:''}${t.uso?'<span class="uso">美股獨有</span>':''}</b>`+
       kv('營收年增',ry,v=>pct(v),sgc(ry.v))+kv('EPS 年增',ey,v=>pct(v),sgc(ey.v))+kv('本益比',pe,v=>fmt(v,1))+
       kv('PEG',pg,v=>fmt(v,2),pegc(pg.v))+kv('本月至今',mt,v=>pct(v,1),sgc(mt.v))+
       `<span class="k"><span>美−台（近一月）</span><span class="num" title="美股 ${gp.uv==null?'—':pct(gp.uv,1)}｜台股 ${gp.tv==null?'—':pct(gp.tv,1)}">${gapT(gp)}</span></span>`+
@@ -1531,7 +1532,7 @@ function themeList(el){
   const td=(a,f,c)=>{if(a.v==null)return `<td>${ST_OK?'—':'…'}</td>`;const few=a.n*2<a.N;return `<td class="${few?'few':c||''}" title="${a.N} 檔裡 ${a.n} 檔有值">${f(a.v)}</td>`};
   el.innerHTML=`<div class="tpan"><div class="tbl"><table class="lst tlt"><thead><tr><th data-tk="">主題</th>${TLC.map(th).join('')}</tr></thead><tbody>`+rows.map(r=>{
     const {t,n,ne,ry,ey,pe,peg,mtd,gap,sg}=r;
-    const meta=`<span style="${n<5?'color:var(--warm)':''}" title="${n} 檔的中位數${n<5?'；檔數少，中位數容易被單一股票帶動':''}">${n}檔</span>${ne?` 📅${ne}`:''}${sg.lt?` <span class="sgl" title="${sg.tip}">${sg.lt}</span>`:''}`;
+    const meta=`<span style="${n<5?'color:var(--warm)':''}" title="${n} 檔的中位數${n<5?'；檔數少，中位數容易被單一股票帶動':''}">${n}檔</span>${ne?` 📅${ne}`:''}${sg.lt?` <span class="sgl" title="${sg.tip}">${sg.lt}</span>`:''}${t.uso?'<span class="uso" title="台股沒有對應主題">美股獨有</span>':''}`;
     return `<tr data-t="${t.id}"><td><span class="tn">${esc(t.name.replace(/^\p{Extended_Pictographic}\uFE0F?\s*/u,''))}</span><span class="tm">${meta}</span></td>`+
       td(ry,v=>pct(v),sgc(ry.v))+td(ey,v=>pct(v),sgc(ey.v))+td(pe,v=>fmt(v,1))+td(peg,v=>fmt(v,2),pegc(peg.v))+td(mtd,v=>pct(v,1),sgc(mtd.v))+
       `<td class="gp">${gapT(gap)}${gap.v!=null?`<span class="gs" title="近一月中位：美股 ${pct(gap.uv,1)}｜台股 ${pct(gap.tv,1)}">美${pct(gap.uv,0).replace('%','')} 台${pct(gap.tv,0).replace('%','')}</span>`:''}</td></tr>`}).join('')+'</tbody></table></div></div>';
@@ -1559,7 +1560,7 @@ function themeRender(tid){
   const tdy=etToday(),ev=[];ids.forEach(id=>(EARN.e[id]||[]).forEach(x=>{const dd=dayDiff(tdy,x[0]);if(dd>=-10&&dd<=45)ev.push([id,x,dd])}));
   ev.sort((a,c)=>a[1][0]<c[1][0]?-1:a[1][0]>c[1][0]?1:a[0]<c[0]?-1:1);
   $('tEarn').innerHTML=ev.length?'<span class="lb">📅 財報</span>'+ev.map(([id,x,dd])=>`<a class="ec${dd<0?' done':''}" href="#${id}">${dd<0?'✅':''}<b>${id}</b><small>${+x[0].slice(5,7)}/${+x[0].slice(8)}${dd<0?' 已公布':({bmo:' 盤前',amc:' 盤後',dmh:' 盤中'}[x[1]]||'')}</small></a>`).join(''):'';
-  $('tTw').innerHTML=t.tw.length?'<span class="lb">對應台股</span>'+t.tw.map(([c,n])=>`<a href="../#${c}"><b>${c}</b>${esc(n)}</a>`).join('')+(!t.custom&&!t.uso&&t.id!=='cloud'&&(TWT||t.id!=='foundry')?`<a class="all" href="../#t/${t.id}">台股同主題 →</a>`:''):(t.dem?'<span class="lb">對應台股：全供應鏈（需求層）</span>':'');
+  $('tTw').innerHTML=t.tw.length?'<span class="lb">對應台股</span>'+t.tw.map(([c,n])=>`<a href="../#${c}"><b>${c}</b>${esc(n)}</a>`).join('')+(!t.custom&&!t.uso&&t.id!=='cloud'&&(TWT||t.id!=='foundry')?`<a class="all" href="../#t/${t.id}">台股同主題 →</a>`:''):(t.dem?'<span class="lb">對應台股：全供應鏈（需求層）・美股獨有主題</span>':t.uso?'<span class="lb">美股獨有主題：台股沒有對應</span>':'');
   const nx=ids.filter(id=>!tracked(id)).length;
   if(LAST_TS!==tid){TS=tsGet(tid);LAST_TS=tid}if(t.idx&&!TS)TS='w:-1';loadPx(t);
   tTable(t);twRender(t);
