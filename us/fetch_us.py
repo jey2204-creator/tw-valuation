@@ -72,6 +72,39 @@ CN = {
     "ROK": "羅克韋爾", "ISRG": "直覺手術", "LMT": "洛克希德馬丁", "RTX": "雷神 RTX", "AVAV": "AeroVironment", "KTOS": "克拉托斯",
     "JPM": "摩根大通", "BAC": "美國銀行", "MS": "摩根士丹利", "WFC": "富國銀行", "USB": "美國合眾銀行", "DHI": "霍頓房屋", "LEN": "萊納房屋",
 }
+# 2026-11-21 batch17：追蹤名單與主題改由台股 data/themes.json 產生（有 us 欄的主題；一檔的本籍＝第一個出現的主題、對應台股＝該主題全部成份股），
+# 再加美股獨有的雲端資本支出；上面的 THEMES 只在讀不到 themes.json 時備用。旗標 C＝循環股、D＝需求層（個股頁 CapEx 圖）
+FLAGS = {"WOLF": "C", "VSH": "C", "AMAT": "C", "LRCX": "C", "MU": "C", "SNDK": "C",
+         "MSFT": "D", "GOOGL": "D", "AMZN": "D", "META": "D", "ORCL": "D", "CRWV": "D"}
+US_ONLY = [("☁️ 雲端資本支出", ["MSFT", "GOOGL", "AMZN", "META", "ORCL"])]
+
+
+def _sync_themes():
+    root = Path(__file__).resolve().parent.parent / "data"
+    th = json.loads((root / "themes.json").read_text("utf-8"))["themes"]
+    try:
+        nm = {r[0]: r[1] for r in json.loads((root / "list.json").read_text("utf-8"))}
+    except Exception:
+        nm = {}
+    out, seen = [], set()
+    for t in th:
+        us = [u for u in t.get("us") or [] if u not in seen]
+        if not us:
+            continue
+        seen.update(us)
+        out.append((t["name"], [(u, FLAGS.get(u, "")) for u in us], [(c, nm.get(c, c)) for c, *_ in t["stocks"]]))
+    for name, us in US_ONLY:
+        us = [u for u in us if u not in seen]
+        seen.update(us)
+        if us:
+            out.append((name, [(u, FLAGS.get(u, "")) for u in us], []))
+    return out
+
+
+try:
+    THEMES = _sync_themes()
+except Exception as e:   # 讀不到台股 themes.json：用上面寫死的舊清單
+    print("themes.json 讀取失敗，改用內建清單：", e, file=sys.stderr)
 CFG = {t: dict(theme=th, flags=f, tw=tw, cn=CN.get(t, "")) for th, items, tw in THEMES for t, f in items}
 STOCKS = list(CFG)
 PRICE_ALIAS = {"ECHO": ["SATS"]}   # 改過代號：舊代號的股價接在前面，歷史才不會斷

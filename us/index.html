@@ -250,6 +250,7 @@ h2.sec small{font-weight:500;letter-spacing:0}
 .tlt th{padding:4px 3px}
 .tlt td:not(:first-child),.tlt th:not(:first-child){padding-inline:2px}
 .tlt tr:last-child td{border-bottom:0}
+#olist .lk{flex:none;width:28px;text-align:center;font-size:13px;opacity:.55}
 .tlt .few{color:var(--muted)!important;opacity:.75}.tlt .few::after{content:'*';font-size:10px;margin-left:1px}
 #hDense{margin-right:6px}
 .tgrid.tlist{display:block}.tlt tr.bkflash td{animation:bkFlash 1.8s ease-out}
@@ -423,6 +424,7 @@ html{scroll-behavior:smooth}
   <div class="ehead"><a href="#">← 完成</a><span class="meta">存在這支手機上・跟台股站分開</span></div>
   <h1>編輯主題</h1>
   <p class="take">按住右邊 ⠿ 拖曳調整首頁順序；點名稱編輯成份股。</p>
+  <p class="foot" id="oNote" hidden>🔒 內建主題跟台股站同步：主題、順序、成份股都照台股站（到台股站排序或改「對應美股」，這裡隔次打開就跟著變）。自訂主題固定排在最上面，可以按住 ⠿ 拖曳。</p>
   <div class="panel" id="olist"></div>
   <div class="ebar"><a class="ib pri" href="#edit/new">＋ 新增主題</a></div>
   <details class="ind" id="bkBox"><summary><b>💾 備份／換手機</b><span>複製設定碼</span></summary>
@@ -1305,7 +1307,7 @@ async function load(id){
   backPaint(id);
   document.body.classList.add('dim');pnPaint(id);$('asof').textContent=`載入 ${id} 中…`;$('err').hidden=true;earnBox(id);
   try{
-    D=await loadAny(id);await injectFlash(D);L=D.last;R=D.riv;Q=D.q;
+    D=await loadAny(id);await injectFlash(D);if(TWT){const x=IDX.find(z=>z.id===D.id);if(x&&x.tw)D.tw=x.tw}L=D.last;R=D.riv;Q=D.q;
     $('code').textContent=D.id;$('nm').innerHTML=dispName(D);
     if(Q.length<2)throw new Error(`${id} 的財報資料不足（新上市或尚未申報），無法繪圖`);
     const big=Math.max(...Q.slice(-4).map(x=>x[2]))>=1000;U=big?{k:1e3,n:'十億美元'}:{k:1,n:'百萬美元'};
@@ -1396,6 +1398,9 @@ const ROLE={SPCX:'火箭發射＋星鏈',ASTS:'手機直連衛星',RKLB:'小型�
   MSFT:'Azure',GOOGL:'Google Cloud／TPU',AMZN:'AWS',META:'自建 AI 資料中心',
   TSM:'晶圓代工龍頭',INTC:'CPU＋晶圓代工',GFS:'成熟製程代工',TSEM:'特殊製程代工',TXN:'類比 IC 龍頭',ADI:'類比／訊號鏈',QCOM:'手機 SoC／數據機',NXPI:'車用 MCU',MPWR:'電源管理 IC',MCHP:'MCU／類比',ON:'功率／SiC',LSCC:'低功耗 FPGA',SITM:'MEMS 時脈',ASML:'微影（EUV）',TER:'測試機',MTSI:'類比／光通訊晶片',
   CEG:'核電',VST:'電力供應（天然氣＋核電）',CRWV:'GPU 雲（Neocloud）',ORCL:'OCI 雲＋資料庫',PLTR:'AI 決策平台',NOW:'企業工作流程',CRM:'CRM＋AI 代理',APP:'AI 廣告投放',
+  ACN:'IT 顧問',IBM:'混合雲＋顧問',CSCO:'企業網通',DELL:'AI 伺服器＋PC',HPQ:'PC／印表機',COHU:'測試分選機',NVT:'機櫃／液冷',VICR:'48V 電源模組',RMBS:'記憶體介面晶片',SYNA:'人機介面 IC',
+  HUBB:'電網設備',PWR:'電網工程',ROK:'工業自動化',ISRG:'手術機器人',LMT:'軍工龍頭',RTX:'飛彈／引擎',AVAV:'軍用無人機',KTOS:'無人機／靶機',
+  JPM:'綜合金控',BAC:'商業銀行',MS:'投資銀行／財管',WFC:'商業銀行',USB:'區域銀行',DHI:'住宅建商',LEN:'住宅建商',
   SMCI:'AI 伺服器',VRT:'散熱＋電源',ETN:'配電／電源管理',ANET:'資料中心交換器',ALAB:'PCIe／CXL 連接',GEV:'燃氣渦輪＋電網'};
 const median=a=>{a=a.filter(x=>x!=null&&isFinite(x)).sort((x,y)=>x-y);if(!a.length)return null;const m=a.length>>1;return a.length%2?a[m]:(a[m-1]+a[m])/2};
 const pct=(v,d=0)=>{if(v==null)return '—';const t=fmt(v,d);return /^-0(\.0+)?$/.test(t)?t.slice(1)+'%':(v>0?'+':'')+t+'%'};   // 四捨五入成 0 的負數顯示 0%，不出現「-0%」
@@ -1425,6 +1430,8 @@ function loadStats(){return ST_P||(ST_P=Promise.all(IDX.map(async s=>{const d=aw
 const UKEY='usThemeCfg';
 let BASE=[],THEMES=[],ORDER_IDS=[],ALLM={};
 // 費城半導體指數（data/sox.json，手動維護）：w＝{代號:權重%}。指數主題 idx:true，成份股可跟產業主題重疊
+// 產業主題跟台股站同步（batch17）：TWT＝台股 themes.json（讀不到就退回舊版：依 index.json 分組）、TWN＝台股代號→名稱（../data/list.json）
+let TWT=null,TWN={};const TWF='../data/themes.json';
 let SOX={w:{}};const soxW=id=>SOX.w[id];
 const tracked=id=>IDX.some(s=>s.id===id);   // 每日追蹤的 46 檔（有股價、本益比）
 const stockOf=id=>IDX.find(s=>s.id===id)||ALLM[id]||{id,name:'',tw:[],unk:true};
@@ -1437,13 +1444,29 @@ function cfgGet(){let c=null;try{c=JSON.parse(localStorage.getItem(UKEY))}catch(
   return {order:ls(c.order),hidden:ls(c.hidden),themes:th}}
 function cfgSave(c){try{localStorage.setItem(UKEY,JSON.stringify({site:'us',order:c.order,hidden:c.hidden,themes:c.themes,at:Date.now()}))}catch(e){}applyCfg();syncDirty()}   // at＝這次修改時間，雲端同步用來判斷哪份比較新
 // 內建主題：index.json 依主題分組；成份股順序＝index.json 順序，細分預設用 ROLE
-function baseThemes(){const g=[];IDX.forEach(s=>{const id=TID[s.theme];if(!id)return;let t=g.find(x=>x.id===id);
+function baseThemes(){if(!TWT)return baseThemesOld();
+  let tc={};try{tc=JSON.parse(localStorage.getItem('themeCfg'))||{}}catch(e){}   // 台股站在同一個瀏覽器的設定：排序、改過的成份股、自訂主題
+  const tth=tc.themes||{},bm=Object.fromEntries(TWT.map(t=>[t.id,t])),g=[];
+  [...(Array.isArray(tc.order)?tc.order:[]),...TWT.map(t=>t.id),...Object.keys(tth)].filter((v,i,a)=>a.indexOf(v)===i).forEach(id=>{
+    const src=tth[id]||bm[id];if(!src||!Array.isArray(src.us)||!src.us.length)return;
+    const ov=Object.fromEntries((src.ov||(bm[id]||{}).ov||[]).filter(x=>/^us/.test(x[0])).map(x=>[x[0].slice(2),x[1]]));
+    g.push({id,name:src.name||(bm[id]||{}).name||id,stocks:src.us.map(u=>[u,ROLE[u]||ov[u]||'']),tw:(src.stocks||[]).map(x=>[x[0],TWN[x[0]]||x[0]]),dem:false})});
+  // 美股獨有（台股沒有對應主題）：放最後
+  const sw=Object.keys(SOX.w).sort((a,b)=>SOX.w[b]-SOX.w[a]);if(sw.length)g.push({id:'sox',name:'🏛️ 費城半導體',stocks:sw.map(u=>[u,ROLE[u]||'']),tw:[],dem:false,idx:true,uso:true});
+  g.push({id:'cloud',name:'☁️ 雲端資本支出',stocks:['MSFT','GOOGL','AMZN','META','ORCL'].map(u=>[u,ROLE[u]||'']),tw:[],dem:true,uso:true});
+  // 每檔的「本籍」主題＝第一個有它的產業主題：個股頁對應台股、搜尋分組用（同一檔可以同時在好幾個主題）
+  const hm={};g.forEach(t=>{if(!t.idx)t.stocks.forEach(([u])=>{if(!hm[u])hm[u]=t})});
+  Object.keys(TID).forEach(k=>delete TID[k]);g.forEach(t=>TID[t.name]=t.id);
+  IDX.forEach(x=>{const t=hm[x.id];if(t){x.theme=t.name;x.tw=t.tw}else x.theme='其他'});
+  return g}
+function baseThemesOld(){const g=[];IDX.forEach(s=>{const id=TID[s.theme];if(!id)return;let t=g.find(x=>x.id===id);
     if(!t)g.push(t={id,name:s.theme,stocks:[],tw:s.tw||[],dem:!!s.dem});t.stocks.push([s.id,ROLE[s.id]||''])});
   const sw=Object.keys(SOX.w).sort((a,b)=>SOX.w[b]-SOX.w[a]);if(sw.length)g.push({id:'sox',name:'🏛️ 費城半導體',stocks:sw.map(u=>[u,ROLE[u]||'']),tw:[],dem:false,idx:true});
   const r=id=>{const i=DEF_ORDER.indexOf(id);return i<0?99:i};return g.sort((a,b)=>r(a.id)-r(b.id))}
 function allThemes(){
   const c=cfgGet(),bm=Object.fromEntries(BASE.map(t=>[t.id,t]));
-  const ids=[...c.order,...BASE.map(t=>t.id),...Object.keys(c.themes)].filter((v,i,a)=>a.indexOf(v)===i&&(bm[v]||c.themes[v]));
+  // 同步模式：美股自訂主題排最上面（照自己拖的順序），內建主題照台股站順序
+  const ids=(TWT?[...[...c.order,...Object.keys(c.themes)].filter(i=>!bm[i]&&c.themes[i]),...BASE.map(t=>t.id)]:[...c.order,...BASE.map(t=>t.id),...Object.keys(c.themes)]).filter((v,i,a)=>a.indexOf(v)===i&&(bm[v]||c.themes[v]));
   return ids.map(i=>{const b=bm[i],o=c.themes[i];
     return {tw:[],dem:false,...(b||{}),...(o?{name:o.name,stocks:o.stocks}:{}),id:i,hidden:c.hidden.includes(i),edited:!!(o&&b),custom:!b}})}
 function applyCfg(){const A=allThemes();ORDER_IDS=A.map(t=>t.id);THEMES=A.filter(t=>!t.hidden)}
@@ -1536,7 +1559,7 @@ function themeRender(tid){
   const tdy=etToday(),ev=[];ids.forEach(id=>(EARN.e[id]||[]).forEach(x=>{const dd=dayDiff(tdy,x[0]);if(dd>=-10&&dd<=45)ev.push([id,x,dd])}));
   ev.sort((a,c)=>a[1][0]<c[1][0]?-1:a[1][0]>c[1][0]?1:a[0]<c[0]?-1:1);
   $('tEarn').innerHTML=ev.length?'<span class="lb">📅 財報</span>'+ev.map(([id,x,dd])=>`<a class="ec${dd<0?' done':''}" href="#${id}">${dd<0?'✅':''}<b>${id}</b><small>${+x[0].slice(5,7)}/${+x[0].slice(8)}${dd<0?' 已公布':({bmo:' 盤前',amc:' 盤後',dmh:' 盤中'}[x[1]]||'')}</small></a>`).join(''):'';
-  $('tTw').innerHTML=t.tw.length?'<span class="lb">對應台股</span>'+t.tw.map(([c,n])=>`<a href="../#${c}"><b>${c}</b>${esc(n)}</a>`).join('')+(!t.custom&&t.id!=='cloud'&&t.id!=='foundry'?`<a class="all" href="../#t/${t.id}">台股同主題 →</a>`:''):(t.dem?'<span class="lb">對應台股：全供應鏈（需求層）</span>':'');
+  $('tTw').innerHTML=t.tw.length?'<span class="lb">對應台股</span>'+t.tw.map(([c,n])=>`<a href="../#${c}"><b>${c}</b>${esc(n)}</a>`).join('')+(!t.custom&&!t.uso&&t.id!=='cloud'&&(TWT||t.id!=='foundry')?`<a class="all" href="../#t/${t.id}">台股同主題 →</a>`:''):(t.dem?'<span class="lb">對應台股：全供應鏈（需求層）</span>':'');
   const nx=ids.filter(id=>!tracked(id)).length;
   if(LAST_TS!==tid){TS=tsGet(tid);LAST_TS=tid}if(t.idx&&!TS)TS='w:-1';loadPx(t);
   tTable(t);twRender(t);
@@ -1619,7 +1642,7 @@ function twRow(c){const S=TWD.s.d[c]||[],E=(TWD.s.eps||{})[c],A=(TWD.m.da||{})[c
     if(r.pe&&r.ey>0&&r.ey<=300)r.peg=r.pe/r.ey}
   return r}
 function twRender(t){const sec=$('tTwSec'),tw=t.tw||[];if(!tw.length){sec.hidden=true;return}sec.hidden=false;
-  const al=$('twAll');al.hidden=!!t.custom||t.id==='cloud';al.href='../#t/'+t.id;
+  const al=$('twAll');al.hidden=!!t.custom||!!t.uso||t.id==='cloud';al.href='../#t/'+t.id;
   if(!TWD){$('twCmp').innerHTML='<span class="meta">台股資料載入中…</span>';$('twList').innerHTML='';$('twFoot').textContent='';
     loadTw().then(d=>{if(CUR_T===t.id&&!$('themePage').hidden){if(d)twRender(t);else $('twCmp').innerHTML='<span class="meta">台股資料讀不到，稍後重新整理</span>'}});return}
   const rows=tw.map(([c,n])=>Object.assign(twRow(c),{n}));
@@ -1735,7 +1758,7 @@ async function capexAll(){
   $('capexAll').hidden=false;c.resize();
 }
 // 個股頁左上「← 主題」：剛看的主題頁有這檔就回那個主題，否則首頁順序第一個有它的主題；都不在就回首頁
-const themeOfStock=id=>THEMES.find(t=>t.id===LAST_T&&t.stocks.some(x=>x[0]===id))||THEMES.find(t=>!t.idx&&t.stocks.some(x=>x[0]===id))||THEMES.find(t=>t.stocks.some(x=>x[0]===id))||null;
+const themeOfStock=id=>THEMES.find(t=>t.id===LAST_T&&t.stocks.some(x=>x[0]===id))||THEMES.find(t=>!t.idx&&!t.custom&&t.stocks.some(x=>x[0]===id))||THEMES.find(t=>!t.idx&&t.stocks.some(x=>x[0]===id))||THEMES.find(t=>t.stocks.some(x=>x[0]===id))||null;
 function backPaint(id){const t=themeOfStock(id);$('back').href=t?'#t/'+t.id:'#';$('back').textContent=t?'← '+t.name:'← 全部主題';$('theme').textContent=t||tracked(id)?'':'全市場'}
 let HOMEY=0;
 function route(){
@@ -1847,7 +1870,8 @@ function renderOrder(){
   const A=allThemes();
   $('olist').innerHTML=A.map(t=>{const n=xn(t);return `<div class="erow${t.hidden?' off':''}" data-id="${t.id}">
     <a class="grow" href="#edit/${t.id}"><b>${esc(t.name)}${t.custom?'<span class="tag">自訂</span>':t.edited?'<span class="tag">已修改</span>':''}</b><small>${t.stocks.length} 檔${n?`（全市場 ${n} 檔）`:''}${t.hidden?'・已隱藏':''}</small></a>
-    <button type="button" class="ib" data-hide aria-label="${t.hidden?'在首頁顯示':'從首頁隱藏'} ${esc(t.name)}">${t.hidden?'顯示':'隱藏'}</button><span class="drag" aria-hidden="true">⠿</span></div>`}).join('');
+    <button type="button" class="ib" data-hide aria-label="${t.hidden?'在首頁顯示':'從首頁隱藏'} ${esc(t.name)}">${t.hidden?'顯示':'隱藏'}</button>${TWT&&!t.custom?'<span class="lk" title="順序跟台股站：要調整請到台股站排">🔒</span>':'<span class="drag" aria-hidden="true">⠿</span>'}</div>`}).join('');
+  $('oNote').hidden=!TWT;
   $('bk').value=JSON.stringify({site:'us',...cfgGet()});$('bkMsg').textContent='';resetArm=0;
 }
 $('olist').addEventListener('click',e=>{const b=e.target.closest('button[data-hide]');if(!b)return;
@@ -2012,6 +2036,8 @@ addEventListener('hashchange',route);
   fetch('../data/salary.json?t='+Date.now()).then(r=>r.ok?r.json():null).then(j=>{if(j){TWSA=j;if(D&&!$('stock').hidden)salLine(D.id)}}).catch(()=>{});   // 台股薪資：對應台股 chip 旁小字
   try{const r=await fetch('data/earnings_auto.json?t='+Date.now());if(r.ok){AUTOQ=(await r.json()).q||{};CMPSET=new Set(Object.keys(AUTOQ))}}catch(e){}
   try{const r=await fetch('data/sox.json?t='+Date.now());if(r.ok){const j=await r.json();if(j&&j.w)SOX=j}}catch(e){}
+  try{const [a,b]=await Promise.all([fetch(TWF+'?t='+Date.now()).then(r=>r.ok?r.json():null),fetch('../data/list.json?d='+new Date().toISOString().slice(0,10)).then(r=>r.ok?r.json():null)]);
+    if(b)b.forEach(r=>TWN[r[0]]=r[1]);if(a&&Array.isArray(a.themes))TWT=a.themes}catch(e){}
   BASE=baseThemes();applyCfg();syStat();syncRun();
   homeRender();earnMini();srHome();route();capexAll();
   // 主題卡的年增／PEG／本月至今要讀 46 個個股檔（各約 6KB），主題裡的全市場股票另讀 data/all；讀完重畫卡片與主題頁
