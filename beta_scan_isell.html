@@ -36,7 +36,7 @@ a{color:var(--accent);text-decoration:none}
 .row+.row{margin-top:5px}
 .t{flex:none;font-weight:900;font-size:15px;padding-right:2px}
 .t small{font-weight:500;font-size:10px;color:var(--muted);margin-left:3px;vertical-align:middle;border:1px solid var(--line);border-radius:4px;padding:0 3px}
-.hd a.home{flex:none;font-size:12px;color:var(--muted);margin-left:auto}
+.hd a.home{color:inherit;text-decoration:none;white-space:nowrap}.hd a.home:active{opacity:.5}
 button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .ch{flex:none;height:28px;line-height:28px;padding:0 10px;border-radius:14px;background:var(--chip);font-size:13px;font-weight:500;white-space:nowrap}
 .ch[aria-pressed=true]{background:var(--sel);color:var(--selfg);font-weight:700}
@@ -219,10 +219,9 @@ select.ch.on{background-color:var(--sel);color:var(--selfg);font-weight:700}
 <body>
 <div class="hd">
   <div class="row">
-    <span class="lead"><span class="t">掃描</span><button class="ch all" id="allBtn" aria-expanded="false" title="全部名單 (分類可收合)">全部▾</button></span>
+    <span class="lead"><a class="t home" href="index.html" title="回估值看板 (首頁對應的主題)">‹ 掃描</a><button class="ch all" id="allBtn" aria-expanded="false" title="全部名單 (分類可收合)">全部▾</button></span>
     <div id="themes" style="display:contents"></div>
     <select class="ch" id="indSel" hidden><option value="">證交所產業 ▾</option></select>
-    <a class="home" href="index.html">← 估值看板</a>
   </div>
 </div>
 <div class="sb" id="sortBar">

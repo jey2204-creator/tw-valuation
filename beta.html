@@ -3037,7 +3037,7 @@ function showTheme(tid){
     if(day!==NT.asof){const src=ntSrc(day);if(src){const alt=noticeThemes(src).find(x=>x.id===tid);t=alt||{...t,stocks:[]}}}NCUR=day}
   if(NCUR)$('tName').innerHTML=`${esc(t.name.replace(/\s*[（(][^）)]*[）)]$/,''))} <select id="ntDay" class="ntday${NCUR===NT.asof?'':NTN&&NCUR===NTN.asof?' nx':' old'}" aria-label="名單日期">${ntDayOpts()}</select>`;else $('tName').textContent=t.name;document.title=`${t.name} 估值看板`;
   modeQ();const ids=t.stocks.map(x=>x[0]),y=median(ids.map(i=>sv(i,'yoy'))),pe=median(ids.map(i=>sv(i,'pe'))),pb=median(ids.map(i=>sv(i,'pb'))),ey=median(ids.map(epsY)),pg=median(ids.map(peg));
-  $('tEdit').href=t.favt?'#f':'#e/'+t.id;$('tEdit').hidden=!!t.auto&&!t.favt;$('tScan').href=(t.id==='isell'?'beta_scan_isell.html?v=2#':'scan.html#')+encodeURIComponent(t.id);RANK=t.favt?null:ranks(ids);
+  $('tEdit').href=t.favt?'#f':'#e/'+t.id;$('tEdit').hidden=!!t.auto&&!t.favt;$('tScan').href=(t.id==='isell'?'beta_scan_isell.html?v=3#':'scan.html#')+encodeURIComponent(t.id);RANK=t.favt?null:ranks(ids);
   const lead=t.favt?'':(()=>{const tc=ids.reduce((a,i)=>a+(cap(i)||0),0),c1=ids.find(i=>RANK[i]&&RANK[i][0]===1),r1=ids.find(i=>RANK[i]&&RANK[i][1]===1);if(!c1||!tc)return '';
     const sh=Math.round(cap(c1)/tc*100);
     return c1===r1?`<br>👑 龍頭 <strong>${nameOf(c1)}</strong> (市值 ${capTxt(cap(c1))}，占主題 ${sh}%) ・主題總市值 ${capTxt(tc)}`

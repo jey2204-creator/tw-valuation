@@ -33,6 +33,11 @@ E = [
   "紅框＝今天上漲且觸及前 20 日高；<b>📉 投信賣超前20</b>＝投信當天賣超金額 ≥0.5 億、依賣超佔股本％取前 20 (榜序第 1 名＝賣最兇)，進這個名單會自動切到「空」；"),
  # K 棒底下的上榜日點：賣超榜用綠色
  ("css(k==='it'?'--ma20':k==='fi'||k==='q'?'--accent':'--warm')", "css(k==='it'?'--ma20':k==='is'?'--down':k==='fi'||k==='q'?'--accent':'--warm')"),
+ # 「掃描」改成返回鈕（11/21 15:09 世杰選 ①）：原本的「← 估值看板」排在名單橫列最後面（約 5,300px 外）找不到 → 拿掉，
+ # 左上固定的「掃描」改成「‹ 掃描」連結，沿用 .hd a.home 的 href 邏輯（主題→首頁該主題頁，其餘→首頁）
+ ('<span class="t">掃描</span>', '<a class="t home" href="index.html" title="回估值看板 (首頁對應的主題)">‹ 掃描</a>'),
+ ('    <a class="home" href="index.html">← 估值看板</a>\n', ''),
+ (".hd a.home{flex:none;font-size:12px;color:var(--muted);margin-left:auto}", ".hd a.home{color:inherit;text-decoration:none;white-space:nowrap}.hd a.home:active{opacity:.5}"),
  ("v1120g", "v1120h"),
 ]
 # beta 才有：兩個 beta 互相連（正式版的 index／scan 還沒有這個主題）
@@ -49,7 +54,7 @@ I = [
   "${t.desc}。股名下方「${t.id==='isell'?'投賣0.77%・連3」＝賣超':'投0.77%・連3」＝'}佔股本％、連續 3 個交易日在這個榜上。"),
  ("v1120b", "v1120i"),
 ]
-I_BETA = [("$('tScan').href='scan.html#'+encodeURIComponent(t.id);", "$('tScan').href=(t.id==='isell'?'beta_scan_isell.html?v=2#':'scan.html#')+encodeURIComponent(t.id);")]
+I_BETA = [("$('tScan').href='scan.html#'+encodeURIComponent(t.id);", "$('tScan').href=(t.id==='isell'?'beta_scan_isell.html?v=3#':'scan.html#')+encodeURIComponent(t.id);")]
 
 
 def patch(src, dst, edits, beta_extra):
