@@ -43,6 +43,8 @@ THEMES = [
      [("2330", "台積電"), ("2303", "聯電"), ("5347", "世界"), ("6770", "力積電")]),
     ("🧩 類比／IC 設計", [("TXN", ""), ("ADI", ""), ("QCOM", ""), ("NXPI", ""), ("MPWR", ""), ("MCHP", ""), ("ON", ""), ("LSCC", ""), ("SITM", "")],
      [("6415", "矽力*-KY"), ("8081", "致新"), ("6138", "茂達"), ("2379", "瑞昱"), ("3034", "聯詠"), ("6719", "力智"), ("2481", "強茂")]),
+    # 2026-11-21 AI 五層蛋糕補追蹤（暫放，前端不認得這個主題所以不顯示）：驗收後 CEG VST → 電力、CRWV ORCL → 雲端資本支出（D）、PLTR NOW CRM APP → 🧠 AI 應用軟體
+    ("🧺 追蹤暫放", [("CEG", ""), ("VST", ""), ("CRWV", ""), ("ORCL", ""), ("PLTR", ""), ("NOW", ""), ("CRM", ""), ("APP", "")], []),
 ]
 # 中文名（首頁、個股頁、搜尋顯示用；沒有通用中文名的就留英文簡稱）
 CN = {
@@ -62,6 +64,8 @@ CN = {
     "TSM": "台積電 ADR", "INTC": "英特爾", "GFS": "格芯", "TSEM": "高塔半導體",
     "TXN": "德州儀器", "ADI": "亞德諾", "QCOM": "高通", "NXPI": "恩智浦", "MPWR": "芯源 MPS", "MCHP": "微芯",
     "ON": "安森美", "LSCC": "萊迪思", "SITM": "SiTime", "ASML": "艾司摩爾", "TER": "泰瑞達", "MTSI": "MACOM",
+    "CEG": "星座能源", "VST": "維斯特拉 Vistra", "CRWV": "CoreWeave", "ORCL": "甲骨文",
+    "PLTR": "Palantir", "NOW": "ServiceNow", "CRM": "Salesforce", "APP": "AppLovin",
 }
 CFG = {t: dict(theme=th, flags=f, tw=tw, cn=CN.get(t, "")) for th, items, tw in THEMES for t, f in items}
 STOCKS = list(CFG)
