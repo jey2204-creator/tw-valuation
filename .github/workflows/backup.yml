@@ -1,8 +1,7 @@
 name: 每月備份
 
 # 每月 1 號台北 10:17 自動備份（也可在 Actions 頁手動 Run workflow）
-#  ① 私有鏡像：把整個 repo（含完整歷史）推到 jey2204-creator/tw-valuation-backup
-#     需要 Secret BACKUP_TOKEN（只能寫 tw-valuation-backup 的 fine-grained 金鑰）；沒設就跳過
+#  ① 私有鏡像：由私有 repo jey2204-creator/tw-valuation-backup 的 mirror.yml 每月 1 號 10:07 自己來抓（不用金鑰）
 #  ③ Telegram：把整包 ZIP 傳到財報快訊同一個 Telegram 頻道
 #     超過 48MB 時改傳「程式碼 ZIP」＋「資料 ZIP 分割檔」
 on:
@@ -23,31 +22,11 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: ① 推到私有鏡像
-        id: mirror
-        env:
-          BACKUP_TOKEN: ${{ secrets.BACKUP_TOKEN }}
-        run: |
-          if [ -z "$BACKUP_TOKEN" ]; then
-            echo "status=⚪ 鏡像未設定（缺 BACKUP_TOKEN）" >> "$GITHUB_OUTPUT"; exit 0
-          fi
-          URL="https://x-access-token:${BACKUP_TOKEN}@github.com/jey2204-creator/tw-valuation-backup.git"
-          git config --unset-all http.https://github.com/.extraheader || true
-          REFS=$(git for-each-ref --format='%(refname):refs/heads/%(refname:lstrip=3)' refs/remotes/origin | grep -v ':refs/heads/HEAD$')
-          if git push --force "$URL" $REFS && git push --force "$URL" --tags; then
-            echo "status=✅ 鏡像已同步" >> "$GITHUB_OUTPUT"
-          else
-            echo "status=❌ 鏡像同步失敗" >> "$GITHUB_OUTPUT"
-          fi
 
       - name: ③ 打包並傳 Telegram
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          MIRROR: ${{ steps.mirror.outputs.status }}
         run: |
           set -e
           D=$(TZ=Asia/Taipei date +%Y%m%d)
@@ -78,7 +57,7 @@ jobs:
           if [ "$OK" = 1 ]; then T="✅ 每月備份完成"; else T="❌ 每月備份：檔案上傳失敗"; fi
           MSG="${T}
           📦 ${MB} MB・${MODE}・commit ${SHA}
-          🪞 ${MIRROR:-⚪ 鏡像未執行}"
+          🪞 私有鏡像：github.com/jey2204-creator/tw-valuation-backup（mirror 分支）"
           curl -sf -o /dev/null --data-urlencode chat_id="$TELEGRAM_CHAT_ID" --data-urlencode text="$MSG" \
             "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage"
           [ "$OK" = 1 ]
