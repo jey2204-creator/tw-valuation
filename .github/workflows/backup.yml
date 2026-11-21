@@ -1,0 +1,83 @@
+name: 每月備份
+
+# 每月 1 號台北 10:17 自動備份（也可在 Actions 頁手動 Run workflow）
+#  ① 私有鏡像：把整個 repo（含完整歷史）推到 jey2204-creator/tw-valuation-backup
+#     需要 Secret BACKUP_TOKEN（只能寫 tw-valuation-backup 的 fine-grained 金鑰）；沒設就跳過
+#  ③ Telegram：把整包 ZIP 傳到財報快訊同一個 Telegram 頻道
+#     超過 48MB 時改傳「程式碼 ZIP」＋「資料 ZIP 分割檔」
+on:
+  schedule:
+    - cron: "17 2 1 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: ① 推到私有鏡像
+        id: mirror
+        env:
+          BACKUP_TOKEN: ${{ secrets.BACKUP_TOKEN }}
+        run: |
+          if [ -z "$BACKUP_TOKEN" ]; then
+            echo "status=⚪ 鏡像未設定（缺 BACKUP_TOKEN）" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          URL="https://x-access-token:${BACKUP_TOKEN}@github.com/jey2204-creator/tw-valuation-backup.git"
+          git config --unset-all http.https://github.com/.extraheader || true
+          REFS=$(git for-each-ref --format='%(refname):refs/heads/%(refname:lstrip=3)' refs/remotes/origin | grep -v ':refs/heads/HEAD$')
+          if git push --force "$URL" $REFS && git push --force "$URL" --tags; then
+            echo "status=✅ 鏡像已同步" >> "$GITHUB_OUTPUT"
+          else
+            echo "status=❌ 鏡像同步失敗" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: ③ 打包並傳 Telegram
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          MIRROR: ${{ steps.mirror.outputs.status }}
+        run: |
+          set -e
+          D=$(TZ=Asia/Taipei date +%Y%m%d)
+          SHA=$(git rev-parse --short HEAD)
+          mkdir -p /tmp/bk && cd /tmp/bk
+          git -C "$GITHUB_WORKSPACE" archive --format=zip -9 -o "tw-valuation_${D}.zip" HEAD
+          SIZE=$(stat -c %s "tw-valuation_${D}.zip")
+          LIMIT=$((48*1024*1024))
+          if [ "$SIZE" -le "$LIMIT" ]; then
+            FILES="tw-valuation_${D}.zip"; MODE="整包"
+          else
+            rm "tw-valuation_${D}.zip"
+            git -C "$GITHUB_WORKSPACE" archive --format=zip -9 -o "tw-valuation_${D}_code.zip" HEAD -- . ':(exclude)data'
+            git -C "$GITHUB_WORKSPACE" archive --format=zip -9 -o "data_${D}.zip" HEAD -- data
+            split -b 45m -d "data_${D}.zip" "tw-valuation_${D}_data.zip.part"
+            rm "data_${D}.zip"
+            FILES=$(ls tw-valuation_${D}_*); MODE="分割（還原：cat *_data.zip.part* > data.zip）"
+          fi
+          TOTAL=$(du -cb $FILES | tail -1 | cut -f1)
+          MB=$(awk "BEGIN{printf \"%.1f\", $TOTAL/1048576}")
+          if [ -z "$TELEGRAM_TOKEN" ]; then echo "缺 TELEGRAM_TOKEN"; exit 1; fi
+          OK=1
+          for f in $FILES; do
+            curl -sf -o /dev/null -F chat_id="$TELEGRAM_CHAT_ID" -F document=@"$f" \
+              "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendDocument" || OK=0
+          done
+          if [ "$OK" = 1 ]; then T="✅ 每月備份完成"; else T="❌ 每月備份：檔案上傳失敗"; fi
+          MSG="${T}
+          📦 ${MB} MB・${MODE}・commit ${SHA}
+          🪞 ${MIRROR:-⚪ 鏡像未執行}"
+          curl -sf -o /dev/null --data-urlencode chat_id="$TELEGRAM_CHAT_ID" --data-urlencode text="$MSG" \
+            "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage"
+          [ "$OK" = 1 ]
