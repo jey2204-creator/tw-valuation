@@ -44,6 +44,8 @@ THEMES = [
     ("🧩 類比／IC 設計", [("TXN", ""), ("ADI", ""), ("QCOM", ""), ("NXPI", ""), ("MPWR", ""), ("MCHP", ""), ("ON", ""), ("LSCC", ""), ("SITM", "")],
      [("6415", "矽力*-KY"), ("8081", "致新"), ("6138", "茂達"), ("2379", "瑞昱"), ("3034", "聯詠"), ("6719", "力智"), ("2481", "強茂")]),
     ("🧠 AI 應用軟體", [("PLTR", ""), ("NOW", ""), ("CRM", ""), ("APP", "")], []),
+    # 2026-11-21 美股站主題改跟台股 themes.json 同步（batch17）：台股主題 us 欄有、原本沒追蹤的 25 檔。先暫放（前端不認得這個主題所以不顯示），上線後主題改由 themes.json 決定
+    ("🧺 同步暫放", [("ACN", ""), ("AVAV", ""), ("BAC", ""), ("COHU", ""), ("CSCO", ""), ("DELL", ""), ("DHI", ""), ("HPQ", ""), ("HUBB", ""), ("IBM", ""), ("ISRG", ""), ("JPM", ""), ("KTOS", ""), ("LEN", ""), ("LMT", ""), ("MS", ""), ("NVT", ""), ("PWR", ""), ("RMBS", ""), ("ROK", ""), ("RTX", ""), ("SYNA", ""), ("USB", ""), ("VICR", ""), ("WFC", "")], []),
 ]
 # 中文名（首頁、個股頁、搜尋顯示用；沒有通用中文名的就留英文簡稱）
 CN = {
@@ -65,6 +67,10 @@ CN = {
     "ON": "安森美", "LSCC": "萊迪思", "SITM": "SiTime", "ASML": "艾司摩爾", "TER": "泰瑞達", "MTSI": "MACOM",
     "CEG": "星座能源", "VST": "維斯特拉 Vistra", "CRWV": "CoreWeave", "ORCL": "甲骨文",
     "PLTR": "Palantir", "NOW": "ServiceNow", "CRM": "Salesforce", "APP": "AppLovin",
+    "ACN": "埃森哲", "IBM": "IBM", "CSCO": "思科", "DELL": "戴爾", "HPQ": "惠普", "COHU": "Cohu", "NVT": "nVent",
+    "VICR": "Vicor", "RMBS": "Rambus", "SYNA": "新突思 Synaptics", "HUBB": "哈伯", "PWR": "廣達服務 Quanta",
+    "ROK": "羅克韋爾", "ISRG": "直覺手術", "LMT": "洛克希德馬丁", "RTX": "雷神 RTX", "AVAV": "AeroVironment", "KTOS": "克拉托斯",
+    "JPM": "摩根大通", "BAC": "美國銀行", "MS": "摩根士丹利", "WFC": "富國銀行", "USB": "美國合眾銀行", "DHI": "霍頓房屋", "LEN": "萊納房屋",
 }
 CFG = {t: dict(theme=th, flags=f, tw=tw, cn=CN.get(t, "")) for th, items, tw in THEMES for t, f in items}
 STOCKS = list(CFG)
