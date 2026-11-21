@@ -1326,9 +1326,9 @@ async function load(id){
 }
 // ---------- 首頁 ----------
 // 內建主題代號：沿用台股站同名主題的 id（#t/pcb，主題頁「台股同主題 →」連得過去）；雲端資本支出台股沒有，自訂 cloud
-const TID={'🛰️ 低軌衛星':'leo','💿 矽晶圓／基板':'wafer','⚡ 被動元件':'passive','🪢 連接器／線材':'conn','🧪 半導體材料':'semimat','🟩 PCB／EMS':'pcb','💡 矽光子／CPO':'cpo','🧱 先進封裝／設備':'pkg','🎯 AI 晶片／記憶體':'ai','☁️ 雲端資本支出':'cloud','🖥️ 伺服器':'server','❄️ 散熱／電源':'thermal','🔀 網通／傳輸':'net','🔌 電力':'power','🏭 晶圓代工':'foundry','🧩 類比／IC 設計':'icd'};
+const TID={'🛰️ 低軌衛星':'leo','💿 矽晶圓／基板':'wafer','⚡ 被動元件':'passive','🪢 連接器／線材':'conn','🧪 半導體材料':'semimat','🟩 PCB／EMS':'pcb','💡 矽光子／CPO':'cpo','🧱 先進封裝／設備':'pkg','🎯 AI 晶片／記憶體':'ai','☁️ 雲端資本支出':'cloud','🖥️ 伺服器':'server','❄️ 散熱／電源':'thermal','🔀 網通／傳輸':'net','🔌 電力':'power','🏭 晶圓代工':'foundry','🧩 類比／IC 設計':'icd','🧠 AI 應用軟體':'aisw'};
 // 預設順序：美股站自己的，不再跟台股站連動（不讀台股的 themeCfg／themes.json）。✏️ 編輯排過就以那份為準
-const DEF_ORDER=['sox','pcb','ai','cpo','pkg','foundry','icd','server','thermal','net','power','passive','conn','wafer','semimat','leo','cloud'];
+const DEF_ORDER=['sox','pcb','ai','cpo','pkg','foundry','icd','server','thermal','net','power','passive','conn','wafer','semimat','leo','cloud','aisw'];
 const rankOf=t=>{const i=ORDER_IDS.indexOf(TID[t]);return i<0?999:i};   // 搜尋結果依首頁主題順序分組
 // 同義代號／俗名 → 本站代號（舊代號、另一股別、常見簡稱）
 const ALIAS={FB:'META',GOOG:'GOOGL',SPACEX:'SPCX',NVIDIA:'NVDA',BROADCOM:'AVGO',MICRON:'MU',GOOGLE:'GOOGL',ALPHABET:'GOOGL',AMAZON:'AMZN',MICROSOFT:'MSFT',FACEBOOK:'META',SUPERMICRO:'SMCI',VERTIV:'VRT',ARISTA:'ANET',ASTERA:'ALAB',LUMENTUM:'LITE',COHERENT:'COHR',FABRINET:'FN',CREDO:'CRDO',MARVELL:'MRVL',APPLIED:'AMAT',LAM:'LRCX',AMKOR:'AMKR',SANDISK:'SNDK'};
@@ -1395,6 +1395,7 @@ const ROLE={SPCX:'火箭發射＋星鏈',ASTS:'手機直連衛星',RKLB:'小型�
   NVDA:'GPU',AMD:'CPU／GPU',MU:'DRAM／HBM',ARM:'架構授權',SNDK:'NAND',
   MSFT:'Azure',GOOGL:'Google Cloud／TPU',AMZN:'AWS',META:'自建 AI 資料中心',
   TSM:'晶圓代工龍頭',INTC:'CPU＋晶圓代工',GFS:'成熟製程代工',TSEM:'特殊製程代工',TXN:'類比 IC 龍頭',ADI:'類比／訊號鏈',QCOM:'手機 SoC／數據機',NXPI:'車用 MCU',MPWR:'電源管理 IC',MCHP:'MCU／類比',ON:'功率／SiC',LSCC:'低功耗 FPGA',SITM:'MEMS 時脈',ASML:'微影（EUV）',TER:'測試機',MTSI:'類比／光通訊晶片',
+  CEG:'核電',VST:'電力供應（天然氣＋核電）',CRWV:'GPU 雲（Neocloud）',ORCL:'OCI 雲＋資料庫',PLTR:'AI 決策平台',NOW:'企業工作流程',CRM:'CRM＋AI 代理',APP:'AI 廣告投放',
   SMCI:'AI 伺服器',VRT:'散熱＋電源',ETN:'配電／電源管理',ANET:'資料中心交換器',ALAB:'PCIe／CXL 連接',GEV:'燃氣渦輪＋電網'};
 const median=a=>{a=a.filter(x=>x!=null&&isFinite(x)).sort((x,y)=>x-y);if(!a.length)return null;const m=a.length>>1;return a.length%2?a[m]:(a[m-1]+a[m])/2};
 const pct=(v,d=0)=>{if(v==null)return '—';const t=fmt(v,d);return /^-0(\.0+)?$/.test(t)?t.slice(1)+'%':(v>0?'+':'')+t+'%'};   // 四捨五入成 0 的負數顯示 0%，不出現「-0%」
@@ -1709,7 +1710,7 @@ function renderSal(){
 $('sTabs').addEventListener('click',e=>{const b=e.target.closest('button[data-tab]');if(!b)return;SR.tab=b.dataset.tab;renderSal()});
 $('sTbl').addEventListener('click',e=>{const r=e.target.closest('tr[data-id]');if(r)location.hash=r.dataset.id});
 async function capexAll(){
-  const ids=IDX.filter(s=>s.dem).map(s=>s.id);if(!ids.length)return;
+  const ids=['MSFT','GOOGL','AMZN','META'].filter(id=>IDX.some(s=>s.id===id));if(!ids.length)return;   // 只算四大；其他 D 旗標股（CRWV、ORCL）不併進來
   const ds=(await Promise.all(ids.map(getD))).filter(Boolean);
   if(!ds.length)return;
   const lbls=[...new Set(ds.flatMap(d=>d.q.filter(x=>x[7]!=null).map(x=>x[0])))].sort().slice(-16);
