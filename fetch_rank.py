@@ -37,13 +37,20 @@ TR_MIN_AMT = 1e8                        # 週轉率榜的成交值門檻（元�
 FIRST_DAYS, MORE_DAYS = 60, 35          # 第一次補幾天／之後每次再補幾天
 BUDGET = 9 * 60                         # 單次最多抓 9 分鐘
 ETF = re.compile(r"^00[0-9A-Z]{2,4}$")
-# 2026-11-22：首頁／掃描頁「📦 ETF」主題的固定名單（世杰選方案 ②；順序＝類別，同類別內依近 20 日均成交值大→小由 build_etf 排）
-# 每列 [代號, 備註「類別｜說明」]；要增減直接改這裡，下次排程就會更新 data/etf.json
-ETF_THEME = [["0050", "市值｜台灣50"], ["006208", "市值｜台灣50"],
-             ["0056", "高息｜高股息"], ["00878", "高息｜ESG高息"], ["00919", "高息｜精選高息"],
-             ["00929", "高息｜科技優息"], ["00940", "高息｜價值高息"], ["00713", "高息｜高息低波"],
-             ["00881", "科技｜科技龍頭"], ["00891", "科技｜半導體"], ["00892", "科技｜半導體"],
-             ["00679B", "債券｜美債20年"], ["00937B", "債券｜投等債20+"]]
+# 2026-11-22：首頁／掃描頁「📦 ETF」主題的固定名單
+# 14:40 世杰改：每類（市值／高息／科技／債券）規模前 5 大＋保留 00713、00940、00892，類別內依規模由大到小
+# 每列 [代號, 備註「類別｜說明」, 規模億元]；規模＝玩股網 2026/11/20 排行（00892 取證交所 ETFortune 126.12 億，不在前 60），手動填、不會自動更新
+# 要增減或更新規模直接改這裡（順序＝畫面順序），下次排程就會更新 data/etf.json
+ETF_AUM_ASOF = "20261120"
+ETF_THEME = [["0050", "市值｜台灣50", 21619.65], ["006208", "市值｜台灣50", 3716.17], ["009816", "市值｜台灣TOP50", 1911.91],
+             ["00922", "市值｜領袖50", 660.66], ["00692", "市值｜公司治理", 445.32],
+             ["0056", "高息｜高股息", 6820.24], ["00878", "高息｜ESG高息", 5625.60], ["00919", "高息｜精選高息", 5379.37],
+             ["00918", "高息｜優利填息", 1379.31], ["00929", "高息｜科技優息", 1311.89], ["00713", "高息｜高息低波", 981.20],
+             ["00940", "高息｜價值高息", 532.19],
+             ["0052", "科技｜科技", 1323.37], ["00881", "科技｜科技龍頭", 1139.73], ["00927", "科技｜半導體收益", 594.77],
+             ["00891", "科技｜半導體", 562.59], ["00935", "科技｜新科技50", 413.60], ["00892", "科技｜半導體", 126.12],
+             ["00937B", "債券｜投等債20+", 2313.96], ["00751B", "債券｜AAA-A公司債", 1550.39], ["00679B", "債券｜美債20年", 1539.01],
+             ["00720B", "債券｜投資級公司債", 1289.85], ["00725B", "債券｜投資級公司債", 1286.23]]
 T0 = time.time()
 
 
@@ -253,7 +260,7 @@ def build(names):
         for m in ("L", "O"):
             for k in ("v", "q"):
                 used.update(c for c, _ in recs[d][m].get(k, []))
-    extra = sorted({c for c in used if c not in stocks} | {c for c, _ in ETF_THEME})   # ＝上過榜的 ETF＋📦 ETF 主題的固定名單
+    extra = sorted({c for c in used if c not in stocks} | {x[0] for x in ETF_THEME})   # ＝上過榜的 ETF＋📦 ETF 主題的固定名單
     kd = sorted(recs)[-KEEP:]
     xk = {"days": kd, "d": {c: [recs[d].get("e", {}).get(c) or 0 for d in kd] for c in extra}}
     now = dt.datetime.utcnow() + dt.timedelta(hours=8)
@@ -266,7 +273,7 @@ def build(names):
 
 def build_etf(recs, names):
     """📦 ETF 主題（2026-11-22）→ data/etf.json：
-    {asof, n, stocks:[[代號, 備註]…], nm:{代號:[名稱,市場]}, px:{代號:[收, 日%, 週%, 月%, 季%, 量比, 成交值億, 20日均值億]}}
+    {asof, n, stocks:[[代號, 備註]…], aum:{代號:規模億}, aumAsof, nm:{代號:[名稱,市場]}, px:{代號:[收, 日%, 週%, 月%, 季%, 量比, 成交值億, 20日均值億]}}
     週/月/季＝對比 5/20/60 個交易日前收盤；量比＝今日張數 ÷ 前 5 日均張；成交值≈收×張×1000。
     ETF 的價格「未還原配息」：跨除息日的漲跌會偏低（高股息 ETF 季配／月配特別明顯）。不另外發請求，只用 data/rank/日期.json 的 e。"""
     kd = sorted(d for d in recs if recs[d].get("e"))
@@ -275,7 +282,7 @@ def build_etf(recs, names):
     def ser(c):
         return [recs[d]["e"].get(c) for d in kd]
     px, cat = {}, {}
-    for c, note in ETF_THEME:
+    for c, note, _ in ETF_THEME:
         a = ser(c)
         if not a or not a[-1]:
             continue
@@ -291,10 +298,9 @@ def build_etf(recs, names):
         v20 = [val(r) for r in a[-20:] if r]
         px[c] = [cl[-1], chg(1), chg(5), chg(20), chg(60), vr, round(val(a[-1]), 2), round(sum(v20) / len(v20), 2) if v20 else None]
         cat[c] = note.split("｜")[0]
-    order = []
-    for k in dict.fromkeys(n.split("｜")[0] for _, n in ETF_THEME):
-        order += sorted((x for x in ETF_THEME if cat.get(x[0]) == k), key=lambda x: -(px[x[0]][7] or 0))
+    order = [[c, n] for c, n, _ in ETF_THEME if c in px]          # 順序＝ETF_THEME（類別內依規模）
     dump(OUT / "etf.json", {"asof": kd[-1], "n": len(order), "stocks": order,
+                            "aum": {c: v for c, _, v in ETF_THEME if c in px}, "aumAsof": ETF_AUM_ASOF,
                             "nm": {c: names.get(c, [c, ""]) for c, _ in order}, "px": px})
     print(f"etf.json: {len(order)}/{len(ETF_THEME)} 檔，資料日 {kd[-1]}")
 
