@@ -1,0 +1,38 @@
+name: ETF 淨值折溢價
+# 📦 ETF 主題「折溢價」（data/etfnav.json＋etfnav_hist.json）。來源：證交所 ETF 盤中預估淨值 all_etf.txt。
+on:
+  workflow_run:
+    workflows: ["更新股票資料"]
+    types: [completed]
+  push:
+    branches: [main]
+    paths: ["fetch_etfnav.py", ".github/workflows/etfnav.yml"]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: etfnav
+  cancel-in-progress: false
+jobs:
+  etfnav:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python fetch_etfnav.py
+      - name: 提交
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          touch data/etfnav_hist.json; git add data/etfnav.json data/etfnav_hist.json
+          git diff --cached --quiet && exit 0
+          git commit -m "etfnav: $(TZ=Asia/Taipei date '+%F %H:%M')"
+          for i in 1 2 3; do
+            git pull --rebase -X theirs origin main && git push && exit 0
+            sleep 10
+          done
+          exit 1
