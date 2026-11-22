@@ -383,7 +383,7 @@ details.ind.hot summary b{color:var(--up)}
 .ntm i{font-style:normal;opacity:.45;padding:3px 3px}.ntm i.on{font-weight:800;opacity:1;text-decoration:underline;text-underline-offset:2px}
 </style>
 
-<style>/* 2026-11-22 ETF 分類切換 */.ecb{display:flex;gap:4px;flex-wrap:nowrap;margin:6px 0 2px;overflow-x:auto;scrollbar-width:none}.ecb::-webkit-scrollbar{display:none}.ecb button{flex:none;border:1px solid var(--line);background:none;color:var(--muted);font:500 13px/26px var(--f-body);padding:0 10px;border-radius:14px;white-space:nowrap;-webkit-tap-highlight-color:transparent}.ecb button[aria-pressed=true]{background:var(--fg);border-color:var(--fg);color:var(--bg);font-weight:700}.ecb button small{font-size:11px;opacity:.7;margin-left:2px}</style>
+<style>/* 2026-11-22 ETF 分類切換 */.ecb{display:flex;gap:5px 4px;flex-wrap:wrap;margin:6px 0 2px}.ecb::-webkit-scrollbar{display:none}.ecb button{flex:none;border:1px solid var(--line);background:none;color:var(--muted);font:500 13px/26px var(--f-body);padding:0 10px;border-radius:14px;white-space:nowrap;-webkit-tap-highlight-color:transparent}.ecb button[aria-pressed=true]{background:var(--fg);border-color:var(--fg);color:var(--bg);font-weight:700}.ecb button small{font-size:11px;opacity:.7;margin-left:2px}</style>
 <style>/* 2026-11-22 ETF 分組標題列 */.lst tr.egh td{background:var(--line);padding:5px 8px;font:700 13px/1.3 var(--f-body);color:var(--fg);cursor:pointer;white-space:nowrap}.lst tr.egh td small{font-weight:400;font-size:11.5px;color:var(--muted);margin-left:4px}.lst tr.egh td .em{font:500 12px var(--f-num);margin-left:6px}</style>
 <style>/* 2026-11-22 主題熱力圖 */
 .hmc{display:flex;gap:8px;align-items:center;justify-content:space-between;margin:8px 0 6px}
@@ -3100,7 +3100,7 @@ function hotPaint(){
     return `<a href="#${id}">${nameOf(id)}</a> <span class="${sign(ch)}">${ch==null?'':pct(ch,1)}</span>${why?`<span class="sm">(${why})</span>`:''}`}).join('、'):'';
   $('hotFoot').innerHTML=MO?`範圍：產業主題＋自選共 ${pool.length} 檔。🔥＝月漲幅 &gt; 0、量比 (5 日均量 ÷ 20 日均量)≥ 1.5、且投信或外資 5 日買超 ≥ 5 日成交量的 1%。是「有資金在推」的訊號，不是買進訊號，要搭配估值位階看。<a href="fstats.html">📊 上榜後勝率統計 ›</a>`
     +(hasH?`<br><b>日期選單</b>可看之前哪些股票上榜 (從 ${ymd(days[0])} 起)；選了舊日期，「數字」預設最新，點一下看當天收盤的數字，還亮著 🔥 的＝今天仍符合。<b>上榜後</b>＝那天收盤 → 最新收盤。<b>🆕新進</b>＝前一個交易日還沒有 🔥；<b>連 N 天</b>＝連續符合的交易日數。<b>橘底 ⚠</b>＝這個進場時機過去抱 10 日輸大盤 2 個百分點以上；<b>短線</b>＝同時是注意股，過去 5 日有超額、10 日倒輸 (都依統計頁的數字即時判斷)。大戶/股東一律是最新一週。`:'')
-    +` 資料 ${ymd(MO.asof)} <span style="opacity:.5">v1122v</span>`:'第一次需要回補約 3 個月的歷史資料，Actions 跑完後就會出現。';
+    +` 資料 ${ymd(MO.asof)} <span style="opacity:.5">v1122w</span>`:'第一次需要回補約 3 個月的歷史資料，Actions 跑完後就會出現。';
 }
 document.addEventListener('toggle',e=>{if(e.target&&e.target.id==='hotBox'&&e.target.open&&!FH)fhLoad().then(()=>{try{hotPaint()}catch(err){}})},true);
 document.addEventListener('change',e=>{if(e.target&&e.target.id==='fhDay'){HDAY=e.target.value;hotPaint()}});
