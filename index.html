@@ -384,6 +384,7 @@ details.ind.hot summary b{color:var(--up)}
 </style>
 
 <style>/* 2026-11-22 ETF 分類切換 */.ecb{display:flex;gap:4px;flex-wrap:nowrap;margin:6px 0 2px;overflow-x:auto;scrollbar-width:none}.ecb::-webkit-scrollbar{display:none}.ecb button{flex:none;border:1px solid var(--line);background:none;color:var(--muted);font:500 13px/26px var(--f-body);padding:0 10px;border-radius:14px;white-space:nowrap;-webkit-tap-highlight-color:transparent}.ecb button[aria-pressed=true]{background:var(--fg);border-color:var(--fg);color:var(--bg);font-weight:700}.ecb button small{font-size:11px;opacity:.7;margin-left:2px}</style>
+<style>/* 2026-11-22 ETF 分組標題列 */.lst tr.egh td{background:var(--line);padding:5px 8px;font:700 13px/1.3 var(--f-body);color:var(--fg);cursor:pointer;white-space:nowrap}.lst tr.egh td small{font-weight:400;font-size:11.5px;color:var(--muted);margin-left:4px}.lst tr.egh td .em{font:500 12px var(--f-num);margin-left:6px}</style>
 </head>
 <body>
 <div class="wrap">
@@ -1743,15 +1744,16 @@ function etfPage(){const t0=THEMES.find(x=>x.id==='etf');if(!t0||!ETFJ)return;co
   const th=(key,lb)=>{const on=!!key&&k===key;return `<th data-ek="${key}" class="${on?'on':''}">${lb}${on?(+d>0?' ▲':' ▼'):''}</th>`};
   const nm=c=>(ETFJ.nm&&ETFJ.nm[c]||[c])[0];
   el.classList.add('mo');
-  el.innerHTML=`<thead><tr>${th('','ETF')}${th('d','收盤')}${th('w','週')}${th('m','月')}${th('v','成交值')}</tr></thead><tbody>`+rows.map(([c,role])=>{
+  el.innerHTML=`<thead><tr>${th('','ETF')}${th('d','收盤')}${th('w','週')}${th('m','月')}${th('v','成交值')}</tr></thead><tbody>`+rows.map(([c,role],ri)=>{const gk=etfCat(c),grp=ETC==='a'&&!k&&gk&&(ri===0||etfCat(rows[ri-1][0])!==gk)?(()=>{const gi=rows.filter(x=>etfCat(x[0])===gk).map(x=>x[0]),gm=j=>median(gi.map(i=>etfPx(i,j))),EM={'市值':'🏛️','高息':'💰','科技':'💻','債券':'🏦','國外':'🌏'};const sp=(v,lb,dg=1)=>`<span class="em ${sign(v)}">${lb}${pct(v,dg)}</span>`;return `<tr class="egh" data-eg="${gk}"><td colspan="5">${EM[gk]||'📦'} ${gk}<small>${gi.length}檔中位</small>${sp(gm(1),'日',2)}${sp(gm(2),'週')}${sp(gm(3),'月')}</td></tr>`})():'';return grp+(()=>{
     const cl=etfPx(c,0),dd=etfPx(c,1),w=etfPx(c,2),m=etfPx(c,3),q=etfPx(c,4),vr=etfPx(c,5),v=etfPx(c,6);
     return `<tr data-id="${c}"><td><span class="nm">${esc(nm(c))}</span><span class="cd">${c}</span>${role?`<div class="role" style="white-space:nowrap">${esc(role.replace(/^[^｜]*｜/,''))}${(()=>{const v=ETFJ.aum&&ETFJ.aum[c];return v?`・${v>=1e4?(v/1e4).toFixed(2)+'兆':Math.round(v)+'億'}`:''})()}</div>`:''}</td>
       <td>${fmt(cl,cl!=null&&cl<100?2:1)}<span class="sub ${sign(dd)}">${pct(dd,2)}</span></td>
       <td class="${sign(w)}">${pct(w)}</td><td class="${sign(m)}">${pct(m)}<span class="sub ${sign(q)}">季${pct(q)}</span></td>
-      <td>${v==null?'—':fmt(v,v>=100?0:1)+'億'}<span class="sub" style="${vr!=null&&vr>=1.5?'color:var(--warm)':''}">量比${fmt(vr,2)}</span></td></tr>`}).join('')+'</tbody>';
+      <td>${v==null?'—':fmt(v,v>=100?0:1)+'億'}<span class="sub" style="${vr!=null&&vr>=1.5?'color:var(--warm)':''}">量比${fmt(vr,2)}</span></td></tr>`})()}).join('')+'</tbody>';
   el.onclick=e=>{const h=e.target.closest('th[data-ek]');if(h){const nk=h.dataset.ek;ETS=!nk?'':k!==nk?nk+':-1':d==='-1'?nk+':1':'';etfPage();return}
+    {const g=e.target.closest('tr.egh');if(g){ETC=g.dataset.eg;etfPage();return}}
     if(e.target.closest('tr[data-id]'))location.href='scan.html#etf'};
-  $('tFoot').innerHTML=`名單＝各類規模前 5 大＋00713、00940、00892；上方「全 市值 高息…」可只看一類 (中位數也只算那類，離開 ETF 主題回到「全」)；順序＝類別 (市值→高息→科技→債券→國外)，同類別內依規模由大到小。股名下方＝說明・規模 (例「台灣50・2.16兆」)；規模 (淨值×受益權單位數)，${ETFJ&&ETFJ.aumAsof?+ETFJ.aumAsof.slice(4,6)+'/'+ +ETFJ.aumAsof.slice(6):''} 的數字 (玩股網排行，00892 取證交所)，<b>不會每天自動更新</b>，排名變動時告訴 Claude 調整；規模會跟著股價漲跌，大跌時排名變化不一定是資金流出。點欄位標題排序 (再點一次反向、第三次回名單順序)；「ETF」標題＝回名單順序。<br>收盤下方＝日漲跌；週/月/季＝對比 5/20/60 個交易日前收盤，<b>未還原配息</b>；成交值＝收盤×成交張數的估算，量比＝今日張數 ÷ 前 5 日均張，≥1.5 標橘色。資料：證交所、櫃買中心每日收盤行情 (跟掃描頁成交值排行同一份)。名單要增減告訴 Claude。`;
+  $('tFoot').innerHTML=`名單＝各類規模前 5 大＋00713、00940、00892；上方「全 市值 高息…」可只看一類 (中位數也只算那類，離開 ETF 主題回到「全」)；選「全」且是名單順序時，每類前面有灰底標題列＝那類的日/週/月中位數，點標題列＝只看那類 (點欄位排序後不顯示)；順序＝類別 (市值→高息→科技→債券→國外)，同類別內依規模由大到小。股名下方＝說明・規模 (例「台灣50・2.16兆」)；規模 (淨值×受益權單位數)，${ETFJ&&ETFJ.aumAsof?+ETFJ.aumAsof.slice(4,6)+'/'+ +ETFJ.aumAsof.slice(6):''} 的數字 (玩股網排行，00892 取證交所)，<b>不會每天自動更新</b>，排名變動時告訴 Claude 調整；規模會跟著股價漲跌，大跌時排名變化不一定是資金流出。點欄位標題排序 (再點一次反向、第三次回名單順序)；「ETF」標題＝回名單順序。<br>收盤下方＝日漲跌；週/月/季＝對比 5/20/60 個交易日前收盤，<b>未還原配息</b>；成交值＝收盤×成交張數的估算，量比＝今日張數 ÷ 前 5 日均張，≥1.5 標橘色。資料：證交所、櫃買中心每日收盤行情 (跟掃描頁成交值排行同一份)。名單要增減告訴 Claude。`;
 }
 function autoThemes(){
   if(!TOP||!TOP.lists)return [...etfTheme(),...e50Theme(),...hp50Theme()];
@@ -3047,7 +3049,7 @@ function hotPaint(){
     return `<a href="#${id}">${nameOf(id)}</a> <span class="${sign(ch)}">${ch==null?'':pct(ch,1)}</span>${why?`<span class="sm">(${why})</span>`:''}`}).join('、'):'';
   $('hotFoot').innerHTML=MO?`範圍：產業主題＋自選共 ${pool.length} 檔。🔥＝月漲幅 &gt; 0、量比 (5 日均量 ÷ 20 日均量)≥ 1.5、且投信或外資 5 日買超 ≥ 5 日成交量的 1%。是「有資金在推」的訊號，不是買進訊號，要搭配估值位階看。<a href="fstats.html">📊 上榜後勝率統計 ›</a>`
     +(hasH?`<br><b>日期選單</b>可看之前哪些股票上榜 (從 ${ymd(days[0])} 起)；選了舊日期，「數字」預設最新，點一下看當天收盤的數字，還亮著 🔥 的＝今天仍符合。<b>上榜後</b>＝那天收盤 → 最新收盤。<b>🆕新進</b>＝前一個交易日還沒有 🔥；<b>連 N 天</b>＝連續符合的交易日數。<b>橘底 ⚠</b>＝這個進場時機過去抱 10 日輸大盤 2 個百分點以上；<b>短線</b>＝同時是注意股，過去 5 日有超額、10 日倒輸 (都依統計頁的數字即時判斷)。大戶/股東一律是最新一週。`:'')
-    +` 資料 ${ymd(MO.asof)} <span style="opacity:.5">v1122d</span>`:'第一次需要回補約 3 個月的歷史資料，Actions 跑完後就會出現。';
+    +` 資料 ${ymd(MO.asof)} <span style="opacity:.5">v1122e</span>`:'第一次需要回補約 3 個月的歷史資料，Actions 跑完後就會出現。';
 }
 document.addEventListener('toggle',e=>{if(e.target&&e.target.id==='hotBox'&&e.target.open&&!FH)fhLoad().then(()=>{try{hotPaint()}catch(err){}})},true);
 document.addEventListener('change',e=>{if(e.target&&e.target.id==='fhDay'){HDAY=e.target.value;hotPaint()}});
