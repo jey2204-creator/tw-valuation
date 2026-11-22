@@ -301,7 +301,8 @@ def split_adj(seq):
 
 def build_etf(recs, names):
     """📦 ETF 主題（2026-11-22）→ data/etf.json：
-    {asof, n, stocks:[[代號, 備註]…], aum:{代號:規模億}, aumAsof, nm:{代號:[名稱,市場]}, px:{代號:[收, 日%, 週%, 月%, 季%, 量比, 成交值億, 20日均值億]}}
+    {asof, n, stocks:[[代號, 備註]…], aum:{代號:規模億}, aumAsof, nm:{代號:[名稱,市場]}, px:{代號:[收, 日%, 週%, 月%, 季%, 量比, 成交值億, 20日均值億, 近12月殖利率%, 近12月配息次數]}}
+    近12月殖利率：adj.json 的 cash（每單位配息元）在近 365 天內的合計 ÷ 最新收盤；adj.json 還沒有 cash 時＝None，有 cash 但沒配息＝0。
     週/月/季＝對比 5/20/60 個交易日前收盤；量比＝今日張數 ÷ 前 5 日均張；成交值≈收×張×1000。
     2026-11-22 起含息：週/月/季/日漲跌用 data/adj.json 的除息係數還原（收盤 × 係數），div＝{代號:[[除息日, 配息占前收%]…]}；
     adj.json 沒有 ETF 事件時等同未還原。成交值用原始收盤。不另外發請求，只用 data/rank/日期.json 的 e。"""
@@ -309,9 +310,12 @@ def build_etf(recs, names):
     if not kd:
         return
     try:                                   # 2026-11-22：含息報酬——data/adj.json 的 ETF 除息係數（fetch_adj.py）
-        AEV = json.loads((OUT / "adj.json").read_text("utf-8")).get("ev") or {}
+        AJ = json.loads((OUT / "adj.json").read_text("utf-8"))
     except Exception:
-        AEV = {}
+        AJ = {}
+    AEV, ACASH = AJ.get("ev") or {}, AJ.get("cash") or {}
+    a0 = dt.date(int(kd[-1][:4]), int(kd[-1][4:6]), int(kd[-1][6:]))
+    y365 = f"{a0 - dt.timedelta(days=365):%Y%m%d}"
     def ser(c):
         a = split_adj([recs[d]["e"].get(c) for d in kd])
         for d0, f, _ in AEV.get(c, []):     # 除息日「之前」的價位 × 係數（參考價 ÷ 前一日收盤）＝還原價
@@ -335,7 +339,18 @@ def build_etf(recs, names):
         vr = round(lots[-1] / (sum(p5) / len(p5)), 2) if p5 and lots[-1] else None
         val = lambda r: r[0] * r[1] * 1000 / 1e8
         v20 = [val(r) for r in a[-20:] if r]
-        px[c] = [cl[-1], chg(1), chg(5), chg(20), chg(60), vr, round(val(a[-1]), 2), round(sum(v20) / len(v20), 2) if v20 else None]
+        # 近 12 月殖利率（2026-11-22）＝除息日在近 365 天內的每單位配息合計 ÷ 最新收盤；分割前的配息 ÷ 分割倍數
+        raw = [recs[d]["e"].get(c) for d in kd]
+        spl = split_adj(raw)
+        def sf(d0):                      # 那天的分割倍數＝原始價 ÷ 分割還原價（130 天外的視為 1）
+            for d, r0, r1 in zip(reversed(kd), reversed(raw), reversed(spl)):
+                if d <= d0 and r0 and r1 and r1[0]:
+                    return r0[0] / r1[0]
+            return 1.0
+        cs = [(d, v / sf(d)) for d, v in ACASH.get(c, []) if y365 < d <= kd[-1]]
+        last = raw[-1][0] if raw[-1] else None
+        yl = round(sum(v for _, v in cs) / last * 100, 2) if cs and last else (0 if ACASH else None)
+        px[c] = [cl[-1], chg(1), chg(5), chg(20), chg(60), vr, round(val(a[-1]), 2), round(sum(v20) / len(v20), 2) if v20 else None, yl, len(cs)]
         cat[c] = note.split("｜")[0]
     order = [[c, n] for c, n, _ in ETF_THEME if c in px]          # 順序＝ETF_THEME（類別內依規模）
     div = {c: [[d, round((1 - f) * 100, 2)] for d, f, t in AEV.get(c, []) if t == "x" and d >= kd[0]] for c, _ in order}

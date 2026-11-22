@@ -14,6 +14,7 @@
   類別 x=除權息、r=減資、p=面額變更
 每次重抓最近 100 天併入舊檔（第一次 230 天），保留 260 天。某個來源失敗就沿用舊資料、不中斷。
 2026-11-22：ETF（代號 00 開頭）的除息也收，供 fetch_rank.py 的 📦 ETF 含息報酬用；第一次會自動往回補 230 天。
+2026-11-22：另存 cash＝{ETF代號:[[除息日, 每單位配息元]]}（除息前收盤 − 參考價），保留 380 天，供 📦 ETF 近 12 月殖利率；第一次往回補 380 天。
 用法：python fetch_adj.py
 """
 import json, re, time, datetime as dt, urllib.request
@@ -23,6 +24,7 @@ ROOT = Path(__file__).resolve().parent
 OUT = ROOT / "data" / "adj.json"
 UA = {"User-Agent": "Mozilla/5.0 (tw-valuation; GitHub Actions)", "Accept": "application/json,text/plain,*/*"}
 KEEP, FIRST, EACH, CHUNK = 260, 230, 100, 100
+CASH_KEEP = 380                          # ETF 配息金額保留天數（近 12 月殖利率用）
 ETF = re.compile(r"^00[0-9A-Z]{2,4}$")   # 2026-11-22：ETF 配息也收（📦 ETF 主題含息報酬、掃描頁 ETF 小卡還原漲幅）
 
 
@@ -77,7 +79,7 @@ def parse(js, typ):
                 continue
             f = ref / p
             if 0.02 < f < 50 and abs(f - 1) > 1e-6:
-                ev.append((c, d, round(f, 6), typ))
+                ev.append((c, d, round(f, 6), typ, round(p - ref, 4) if typ == "x" and ETF.match(c) else None))
     return ev
 
 
@@ -91,7 +93,9 @@ def main():
     has_etf = any(ETF.match(c) for c in (old.get("ev") or {}))   # 第一次收 ETF：往回補 230 天
     start = today - dt.timedelta(days=EACH if old.get("ev") and has_etf else FIRST)
     cut = (today - dt.timedelta(days=KEEP)).strftime("%Y%m%d")
-    got, errs, n = {}, [], 0
+    got, gcash, errs, n = {}, {}, [], 0
+    if not old.get("cash"):                # 2026-11-22：第一次存 ETF 配息金額 → 往回補 380 天（近 12 月殖利率要一整年）
+        start = today - dt.timedelta(days=CASH_KEEP)
     a = start
     while a <= today:
         b = min(today, a + dt.timedelta(days=CHUNK - 1))
@@ -106,9 +110,11 @@ def main():
             ("上櫃面額", "p", "tpex", f"https://www.tpex.org.tw/www/zh-tw/bulletin/pvChgRslt?startDate={sl(a)}&endDate={sl(b)}&response=json"),
         ):
             try:
-                for c, d, f, t in parse(get(url), typ):
+                for c, d, f, t, cs in parse(get(url), typ):
                     if s <= d <= e:
                         got[(c, d, t)] = f
+                        if cs:
+                            gcash[(c, d)] = cs
                         n += 1
             except Exception as ex:
                 errs.append(f"{name} {s}~{e}: {ex}")
@@ -127,7 +133,17 @@ def main():
     if not ev:
         print("fetch_adj: 沒有任何資料，不輸出", errs)
         return
-    res = {"updated": dt.datetime.utcnow().strftime("%Y-%m-%dT%H:%MZ"), "from": cut, "to": f"{today:%Y%m%d}", "errors": errs[:20], "ev": ev}
+    mc = {}
+    for c, lst in (old.get("cash") or {}).items():
+        for d, v in lst:
+            mc[(c, d)] = v
+    mc.update(gcash)
+    ccut = (today - dt.timedelta(days=CASH_KEEP)).strftime("%Y%m%d")
+    cash = {}
+    for (c, d), v in sorted(mc.items()):
+        if d >= ccut:
+            cash.setdefault(c, []).append([d, v])
+    res = {"updated": dt.datetime.utcnow().strftime("%Y-%m-%dT%H:%MZ"), "from": cut, "to": f"{today:%Y%m%d}", "errors": errs[:20], "ev": ev, "cash": cash}
     OUT.write_text(json.dumps(res, ensure_ascii=False, separators=(",", ":")), "utf-8")
     print(f"adj.json: {len(ev)} 檔、{sum(len(v) for v in ev.values())} 筆事件（這次抓到 {n} 筆），錯誤 {len(errs)}", errs[:5])
 
