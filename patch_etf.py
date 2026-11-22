@@ -83,12 +83,15 @@ scan_edits = [
     ("const A=THEMES.filter(t=>t.id==='_fav'||t.id==='e50'||", "const A=THEMES.filter(t=>t.id==='_fav'||t.id==='etf'||t.id==='e50'||"),
     ("const isRk=isN||(sel.kind==='t'&&(sel.id==='e50'||sel.id==='hp50'));",
      "const isRk=isN||(sel.kind==='t'&&(sel.id==='e50'||sel.id==='hp50'||sel.id==='etf'));   // 2026-11-22：📦 ETF 也預設榜序（＝首頁名單順序）"),
-    ('<span style="opacity:.5">v1121a</span>', '<span style="opacity:.5">v1122a</span>'),
+    # 2026-11-22 13:55 世杰選 ①：ETF 小卡第二行的「投— 外—」（ETF 沒有法人籌碼，永遠是—）換成代號；所有名單適用
+    ("${badge(r.ts,'投')}${badge(r.fs,'外')}</div>",
+     "${/^00/.test(r.c)?`<span class=\"tg n cdt\" title=\"ETF 代號 (ETF 沒有投信/外資籌碼)\">${esc(r.c)}</span>`:badge(r.ts,'投')+badge(r.fs,'外')}</div>"),
+    ('<span style="opacity:.5">v1121a</span>', '<span style="opacity:.5">v1122b</span>'),
 ]
 
 # beta 互連：首頁 beta 的 ETF「掃描」鈕／點列 → 掃描 beta；掃描 beta 的「‹ 掃描」回首頁 beta
-I_BETA = [("$('tScan').href='scan.html#'+encodeURIComponent(t.id);", "$('tScan').href=(t.id==='etf'?'beta_scan_etft.html?v=1#':'scan.html#')+encodeURIComponent(t.id);"),
-          ("location.href='scan.html#etf'", "location.href='beta_scan_etft.html?v=1#etf'")]
+I_BETA = [("$('tScan').href='scan.html#'+encodeURIComponent(t.id);", "$('tScan').href=(t.id==='etf'?'beta_scan_etft.html?v=2#':'scan.html#')+encodeURIComponent(t.id);"),
+          ("location.href='scan.html#etf'", "location.href='beta_scan_etft.html?v=2#etf'")]
 S_BETA = [("?'index.html#t/'+encodeURIComponent(sel.id):'index.html';", "?(sel.id==='etf'?'beta.html?v=18#t/':'index.html#t/')+encodeURIComponent(sel.id):'index.html';")]
 patch('index.html', 'index.html' if prod else 'beta.html', index_edits, I_BETA)
 patch('scan.html', 'scan.html' if prod else 'beta_scan_etft.html', scan_edits, S_BETA)

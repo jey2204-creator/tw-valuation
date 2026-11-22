@@ -1749,7 +1749,7 @@ function etfPage(){const t=THEMES.find(x=>x.id==='etf');if(!t||!ETFJ)return;cons
       <td class="${sign(w)}">${pct(w)}</td><td class="${sign(m)}">${pct(m)}<span class="sub ${sign(q)}">季${pct(q)}</span></td>
       <td>${v==null?'—':fmt(v,v>=100?0:1)+'億'}<span class="sub" style="${vr!=null&&vr>=1.5?'color:var(--warm)':''}">量比${fmt(vr,2)}</span></td></tr>`}).join('')+'</tbody>';
   el.onclick=e=>{const h=e.target.closest('th[data-ek]');if(h){const nk=h.dataset.ek;ETS=!nk?'':k!==nk?nk+':-1':d==='-1'?nk+':1':'';etfPage();return}
-    if(e.target.closest('tr[data-id]'))location.href='beta_scan_etft.html?v=1#etf'};
+    if(e.target.closest('tr[data-id]'))location.href='beta_scan_etft.html?v=2#etf'};
   $('tFoot').innerHTML=`名單順序＝類別 (市值→高息→科技→債券)，同類別內依近 20 個交易日平均成交值由大到小；本站沒有 ETF 規模 (受益權單位×淨值) 資料，所以不是依規模。點欄位標題排序 (再點一次反向、第三次回名單順序)；「ETF」標題＝回名單順序。<br>收盤下方＝日漲跌；週/月/季＝對比 5/20/60 個交易日前收盤，<b>未還原配息</b>；成交值＝收盤×成交張數的估算，量比＝今日張數 ÷ 前 5 日均張，≥1.5 標橘色。資料：證交所、櫃買中心每日收盤行情 (跟掃描頁成交值排行同一份)。名單要增減告訴 Claude。`;
 }
 function autoThemes(){
@@ -3086,7 +3086,7 @@ function showTheme(tid){
     if(day!==NT.asof){const src=ntSrc(day);if(src){const alt=noticeThemes(src).find(x=>x.id===tid);t=alt||{...t,stocks:[]}}}NCUR=day}
   if(NCUR)$('tName').innerHTML=`${esc(t.name.replace(/\s*[（(][^）)]*[）)]$/,''))} <select id="ntDay" class="ntday${NCUR===NT.asof?'':NTN&&NCUR===NTN.asof?' nx':' old'}" aria-label="名單日期">${ntDayOpts()}</select>`;else $('tName').textContent=t.name;document.title=`${t.name} 估值看板`;
   modeQ();const ids=t.stocks.map(x=>x[0]),y=median(ids.map(i=>sv(i,'yoy'))),pe=median(ids.map(i=>sv(i,'pe'))),pb=median(ids.map(i=>sv(i,'pb'))),ey=median(ids.map(epsY)),pg=median(ids.map(peg));
-  $('tEdit').href=t.favt?'#f':'#e/'+t.id;$('tEdit').hidden=!!t.auto&&!t.favt;$('tScan').href=(t.id==='etf'?'beta_scan_etft.html?v=1#':'scan.html#')+encodeURIComponent(t.id);RANK=t.favt?null:ranks(ids);
+  $('tEdit').href=t.favt?'#f':'#e/'+t.id;$('tEdit').hidden=!!t.auto&&!t.favt;$('tScan').href=(t.id==='etf'?'beta_scan_etft.html?v=2#':'scan.html#')+encodeURIComponent(t.id);RANK=t.favt?null:ranks(ids);
   const lead=t.favt?'':(()=>{const tc=ids.reduce((a,i)=>a+(cap(i)||0),0),c1=ids.find(i=>RANK[i]&&RANK[i][0]===1),r1=ids.find(i=>RANK[i]&&RANK[i][1]===1);if(!c1||!tc)return '';
     const sh=Math.round(cap(c1)/tc*100);
     return c1===r1?`<br>👑 龍頭 <strong>${nameOf(c1)}</strong> (市值 ${capTxt(cap(c1))}，占主題 ${sh}%) ・主題總市值 ${capTxt(tc)}`
