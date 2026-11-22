@@ -38,7 +38,7 @@ FIRST_DAYS, MORE_DAYS = 60, 35          # 第一次補幾天／之後每次再�
 BUDGET = 9 * 60                         # 單次最多抓 9 分鐘
 ETF = re.compile(r"^00[0-9A-Z]{2,4}$")
 # 2026-11-22：首頁／掃描頁「📦 ETF」主題的固定名單
-# 14:40 世杰改：每類（市值／高息／科技／債券）規模前 5 大＋保留 00713、00940、00892，類別內依規模由大到小
+# 14:40 世杰改：每類（市值／高息／科技／債券／國外）規模前 5 大＋保留 00713、00940、00892，類別內依規模由大到小
 # 每列 [代號, 備註「類別｜說明」, 規模億元]；規模＝玩股網 2026/11/20 排行（00892 取證交所 ETFortune 126.12 億，不在前 60），手動填、不會自動更新
 # 要增減或更新規模直接改這裡（順序＝畫面順序），下次排程就會更新 data/etf.json
 ETF_AUM_ASOF = "20261120"
@@ -50,7 +50,10 @@ ETF_THEME = [["0050", "市值｜台灣50", 21619.65], ["006208", "市值｜台�
              ["0052", "科技｜科技", 1323.37], ["00881", "科技｜科技龍頭", 1139.73], ["00927", "科技｜半導體收益", 594.77],
              ["00891", "科技｜半導體", 562.59], ["00935", "科技｜新科技50", 413.60], ["00892", "科技｜半導體", 126.12],
              ["00937B", "債券｜投等債20+", 2313.96], ["00751B", "債券｜AAA-A公司債", 1550.39], ["00679B", "債券｜美債20年", 1539.01],
-             ["00720B", "債券｜投資級公司債", 1289.85], ["00725B", "債券｜投資級公司債", 1286.23]]
+             ["00720B", "債券｜投資級公司債", 1289.85], ["00725B", "債券｜投資級公司債", 1286.23],
+             # 15:47 世杰加「國外」類：規模前 5 大（不含主動式 00988A、陸股 00882）
+             ["00662", "國外｜NASDAQ", 1155.98], ["00830", "國外｜費城半導體", 703.91], ["00646", "國外｜S&P500", 472.79],
+             ["00712", "國外｜美國不動產", 422.12], ["00757", "國外｜FANG+", 333.70]]
 T0 = time.time()
 
 
@@ -262,13 +265,38 @@ def build(names):
                 used.update(c for c, _ in recs[d][m].get(k, []))
     extra = sorted({c for c in used if c not in stocks} | {x[0] for x in ETF_THEME})   # ＝上過榜的 ETF＋📦 ETF 主題的固定名單
     kd = sorted(recs)[-KEEP:]
-    xk = {"days": kd, "d": {c: [recs[d].get("e", {}).get(c) or 0 for d in kd] for c in extra}}
+    xk = {"days": kd, "d": {c: [r or 0 for r in split_adj([recs[d].get("e", {}).get(c) for d in kd])] for c in extra}}   # 2026-11-22：ETF 分割還原
     now = dt.datetime.utcnow() + dt.timedelta(hours=8)
     dump(OUT / "rank.json", {"asof": show[0], "builtAt": f"{now:%Y/%m/%d %H:%M}", "top": TOP, "days": show, "hist": hist,
                              "nm": {c: names.get(c, [c, ""]) for c in extra}, "xk": xk})
     home(show, hist, names)
     build_etf(recs, names)
     print(f"rank.json: 名單 {len(show)} 天（最新 {show[0]}）、ETF {len(extra)} 檔、K 線 {len(kd)} 天、週轉率 {ntr} 天、{(OUT / 'rank.json').stat().st_size // 1024} KB")
+
+
+def split_adj(seq):
+    """2026-11-22：ETF 分割／反分割還原（例 00662 富邦NASDAQ 11/17 一拆五：117.8 → 23.1）。
+    seq＝[[收,張,開,高,低] 或 None/0,…]（舊→新）。相鄰兩個有值的收盤比 ≥1.8（或 ≤1/1.8）且接近整數倍（誤差 <8%）視為分割，
+    把更早的價位 ÷ 倍數、張數 × 倍數。台股 ETF 有 10% 漲跌幅（海外型也很少單日腰斬），不會誤判一般漲跌。"""
+    out = [list(r) if r else r for r in seq]
+    last = None
+    for i in range(len(out)):
+        r = out[i]
+        if not r:
+            continue
+        if last is not None and r[0]:
+            p = out[last][0]
+            for k in (p / r[0], r[0] / p):
+                n = round(k)
+                if k >= 1.8 and abs(k - n) / n < 0.08:
+                    f = n if p > r[0] else 1 / n
+                    for j in range(i):
+                        q = out[j]
+                        if q:
+                            out[j] = [round(q[0] / f, 4), int(round(q[1] * f))] + [round(x / f, 4) if x is not None else None for x in q[2:]]
+                    break
+        last = i
+    return out
 
 
 def build_etf(recs, names):
@@ -280,7 +308,7 @@ def build_etf(recs, names):
     if not kd:
         return
     def ser(c):
-        return [recs[d]["e"].get(c) for d in kd]
+        return split_adj([recs[d]["e"].get(c) for d in kd])
     px, cat = {}, {}
     for c, note, _ in ETF_THEME:
         a = ser(c)
@@ -288,10 +316,13 @@ def build_etf(recs, names):
             continue
         cl = [r[0] if r else None for r in a]
         lots = [r[1] if r else None for r in a]
-        def chg(n):
-            if len(cl) <= n or cl[-1 - n] in (None, 0):
+        def chg(n):                      # 基準日停止交易（分割期間等）時往前找最近一個有收盤的日子
+            j = len(cl) - 1 - n
+            while j >= 0 and not cl[j]:
+                j -= 1
+            if j < 0:
                 return None
-            return round((cl[-1] / cl[-1 - n] - 1) * 100, 2)
+            return round((cl[-1] / cl[j] - 1) * 100, 2)
         p5 = [x for x in lots[-6:-1] if x]
         vr = round(lots[-1] / (sum(p5) / len(p5)), 2) if p5 and lots[-1] else None
         val = lambda r: r[0] * r[1] * 1000 / 1e8
