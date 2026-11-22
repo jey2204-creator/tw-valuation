@@ -22,3 +22,7 @@ iPhone 用的個股估值頁：月營收、三率、EPS、預估 EPS、本益比
 python fetch.py 2330
 python -m http.server 8000   # 開 http://localhost:8000
 ```
+
+## 📊 Traffic
+
+![Traffic](traffic/chart.png)
