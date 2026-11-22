@@ -11,7 +11,7 @@
 入口：首頁入口清單「📈 K 線掃描」下方一列＋產業主題標題列「🗺️」。
 用法：python3 patch_hmap.py       → beta.html
       python3 patch_hmap.py prod  → index.html
-只能對 index v1122h 跑一次。
+只能對沒有 #hmap 的 index 跑一次（11/22 20:11 改成對 v1122r 套用，頁尾改 v1122s）。
 """
 import sys
 prod = len(sys.argv) > 1 and sys.argv[1] == 'prod'
@@ -106,13 +106,15 @@ E = [
      '<div class="hub" id="hub"><a class="srlink" href="scan.html"><b>📈 K 線掃描</b><span>一面小卡掃 K、量、投信外資</span></a>'
      '<a class="srlink" href="#h"><b>🗺️ 主題熱力圖</b><span>一屏看各主題日/週/月/季強弱</span></a>'),
     ("function applyCfg(){THEMES=allThemes().filter(t=>!t.hidden)}", JS + "function applyCfg(){THEMES=allThemes().filter(t=>!t.hidden)}"),
-    ('<span style="opacity:.5">v1122h</span>', '<span style="opacity:.5">v1122i</span>'),
 ]
 
 s = open('index.html', encoding='utf-8').read()
 for a, b in E:
     assert s.count(a) == 1, (s.count(a), a[:60])
     s = s.replace(a, b)
+import re
+assert len(re.findall(r'opacity:\.5">v1122[a-z]</span>', s)) == 1
+s = re.sub(r'opacity:\.5">v1122[a-z]</span>', 'opacity:.5">v1122s</span>', s)
 if not prod:
     s = s.replace('<title>', '<title>[beta] ', 1)
 dst = 'index.html' if prod else 'beta.html'
