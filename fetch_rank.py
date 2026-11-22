@@ -353,9 +353,28 @@ def build_etf(recs, names):
         px[c] = [cl[-1], chg(1), chg(5), chg(20), chg(60), vr, round(val(a[-1]), 2), round(sum(v20) / len(v20), 2) if v20 else None, yl, len(cs)]
         cat[c] = note.split("｜")[0]
     order = [[c, n] for c, n, _ in ETF_THEME if c in px]          # 順序＝ETF_THEME（類別內依規模）
+    # 2026-11-22 除息提醒：預估下次除息＝過去除息日 + 1 年（取今天之後最早那天），附上次配息金額；已公告的由網頁讀 data/exdiv.json
+    def nxt(c):
+        L = ACASH.get(c, [])
+        if not L:
+            return None
+        cands = []
+        for d, _ in L:
+            y, m, dd = int(d[:4]) + 1, int(d[4:6]), int(d[6:])
+            try:
+                e = f"{dt.date(y, m, min(dd, 28 if m == 2 else dd)):%Y%m%d}"
+            except ValueError:
+                continue
+            ed = dt.date(int(e[:4]), int(e[4:6]), int(e[6:]))
+            done = any(abs((ed - dt.date(int(x[:4]), int(x[4:6]), int(x[6:]))).days) <= 25 for x, _ in L)   # 今年這次已經除過（例 00679B 去年 11/21、今年 11/20）
+            if e > kd[-1] and not done:
+                cands.append(e)
+        return [min(cands), L[-1][1]] if cands else None
+    nx = {c: nxt(c) for c, _ in order}
+    nx = {c: v for c, v in nx.items() if v}
     div = {c: [[d, round((1 - f) * 100, 2)] for d, f, t in AEV.get(c, []) if t == "x" and d >= kd[0]] for c, _ in order}
     div = {c: v for c, v in div.items() if v}
-    dump(OUT / "etf.json", {"asof": kd[-1], "n": len(order), "stocks": order, "adj": bool(AEV), "div": div, "d20": kd[-21] if len(kd) > 20 else kd[0],
+    dump(OUT / "etf.json", {"asof": kd[-1], "n": len(order), "stocks": order, "adj": bool(AEV), "div": div, "nx": nx, "d20": kd[-21] if len(kd) > 20 else kd[0],
                             "aum": {c: v for c, _, v in ETF_THEME if c in px}, "aumAsof": ETF_AUM_ASOF,
                             "nm": {c: names.get(c, [c, ""]) for c, _ in order}, "px": px})
     print(f"etf.json: {len(order)}/{len(ETF_THEME)} 檔，資料日 {kd[-1]}")
