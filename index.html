@@ -217,6 +217,7 @@ details.ind summary{padding:10px 12px;cursor:pointer;display:flex;justify-conten
 details.ind summary::-webkit-details-marker{display:none}
 details.ind summary span{color:var(--muted);font-size:12px;font-family:var(--f-num)}
 details.ind .tbl{padding:0 10px 6px;margin-top:0}
+.ussig{flex-basis:100%;font-size:12px;line-height:1.6;color:var(--muted)}.ussig:empty{display:none}.ussig b{color:var(--fg)}
 .uslink{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:10px;font-size:12px;color:var(--muted)}
 .uslink a,.peers a{color:var(--fg);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:1px 9px;background:var(--card);font-family:var(--f-num);font-size:12px}
 .crumb{display:flex;justify-content:space-between;align-items:center;padding-top:12px;font-size:13px}
@@ -2732,6 +2733,23 @@ const nameOf=id=>{const it=LIST.find(s=>s[0]===id);return it?it[1].replace(/\*$/
 const sign=v=>v==null?'':v>0?'up':v<0?'dn':'';
 const pct=(v,d=1)=>v==null?'—':(v>0?'+':'')+fmt(v,d)+'%';
 const median=a=>{a=a.filter(x=>x!=null).sort((x,y)=>x-y);if(!a.length)return null;const m=a.length>>1;return a.length%2?a[m]:(a[m-1]+a[m])/2};
+// ---- 美股財報動能燈號（batch19）：us/data/sig.json 每檔 [營收加速(點), EPS 驚喜%, 首日反應%, 近一月%, 財報日]；跟美股站 sigOf() 同算法 ----
+// 三項各取主題中位數（不到一半檔數有值不算）：可算的全正 🟢、全負 🔴、其他 🟡、可算不到 2 項 ⚪。只描述美股這季財報動能，不是買賣訊號
+let USIG=null,USIG_P=null;
+function loadUsig(){return USIG_P||(USIG_P=fetch('us/data/sig.json?d='+new Date().toISOString().slice(0,10)).then(r=>r.ok?r.json():null).then(j=>{if(j&&j.d){USIG=j;
+  try{if(!$('home').hidden)renderHome()}catch(e){}try{const el=$('tUSsig');if(el&&el.dataset.t){const t=THEMES.find(x=>x.id===el.dataset.t);if(t)el.innerHTML=usSigLine(t)}}catch(e){}}}).catch(()=>null))}
+function usSig(us){if(!USIG||!us||!us.length)return null;const N=us.length,D=USIG.d;
+  const mk=(lb,i,f)=>{const v=us.map(u=>(D[u]||[])[i]).filter(x=>x!=null&&isFinite(x));return{lb,v:v.length&&v.length*2>=N?median(v):null,f}};
+  const c=[mk('營收加速',0,v=>(v>0?'+':'')+fmt(v,0)+' 點'),mk('EPS 驚喜',1,v=>pct(v,1)),mk('首日反應',2,v=>pct(v,1))];
+  const av=c.filter(x=>x.v!=null),pos=av.filter(x=>x.v>0).length,m=us.map(u=>(D[u]||[])[3]).filter(x=>x!=null);
+  return{lt:av.length<2?'⚪':pos===av.length?'🟢':pos===0?'🔴':'🟡',c,tip:c.map(x=>`${x.lb} ${x.v==null?'—':(x.v>0?'✓ ':'✗ ')+x.f(x.v)}`).join('・'),m1:m.length*2>=N?median(m):null}}
+function usBadge(t,link){const us=t.us||[];if(!us.length)return '';const g=usSig(us);
+  const tip=g?`美股財報動能 ${g.lt}：${g.tip}${g.m1!=null?'・美股近一月 '+pct(g.m1,0):''}`:'美股站也有這個主題';
+  return link?`<a class="usf" href="us/index.html#t/${t.id}" title="${tip}（點了開美股同主題）" aria-label="美股同主題">${g?'美'+g.lt:'🇺🇸'}</a>`:`<span class="usf" title="${tip}">${g?'美'+g.lt:'🇺🇸'}</span>`}
+function usSigLine(t){const g=usSig(t.us||[]);if(!g)return '';const tw=median(t.stocks.map(x=>mv(x[0],'m')));
+  return `美股財報動能 <b>${g.lt}</b>：${g.c.map(x=>`${x.lb} ${x.v==null?'—':`<span class="${x.v>0?'up':'dn'}">${x.v>0?'✓':'✗'} ${x.f(x.v)}</span>`}`).join('・')}`+
+    (g.m1!=null?`<br>近一月：美股 <span class="${sign(g.m1)}">${pct(g.m1,0)}</span>${tw!=null?`・台股 <span class="${sign(tw)}">${pct(tw,0)}</span>・美−台 <b>${(g.m1-tw>0?'+':'')+fmt(g.m1-tw,0)}</b> 點`:''}`:'')+
+    `<br><span style="font-size:11px">燈號只描述美股這季財報動能，台股可能落後或不跟，不是買進訊號</span>`}
 const COLS=[['pe','本益比'],['pb','淨值比'],['yoy','營收年增']];
 // ---- EPS 年增／PEG ----
 // 來源：summary.json 的 eps（主題成份股，Actions 每天抓）＋個股頁看過時存在手機的 epsLocal（自訂主題的股票靠這個）
@@ -2934,7 +2952,7 @@ function themeList(el){
   const th=([key,lb])=>{const on=k===key;return `<th data-tk="${key}" class="${on?'on':''}">${lb}${on?(+d>0?'▲':'▼'):''}</th>`};
   el.innerHTML=`<div class="panel"><div class="tbl tlw"><table class="lst tlt" style="--tnw:${rows.length>99?19:13}px"><thead><tr><th data-tk="">主題</th>${TLC.map(th).join('')}</tr></thead><tbody>`+rows.map(r=>{
     const {t,n,y,pe,ey,pg,mm,nf,a3,a2}=r;
-    const meta=`<span class="dtip" data-tip="${n} 檔的中位數${n<5?'；檔數少，中位數容易被單一股票帶動':''}" style="${n<5?'color:var(--warm)':''}">${n}檔</span>${a3!=null&&(a3||a2)?` AI<span class="ail3">${a3}</span>/<span class="ail2">${a2}</span>`:''}${nf?` 🔥${nf}`:''}${(t.us||[]).length?`<a class="usf" href="us/index.html#t/${t.id}" title="美股站也有這個主題（${t.us.length} 檔對應美股），點了開美股同主題" aria-label="美股同主題">🇺🇸</a>`:''}`;
+    const meta=`<span class="dtip" data-tip="${n} 檔的中位數${n<5?'；檔數少，中位數容易被單一股票帶動':''}" style="${n<5?'color:var(--warm)':''}">${n}檔</span>${a3!=null&&(a3||a2)?` AI<span class="ail3">${a3}</span>/<span class="ail2">${a2}</span>`:''}${nf?` 🔥${nf}`:''}${usBadge(t,true)}`;
     // 自動主題的名單日「（10/28）」移到第二行小字，主題名維持一行（2026-10-29）
     const nm=t.name.replace(/^\p{Extended_Pictographic}\uFE0F?\s*/u,''),dm=nm.match(/^(.*?)\s*[（(](\d{1,2}\/\d{1,2})[）)]\s*$/);
     return `<tr data-t="${t.id}"><td><div class="tc"><span class="tno"></span><div><span class="tn">${dm?dm[1]:nm}</span><span class="tm">${dm?`${dm[2]}・`:''}${meta}</span></div></div></td>
@@ -3016,7 +3034,7 @@ function rkHome(){
     const f=t[2]>=100?Math.round(t[2]).toLocaleString():t[2].toFixed(1);
     const md=`${+h.asof.slice(4,6)}/${+h.asof.slice(6)}`;el.textContent=(t[1].length<=4?t[1]+' ':'')+`${f}億`;
     el.title=`${md} ${m==='L'?'上市':m==='O'?'上櫃':'上市櫃合併'}${e==='0'?' (不含 ETF)':''}成交值第 1 名${t[3]!=null?'；新上榜 '+t[3]+' 檔':''}；右邊三顆＝成交值/成交量/週轉率前 50`}).catch(()=>{})}
-function renderHome(){
+function renderHome(){loadUsig();
   RANK=null;srHome();try{calHome()}catch(e){}try{rkHome()}catch(e){}
   modeQ();$('sumAsof').innerHTML=S?`<span class="asof" id="sumPx">收盤 ${S.pxAsof?S.pxAsof.slice(4,6)+'/'+S.pxAsof.slice(6):S.updated.slice(5,10).replace('-','/')}</span>・營收 ${S.revYM?+S.revYM.slice(5)+'月':'—'}${QN?'・EPS '+QN:''}`:'數字待 Actions 產生';
   const fav=store.get('fav')||[];$('favEdit').hidden=!fav.length;try{asofPaint()}catch(e){}
@@ -3027,7 +3045,7 @@ function renderHome(){
   const tg=$('tgrid');tg.classList.toggle('tl',DENSE);
   if(DENSE){themeList(tg)}else
   $('tgrid').innerHTML=THEMES.map(t=>{const ids=t.stocks.map(x=>x[0]),y=median(ids.map(i=>sv(i,'yoy'))),pe=median(ids.map(i=>sv(i,'pe'))),ey=median(ids.map(epsY)),pg=median(ids.map(peg)),mm=median(ids.map(i=>mv(i,'m'))),nf=ids.filter(i=>mv(i,'fire')).length;
-    return `<a class="tcard" href="#t/${t.id}"><b>${t.name}${(t.us||[]).length?'<span class="usf" title="美股站也有這個主題">🇺🇸</span>':''}</b><span class="k"><span>營收年增</span><span class="num ${sign(y)}">${y==null?'—':pct(y,0)}</span></span><span class="k"><span>EPS 年增 (四季)</span><span class="num ${sign(ey)}">${ey==null?'—':pct(ey,0)}</span></span><span class="k"><span>本益比</span><span class="num">${pe==null?'—':fmt(pe,1)}</span></span><span class="k"><span>PEG</span><span class="num ${pg==null?'':pg<1?'cheap':pg>2?'pricey':''}">${pg==null?'—':fmt(pg,2)}</span></span><span class="k"><span>月漲幅</span><span class="num ${sign(mm)}">${mm==null?'—':pct(mm,1)}${nf?' 🔥'+nf:''}</span></span>${AI?`<span class="k"><span>AI 高/中</span><span class="num"><span class="ail3">${ids.filter(i=>ai(i)&&ai(i).lv===3).length}</span>/<span class="ail2">${ids.filter(i=>ai(i)&&ai(i).lv===2).length}</span> <span style="color:var(--muted)">檔</span></span></span>`:''}</a>`}).join('');
+    return `<a class="tcard" href="#t/${t.id}"><b>${t.name}${usBadge(t,false)}</b><span class="k"><span>營收年增</span><span class="num ${sign(y)}">${y==null?'—':pct(y,0)}</span></span><span class="k"><span>EPS 年增 (四季)</span><span class="num ${sign(ey)}">${ey==null?'—':pct(ey,0)}</span></span><span class="k"><span>本益比</span><span class="num">${pe==null?'—':fmt(pe,1)}</span></span><span class="k"><span>PEG</span><span class="num ${pg==null?'':pg<1?'cheap':pg>2?'pricey':''}">${pg==null?'—':fmt(pg,2)}</span></span><span class="k"><span>月漲幅</span><span class="num ${sign(mm)}">${mm==null?'—':pct(mm,1)}${nf?' 🔥'+nf:''}</span></span>${AI?`<span class="k"><span>AI 高/中</span><span class="num"><span class="ail3">${ids.filter(i=>ai(i)&&ai(i).lv===3).length}</span>/<span class="ail2">${ids.filter(i=>ai(i)&&ai(i).lv===2).length}</span> <span style="color:var(--muted)">檔</span></span></span>`:''}</a>`}).join('');
   if(!$('indBox').dataset.done&&LIST.length){
     const g={};LIST.forEach(s=>{let k=(s[3]||'其他').replace(/類$/,'');if(k==='其他電子')k='其他電子業';(g[k]=g[k]||[]).push(s[0])});
     $('indBox').innerHTML=Object.entries(g).sort((a,b)=>b[1].length-a[1].length).map(([k,v],i)=>`<details class="ind" data-i="${i}"><summary>${k}<span>${v.length} 檔</span></summary><div class="tbl"><table class="lst"></table></div></details>`).join('');
@@ -3052,7 +3070,7 @@ function showTheme(tid){
   const aiS=(()=>{const n=[3,2,1].map(l=>ids.filter(i=>ai(i)&&ai(i).lv===l).length);return n.some(Boolean)?`・🤖 AI <span class="ail3">高 <strong>${n[0]}</strong></span>/<span class="ail2">中 <strong>${n[1]}</strong></span>/<span class="ail1">低 <strong>${n[2]}</strong></span>`:''})();
   $('tSum').innerHTML=S?`${ids.length} 檔中位數：營收年增 <strong class="${sign(y)}">${pct(y)}</strong>・EPS 年增 (近四季) <strong class="${sign(ey)}">${pct(ey)}</strong>・本益比 <strong>${fmt(pe,1)}</strong>・PEG <strong>${fmt(pg,2)}</strong>・淨值比 <strong>${fmt(pb,2)}</strong>${sal}${aiS}${lead}`:'全市場數字尚未產生 (等 Actions 第一次執行)';
   {const jp=t.jp||(BASE.find(x=>x.id===t.id)||{}).jp||[],kr=t.kr||(BASE.find(x=>x.id===t.id)||{}).kr||[];
-   $('tUS').innerHTML=(t.us&&t.us.length?'對應美股 '+t.us.map(u=>`<a href="us/#${u}">${u}</a>`).join(''):'')+
+   loadUsig();$('tUS').innerHTML=(t.us&&t.us.length?'對應美股 '+t.us.map(u=>`<a href="us/#${u}">${u}</a>`).join('')+`<span class="ussig" id="tUSsig" data-t="${t.id}">${usSigLine(t)}</span>`:'')+
     (jp.length?`${t.us&&t.us.length?'<span style="flex-basis:100%;height:0"></span>':''}對應日股 `+jp.map(([c,n])=>`<a href="jp/#${c}">${c} ${esc(n)}</a>`).join(''):'')+
     (kr.length?`${(t.us&&t.us.length)||jp.length?'<span style="flex-basis:100%;height:0"></span>':''}對應韓股 `+kr.map(([c,n])=>`<a href="kr/#${c}">${c} ${esc(n)}</a>`).join(''):'')}
   paintSeg();
