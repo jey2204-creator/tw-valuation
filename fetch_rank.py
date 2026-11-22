@@ -302,7 +302,7 @@ def split_adj(seq):
 def build_etf(recs, names):
     """📦 ETF 主題（2026-11-22）→ data/etf.json：
     {asof, n, stocks:[[代號, 備註]…], aum:{代號:規模億}, aumAsof, nm:{代號:[名稱,市場]}, px:{代號:[收, 日%, 週%, 月%, 季%, 量比, 成交值億, 20日均值億, 近12月殖利率%, 近12月配息次數]}}
-    近12月殖利率：adj.json 的 cash（每單位配息元）在近 365 天內的合計 ÷ 最新收盤；adj.json 還沒有 cash 時＝None，有 cash 但沒配息＝0。
+    近12月殖利率：adj.json 的 cash（每單位配息元）在近 350 天內的合計（避免季配、年配把去年同月那次也算進來） ÷ 最新收盤；adj.json 還沒有 cash 時＝None，有 cash 但沒配息＝0。
     週/月/季＝對比 5/20/60 個交易日前收盤；量比＝今日張數 ÷ 前 5 日均張；成交值≈收×張×1000。
     2026-11-22 起含息：週/月/季/日漲跌用 data/adj.json 的除息係數還原（收盤 × 係數），div＝{代號:[[除息日, 配息占前收%]…]}；
     adj.json 沒有 ETF 事件時等同未還原。成交值用原始收盤。不另外發請求，只用 data/rank/日期.json 的 e。"""
@@ -315,7 +315,7 @@ def build_etf(recs, names):
         AJ = {}
     AEV, ACASH = AJ.get("ev") or {}, AJ.get("cash") or {}
     a0 = dt.date(int(kd[-1][:4]), int(kd[-1][4:6]), int(kd[-1][6:]))
-    y365 = f"{a0 - dt.timedelta(days=365):%Y%m%d}"
+    y365 = f"{a0 - dt.timedelta(days=350):%Y%m%d}"   # 350 天：季配同月份的去年那次（差 364 天）不重複算
     def ser(c):
         a = split_adj([recs[d]["e"].get(c) for d in kd])
         for d0, f, _ in AEV.get(c, []):     # 除息日「之前」的價位 × 係數（參考價 ÷ 前一日收盤）＝還原價
