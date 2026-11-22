@@ -340,7 +340,7 @@ def build_etf(recs, names):
     order = [[c, n] for c, n, _ in ETF_THEME if c in px]          # 順序＝ETF_THEME（類別內依規模）
     div = {c: [[d, round((1 - f) * 100, 2)] for d, f, t in AEV.get(c, []) if t == "x" and d >= kd[0]] for c, _ in order}
     div = {c: v for c, v in div.items() if v}
-    dump(OUT / "etf.json", {"asof": kd[-1], "n": len(order), "stocks": order, "adj": bool(AEV), "div": div,
+    dump(OUT / "etf.json", {"asof": kd[-1], "n": len(order), "stocks": order, "adj": bool(AEV), "div": div, "d20": kd[-21] if len(kd) > 20 else kd[0],
                             "aum": {c: v for c, _, v in ETF_THEME if c in px}, "aumAsof": ETF_AUM_ASOF,
                             "nm": {c: names.get(c, [c, ""]) for c, _ in order}, "px": px})
     print(f"etf.json: {len(order)}/{len(ETF_THEME)} 檔，資料日 {kd[-1]}")
