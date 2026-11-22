@@ -1,0 +1,38 @@
+name: 除權除息預告
+# 📦 ETF 主題「除息提醒」（data/exdiv.json）。來源：證交所 TWT48U、櫃買除權除息預告。
+on:
+  workflow_run:
+    workflows: ["更新股票資料"]
+    types: [completed]
+  push:
+    branches: [main]
+    paths: ["fetch_exdiv.py", ".github/workflows/exdiv.yml"]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: exdiv
+  cancel-in-progress: false
+jobs:
+  exdiv:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python fetch_exdiv.py
+      - name: 提交
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/exdiv.json
+          git diff --cached --quiet && exit 0
+          git commit -m "exdiv: $(TZ=Asia/Taipei date '+%F %H:%M')"
+          for i in 1 2 3; do
+            git pull --rebase -X theirs origin main && git push && exit 0
+            sleep 10
+          done
+          exit 1
