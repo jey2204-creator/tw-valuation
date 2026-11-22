@@ -13,15 +13,17 @@
   係數 = 參考價 ÷ 前一交易日收盤；事件日「之前」的價格都乘上它就是還原價（多個事件連乘）
   類別 x=除權息、r=減資、p=面額變更
 每次重抓最近 100 天併入舊檔（第一次 230 天），保留 260 天。某個來源失敗就沿用舊資料、不中斷。
+2026-11-22：ETF（代號 00 開頭）的除息也收，供 fetch_rank.py 的 📦 ETF 含息報酬用；第一次會自動往回補 230 天。
 用法：python fetch_adj.py
 """
-import json, time, datetime as dt, urllib.request
+import json, re, time, datetime as dt, urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 OUT = ROOT / "data" / "adj.json"
 UA = {"User-Agent": "Mozilla/5.0 (tw-valuation; GitHub Actions)", "Accept": "application/json,text/plain,*/*"}
 KEEP, FIRST, EACH, CHUNK = 260, 230, 100, 100
+ETF = re.compile(r"^00[0-9A-Z]{2,4}$")   # 2026-11-22：ETF 配息也收（📦 ETF 主題含息報酬、掃描頁 ETF 小卡還原漲幅）
 
 
 def get(url):
@@ -71,7 +73,7 @@ def parse(js, typ):
             continue
         for r in rows:
             c, d, p, ref = str(r[ic]).strip(), ymd(r[idt]), num(r[ip]), num(r[ir])
-            if not (len(c) == 4 and c.isdigit() and c[0] != "0") or not d or not p or not ref or p <= 0 or ref <= 0:
+            if not ((len(c) == 4 and c.isdigit() and c[0] != "0") or ETF.match(c)) or not d or not p or not ref or p <= 0 or ref <= 0:
                 continue
             f = ref / p
             if 0.02 < f < 50 and abs(f - 1) > 1e-6:
@@ -86,7 +88,8 @@ def main():
     except Exception:
         pass
     today = (dt.datetime.utcnow() + dt.timedelta(hours=8)).date()
-    start = today - dt.timedelta(days=EACH if old.get("ev") else FIRST)
+    has_etf = any(ETF.match(c) for c in (old.get("ev") or {}))   # 第一次收 ETF：往回補 230 天
+    start = today - dt.timedelta(days=EACH if old.get("ev") and has_etf else FIRST)
     cut = (today - dt.timedelta(days=KEEP)).strftime("%Y%m%d")
     got, errs, n = {}, [], 0
     a = start

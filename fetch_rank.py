@@ -303,12 +303,20 @@ def build_etf(recs, names):
     """📦 ETF 主題（2026-11-22）→ data/etf.json：
     {asof, n, stocks:[[代號, 備註]…], aum:{代號:規模億}, aumAsof, nm:{代號:[名稱,市場]}, px:{代號:[收, 日%, 週%, 月%, 季%, 量比, 成交值億, 20日均值億]}}
     週/月/季＝對比 5/20/60 個交易日前收盤；量比＝今日張數 ÷ 前 5 日均張；成交值≈收×張×1000。
-    ETF 的價格「未還原配息」：跨除息日的漲跌會偏低（高股息 ETF 季配／月配特別明顯）。不另外發請求，只用 data/rank/日期.json 的 e。"""
+    2026-11-22 起含息：週/月/季/日漲跌用 data/adj.json 的除息係數還原（收盤 × 係數），div＝{代號:[[除息日, 配息占前收%]…]}；
+    adj.json 沒有 ETF 事件時等同未還原。成交值用原始收盤。不另外發請求，只用 data/rank/日期.json 的 e。"""
     kd = sorted(d for d in recs if recs[d].get("e"))
     if not kd:
         return
+    try:                                   # 2026-11-22：含息報酬——data/adj.json 的 ETF 除息係數（fetch_adj.py）
+        AEV = json.loads((OUT / "adj.json").read_text("utf-8")).get("ev") or {}
+    except Exception:
+        AEV = {}
     def ser(c):
-        return split_adj([recs[d]["e"].get(c) for d in kd])
+        a = split_adj([recs[d]["e"].get(c) for d in kd])
+        for d0, f, _ in AEV.get(c, []):     # 除息日「之前」的價位 × 係數（參考價 ÷ 前一日收盤）＝還原價
+            a = [[round(r[0] * f, 4)] + r[1:] if r and d < d0 else r for d, r in zip(kd, a)]
+        return a
     px, cat = {}, {}
     for c, note, _ in ETF_THEME:
         a = ser(c)
@@ -330,7 +338,9 @@ def build_etf(recs, names):
         px[c] = [cl[-1], chg(1), chg(5), chg(20), chg(60), vr, round(val(a[-1]), 2), round(sum(v20) / len(v20), 2) if v20 else None]
         cat[c] = note.split("｜")[0]
     order = [[c, n] for c, n, _ in ETF_THEME if c in px]          # 順序＝ETF_THEME（類別內依規模）
-    dump(OUT / "etf.json", {"asof": kd[-1], "n": len(order), "stocks": order,
+    div = {c: [[d, round((1 - f) * 100, 2)] for d, f, t in AEV.get(c, []) if t == "x" and d >= kd[0]] for c, _ in order}
+    div = {c: v for c, v in div.items() if v}
+    dump(OUT / "etf.json", {"asof": kd[-1], "n": len(order), "stocks": order, "adj": bool(AEV), "div": div,
                             "aum": {c: v for c, _, v in ETF_THEME if c in px}, "aumAsof": ETF_AUM_ASOF,
                             "nm": {c: names.get(c, [c, ""]) for c, _ in order}, "px": px})
     print(f"etf.json: {len(order)}/{len(ETF_THEME)} 檔，資料日 {kd[-1]}")
