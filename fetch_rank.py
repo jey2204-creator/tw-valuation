@@ -37,6 +37,13 @@ TR_MIN_AMT = 1e8                        # 週轉率榜的成交值門檻（元�
 FIRST_DAYS, MORE_DAYS = 60, 35          # 第一次補幾天／之後每次再補幾天
 BUDGET = 9 * 60                         # 單次最多抓 9 分鐘
 ETF = re.compile(r"^00[0-9A-Z]{2,4}$")
+# 2026-11-22：首頁／掃描頁「📦 ETF」主題的固定名單（世杰選方案 ②；順序＝類別，同類別內依近 20 日均成交值大→小由 build_etf 排）
+# 每列 [代號, 備註「類別｜說明」]；要增減直接改這裡，下次排程就會更新 data/etf.json
+ETF_THEME = [["0050", "市值｜台灣50"], ["006208", "市值｜台灣50"],
+             ["0056", "高息｜高股息"], ["00878", "高息｜ESG高息"], ["00919", "高息｜精選高息"],
+             ["00929", "高息｜科技優息"], ["00940", "高息｜價值高息"], ["00713", "高息｜高息低波"],
+             ["00881", "科技｜科技龍頭"], ["00891", "科技｜半導體"], ["00892", "科技｜半導體"],
+             ["00679B", "債券｜美債20年"], ["00937B", "債券｜投等債20+"]]
 T0 = time.time()
 
 
@@ -246,14 +253,50 @@ def build(names):
         for m in ("L", "O"):
             for k in ("v", "q"):
                 used.update(c for c, _ in recs[d][m].get(k, []))
-    extra = sorted(c for c in used if c not in stocks)             # ＝上過榜的 ETF
+    extra = sorted({c for c in used if c not in stocks} | {c for c, _ in ETF_THEME})   # ＝上過榜的 ETF＋📦 ETF 主題的固定名單
     kd = sorted(recs)[-KEEP:]
     xk = {"days": kd, "d": {c: [recs[d].get("e", {}).get(c) or 0 for d in kd] for c in extra}}
     now = dt.datetime.utcnow() + dt.timedelta(hours=8)
     dump(OUT / "rank.json", {"asof": show[0], "builtAt": f"{now:%Y/%m/%d %H:%M}", "top": TOP, "days": show, "hist": hist,
                              "nm": {c: names.get(c, [c, ""]) for c in extra}, "xk": xk})
     home(show, hist, names)
+    build_etf(recs, names)
     print(f"rank.json: 名單 {len(show)} 天（最新 {show[0]}）、ETF {len(extra)} 檔、K 線 {len(kd)} 天、週轉率 {ntr} 天、{(OUT / 'rank.json').stat().st_size // 1024} KB")
+
+
+def build_etf(recs, names):
+    """📦 ETF 主題（2026-11-22）→ data/etf.json：
+    {asof, n, stocks:[[代號, 備註]…], nm:{代號:[名稱,市場]}, px:{代號:[收, 日%, 週%, 月%, 季%, 量比, 成交值億, 20日均值億]}}
+    週/月/季＝對比 5/20/60 個交易日前收盤；量比＝今日張數 ÷ 前 5 日均張；成交值≈收×張×1000。
+    ETF 的價格「未還原配息」：跨除息日的漲跌會偏低（高股息 ETF 季配／月配特別明顯）。不另外發請求，只用 data/rank/日期.json 的 e。"""
+    kd = sorted(d for d in recs if recs[d].get("e"))
+    if not kd:
+        return
+    def ser(c):
+        return [recs[d]["e"].get(c) for d in kd]
+    px, cat = {}, {}
+    for c, note in ETF_THEME:
+        a = ser(c)
+        if not a or not a[-1]:
+            continue
+        cl = [r[0] if r else None for r in a]
+        lots = [r[1] if r else None for r in a]
+        def chg(n):
+            if len(cl) <= n or cl[-1 - n] in (None, 0):
+                return None
+            return round((cl[-1] / cl[-1 - n] - 1) * 100, 2)
+        p5 = [x for x in lots[-6:-1] if x]
+        vr = round(lots[-1] / (sum(p5) / len(p5)), 2) if p5 and lots[-1] else None
+        val = lambda r: r[0] * r[1] * 1000 / 1e8
+        v20 = [val(r) for r in a[-20:] if r]
+        px[c] = [cl[-1], chg(1), chg(5), chg(20), chg(60), vr, round(val(a[-1]), 2), round(sum(v20) / len(v20), 2) if v20 else None]
+        cat[c] = note.split("｜")[0]
+    order = []
+    for k in dict.fromkeys(n.split("｜")[0] for _, n in ETF_THEME):
+        order += sorted((x for x in ETF_THEME if cat.get(x[0]) == k), key=lambda x: -(px[x[0]][7] or 0))
+    dump(OUT / "etf.json", {"asof": kd[-1], "n": len(order), "stocks": order,
+                            "nm": {c: names.get(c, [c, ""]) for c, _ in order}, "px": px})
+    print(f"etf.json: {len(order)}/{len(ETF_THEME)} 檔，資料日 {kd[-1]}")
 
 
 def home(show, hist, names):
