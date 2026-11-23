@@ -295,7 +295,7 @@
    "Reason"
   ],
   "first": {
-   "Date": "1151120",
+   "Date": "1151122",
    "SecuritiesCompanyCode": "00950B",
    "CompanyName": "凱基A級公司債",
    "ShortSaleSuspensionStartDate": "1151126",
@@ -304,7 +304,7 @@
   },
   "sample": [
    {
-    "Date": "1151120",
+    "Date": "1151122",
     "SecuritiesCompanyCode": "00958B",
     "CompanyName": "永豐ESG銀行債15+",
     "ShortSaleSuspensionStartDate": "1151118",
@@ -312,7 +312,7 @@
     "Reason": ""
    },
    {
-    "Date": "1151120",
+    "Date": "1151122",
     "SecuritiesCompanyCode": "00959B",
     "CompanyName": "大華投等美債15Y+",
     "ShortSaleSuspensionStartDate": "1151127",
@@ -320,7 +320,7 @@
     "Reason": ""
    },
    {
-    "Date": "1151120",
+    "Date": "1151122",
     "SecuritiesCompanyCode": "00966B",
     "CompanyName": "統一ESG投等債15+",
     "ShortSaleSuspensionStartDate": "1151126",
@@ -341,7 +341,7 @@
    "F": 2086,
    "X": 30,
    "B": 0,
-   "L": 1343
+   "L": 1726
   },
   "stop": 37,
   "N": 148
