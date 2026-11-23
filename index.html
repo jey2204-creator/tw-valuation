@@ -487,7 +487,7 @@ details.ind.hot summary b{color:var(--up)}
   <div class="panel" style="margin-top:8px" id="fRows"></div>
   <p class="foot" id="fMsg" role="status"></p>
 </section>
-<section id="hmap" hidden>
+<section id="hmap" hidden style="padding-bottom:90px">
   <div class="ehead"><a href="#">← 首頁</a><span class="meta" id="hmAsof"></span></div>
   <h1 style="font-size:22px;margin:6px 0 0">🗺️ 主題熱力圖</h1>
   <div class="hmc"><div class="hmseg" id="hmP"><button data-p="d">日</button><button data-p="w">週</button><button data-p="m">月</button><button data-p="q">季</button></div><div class="hmseg" id="hmS"><button data-s="o">順序</button><button data-s="v">漲幅</button></div></div>
@@ -3100,7 +3100,7 @@ function hotPaint(){
     return `<a href="#${id}">${nameOf(id)}</a> <span class="${sign(ch)}">${ch==null?'':pct(ch,1)}</span>${why?`<span class="sm">(${why})</span>`:''}`}).join('、'):'';
   $('hotFoot').innerHTML=MO?`範圍：產業主題＋自選共 ${pool.length} 檔。🔥＝月漲幅 &gt; 0、量比 (5 日均量 ÷ 20 日均量)≥ 1.5、且投信或外資 5 日買超 ≥ 5 日成交量的 1%。是「有資金在推」的訊號，不是買進訊號，要搭配估值位階看。<a href="fstats.html">📊 上榜後勝率統計 ›</a>`
     +(hasH?`<br><b>日期選單</b>可看之前哪些股票上榜 (從 ${ymd(days[0])} 起)；選了舊日期，「數字」預設最新，點一下看當天收盤的數字，還亮著 🔥 的＝今天仍符合。<b>上榜後</b>＝那天收盤 → 最新收盤。<b>🆕新進</b>＝前一個交易日還沒有 🔥；<b>連 N 天</b>＝連續符合的交易日數。<b>橘底 ⚠</b>＝這個進場時機過去抱 10 日輸大盤 2 個百分點以上；<b>短線</b>＝同時是注意股，過去 5 日有超額、10 日倒輸 (都依統計頁的數字即時判斷)。大戶/股東一律是最新一週。`:'')
-    +` 資料 ${ymd(MO.asof)} <span style="opacity:.5">v1122w</span>`:'第一次需要回補約 3 個月的歷史資料，Actions 跑完後就會出現。';
+    +` 資料 ${ymd(MO.asof)} <span style="opacity:.5">v1123a</span>`:'第一次需要回補約 3 個月的歷史資料，Actions 跑完後就會出現。';
 }
 document.addEventListener('toggle',e=>{if(e.target&&e.target.id==='hotBox'&&e.target.open&&!FH)fhLoad().then(()=>{try{hotPaint()}catch(err){}})},true);
 document.addEventListener('change',e=>{if(e.target&&e.target.id==='fhDay'){HDAY=e.target.value;hotPaint()}});
@@ -3195,7 +3195,7 @@ function route(){
   const show=v=>{pnShut();if(v!=='stock'){$('pnav').hidden=true;document.body.classList.remove('pn')}document.body.dataset.view=v;['home','theme','tlist','tedit','flist','srank','hmap'].forEach(k=>$(k).hidden=v!==k)};
   if(/^\d{4,6}[A-Z]?$/.test(h)){show('stock');stockExtras(h);const k=KEEP;KEEP=null;if(!D||D.id!==h){if(!k)scrollTo(0,0);load(h).then(()=>{if(k)requestAnimationFrame(()=>goSec(k))})}else{setTimeout(()=>Object.values(charts).forEach(c=>c.resize()),0);k?goSec(k):scrollTo(0,0)}}
   else if(h==='f'){show('flist');document.title='編輯自選';$('fQ').value='';$('fRes').hidden=true;$('fAddMsg').textContent='';$('fMsg').textContent='';renderFav();scrollTo(0,0)}
-  else if(h==='h'){show('hmap');document.title='主題熱力圖';renderHmap();if(VPREV!=='stock')scrollTo(0,0)}
+  else if(h==='h'){show('hmap');document.title='主題熱力圖';renderHmap();hlKick();if(VPREV!=='stock')scrollTo(0,0)}
   else if(h==='s'){show('srank');document.title='薪資排行';renderSal();scrollTo(0,0)}
   else if(h==='e'){show('tlist');document.title='編輯主題';renderOrder();scrollTo(0,0)}
   else if(h.startsWith('e/')){show('tedit');openEditor(h.slice(2));scrollTo(0,0)}
@@ -3220,7 +3220,33 @@ function allThemes(){
 // ---- 🗺️ 主題熱力圖（2026-11-22）：等大方格、成份股中位數、固定七階色 ----
 let HMP=(()=>{const v=store.get('hmP');return ['d','w','m','q'].includes(v)?v:'d'})(),HMS=store.get('hmS')==='v'?'v':'o',HMSEL=null;
 const HMTH={d:[.5,1.5,3],w:[1.5,4,8],m:[3,8,15],q:[5,12,25]},HML={d:'日',w:'週',m:'月',q:'季'};
-const hmV=(id,k)=>{if(k==='d')return sv(id,'chg');if(!MO)return null;const i={w:0,m:1,q:2}[k];if(MO.da&&MO.da[id]&&MO.da[id][i]!=null)return MO.da[id][i];if(k!=='w'&&MO.dc&&MO.dc[id])return MO.dc[id][k==='m'?0:1];return MO.d[id]?MO.d[id][i]:null};
+
+// ---- 熱力圖即時（2026-11-23）：Worker twse-live，先 MIS、缺的再一輪 MIS→富果→Yahoo，不帶 p=1 ----
+const HL_API='https://twse-live.jey2204.workers.dev',HLIVE=new Map();let hlBusy=false,hlAfter=0,hlLast='',hlTimer=null;
+function hlTpe(){const m=/hlnow=(\d{12})/.exec(location.search);if(m){const s=m[1];const d=new Date(Date.UTC(+s.slice(0,4),+s.slice(4,6)-1,+s.slice(6,8),+s.slice(8,10),+s.slice(10,12)));return {ymd:s.slice(0,8),min:d.getUTCHours()*60+d.getUTCMinutes(),dow:d.getUTCDay(),hm:s.slice(8,10)+':'+s.slice(10,12)}}
+  const d=new Date(Date.now()+8*3600e3);return {ymd:d.toISOString().slice(0,10).replace(/-/g,''),min:d.getUTCHours()*60+d.getUTCMinutes(),dow:d.getUTCDay(),hm:d.toISOString().slice(11,16)}}
+const hlOpen=()=>{const t=hlTpe();return t.dow>=1&&t.dow<=5&&t.min>=8*60+59&&t.min<=13*60+36};
+const hlMk=c=>{const x=LIST.find(r=>r[0]===c);return x?x[2]:null};
+function hlIds(){const s=new Set();THEMES.filter(t=>!isAuto(t.id)&&!t.favt&&!t.etf&&t.stocks).forEach(t=>t.stocks.forEach(x=>{if(/^[0-9A-Za-z]{4,6}$/.test(x[0])&&hlMk(x[0]))s.add(x[0])}));return [...s]}
+const hlToday=c=>{const q=HLIVE.get(c);return !!(q&&q.d===hlTpe().ymd)};
+const hlSumToday=()=>!!(S&&S.pxAsof&&S.pxAsof>=hlTpe().ymd);
+function hlWant(){if(document.visibilityState!=='visible'||!document.body||document.body.dataset.view!=='hmap')return false;if(hlSumToday())return false;
+  if(hlOpen())return true;const t=hlTpe();if(!(t.dow>=1&&t.dow<=5&&t.min>13*60+36))return false;return hlAfter<12&&hlIds().some(c=>!hlToday(c))}
+const hlUrl=(ids,mis)=>HL_API+'/?s='+ids.map(c=>(hlMk(c)==='上櫃'?'otc_':'tse_')+c).join(',')+(mis?'&src=mis':'');
+async function hlAsk(ids,mis){const today=hlTpe().ymd;let n=0;for(let k=0;k<ids.length;k+=40){const part=ids.slice(k,k+40);
+  try{const ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),15000);const r=await fetch(hlUrl(part,mis),{signal:ctl.signal,cache:'no-store'});clearTimeout(to);const j=await r.json();
+    (j&&j.q||[]).forEach(q=>{if(!q||!q.c||q.d!==today)return;const px=q.z!=null?q.z:q.pz!=null?q.pz:(HLIVE.get(q.c)||{}).px;if(px==null||!q.y)return;HLIVE.set(q.c,{px,y:q.y,d:q.d,t:q.t,src:q.src,_at:Date.now()});n++})}catch(e){}
+  if(k+40<ids.length)await new Promise(r=>setTimeout(r,300))}return n}
+async function hlRefresh(){if(hlBusy||!hlWant())return;hlBusy=true;
+  try{const open=hlOpen(),all=hlIds(),fresh=c=>{const q=HLIVE.get(c);return q&&q.d===hlTpe().ymd&&Date.now()-q._at<50000};
+    let ids=open?all.filter(c=>!fresh(c)):all.filter(c=>!hlToday(c));
+    if(ids.length){await hlAsk(ids,true);const miss=ids.filter(c=>!hlToday(c)||(open&&!fresh(c)));if(miss.length&&miss.length<=120)await hlAsk(miss,false)}
+    if(!open)hlAfter++;hlLast=hlTpe().hm;if(document.body.dataset.view==='hmap')renderHmap()}catch(e){}
+  hlBusy=false}
+function hlKick(){hlRefresh();if(!hlTimer)hlTimer=setInterval(hlRefresh,60000)}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')hlRefresh()});
+function hlD(id){if(hlSumToday())return null;const q=HLIVE.get(id);return q&&q.d===hlTpe().ymd?(q.px/q.y-1)*100:null}
+const hmV=(id,k)=>{if(k==='d'){const l=hlD(id);return l!=null?l:sv(id,'chg')}if(!MO)return null;const i={w:0,m:1,q:2}[k];if(MO.da&&MO.da[id]&&MO.da[id][i]!=null)return MO.da[id][i];if(k!=='w'&&MO.dc&&MO.dc[id])return MO.dc[id][k==='m'?0:1];return MO.d[id]?MO.d[id][i]:null};
 const hmLv=(v,k)=>{if(v==null)return null;const t=HMTH[k],a=Math.abs(v),l=a<t[0]?0:a<t[1]?1:a<t[2]?2:3;return v<0?-l:l};
 const hmNm=t=>t.name.replace(/^\p{Extended_Pictographic}️?\s*/u,'');
 const hmCap=id=>{const c=sv(id,'close'),s=S&&S.sh&&S.sh[id];return c&&s?c*s:0};
@@ -3233,14 +3259,14 @@ function renderHmap(){
   const A=THEMES.filter(t=>!isAuto(t.id)&&!t.favt&&!t.etf&&t.stocks&&t.stocks.length);
   let R=A.map(hmStat);if(HMS==='v')R=[...R].sort((a,b)=>a.m==null?1:b.m==null?-1:b.m-a.m);
   const asof=HMP==='d'?(S&&S.pxAsof):(MO&&MO.asof),md=s=>s?`${+s.slice(4,6)}/${+s.slice(6,8)}`:'';
-  $('hmAsof').textContent=asof?`收盤日 ${s2d(asof)}`:'';
+  {const ids=hlIds(),nl=ids.filter(c=>hlD(c)!=null).length;$('hmAsof').innerHTML=HMP==='d'&&nl?`<b style="color:var(--accent)">即時 ${esc(hlLast||'')}</b>・${nl}/${ids.length} 檔`:(asof?`收盤日 ${s2d(asof)}`:'')}
   const ok=R.filter(r=>r.m!=null),u=ok.filter(r=>r.m>0).length,d=ok.filter(r=>r.m<0).length,srt=[...ok].sort((a,b)=>b.m-a.m);
   $('hmTake').innerHTML=ok.length?`<b>${HML[HMP]}</b>漲跌・${ok.length} 個主題：<span class="up">上漲 ${u}</span>・<span class="dn">下跌 ${d}</span>　最強 <b>${esc(hmNm(srt[0].t))}</b> <span class="${sign(srt[0].m)}">${pct(srt[0].m,1)}</span>・最弱 <b>${esc(hmNm(srt[srt.length-1].t))}</b> <span class="${sign(srt[srt.length-1].m)}">${pct(srt[srt.length-1].m,1)}</span>`:'資料還沒載入';
   $('hmG').innerHTML=R.map(r=>{const nm=hmNm(r.t);return hmTile(nm,r.m,r.n?`${r.up}/${r.n}↑`:'',`data-ht="${esc(r.t.id)}"${r.t.id===HMSEL?' aria-current="true"':''}`,hmSz(nm))}).join('');
   $('hmG').querySelectorAll('.hmt').forEach(b=>b.classList.toggle('sel',b.dataset.ht===HMSEL));
   const T=HMTH[HMP];$('hmLg').innerHTML=`<span style="margin-right:3px">跌</span>`+[-3,-2,-1,0,1,2,3].map(l=>`<i class="hmt l${l}" style="padding:0">${l===0?'0':(l<0?'−':'+')+T[Math.abs(l)-1]}</i>`).join('')+`<span style="margin-left:3px">漲</span>`;
   hmDetail();
-  $('hmFoot').innerHTML=`每一格＝一個產業主題 (首頁主題表的內建＋自訂主題，不含 ETF、0050、注意股、投信買超、⭐自選這些自動名單；首頁隱藏的主題這裡也不出現)。數字＝成份股漲跌的<b>中位數</b> (不讓台積電、鴻海一檔決定整格顏色)；第三行「7/10↑」＝有資料的 10 檔中 7 檔上漲。<b>顏色固定七階</b>，同一個顏色每天代表一樣的幅度：最淺＝${T[0]}～${T[1]}%、中＝${T[1]}～${T[2]}%、最深＝${T[2]}% 以上，±${T[0]}% 以內灰色 (週 ±1.5/4/8%、月 ±3/8/15%、季 ±5/12/25%、日 ±0.5/1.5/3%)。日＝最新收盤漲跌 (盤後更新，盤中看到的是前一交易日)；週/月/季＝跟首頁一樣用還原價，週＝5 個交易日、月/季＝日曆日 (月基準 ${md(MO&&MO.calBase&&MO.calBase.m)}、季基準 ${md(MO&&MO.calBase&&MO.calBase.q)})。「順序」＝首頁主題表的順序 (含你的手動排序)，「漲幅」＝由強到弱。點格子＝下方展開成份股 (依市值排)；華通、啟碁、兆赫在兩個主題都會算。`;
+  $('hmFoot').innerHTML=`<b>盤中即時</b>：日＝即時價對昨收 (跟掃描頁同一個來源，先問證交所，沒拿到的再問富果/Yahoo；畫面開著每 60 秒更新，切到背景就停)，標題顯示「即時 時間・拿到幾檔」；收盤後排程更新前也是今天的即時收盤。週/月/季仍是收盤資料，不含今天盤中。<br>每一格＝一個產業主題 (首頁主題表的內建＋自訂主題，不含 ETF、0050、注意股、投信買超、⭐自選這些自動名單；首頁隱藏的主題這裡也不出現)。數字＝成份股漲跌的<b>中位數</b> (不讓台積電、鴻海一檔決定整格顏色)；第三行「7/10↑」＝有資料的 10 檔中 7 檔上漲。<b>顏色固定七階</b>，同一個顏色每天代表一樣的幅度：最淺＝${T[0]}～${T[1]}%、中＝${T[1]}～${T[2]}%、最深＝${T[2]}% 以上，±${T[0]}% 以內灰色 (週 ±1.5/4/8%、月 ±3/8/15%、季 ±5/12/25%、日 ±0.5/1.5/3%)。日＝最新收盤漲跌 (盤後更新，盤中看到的是前一交易日)；週/月/季＝跟首頁一樣用還原價，週＝5 個交易日、月/季＝日曆日 (月基準 ${md(MO&&MO.calBase&&MO.calBase.m)}、季基準 ${md(MO&&MO.calBase&&MO.calBase.q)})。「順序」＝首頁主題表的順序 (含你的手動排序)，「漲幅」＝由強到弱。點格子＝下方展開成份股 (依市值排)；華通、啟碁、兆赫在兩個主題都會算。`;
 }
 function hmDetail(){const el=$('hmD'),t=HMSEL&&THEMES.find(x=>x.id===HMSEL);if(!t){el.hidden=true;return}
   const r=hmStat(t),ids=[...r.ids].sort((a,b)=>hmCap(b)-hmCap(a));
