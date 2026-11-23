@@ -157,7 +157,7 @@
  },
  "twse_stop": {
   "path": "/exchangeReport/BFI84U",
-  "rows": 24,
+  "rows": 23,
   "keys": [
    "Code",
    "Name",
@@ -166,13 +166,20 @@
    "Reason"
   ],
   "first": {
-   "Code": "00406A",
-   "Name": "主動中信台灣收益",
-   "StartDate": "1151126",
-   "EndDate": "1151201",
+   "Code": "00400A",
+   "Name": "主動國泰動能高息",
+   "StartDate": "1151202",
+   "EndDate": "1151207",
    "Reason": "分配收益"
   },
   "sample": [
+   {
+    "Code": "00406A",
+    "Name": "主動中信台灣收益",
+    "StartDate": "1151126",
+    "EndDate": "1151201",
+    "Reason": "分配收益"
+   },
    {
     "Code": "0053",
     "Name": "元大科技市值",
@@ -181,17 +188,10 @@
     "Reason": "ETF分割"
    },
    {
-    "Code": "00901",
-    "Name": "永豐智能車供應鏈",
-    "StartDate": "1151118",
-    "EndDate": "1151123",
-    "Reason": "分配收益"
-   },
-   {
-    "Code": "00930",
-    "Name": "永豐ESG低碳高息",
-    "StartDate": "1151118",
-    "EndDate": "1151123",
+    "Code": "00939",
+    "Name": "統一台灣高息動能",
+    "StartDate": "1151125",
+    "EndDate": "1151130",
     "Reason": "分配收益"
    }
   ]
@@ -345,7 +345,7 @@
    "B": 0,
    "L": 1733
   },
-  "stop": 38,
+  "stop": 37,
   "N": 141
  }
 }
