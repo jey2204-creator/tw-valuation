@@ -3100,7 +3100,7 @@ function hotPaint(){
     return `<a href="#${id}">${nameOf(id)}</a> <span class="${sign(ch)}">${ch==null?'':pct(ch,1)}</span>${why?`<span class="sm">(${why})</span>`:''}`}).join('、'):'';
   $('hotFoot').innerHTML=MO?`範圍：產業主題＋自選共 ${pool.length} 檔。🔥＝月漲幅 &gt; 0、量比 (5 日均量 ÷ 20 日均量)≥ 1.5、且投信或外資 5 日買超 ≥ 5 日成交量的 1%。是「有資金在推」的訊號，不是買進訊號，要搭配估值位階看。<a href="fstats.html">📊 上榜後勝率統計 ›</a>`
     +(hasH?`<br><b>日期選單</b>可看之前哪些股票上榜 (從 ${ymd(days[0])} 起)；選了舊日期，「數字」預設最新，點一下看當天收盤的數字，還亮著 🔥 的＝今天仍符合。<b>上榜後</b>＝那天收盤 → 最新收盤。<b>🆕新進</b>＝前一個交易日還沒有 🔥；<b>連 N 天</b>＝連續符合的交易日數。<b>橘底 ⚠</b>＝這個進場時機過去抱 10 日輸大盤 2 個百分點以上；<b>短線</b>＝同時是注意股，過去 5 日有超額、10 日倒輸 (都依統計頁的數字即時判斷)。大戶/股東一律是最新一週。`:'')
-    +` 資料 ${ymd(MO.asof)} <span style="opacity:.5">v1123a</span>`:'第一次需要回補約 3 個月的歷史資料，Actions 跑完後就會出現。';
+    +` 資料 ${ymd(MO.asof)} <span style="opacity:.5">v1124a</span>`:'第一次需要回補約 3 個月的歷史資料，Actions 跑完後就會出現。';
 }
 document.addEventListener('toggle',e=>{if(e.target&&e.target.id==='hotBox'&&e.target.open&&!FH)fhLoad().then(()=>{try{hotPaint()}catch(err){}})},true);
 document.addEventListener('change',e=>{if(e.target&&e.target.id==='fhDay'){HDAY=e.target.value;hotPaint()}});
@@ -3222,7 +3222,7 @@ let HMP=(()=>{const v=store.get('hmP');return ['d','w','m','q'].includes(v)?v:'d
 const HMTH={d:[.5,1.5,3],w:[1.5,4,8],m:[3,8,15],q:[5,12,25]},HML={d:'日',w:'週',m:'月',q:'季'};
 
 // ---- 熱力圖即時（2026-11-23）：Worker twse-live，先 MIS、缺的再一輪 MIS→富果→Yahoo，不帶 p=1 ----
-const HL_API='https://twse-live.jey2204.workers.dev',HLIVE=new Map();let hlBusy=false,hlAfter=0,hlLast='',hlTimer=null;
+const HL_API='https://twse-live.jey2204.workers.dev',HLIVE=new Map(),HLST={ask:0,ret:0,got:0,err:'',d:''};let hlBusy=false,hlAfter=0,hlLast='',hlTimer=null;
 function hlTpe(){const m=/hlnow=(\d{12})/.exec(location.search);if(m){const s=m[1];const d=new Date(Date.UTC(+s.slice(0,4),+s.slice(4,6)-1,+s.slice(6,8),+s.slice(8,10),+s.slice(10,12)));return {ymd:s.slice(0,8),min:d.getUTCHours()*60+d.getUTCMinutes(),dow:d.getUTCDay(),hm:s.slice(8,10)+':'+s.slice(10,12)}}
   const d=new Date(Date.now()+8*3600e3);return {ymd:d.toISOString().slice(0,10).replace(/-/g,''),min:d.getUTCHours()*60+d.getUTCMinutes(),dow:d.getUTCDay(),hm:d.toISOString().slice(11,16)}}
 const hlOpen=()=>{const t=hlTpe();return t.dow>=1&&t.dow<=5&&t.min>=8*60+59&&t.min<=13*60+36};
@@ -3234,15 +3234,15 @@ function hlWant(){if(document.visibilityState!=='visible'||!document.body||docum
   if(hlOpen())return true;const t=hlTpe();if(!(t.dow>=1&&t.dow<=5&&t.min>13*60+36))return false;return hlAfter<12&&hlIds().some(c=>!hlToday(c))}
 const hlUrl=(ids,mis)=>HL_API+'/?s='+ids.map(c=>(hlMk(c)==='上櫃'?'otc_':'tse_')+c).join(',')+(mis?'&src=mis':'');
 async function hlAsk(ids,mis){const today=hlTpe().ymd;let n=0;for(let k=0;k<ids.length;k+=40){const part=ids.slice(k,k+40);
-  try{const ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),15000);const r=await fetch(hlUrl(part,mis),{signal:ctl.signal,cache:'no-store'});clearTimeout(to);const j=await r.json();
-    (j&&j.q||[]).forEach(q=>{if(!q||!q.c||q.d!==today)return;const px=q.z!=null?q.z:q.pz!=null?q.pz:(HLIVE.get(q.c)||{}).px;if(px==null||!q.y)return;HLIVE.set(q.c,{px,y:q.y,d:q.d,t:q.t,src:q.src,_at:Date.now()});n++})}catch(e){}
+  try{HLST.ask+=part.length;const ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),15000);const r=await fetch(hlUrl(part,mis),{signal:ctl.signal,cache:'no-store'});clearTimeout(to);if(!r.ok)HLST.err='HTTP '+r.status;const j=await r.json();if(j&&j.err&&j.err.length)HLST.err=String(j.err[0]).slice(0,60);
+    (j&&j.q||[]).forEach(q=>{if(!q||!q.c)return;HLST.ret++;if(q.d)HLST.d=q.d;if(q.d!==today)return;HLST.got++;const px=q.z!=null?q.z:q.pz!=null?q.pz:(HLIVE.get(q.c)||{}).px;if(px==null||!q.y)return;HLIVE.set(q.c,{px,y:q.y,d:q.d,t:q.t,src:q.src,_at:Date.now()});n++})}catch(e){HLST.err=String(e&&e.message||e).slice(0,60)}
   if(k+40<ids.length)await new Promise(r=>setTimeout(r,300))}return n}
-async function hlRefresh(){if(hlBusy||!hlWant())return;hlBusy=true;
+async function hlRefresh(){if(hlBusy||!hlWant())return;hlBusy=true;Object.assign(HLST,{ask:0,ret:0,got:0,err:'',d:''});if(document.body.dataset.view==='hmap'&&!HLIVE.size)renderHmap();
   try{const open=hlOpen(),all=hlIds(),fresh=c=>{const q=HLIVE.get(c);return q&&q.d===hlTpe().ymd&&Date.now()-q._at<50000};
     let ids=open?all.filter(c=>!fresh(c)):all.filter(c=>!hlToday(c));
     if(ids.length){await hlAsk(ids,true);const miss=ids.filter(c=>!hlToday(c)||(open&&!fresh(c)));if(miss.length&&miss.length<=120)await hlAsk(miss,false)}
-    if(!open)hlAfter++;hlLast=hlTpe().hm;if(document.body.dataset.view==='hmap')renderHmap()}catch(e){}
-  hlBusy=false}
+    if(!open)hlAfter++;hlLast=hlTpe().hm;}catch(e){}
+  hlBusy=false;if(document.body.dataset.view==='hmap')renderHmap()}
 function hlKick(){hlRefresh();if(!hlTimer)hlTimer=setInterval(hlRefresh,60000)}
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')hlRefresh()});
 function hlD(id){if(hlSumToday())return null;const q=HLIVE.get(id);return q&&q.d===hlTpe().ymd?(q.px/q.y-1)*100:null}
@@ -3259,7 +3259,7 @@ function renderHmap(){
   const A=THEMES.filter(t=>!isAuto(t.id)&&!t.favt&&!t.etf&&t.stocks&&t.stocks.length);
   let R=A.map(hmStat);if(HMS==='v')R=[...R].sort((a,b)=>a.m==null?1:b.m==null?-1:b.m-a.m);
   const asof=HMP==='d'?(S&&S.pxAsof):(MO&&MO.asof),md=s=>s?`${+s.slice(4,6)}/${+s.slice(6,8)}`:'';
-  {const ids=hlIds(),nl=ids.filter(c=>hlD(c)!=null).length;$('hmAsof').innerHTML=HMP==='d'&&nl?`<b style="color:var(--accent)">即時 ${esc(hlLast||'')}</b>・${nl}/${ids.length} 檔`:(asof?`收盤日 ${s2d(asof)}`:'')}
+  {const ids=hlIds(),nl=ids.filter(c=>hlD(c)!=null).length;const st=HMP==='d'&&!nl&&!hlSumToday()&&hlOpen()?(hlBusy?'⏳ 即時讀取中…・':hlLast?`<span title="${esc(JSON.stringify(HLST))}">⚠️ 即時沒拿到 (${esc(HLST.err||(HLST.ret?'回傳日期 '+HLST.d:'回傳 0 檔'))})</span>・`:''):'';$('hmAsof').innerHTML=HMP==='d'&&nl?`<b style="color:var(--accent)">即時 ${esc(hlLast||'')}</b>・${nl}/${ids.length} 檔`:st+(asof?`收盤日 ${s2d(asof)}`:'')}
   const ok=R.filter(r=>r.m!=null),u=ok.filter(r=>r.m>0).length,d=ok.filter(r=>r.m<0).length,srt=[...ok].sort((a,b)=>b.m-a.m);
   $('hmTake').innerHTML=ok.length?`<b>${HML[HMP]}</b>漲跌・${ok.length} 個主題：<span class="up">上漲 ${u}</span>・<span class="dn">下跌 ${d}</span>　最強 <b>${esc(hmNm(srt[0].t))}</b> <span class="${sign(srt[0].m)}">${pct(srt[0].m,1)}</span>・最弱 <b>${esc(hmNm(srt[srt.length-1].t))}</b> <span class="${sign(srt[srt.length-1].m)}">${pct(srt[srt.length-1].m,1)}</span>`:'資料還沒載入';
   $('hmG').innerHTML=R.map(r=>{const nm=hmNm(r.t);return hmTile(nm,r.m,r.n?`${r.up}/${r.n}↑`:'',`data-ht="${esc(r.t.id)}"${r.t.id===HMSEL?' aria-current="true"':''}`,hmSz(nm))}).join('');
