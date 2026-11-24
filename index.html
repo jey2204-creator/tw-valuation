@@ -388,7 +388,7 @@ details.ind.hot summary b{color:var(--up)}
 <style>/* 2026-11-22 主題熱力圖 */
 .hmc{display:flex;gap:8px;align-items:center;justify-content:space-between;margin:8px 0 6px}
 .hmseg{display:flex;border:1px solid var(--line);border-radius:14px;overflow:hidden}
-.hmseg button{border:0;background:none;color:var(--muted);font:500 13px/28px var(--f-body);padding:0 11px;-webkit-tap-highlight-color:transparent}
+.hmseg button{border:0;background:none;color:var(--muted);font:500 13px/28px var(--f-body);padding:0 9px;-webkit-tap-highlight-color:transparent}
 .hmseg button[aria-pressed="true"]{background:var(--accent);color:#fff;font-weight:700}
 .hm{display:grid;grid-template-columns:repeat(4,1fr);gap:3px}
 .hm.m3{grid-template-columns:repeat(3,1fr)}
@@ -490,7 +490,7 @@ details.ind.hot summary b{color:var(--up)}
 <section id="hmap" hidden style="padding-bottom:90px">
   <div class="ehead"><a href="#">← 首頁</a><span class="meta" id="hmAsof"></span></div>
   <h1 style="font-size:22px;margin:6px 0 0">🗺️ 主題熱力圖</h1>
-  <div class="hmc"><div class="hmseg" id="hmP"><button data-p="d">日</button><button data-p="w">週</button><button data-p="m">月</button><button data-p="q">季</button></div><div class="hmseg" id="hmS"><button data-s="o">順序</button><button data-s="v">漲幅</button></div></div>
+  <div class="hmc"><div class="hmseg" id="hmP"><button data-p="d">日</button><button data-p="w">週</button><button data-p="m">月</button><button data-p="q">季</button></div><div class="hmseg" id="hmS"><button data-s="o">順序</button><button data-s="v">漲幅</button></div><div class="hmseg" id="hmC" title="顏色：固定幅度／跟其他格比排名"><button data-c="f">固定</button><button data-c="r">相對</button></div></div>
   <p class="foot" id="hmTake" style="margin:0 0 6px"></p>
   <div class="hm" id="hmG"></div>
   <div class="hmlg" id="hmLg"></div>
@@ -3100,7 +3100,7 @@ function hotPaint(){
     return `<a href="#${id}">${nameOf(id)}</a> <span class="${sign(ch)}">${ch==null?'':pct(ch,1)}</span>${why?`<span class="sm">(${why})</span>`:''}`}).join('、'):'';
   $('hotFoot').innerHTML=MO?`範圍：產業主題＋自選共 ${pool.length} 檔。🔥＝月漲幅 &gt; 0、量比 (5 日均量 ÷ 20 日均量)≥ 1.5、且投信或外資 5 日買超 ≥ 5 日成交量的 1%。是「有資金在推」的訊號，不是買進訊號，要搭配估值位階看。<a href="fstats.html">📊 上榜後勝率統計 ›</a>`
     +(hasH?`<br><b>日期選單</b>可看之前哪些股票上榜 (從 ${ymd(days[0])} 起)；選了舊日期，「數字」預設最新，點一下看當天收盤的數字，還亮著 🔥 的＝今天仍符合。<b>上榜後</b>＝那天收盤 → 最新收盤。<b>🆕新進</b>＝前一個交易日還沒有 🔥；<b>連 N 天</b>＝連續符合的交易日數。<b>橘底 ⚠</b>＝這個進場時機過去抱 10 日輸大盤 2 個百分點以上；<b>短線</b>＝同時是注意股，過去 5 日有超額、10 日倒輸 (都依統計頁的數字即時判斷)。大戶/股東一律是最新一週。`:'')
-    +` 資料 ${ymd(MO.asof)} <span style="opacity:.5">v1124d</span>`:'第一次需要回補約 3 個月的歷史資料，Actions 跑完後就會出現。';
+    +` 資料 ${ymd(MO.asof)} <span style="opacity:.5">v1124e</span>`:'第一次需要回補約 3 個月的歷史資料，Actions 跑完後就會出現。';
 }
 document.addEventListener('toggle',e=>{if(e.target&&e.target.id==='hotBox'&&e.target.open&&!FH)fhLoad().then(()=>{try{hotPaint()}catch(err){}})},true);
 document.addEventListener('change',e=>{if(e.target&&e.target.id==='fhDay'){HDAY=e.target.value;hotPaint()}});
@@ -3263,29 +3263,36 @@ const hmLv=(v,k)=>{if(v==null)return null;const t=HMTH[k],a=Math.abs(v),l=a<t[0]
 const hmNm=t=>t.name.replace(/^\p{Extended_Pictographic}️?\s*/u,'');
 const hmCap=id=>{const c=sv(id,'close'),s=S&&S.sh&&S.sh[id];return c&&s?c*s:0};
 function hmStat(t){const ids=[...new Set(t.stocks.map(x=>x[0]))],vs=ids.map(i=>hmV(i,HMP)).filter(v=>v!=null);return {t,ids,n:vs.length,up:vs.filter(v=>v>0).length,dn:vs.filter(v=>v<0).length,m:median(vs)}}
-function hmTile(lab,v,sub,attrs,sz){const l=hmLv(v,HMP);return `<button type="button" class="hmt ${l==null?'na':'l'+l}" ${attrs}><span class="n ${sz}">${esc(lab)}</span><span class="p">${v==null?'—':pct(v,HMP==='d'?2:1)}</span>${sub?`<span class="c">${sub}</span>`:''}</button>`}
+let HMC=store.get('hmC')==='r'?'r':'f',HMLV=null;
+// 相對色階：跟同一批值比百分位（同值取平均名次）
+function hmRel(vals){const k=HMP==='d'?100:10,rd=v=>Math.round(v*k)/k;   // 用畫面上顯示的位數比，同樣數字＝同色
+const a=vals.filter(v=>v!=null).map(rd).sort((x,y)=>x-y),n=a.length;if(n<3)return null;return v=>{if(v==null)return null;v=rd(v);let lo=0,eq=0;for(const x of a){if(x<v)lo++;else if(x===v)eq++}const p=(lo+eq/2)/n;return p<.1?-3:p<.25?-2:p<.4?-1:p<=.6?0:p<=.75?1:p<=.9?2:3}}
+function hmTile(lab,v,sub,attrs,sz){const l=HMLV?HMLV(v):hmLv(v,HMP);return `<button type="button" class="hmt ${l==null?'na':'l'+l}" ${attrs}><span class="n ${sz}">${esc(lab)}</span><span class="p">${v==null?'—':pct(v,HMP==='d'?2:1)}</span>${sub?`<span class="c">${sub}</span>`:''}</button>`}
 const hmSz=s=>{const w=[...s].reduce((a,c)=>a+(/[\x00-\xff]/.test(c)?.55:1),0);return w>8.5?'s2':w>7?'s1':''};
 function renderHmap(){
   $('hmP').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.p===HMP));
   $('hmS').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.s===HMS));
+  $('hmC').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.c===HMC));
   const A=THEMES.filter(t=>!isAuto(t.id)&&!t.favt&&!t.etf&&t.stocks&&t.stocks.length);
   let R=A.map(hmStat);if(HMS==='v')R=[...R].sort((a,b)=>a.m==null?1:b.m==null?-1:b.m-a.m);
   const asof=HMP==='d'?(S&&S.pxAsof):(MO&&MO.asof),md=s=>s?`${+s.slice(4,6)}/${+s.slice(6,8)}`:'';
   {const ids=hlIds(),nl=ids.filter(c=>hlD(c)!=null).length,ny=ids.filter(c=>hlD(c)!=null&&HLIVE.get(c).src==='yahoo').length;const st=HMP==='d'&&!nl&&!hlSumToday()&&hlOpen()?(hlBusy?`⏳ 即時讀取中… ${HLST.ask}/${hlIds().length}${hlMisOff>Date.now()?' (Yahoo)':''}・`:hlLast?`<span title="${esc(JSON.stringify(HLST))}">⚠️ 即時沒拿到 (${esc(HLST.err||(HLST.ret?'回傳日期 '+HLST.d:'回傳 0 檔'))})</span>・`:''):'';$('hmAsof').innerHTML=HMP==='d'&&nl?(ny?`<b style="color:var(--accent)">${esc(hlLast||'')}</b> ${nl-ny?`即時 ${nl-ny}・`:''}<span style="color:#c77700" title="證交所擋住時改用 Yahoo，約延遲 20 分">延遲約20分 ${ny}</span>/${ids.length} 檔`:`<b style="color:var(--accent)">即時 ${esc(hlLast||'')}</b>・${nl}/${ids.length} 檔`):st+(asof?`收盤日 ${s2d(asof)}`:'')}
   const ok=R.filter(r=>r.m!=null),u=ok.filter(r=>r.m>0).length,d=ok.filter(r=>r.m<0).length,srt=[...ok].sort((a,b)=>b.m-a.m);
   const hmMiss=HMP==='d'&&HLIVE.size&&!hlBusy?hlIds().filter(c=>hlD(c)==null):[];
-  $('hmTake').innerHTML=(hmMiss.length&&hmMiss.length<=5?`<span style="color:#c77700">缺即時報價：${hmMiss.map(c=>`<a href="#${c}">${esc(nameOf(c))} ${c}</a>`).join('、')} (用昨收)</span><br>`:hmMiss.length?`<span style="color:#c77700">缺即時報價 ${hmMiss.length} 檔 (用昨收)</span><br>`:'')+(ok.length?`<b>${HML[HMP]}</b>漲跌・${ok.length} 個主題：<span class="up">上漲 ${u}</span>・<span class="dn">下跌 ${d}</span>　最強 <b>${esc(hmNm(srt[0].t))}</b> <span class="${sign(srt[0].m)}">${pct(srt[0].m,1)}</span>・最弱 <b>${esc(hmNm(srt[srt.length-1].t))}</b> <span class="${sign(srt[srt.length-1].m)}">${pct(srt[srt.length-1].m,1)}</span>`:'資料還沒載入');
+  $('hmTake').innerHTML=(hmMiss.length&&hmMiss.length<=5?`<span style="color:#c77700">缺即時報價：${hmMiss.map(c=>`<a href="#${c}">${esc(nameOf(c))} ${c}</a>`).join('、')} (用昨收)</span><br>`:hmMiss.length?`<span style="color:#c77700">缺即時報價 ${hmMiss.length} 檔 (用昨收)</span><br>`:'')+(HMC==='r'&&ok.length?`<span style="color:var(--accent)">🎨 相對色：跟 ${ok.length} 個主題比名次 (中位 ${pct(median(ok.map(r=>r.m)),HMP==='d'?2:1)})</span><br>`:'')+(ok.length?`<b>${HML[HMP]}</b>漲跌・${ok.length} 個主題：<span class="up">上漲 ${u}</span>・<span class="dn">下跌 ${d}</span>　最強 <b>${esc(hmNm(srt[0].t))}</b> <span class="${sign(srt[0].m)}">${pct(srt[0].m,1)}</span>・最弱 <b>${esc(hmNm(srt[srt.length-1].t))}</b> <span class="${sign(srt[srt.length-1].m)}">${pct(srt[srt.length-1].m,1)}</span>`:'資料還沒載入');
+  HMLV=HMC==='r'?hmRel(R.map(r=>r.m)):null;
   $('hmG').innerHTML=R.map(r=>{const nm=hmNm(r.t);return hmTile(nm,r.m,r.n?`${r.up}/${r.n}↑`:'',`data-ht="${esc(r.t.id)}"${r.t.id===HMSEL?' aria-current="true"':''}`,hmSz(nm))}).join('');
   $('hmG').querySelectorAll('.hmt').forEach(b=>b.classList.toggle('sel',b.dataset.ht===HMSEL));
-  const T=HMTH[HMP];$('hmLg').innerHTML=`<span style="margin-right:3px">跌</span>`+[-3,-2,-1,0,1,2,3].map(l=>`<i class="hmt l${l}" style="padding:0">${l===0?'0':(l<0?'−':'+')+T[Math.abs(l)-1]}</i>`).join('')+`<span style="margin-left:3px">漲</span>`;
+  const T=HMTH[HMP];$('hmLg').innerHTML=HMLV?`<span style="margin-right:3px">弱</span>`+[['-3','後10%'],['-2','後25%'],['-1','後40%'],['0','中間'],['1','前40%'],['2','前25%'],['3','前10%']].map(([l,t])=>`<i class="hmt l${l}" style="padding:0">${t}</i>`).join('')+`<span style="margin-left:3px">強</span>`:`<span style="margin-right:3px">跌</span>`+[-3,-2,-1,0,1,2,3].map(l=>`<i class="hmt l${l}" style="padding:0">${l===0?'0':(l<0?'−':'+')+T[Math.abs(l)-1]}</i>`).join('')+`<span style="margin-left:3px">漲</span>`;
   hmDetail();
-  $('hmFoot').innerHTML=`<b>盤中即時</b>：日＝即時價對昨收 (跟掃描頁同一個來源，先問證交所；證交所擋住時改用 Yahoo，約延遲 20 分、每 3 分鐘更新，右上角會標「延遲約20分」；不用富果，額度留給投本比頁；畫面開著每 60 秒更新，切到背景就停)，標題顯示「即時 時間・拿到幾檔」；收盤後排程更新前也是今天的即時收盤。週/月/季仍是收盤資料，不含今天盤中。<br>每一格＝一個產業主題 (首頁主題表的內建＋自訂主題，不含 ETF、0050、注意股、投信買超、⭐自選這些自動名單；首頁隱藏的主題這裡也不出現)。數字＝成份股漲跌的<b>中位數</b> (不讓台積電、鴻海一檔決定整格顏色)；第三行「7/10↑」＝有資料的 10 檔中 7 檔上漲。<b>顏色固定七階</b>，同一個顏色每天代表一樣的幅度：最淺＝${T[0]}～${T[1]}%、中＝${T[1]}～${T[2]}%、最深＝${T[2]}% 以上，±${T[0]}% 以內灰色 (週 ±1.5/4/8%、月 ±3/8/15%、季 ±5/12/25%、日 ±0.5/1.5/3%)。日＝最新收盤漲跌 (盤後更新，盤中看到的是前一交易日)；週/月/季＝跟首頁一樣用還原價，週＝5 個交易日、月/季＝日曆日 (月基準 ${md(MO&&MO.calBase&&MO.calBase.m)}、季基準 ${md(MO&&MO.calBase&&MO.calBase.q)})。「順序」＝首頁主題表的順序 (含你的手動排序)，「漲幅」＝由強到弱。點格子＝下方展開成份股 (依市值排)；華通、啟碁、兆赫在兩個主題都會算。`;
+  $('hmFoot').innerHTML=`<b>顏色「固定 / 相對」</b>：固定＝照漲跌幅度上色 (下面說明的七階)；相對＝跟同畫面其他格比名次，前 10% 最深紅、後 10% 最深綠、中間 40～60% 灰色，數字不變，適合全市場一起大漲或大跌、顏色全部一樣深的日子找出相對強弱；展開的成份股則是在該主題內比。<br><b>盤中即時</b>：日＝即時價對昨收 (跟掃描頁同一個來源，先問證交所；證交所擋住時改用 Yahoo，約延遲 20 分、每 3 分鐘更新，右上角會標「延遲約20分」；不用富果，額度留給投本比頁；畫面開著每 60 秒更新，切到背景就停)，標題顯示「即時 時間・拿到幾檔」；收盤後排程更新前也是今天的即時收盤。週/月/季仍是收盤資料，不含今天盤中。<br>每一格＝一個產業主題 (首頁主題表的內建＋自訂主題，不含 ETF、0050、注意股、投信買超、⭐自選這些自動名單；首頁隱藏的主題這裡也不出現)。數字＝成份股漲跌的<b>中位數</b> (不讓台積電、鴻海一檔決定整格顏色)；第三行「7/10↑」＝有資料的 10 檔中 7 檔上漲。<b>顏色固定七階</b>，同一個顏色每天代表一樣的幅度：最淺＝${T[0]}～${T[1]}%、中＝${T[1]}～${T[2]}%、最深＝${T[2]}% 以上，±${T[0]}% 以內灰色 (週 ±1.5/4/8%、月 ±3/8/15%、季 ±5/12/25%、日 ±0.5/1.5/3%)。日＝最新收盤漲跌 (盤後更新，盤中看到的是前一交易日)；週/月/季＝跟首頁一樣用還原價，週＝5 個交易日、月/季＝日曆日 (月基準 ${md(MO&&MO.calBase&&MO.calBase.m)}、季基準 ${md(MO&&MO.calBase&&MO.calBase.q)})。「順序」＝首頁主題表的順序 (含你的手動排序)，「漲幅」＝由強到弱。點格子＝下方展開成份股 (依市值排)；華通、啟碁、兆赫在兩個主題都會算。`;
 }
 function hmDetail(){const el=$('hmD'),t=HMSEL&&THEMES.find(x=>x.id===HMSEL);if(!t){el.hidden=true;return}
-  const r=hmStat(t),ids=[...r.ids].sort((a,b)=>hmCap(b)-hmCap(a));
+  const r=hmStat(t),ids=[...r.ids].sort((a,b)=>hmCap(b)-hmCap(a));HMLV=HMC==='r'?hmRel(ids.map(i=>hmV(i,HMP))):null;
   el.hidden=false;el.innerHTML=`<h3><span>${esc(t.name)} <span class="${sign(r.m)}" style="font-family:var(--f-num)">${pct(r.m,HMP==='d'?2:1)}</span></span><span><a href="scan.html#${esc(t.id)}">📈 掃 K 線</a><a href="#t/${esc(t.id)}">📋 主題頁</a></span></h3><p class="foot" style="margin:0 0 6px">${HML[HMP]}漲跌・${r.n} 檔：上漲 ${r.up}・下跌 ${r.dn}・依市值由大到小，點一格看個股</p><div class="hm m3">`+
     ids.map(i=>{const nm=nameOf(i),v=hmV(i,HMP),c=hmCap(i);return hmTile(nm,v,c?`${i}・${c>=1e12?fmt(c/1e12,1)+'兆':fmt(c/1e8,0)+'億'}`:i,`data-hs="${i}"`,hmSz(nm))}).join('')+'</div>'}
 document.addEventListener('click',e=>{if(!document.body||document.body.dataset.view!=='hmap')return;
+  {const c=e.target.closest('#hmC button');if(c){HMC=c.dataset.c;store.set('hmC',HMC);renderHmap();return}}
   const p=e.target.closest('#hmP button'),s=e.target.closest('#hmS button'),g=e.target.closest('[data-ht]'),k=e.target.closest('[data-hs]');
   if(p){HMP=p.dataset.p;store.set('hmP',HMP);renderHmap()}
   else if(s){HMS=s.dataset.s;store.set('hmS',HMS);renderHmap()}
