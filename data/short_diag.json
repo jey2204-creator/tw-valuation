@@ -156,7 +156,7 @@
  },
  "twse_stop": {
   "path": "/exchangeReport/BFI84U",
-  "rows": 23,
+  "rows": 24,
   "keys": [
    "Code",
    "Name",
@@ -344,7 +344,7 @@
    "B": 0,
    "L": 1733
   },
-  "stop": 36,
+  "stop": 37,
   "N": 141
  }
 }
