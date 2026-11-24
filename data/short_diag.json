@@ -287,7 +287,7 @@
  },
  "tpex_stop": {
   "path": "/tpex_margin_trading_term",
-  "rows": 14,
+  "rows": 13,
   "keys": [
    "Date",
    "SecuritiesCompanyCode",
@@ -297,7 +297,7 @@
    "Reason"
   ],
   "first": {
-   "Date": "1151123",
+   "Date": "1151124",
    "SecuritiesCompanyCode": "00950B",
    "CompanyName": "凱基A級公司債",
    "ShortSaleSuspensionStartDate": "1151126",
@@ -306,15 +306,7 @@
   },
   "sample": [
    {
-    "Date": "1151123",
-    "SecuritiesCompanyCode": "00958B",
-    "CompanyName": "永豐ESG銀行債15+",
-    "ShortSaleSuspensionStartDate": "1151118",
-    "ShortSaleSuspensionEndDate": "1151123",
-    "Reason": ""
-   },
-   {
-    "Date": "1151123",
+    "Date": "1151124",
     "SecuritiesCompanyCode": "00959B",
     "CompanyName": "大華投等美債15Y+",
     "ShortSaleSuspensionStartDate": "1151127",
@@ -322,11 +314,19 @@
     "Reason": ""
    },
    {
-    "Date": "1151123",
+    "Date": "1151124",
     "SecuritiesCompanyCode": "00966B",
     "CompanyName": "統一ESG投等債15+",
     "ShortSaleSuspensionStartDate": "1151126",
     "ShortSaleSuspensionEndDate": "1151201",
+    "Reason": ""
+   },
+   {
+    "Date": "1151124",
+    "SecuritiesCompanyCode": "00983B",
+    "CompanyName": "大華優利美公債20",
+    "ShortSaleSuspensionStartDate": "1151127",
+    "ShortSaleSuspensionEndDate": "1151202",
     "Reason": ""
    }
   ]
@@ -345,7 +345,7 @@
    "B": 0,
    "L": 1733
   },
-  "stop": 37,
+  "stop": 36,
   "N": 141
  }
 }
