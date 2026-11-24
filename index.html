@@ -3100,7 +3100,7 @@ function hotPaint(){
     return `<a href="#${id}">${nameOf(id)}</a> <span class="${sign(ch)}">${ch==null?'':pct(ch,1)}</span>${why?`<span class="sm">(${why})</span>`:''}`}).join('、'):'';
   $('hotFoot').innerHTML=MO?`範圍：產業主題＋自選共 ${pool.length} 檔。🔥＝月漲幅 &gt; 0、量比 (5 日均量 ÷ 20 日均量)≥ 1.5、且投信或外資 5 日買超 ≥ 5 日成交量的 1%。是「有資金在推」的訊號，不是買進訊號，要搭配估值位階看。<a href="fstats.html">📊 上榜後勝率統計 ›</a>`
     +(hasH?`<br><b>日期選單</b>可看之前哪些股票上榜 (從 ${ymd(days[0])} 起)；選了舊日期，「數字」預設最新，點一下看當天收盤的數字，還亮著 🔥 的＝今天仍符合。<b>上榜後</b>＝那天收盤 → 最新收盤。<b>🆕新進</b>＝前一個交易日還沒有 🔥；<b>連 N 天</b>＝連續符合的交易日數。<b>橘底 ⚠</b>＝這個進場時機過去抱 10 日輸大盤 2 個百分點以上；<b>短線</b>＝同時是注意股，過去 5 日有超額、10 日倒輸 (都依統計頁的數字即時判斷)。大戶/股東一律是最新一週。`:'')
-    +` 資料 ${ymd(MO.asof)} <span style="opacity:.5">v1124c</span>`:'第一次需要回補約 3 個月的歷史資料，Actions 跑完後就會出現。';
+    +` 資料 ${ymd(MO.asof)} <span style="opacity:.5">v1124d</span>`:'第一次需要回補約 3 個月的歷史資料，Actions 跑完後就會出現。';
 }
 document.addEventListener('toggle',e=>{if(e.target&&e.target.id==='hotBox'&&e.target.open&&!FH)fhLoad().then(()=>{try{hotPaint()}catch(err){}})},true);
 document.addEventListener('change',e=>{if(e.target&&e.target.id==='fhDay'){HDAY=e.target.value;hotPaint()}});
@@ -3273,7 +3273,8 @@ function renderHmap(){
   const asof=HMP==='d'?(S&&S.pxAsof):(MO&&MO.asof),md=s=>s?`${+s.slice(4,6)}/${+s.slice(6,8)}`:'';
   {const ids=hlIds(),nl=ids.filter(c=>hlD(c)!=null).length,ny=ids.filter(c=>hlD(c)!=null&&HLIVE.get(c).src==='yahoo').length;const st=HMP==='d'&&!nl&&!hlSumToday()&&hlOpen()?(hlBusy?`⏳ 即時讀取中… ${HLST.ask}/${hlIds().length}${hlMisOff>Date.now()?' (Yahoo)':''}・`:hlLast?`<span title="${esc(JSON.stringify(HLST))}">⚠️ 即時沒拿到 (${esc(HLST.err||(HLST.ret?'回傳日期 '+HLST.d:'回傳 0 檔'))})</span>・`:''):'';$('hmAsof').innerHTML=HMP==='d'&&nl?(ny?`<b style="color:var(--accent)">${esc(hlLast||'')}</b> ${nl-ny?`即時 ${nl-ny}・`:''}<span style="color:#c77700" title="證交所擋住時改用 Yahoo，約延遲 20 分">延遲約20分 ${ny}</span>/${ids.length} 檔`:`<b style="color:var(--accent)">即時 ${esc(hlLast||'')}</b>・${nl}/${ids.length} 檔`):st+(asof?`收盤日 ${s2d(asof)}`:'')}
   const ok=R.filter(r=>r.m!=null),u=ok.filter(r=>r.m>0).length,d=ok.filter(r=>r.m<0).length,srt=[...ok].sort((a,b)=>b.m-a.m);
-  $('hmTake').innerHTML=ok.length?`<b>${HML[HMP]}</b>漲跌・${ok.length} 個主題：<span class="up">上漲 ${u}</span>・<span class="dn">下跌 ${d}</span>　最強 <b>${esc(hmNm(srt[0].t))}</b> <span class="${sign(srt[0].m)}">${pct(srt[0].m,1)}</span>・最弱 <b>${esc(hmNm(srt[srt.length-1].t))}</b> <span class="${sign(srt[srt.length-1].m)}">${pct(srt[srt.length-1].m,1)}</span>`:'資料還沒載入';
+  const hmMiss=HMP==='d'&&HLIVE.size&&!hlBusy?hlIds().filter(c=>hlD(c)==null):[];
+  $('hmTake').innerHTML=(hmMiss.length&&hmMiss.length<=5?`<span style="color:#c77700">缺即時報價：${hmMiss.map(c=>`<a href="#${c}">${esc(nameOf(c))} ${c}</a>`).join('、')} (用昨收)</span><br>`:hmMiss.length?`<span style="color:#c77700">缺即時報價 ${hmMiss.length} 檔 (用昨收)</span><br>`:'')+(ok.length?`<b>${HML[HMP]}</b>漲跌・${ok.length} 個主題：<span class="up">上漲 ${u}</span>・<span class="dn">下跌 ${d}</span>　最強 <b>${esc(hmNm(srt[0].t))}</b> <span class="${sign(srt[0].m)}">${pct(srt[0].m,1)}</span>・最弱 <b>${esc(hmNm(srt[srt.length-1].t))}</b> <span class="${sign(srt[srt.length-1].m)}">${pct(srt[srt.length-1].m,1)}</span>`:'資料還沒載入');
   $('hmG').innerHTML=R.map(r=>{const nm=hmNm(r.t);return hmTile(nm,r.m,r.n?`${r.up}/${r.n}↑`:'',`data-ht="${esc(r.t.id)}"${r.t.id===HMSEL?' aria-current="true"':''}`,hmSz(nm))}).join('');
   $('hmG').querySelectorAll('.hmt').forEach(b=>b.classList.toggle('sel',b.dataset.ht===HMSEL));
   const T=HMTH[HMP];$('hmLg').innerHTML=`<span style="margin-right:3px">跌</span>`+[-3,-2,-1,0,1,2,3].map(l=>`<i class="hmt l${l}" style="padding:0">${l===0?'0':(l<0?'−':'+')+T[Math.abs(l)-1]}</i>`).join('')+`<span style="margin-left:3px">漲</span>`;
