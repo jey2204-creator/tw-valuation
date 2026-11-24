@@ -196,22 +196,156 @@
    }
   ]
  },
- "tpex_swagger": "ERR HTTP Error 520: <none>",
+ "tpex_swagger": [
+  [
+   "/tpex_mainboard_margin_balance",
+   "上櫃股票融資融券餘額 上櫃股票融資融券餘額"
+  ],
+  [
+   "/tpex_margin_sbl",
+   "上櫃股票融券借券賣出餘額 上櫃股票融券借券賣出餘額"
+  ],
+  [
+   "/tpex_margin_trading_term",
+   "上櫃融資融券暫停融券賣出預告表 上櫃融資融券暫停融券賣出預告表"
+  ],
+  [
+   "/tpex_margin_trading_adjust",
+   "上櫃融資融券調整成數 上櫃融資融券調整成數"
+  ],
+  [
+   "/tpex_margin_trading_lend",
+   "上櫃融資融券標借 上櫃融資融券標借"
+  ],
+  [
+   "/tpex_margin_trading_margin_mark",
+   "上櫃平盤下得融(借)券賣出之證券名單 上櫃平盤下得融(借)券賣出之證券名單"
+  ],
+  [
+   "/tpex_margin_trading_margin_used",
+   "上櫃融資融券使用率報表 上櫃融資融券使用率報表"
+  ],
+  [
+   "/tpex_margin_trading_short_sell",
+   "上櫃融資融券增減排行表 上櫃融資融券增減排行表"
+  ],
+  [
+   "/tpex_short_sell",
+   "上櫃當日融券賣出與借券賣出成交量值 上櫃當日融券賣出與借券賣出成交量值"
+  ],
+  [
+   "/tpex_intraday_fee",
+   "上櫃應付現股當日沖銷券差借券費率 上櫃應付現股當日沖銷券差借券費率"
+  ]
+ ],
+ "tpex_base": "https://www.tpex.org.tw/openapi/v1",
+ "tpex_flat": {
+  "path": "/tpex_margin_trading_margin_mark",
+  "rows": 848,
+  "keys": [
+   "Date",
+   "SecuritiesCompanyCode",
+   "CompanyName",
+   "BannedFromMarginShortSelling",
+   "BannedFromSBLShortSelling",
+   "SubjectToUptickRule"
+  ],
+  "first": {
+   "Date": "1151124",
+   "SecuritiesCompanyCode": "00411A",
+   "CompanyName": "主動統一前沿科技",
+   "BannedFromMarginShortSelling": "",
+   "BannedFromSBLShortSelling": "",
+   "SubjectToUptickRule": ""
+  },
+  "sample": [
+   {
+    "Date": "1151124",
+    "SecuritiesCompanyCode": "00679B",
+    "CompanyName": "元大美債20年",
+    "BannedFromMarginShortSelling": "",
+    "BannedFromSBLShortSelling": "",
+    "SubjectToUptickRule": ""
+   },
+   {
+    "Date": "1151124",
+    "SecuritiesCompanyCode": "00687B",
+    "CompanyName": "國泰20年美債",
+    "BannedFromMarginShortSelling": "",
+    "BannedFromSBLShortSelling": "",
+    "SubjectToUptickRule": ""
+   },
+   {
+    "Date": "1151124",
+    "SecuritiesCompanyCode": "00694B",
+    "CompanyName": "富邦美債1-3",
+    "BannedFromMarginShortSelling": "",
+    "BannedFromSBLShortSelling": "",
+    "SubjectToUptickRule": ""
+   }
+  ]
+ },
+ "tpex_stop": {
+  "path": "/tpex_margin_trading_term",
+  "rows": 14,
+  "keys": [
+   "Date",
+   "SecuritiesCompanyCode",
+   "CompanyName",
+   "ShortSaleSuspensionStartDate",
+   "ShortSaleSuspensionEndDate",
+   "Reason"
+  ],
+  "first": {
+   "Date": "1151123",
+   "SecuritiesCompanyCode": "00950B",
+   "CompanyName": "凱基A級公司債",
+   "ShortSaleSuspensionStartDate": "1151126",
+   "ShortSaleSuspensionEndDate": "1151201",
+   "Reason": ""
+  },
+  "sample": [
+   {
+    "Date": "1151123",
+    "SecuritiesCompanyCode": "00958B",
+    "CompanyName": "永豐ESG銀行債15+",
+    "ShortSaleSuspensionStartDate": "1151118",
+    "ShortSaleSuspensionEndDate": "1151123",
+    "Reason": ""
+   },
+   {
+    "Date": "1151123",
+    "SecuritiesCompanyCode": "00959B",
+    "CompanyName": "大華投等美債15Y+",
+    "ShortSaleSuspensionStartDate": "1151127",
+    "ShortSaleSuspensionEndDate": "1151202",
+    "Reason": ""
+   },
+   {
+    "Date": "1151123",
+    "SecuritiesCompanyCode": "00966B",
+    "CompanyName": "統一ESG投等債15+",
+    "ShortSaleSuspensionStartDate": "1151126",
+    "ShortSaleSuspensionEndDate": "1151201",
+    "Reason": ""
+   }
+  ]
+ },
  "out": {
   "md": "20261123",
   "fd": {
    "twse": "20261124",
-   "tpex": null
+   "tpex": "20261124"
   },
   "n": 2234,
-  "flat": 1245,
+  "flat": 2093,
   "flatmarks": {
-   "F": 1245,
-   "X": 11,
+   "F": 2093,
+   "X": 37,
    "B": 0,
-   "L": 1001
+   "L": 1733
   },
-  "stop": 23,
-  "N": 167
+  "stop": 37,
+  "N": 141
  }
 }
