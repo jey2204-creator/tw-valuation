@@ -284,49 +284,7 @@
  },
  "tpex_stop": {
   "path": "/tpex_margin_trading_term",
-  "rows": 13,
-  "keys": [
-   "Date",
-   "SecuritiesCompanyCode",
-   "CompanyName",
-   "ShortSaleSuspensionStartDate",
-   "ShortSaleSuspensionEndDate",
-   "Reason"
-  ],
-  "first": {
-   "Date": "1151125",
-   "SecuritiesCompanyCode": "00950B",
-   "CompanyName": "凱基A級公司債",
-   "ShortSaleSuspensionStartDate": "1151126",
-   "ShortSaleSuspensionEndDate": "1151201",
-   "Reason": ""
-  },
-  "sample": [
-   {
-    "Date": "1151125",
-    "SecuritiesCompanyCode": "00959B",
-    "CompanyName": "大華投等美債15Y+",
-    "ShortSaleSuspensionStartDate": "1151127",
-    "ShortSaleSuspensionEndDate": "1151202",
-    "Reason": ""
-   },
-   {
-    "Date": "1151125",
-    "SecuritiesCompanyCode": "00966B",
-    "CompanyName": "統一ESG投等債15+",
-    "ShortSaleSuspensionStartDate": "1151126",
-    "ShortSaleSuspensionEndDate": "1151201",
-    "Reason": ""
-   },
-   {
-    "Date": "1151125",
-    "SecuritiesCompanyCode": "00983B",
-    "CompanyName": "大華優利美公債20",
-    "ShortSaleSuspensionStartDate": "1151127",
-    "ShortSaleSuspensionEndDate": "1151202",
-    "Reason": ""
-   }
-  ]
+  "err": "HTTP Error 520: <none>"
  },
  "out": {
   "md": "20261125",
@@ -342,7 +300,7 @@
    "B": 1,
    "L": 1733
   },
-  "stop": 36,
+  "stop": 23,
   "N": 141
  }
 }
