@@ -248,7 +248,7 @@
    "SubjectToUptickRule"
   ],
   "first": {
-   "Date": "1151125",
+   "Date": "1151126",
    "SecuritiesCompanyCode": "00411A",
    "CompanyName": "主動統一前沿科技",
    "BannedFromMarginShortSelling": "",
@@ -257,7 +257,7 @@
   },
   "sample": [
    {
-    "Date": "1151125",
+    "Date": "1151126",
     "SecuritiesCompanyCode": "00679B",
     "CompanyName": "元大美債20年",
     "BannedFromMarginShortSelling": "",
@@ -265,7 +265,7 @@
     "SubjectToUptickRule": ""
    },
    {
-    "Date": "1151125",
+    "Date": "1151126",
     "SecuritiesCompanyCode": "00687B",
     "CompanyName": "國泰20年美債",
     "BannedFromMarginShortSelling": "",
@@ -273,7 +273,7 @@
     "SubjectToUptickRule": ""
    },
    {
-    "Date": "1151125",
+    "Date": "1151126",
     "SecuritiesCompanyCode": "00694B",
     "CompanyName": "富邦美債1-3",
     "BannedFromMarginShortSelling": "",
@@ -332,17 +332,17 @@
   "md": "20261125",
   "fd": {
    "twse": "20261126",
-   "tpex": "20261125"
+   "tpex": "20261126"
   },
   "n": 2235,
   "flat": 2094,
   "flatmarks": {
    "F": 2094,
-   "X": 32,
+   "X": 33,
    "B": 1,
    "L": 1733
   },
   "stop": 37,
-  "N": 144
+  "N": 141
  }
 }
