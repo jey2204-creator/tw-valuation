@@ -1,16 +1,16 @@
 {
- "at": "2026-11-26 18:58",
+ "at": "2026-11-26 22:03",
  "ok": true,
  "tries": [
   {
    "src": "moneydj",
    "status": 200,
-   "len": 65457,
+   "len": 65347,
    "head": " <!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"> <html xmlns=\"http://www.w3.org/1999/xhtml\" > <meta HTTP-EQUIV=\"C",
    "n": 50,
    "ok": true,
    "why": "",
-   "asof": "20261125"
+   "asof": "20261126"
   }
  ]
 }
