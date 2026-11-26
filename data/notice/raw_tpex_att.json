@@ -1,5 +1,93 @@
 [
 {
+"Date": "1151126",
+"SecuritiesCompanyCode": "3163",
+"CompanyName": "波若威",
+"TradingInformation": "最近六個營業日(自當日之前一個營業日起)之當日沖銷成交量占總成交量比率達65.99%，當日之前一個營業日當日沖銷成交量占總成交量達75.97%（第十三款)",
+"ClosePrice": "369.00",
+"PriceEarningRatio": "49.86"
+},
+{
+"Date": "1151126",
+"SecuritiesCompanyCode": "3259",
+"CompanyName": "鑫創",
+"TradingInformation": "最近六個營業日(含當日)累積之最後成交價跌幅達48.92%(第一款)",
+"ClosePrice": "5.08",
+"PriceEarningRatio": "N/A"
+},
+{
+"Date": "1151126",
+"SecuritiesCompanyCode": "4198",
+"CompanyName": "欣大健康",
+"TradingInformation": "最近六個營業日(含當日)之日平均成交量較最近六十個營業日日平均成交量放大為7.06倍，當日成交量較最近六十個營業日之日平均成交量放大為12.06倍(第九款)",
+"ClosePrice": "47.00",
+"PriceEarningRatio": "N/A"
+},
+{
+"Date": "1151126",
+"SecuritiesCompanyCode": "4577",
+"CompanyName": "達航科技",
+"TradingInformation": "最近六個營業日(含當日)累積之最後成交價跌幅達33.82%(第一款)",
+"ClosePrice": "71.50",
+"PriceEarningRatio": "210.29"
+},
+{
+"Date": "1151126",
+"SecuritiesCompanyCode": "5013",
+"CompanyName": "強新",
+"TradingInformation": "最近六個營業日(含當日)累積之最後成交價跌幅達32.37%(第一款)",
+"ClosePrice": "44.40",
+"PriceEarningRatio": "14.01"
+},
+{
+"Date": "1151126",
+"SecuritiesCompanyCode": "61828",
+"CompanyName": "合晶八",
+"TradingInformation": "最近六個營業日(含當日)累積之最後成交價跌幅達24.24%且最近六個營業日(含當日)起迄兩個營業日之最後成交價價差達新臺幣56元(第一款)",
+"ClosePrice": "193.00",
+"PriceEarningRatio": "N/A"
+},
+{
+"Date": "1151126",
+"SecuritiesCompanyCode": "6690",
+"CompanyName": "安碁資訊",
+"TradingInformation": "最近六個營業日(自當日之前一個營業日起)之當日沖銷成交量占總成交量比率達66.05%，當日之前一個營業日當日沖銷成交量占總成交量達70.93%（第十三款)",
+"ClosePrice": "196.00",
+"PriceEarningRatio": "17.36"
+},
+{
+"Date": "1151126",
+"SecuritiesCompanyCode": "6697",
+"CompanyName": "東捷資訊",
+"TradingInformation": "最近六個營業日(含當日)累積之最後成交價跌幅達38.39%(第一款)",
+"ClosePrice": "47.70",
+"PriceEarningRatio": "15.90"
+},
+{
+"Date": "1151126",
+"SecuritiesCompanyCode": "68301",
+"CompanyName": "汎銓一",
+"TradingInformation": "最近六個營業日(含當日)累積之最後成交價跌幅達29.57%且最近六個營業日(含當日)起迄兩個營業日之最後成交價價差達新臺幣87元(第一款)",
+"ClosePrice": "238.00",
+"PriceEarningRatio": "N/A"
+},
+{
+"Date": "1151126",
+"SecuritiesCompanyCode": "715277",
+"CompanyName": "富喬元大63購11",
+"TradingInformation": "最近六個營業日(含當日)累積之最後成交價跌幅達32.87%(第一款)",
+"ClosePrice": "0.30",
+"PriceEarningRatio": "N/A"
+},
+{
+"Date": "1151126",
+"SecuritiesCompanyCode": "7856",
+"CompanyName": "漢測",
+"TradingInformation": "最近六個營業日(含當日)累積之最後成交價跌幅達25.24%且最近六個營業日(含當日)起迄兩個營業日之最後成交價價差達新臺幣295元(第一款)",
+"ClosePrice": "1580.00",
+"PriceEarningRatio": "135.74"
+},
+{
 "Date": "1151125",
 "SecuritiesCompanyCode": "3259",
 "CompanyName": "鑫創",
