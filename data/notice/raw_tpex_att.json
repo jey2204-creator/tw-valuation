@@ -1,5 +1,101 @@
 [
 {
+"Date": "1151127",
+"SecuritiesCompanyCode": "2221",
+"CompanyName": "大甲",
+"TradingInformation": "最近六個營業日(自當日之前一個營業日起)之當日沖銷成交量占總成交量比率達69.49%，當日之前一個營業日當日沖銷成交量占總成交量達76.9%（第十三款)",
+"ClosePrice": "113.00",
+"PriceEarningRatio": "25.17"
+},
+{
+"Date": "1151127",
+"SecuritiesCompanyCode": "3374",
+"CompanyName": "精材",
+"TradingInformation": "最近六個營業日(自當日之前一個營業日起)之當日沖銷成交量占總成交量比率達61.17%，當日之前一個營業日當日沖銷成交量占總成交量達74.18%（第十三款)",
+"ClosePrice": "330.50",
+"PriceEarningRatio": "47.08"
+},
+{
+"Date": "1151127",
+"SecuritiesCompanyCode": "3624",
+"CompanyName": "光頡",
+"TradingInformation": "最近六個營業日(自當日之前一個營業日起)之當日沖銷成交量占總成交量比率達63.43%，當日之前一個營業日當日沖銷成交量占總成交量達75.22%（第十三款)",
+"ClosePrice": "93.00",
+"PriceEarningRatio": "20.95"
+},
+{
+"Date": "1151127",
+"SecuritiesCompanyCode": "3672",
+"CompanyName": "康聯訊",
+"TradingInformation": "最近六個營業日(含當日)累積之最後成交價跌幅達32.78%(第一款)",
+"ClosePrice": "8.22",
+"PriceEarningRatio": "N/A"
+},
+{
+"Date": "1151127",
+"SecuritiesCompanyCode": "4577",
+"CompanyName": "達航科技",
+"TradingInformation": "最近六個營業日(含當日)累積之最後成交價跌幅達33.61%(第一款)",
+"ClosePrice": "64.50",
+"PriceEarningRatio": "189.71"
+},
+{
+"Date": "1151127",
+"SecuritiesCompanyCode": "5013",
+"CompanyName": "強新",
+"TradingInformation": "最近六個營業日(含當日)累積之最後成交價跌幅達30.14%(第一款)",
+"ClosePrice": "40.95",
+"PriceEarningRatio": "12.92"
+},
+{
+"Date": "1151127",
+"SecuritiesCompanyCode": "5274",
+"CompanyName": "信驊",
+"TradingInformation": "最近六個營業日(含當日)起迄兩個營業日之最後成交價價差達新臺幣1740元(第十一款)",
+"ClosePrice": "9600.00",
+"PriceEarningRatio": "61.85"
+},
+{
+"Date": "1151127",
+"SecuritiesCompanyCode": "5457",
+"CompanyName": "宣德",
+"TradingInformation": "最近六個營業日(含當日)累積之最後成交價漲幅達35.71%(第一款)當日之成交量較最近六十個營業日日平均成交量放大12.27倍(第三款)當日週轉率達9.71%(第四款)",
+"ClosePrice": "30.10",
+"PriceEarningRatio": "N/A"
+},
+{
+"Date": "1151127",
+"SecuritiesCompanyCode": "6274",
+"CompanyName": "台燿",
+"TradingInformation": "最近六個營業日(自當日之前一個營業日起)之當日沖銷成交量占總成交量比率達60.87%，當日之前一個營業日當日沖銷成交量占總成交量達69.72%（第十三款)",
+"ClosePrice": "759.00",
+"PriceEarningRatio": "26.61"
+},
+{
+"Date": "1151127",
+"SecuritiesCompanyCode": "68301",
+"CompanyName": "汎銓一",
+"TradingInformation": "最近六個營業日(含當日)累積之最後成交價跌幅達34.61%(第一款)",
+"ClosePrice": "226.00",
+"PriceEarningRatio": "N/A"
+},
+{
+"Date": "1151127",
+"SecuritiesCompanyCode": "7767",
+"CompanyName": "仁大資訊",
+"TradingInformation": "最近六個營業日(含當日)之日平均成交量較最近六十個營業日日平均成交量放大為5.04倍，當日成交量較最近六十個營業日之日平均成交量放大為9.41倍(第九款)",
+"ClosePrice": "58.00",
+"PriceEarningRatio": "12.53"
+},
+{
+"Date": "1151127",
+"SecuritiesCompanyCode": "8227",
+"CompanyName": "巨有科技",
+"TradingInformation": "最近六個營業日(自當日之前一個營業日起)之當日沖銷成交量占總成交量比率達66.8%，當日之前一個營業日當日沖銷成交量占總成交量達76.69%（第十三款)",
+"ClosePrice": "192.50",
+"PriceEarningRatio": "43.06"
+},
+{
 "Date": "1151126",
 "SecuritiesCompanyCode": "3163",
 "CompanyName": "波若威",
