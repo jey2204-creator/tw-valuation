@@ -284,7 +284,7 @@
  },
  "tpex_stop": {
   "path": "/tpex_margin_trading_term",
-  "rows": 13,
+  "rows": 14,
   "keys": [
    "Date",
    "SecuritiesCompanyCode",
@@ -294,7 +294,7 @@
    "Reason"
   ],
   "first": {
-   "Date": "1151126",
+   "Date": "1151127",
    "SecuritiesCompanyCode": "00950B",
    "CompanyName": "凱基A級公司債",
    "ShortSaleSuspensionStartDate": "1151126",
@@ -303,7 +303,7 @@
   },
   "sample": [
    {
-    "Date": "1151126",
+    "Date": "1151127",
     "SecuritiesCompanyCode": "00959B",
     "CompanyName": "大華投等美債15Y+",
     "ShortSaleSuspensionStartDate": "1151127",
@@ -311,7 +311,7 @@
     "Reason": ""
    },
    {
-    "Date": "1151126",
+    "Date": "1151127",
     "SecuritiesCompanyCode": "00966B",
     "CompanyName": "統一ESG投等債15+",
     "ShortSaleSuspensionStartDate": "1151126",
@@ -319,7 +319,7 @@
     "Reason": ""
    },
    {
-    "Date": "1151126",
+    "Date": "1151127",
     "SecuritiesCompanyCode": "00983B",
     "CompanyName": "大華優利美公債20",
     "ShortSaleSuspensionStartDate": "1151127",
@@ -342,7 +342,7 @@
    "B": 0,
    "L": 1733
   },
-  "stop": 38,
+  "stop": 39,
   "N": 141
  }
 }
