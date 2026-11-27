@@ -1,5 +1,5 @@
 {
- "asof": "2026-11-27 07:26 JST",
+ "asof": "2026-11-28 04:03 JST",
  "errors": [],
  "stocks": {
   "8035": {
@@ -981,20 +981,20 @@
   }
  },
  "tdnet": {
-  "days_scanned": 2,
-  "rows": 8,
+  "days_scanned": 1,
+  "rows": 12,
   "new_records": 0,
   "backfill": false
  },
  "validate_tdnet": {
-  "checked": 3,
+  "checked": 4,
   "fields": {
    "sales": [
-    3,
+    4,
     0
    ],
    "op": [
-    3,
+    4,
     0
    ],
    "odp": [
@@ -1003,20 +1003,39 @@
    ],
    "np": [
     3,
-    0
+    1
    ],
    "eps": [
-    3,
-    0
+    2,
+    2
    ]
   },
-  "mismatch": []
+  "mismatch": [
+   [
+    "33230",
+    "acedifsm",
+    "np",
+    0.8448
+   ],
+   [
+    "33230",
+    "acedifsm",
+    "eps",
+    0.8467
+   ],
+   [
+    "47620",
+    "snedjpsy",
+    "eps",
+    0.5
+   ]
+  ]
  },
  "fx_src": {
-  "usdtwd": 32.92100143432617,
-  "usdjpy": 159.2270050048828
+  "usdtwd": 32.96799850463867,
+  "usdjpy": 159.5449981689453
  },
- "fx_jpytwd": 0.20676,
+ "fx_jpytwd": 0.20664,
  "rs_x20": {
   "8035": 7,
   "6857": 7,
@@ -1073,7 +1092,7 @@
   "n": 32,
   "days": 60,
   "asof": "2026-11-26",
-  "rewritten": true,
+  "rewritten": false,
   "bytes": 96326
  },
  "ok": [
